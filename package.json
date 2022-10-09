@@ -27,8 +27,8 @@
     "build:compact-js": "node build.js",
     "build:compact-typings": "tsc --emitDeclarationOnly --declaration --outFile lib-compact/index.d.ts",
     "build:compact": "npm run build:compact-js && npm run build:compact-typings",
-    "build": "npm run build:normal && npm run build:compact",
-    "release": "npm run format && npm run build && standard-version"
+    "build": "npm run format && npm run build:normal && npm run build:compact",
+    "release": "standard-version"
   },
   "devDependencies": {
     "@types/jest": "^29.1.2",
