@@ -15,6 +15,45 @@ import { JpegEncoder } from './formats/jpeg-encoder';
 import { PngDecoder } from './formats/png-decoder';
 import { PngEncoder } from './formats/png-encoder';
 
+// Export types from 'common' directory
+export { BitOperators } from './common/bit-operators';
+export { BlendMode } from './common/blend-mode';
+export { Clamp } from './common/clamp';
+export { ColorChannel } from './common/color-channel';
+export { ColorModel } from './common/color-model';
+export { ColorUtils } from './common/color-utils';
+export { Color } from './common/color';
+export { Crc32 } from './common/crc32';
+export { DisposeMode } from './common/dispose-mode';
+export { ExifData } from './common/exif_data';
+export { FrameAnimation } from './common/frame-animation';
+export { FrameType } from './common/frame-type';
+export { ICCProfileData } from './common/icc_profile_data';
+export { ICCPCompressionMode } from './common/iccp-compression-mode';
+export { ListUtils } from './common/list-utils';
+export { MemoryImage } from './common/memory-image';
+export { RgbChannelSet } from './common/rgb-channel-set';
+export { TextCodec } from './common/text-codec';
+export { CompressionLevel, TypedArray } from './common/typings';
+
+// Export types from 'draw' directory
+export { drawPixel } from './draw/draw-pixel';
+
+// Export types from 'formats' directory
+export { BmpDecoder } from './formats/bmp-decoder';
+export { BmpEncoder } from './formats/bmp-encoder';
+export { DecodeInfo } from './formats/decode-info';
+export { Decoder } from './formats/decoder';
+export { Encoder } from './formats/encoder';
+export { GifDecoder } from './formats/gif-decoder';
+export { GifEncoder } from './formats/gif-encoder';
+export { IcoDecoder } from './formats/ico-decoder';
+export { IcoEncoder } from './formats/ico-encoder';
+export { JpegDecoder } from './formats/jpeg-decoder';
+export { JpegEncoder } from './formats/jpeg-encoder';
+export { PngDecoder } from './formats/png-decoder';
+export { PngEncoder } from './formats/png-encoder';
+
 /**
  * Find a [Decoder] that is able to decode the given image [data].
  * Use this is you don't know the type of image it is. Since this will
