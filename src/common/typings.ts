@@ -1,6 +1,6 @@
 /** @format */
 
-type TypedArray =
+export type TypedArray =
   | Int8Array
   | Int16Array
   | Int32Array
@@ -10,7 +10,7 @@ type TypedArray =
   | Float32Array
   | Float64Array;
 
-type BufferEncoding =
+export type BufferEncoding =
   | 'ascii'
   | 'utf8'
   | 'utf-8'
@@ -22,4 +22,16 @@ type BufferEncoding =
   | 'binary'
   | 'hex';
 
-type CompressionLevel = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined;
+export type CompressionLevel =
+  | -1
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | undefined;

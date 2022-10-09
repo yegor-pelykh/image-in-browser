@@ -1,6 +1,7 @@
 /** @format */
 
 import { ImageError } from '../error/image-error';
+import { TypedArray } from './typings';
 
 export abstract class ListUtils {
   public static copyInt8(

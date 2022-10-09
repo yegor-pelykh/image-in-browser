@@ -2,6 +2,7 @@
 
 import { FrameAnimation } from './common/frame-animation';
 import { MemoryImage } from './common/memory-image';
+import { CompressionLevel, TypedArray } from './common/typings';
 import { BmpDecoder } from './formats/bmp-decoder';
 import { BmpEncoder } from './formats/bmp-encoder';
 import { Decoder } from './formats/decoder';

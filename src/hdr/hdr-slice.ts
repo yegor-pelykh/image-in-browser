@@ -1,6 +1,7 @@
 /** @format */
 
 import { ListUtils } from '../common/list-utils';
+import { TypedArray } from '../common/typings';
 import { NotImplementedError } from '../error/not-implemented-error';
 import { Half } from './half';
 

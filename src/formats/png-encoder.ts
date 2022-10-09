@@ -10,6 +10,7 @@ import { ICCProfileData } from '../common/icc_profile_data';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { TextCodec } from '../common/text-codec';
+import { CompressionLevel } from '../common/typings';
 import { Encoder } from './encoder';
 import { OutputBuffer } from './util/output-buffer';
 
