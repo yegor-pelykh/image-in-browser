@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.3](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.2...v1.0.3) (2022-10-09)
+
+
+### Bug Fixes
+
+* Added missing exports of various types ([191507e](https://github.com/yegor-pelykh/image-in-browser/commit/191507edbf36dbf762f1e899c7bf8edbe0429b62))
+
 ### [1.0.2](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.1...v1.0.2) (2022-10-09)
 
 
