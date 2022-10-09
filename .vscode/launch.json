@@ -11,6 +11,12 @@
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Compact builder",
+            "program": "${workspaceFolder}/build.js"
         }
     ]
 }

@@ -18,14 +18,17 @@
     "testEnvironment": "node"
   },
   "scripts": {
-    "build": "tsc",
-    "build-watch": "tsc -w",
     "format-src": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" --no-error-on-unmatched-pattern",
     "format-test": "prettier --write \"test/**/*.ts\" \"test/**/*.js\" --no-error-on-unmatched-pattern",
     "eslint": "eslint --fix",
     "format": "npm run format-src && npm run format-test && npm run eslint",
     "test": "jest",
-    "release": "standard-version"
+    "build:normal": "tsc",
+    "build:compact-js": "node build.js",
+    "build:compact-typings": "tsc --emitDeclarationOnly --declaration --outFile lib-compact/index.d.ts",
+    "build:compact": "npm run build:compact-js && npm run build:compact-typings",
+    "build": "npm run build:normal && npm run build:compact",
+    "release": "npm run format && npm run build && standard-version"
   },
   "devDependencies": {
     "@types/jest": "^29.1.2",
@@ -43,6 +46,7 @@
   },
   "dependencies": {
     "buffer": "^6.0.3",
+    "esbuild": "^0.15.10",
     "uzip": "^0.20201231.0"
   }
 }
