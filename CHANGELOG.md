@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.2](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.1...v1.0.2) (2022-10-09)
+
+
+### Bug Fixes
+
+* Fixed problems with using typings ([7a2e220](https://github.com/yegor-pelykh/image-in-browser/commit/7a2e2205999f89ae217a033957e7ec2b783f6b8d))
+
 ### [1.0.1](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.0...v1.0.1) (2022-10-08)
 
 
