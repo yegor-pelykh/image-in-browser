@@ -1,16 +1,10 @@
 /** @format */
 
-import { Buffer } from 'buffer';
 import { ImageError } from '../error/image-error';
 
 export abstract class TextCodec {
   public static readonly utf8Decoder = new TextDecoder('utf8');
   public static readonly latin1Decoder = new TextDecoder('latin1');
-
-  public static encode(str: string, encoding: BufferEncoding): Uint8Array {
-    const buffer = Buffer.from(str, encoding);
-    return new Uint8Array(buffer);
-  }
 
   public static getCodePoints(str: string): Uint8Array {
     const array = new Uint8Array(str.length);

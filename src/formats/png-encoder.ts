@@ -419,8 +419,8 @@ export class PngEncoder implements Encoder {
     const chunk = new OutputBuffer({
       bigEndian: true,
     });
-    const keywordBytes = TextCodec.encode(keyword, 'latin1');
-    const textBytes = TextCodec.encode(text, 'latin1');
+    const keywordBytes = TextCodec.getCodePoints(keyword);
+    const textBytes = TextCodec.getCodePoints(text);
     chunk.writeBytes(keywordBytes);
     chunk.writeByte(0);
     chunk.writeBytes(textBytes);
