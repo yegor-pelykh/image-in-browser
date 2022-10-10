@@ -1,4 +1,3 @@
-/// <reference types="node" />
 declare module "common/frame-type" {
     /** @format */
     export enum FrameType {
@@ -1071,7 +1070,6 @@ declare module "common/text-codec" {
     export abstract class TextCodec {
         static readonly utf8Decoder: TextDecoder;
         static readonly latin1Decoder: TextDecoder;
-        static encode(str: string, encoding: BufferEncoding): Uint8Array;
         static getCodePoints(str: string): Uint8Array;
     }
 }
