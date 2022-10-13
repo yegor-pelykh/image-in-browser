@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.7](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.6...v1.0.7) (2022-10-13)
+
+
+### Bug Fixes
+
+* Fix of wrong height in IcoBmpInfo ([03a5a5c](https://github.com/yegor-pelykh/image-in-browser/commit/03a5a5c72039e3cd8452e2a0d3acd92096373fd3))
+
 ### [1.0.6](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.5...v1.0.6) (2022-10-10)
 
 ### [1.0.5](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.4...v1.0.5) (2022-10-09)
