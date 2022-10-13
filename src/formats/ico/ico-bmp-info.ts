@@ -4,7 +4,7 @@ import { BmpInfo } from '../bmp/bmp-info';
 
 export class IcoBmpInfo extends BmpInfo {
   public get height(): number {
-    return Math.floor(super._height / 2);
+    return Math.floor(this._height / 2);
   }
 
   public get ignoreAlphaChannel(): boolean {
