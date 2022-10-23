@@ -29,9 +29,12 @@ export class GifImageDesc {
     return this._interlaced;
   }
 
-  private readonly _colorMap?: GifColorMap;
+  private _colorMap?: GifColorMap;
   public get colorMap(): GifColorMap | undefined {
     return this._colorMap;
+  }
+  public set colorMap(v: GifColorMap | undefined) {
+    this._colorMap = v;
   }
 
   private _duration = 80;
@@ -70,7 +73,9 @@ export class GifImageDesc {
     this._interlaced = (b & 0x40) !== 0;
 
     if ((b & 0x80) !== 0) {
-      this._colorMap = new GifColorMap(1 << bitsPerPixel);
+      this._colorMap = new GifColorMap({
+        numColors: 1 << bitsPerPixel,
+      });
       for (let i = 0; i < this._colorMap.numColors; ++i) {
         this._colorMap.setColor(
           i,

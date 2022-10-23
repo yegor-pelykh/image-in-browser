@@ -2,6 +2,13 @@
 
 import { ColorUtils } from '../../common/color-utils';
 
+export interface GifColorMapInitOptions {
+  numColors: number;
+  bitsPerPixel?: number;
+  colors?: Uint8Array;
+  transparent?: number;
+}
+
 export class GifColorMap {
   private readonly _colors: Uint8Array;
   public get colors(): Uint8Array {
@@ -26,10 +33,12 @@ export class GifColorMap {
     return this._transparent;
   }
 
-  constructor(numColors: number) {
-    this._numColors = numColors;
-    this._colors = new Uint8Array(numColors * 3);
-    this._bitsPerPixel = GifColorMap.bitSize(numColors);
+  constructor(options: GifColorMapInitOptions) {
+    this._numColors = options.numColors;
+    this._bitsPerPixel =
+      options.bitsPerPixel ?? GifColorMap.bitSize(options.numColors);
+    this._colors = options.colors ?? new Uint8Array(options.numColors * 3);
+    this._transparent = options.transparent;
   }
 
   private static bitSize(n: number): number {
@@ -39,6 +48,15 @@ export class GifColorMap {
       }
     }
     return 0;
+  }
+
+  public static from(other: GifColorMap) {
+    return new GifColorMap({
+      numColors: other.numColors,
+      bitsPerPixel: other.bitsPerPixel,
+      colors: other.colors,
+      transparent: other.transparent,
+    });
   }
 
   public getByte(index: number): number {

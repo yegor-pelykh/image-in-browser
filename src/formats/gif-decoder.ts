@@ -162,7 +162,9 @@ export class GifDecoder implements Decoder {
     let globalColorMap: GifColorMap | undefined = undefined;
     // Is there a global color map?
     if ((b & 0x80) !== 0) {
-      globalColorMap = new GifColorMap(1 << bitsPerPixel);
+      globalColorMap = new GifColorMap({
+        numColors: 1 << bitsPerPixel,
+      });
 
       // Get the global color map:
       for (let i = 0; i < globalColorMap.numColors; ++i) {
@@ -255,10 +257,14 @@ export class GifDecoder implements Decoder {
       gifImage.clearFrame = disposalMethod === 2;
 
       if (transparentFlag !== 0) {
+        if (
+          gifImage.colorMap === undefined &&
+          this.info!.globalColorMap !== undefined
+        ) {
+          gifImage.colorMap = GifColorMap.from(this.info!.globalColorMap);
+        }
         if (gifImage.colorMap !== undefined) {
           gifImage.colorMap.transparent = transparent;
-        } else if (this.info!.globalColorMap !== undefined) {
-          this.info!.globalColorMap.transparent = transparent;
         }
       }
 
@@ -678,29 +684,51 @@ export class GifDecoder implements Decoder {
       loopCount: this.repeat,
     });
 
-    let lastImage = new MemoryImage({
-      width: this.info.width,
-      height: this.info.height,
-    });
+    let lastImage: MemoryImage | undefined = undefined;
 
     for (let i = 0; i < this.info.numFrames; ++i) {
-      //_frame = i;
-      lastImage = MemoryImage.from(lastImage);
-
       const frame = this.info.frames[i];
       const image = this.decodeFrame(i);
       if (image === undefined) {
         return undefined;
       }
 
-      const colorMap =
-        frame.colorMap !== undefined
-          ? frame.colorMap
-          : this.info.globalColorMap;
+      if (lastImage === undefined) {
+        lastImage = image;
+        // Convert to MS
+        lastImage.duration = frame.duration * 10;
+        animation.addFrame(lastImage);
+        continue;
+      }
+
+      if (
+        image.width === lastImage.width &&
+        image.height === lastImage.height &&
+        frame.x === 0 &&
+        frame.y === 0 &&
+        frame.clearFrame
+      ) {
+        lastImage = image;
+        // Convert to MS
+        lastImage.duration = frame.duration * 10;
+        animation.addFrame(lastImage);
+        continue;
+      }
 
       if (frame.clearFrame) {
-        lastImage.fill(colorMap!.getColor(this.info.backgroundColor));
+        lastImage = new MemoryImage({
+          width: lastImage.width,
+          height: lastImage.height,
+        });
+        const colorMap =
+          frame.colorMap !== undefined
+            ? frame.colorMap
+            : this.info!.globalColorMap;
+        lastImage.fill(colorMap!.getColor(this.info!.backgroundColor));
+      } else {
+        lastImage = MemoryImage.from(lastImage);
       }
+
       CopyIntoTransform.copyInto({
         dst: lastImage,
         src: image,

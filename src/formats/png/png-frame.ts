@@ -76,6 +76,16 @@ export class PngFrame {
     return this._blend;
   }
 
+  public get delay() {
+    if (this._delayNum === undefined || this._delayDen === undefined) {
+      return 0;
+    }
+    if (this._delayDen === 0) {
+      return 0;
+    }
+    return this._delayNum / this._delayDen;
+  }
+
   constructor(options: PngFrameInitOptions) {
     this._sequenceNumber = options?.sequenceNumber;
     this._width = options?.width;

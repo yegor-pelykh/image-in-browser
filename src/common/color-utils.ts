@@ -17,8 +17,12 @@ export abstract class ColorUtils {
   ): number {
     const srcAlpha = ColorUtils.getAlpha(src);
     if (srcAlpha === 255 && fraction === 0xff) {
-      // Src is fully opaque, nothing to blend
+      // src is fully opaque, nothing to blend
       return src;
+    }
+    if (srcAlpha === 0 && fraction === 0xff) {
+      // src is fully transparent, nothing to blend
+      return dst;
     }
 
     let a = srcAlpha / 255.0;

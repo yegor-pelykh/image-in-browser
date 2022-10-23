@@ -807,8 +807,8 @@ export class PngDecoder implements Decoder {
           break;
         }
         case 'fdAT': {
-          /* Const sequenceNumber: number = */
-          this._input.readUint32();
+          // @ts-ignore
+          const sequenceNumber = this._input.readUint32();
           const frame = this._info!.frames[this._info!.frames.length - 1];
           frame.fdat.push(inputPos);
           this._input.skip(chunkSize - 4);
@@ -890,23 +890,31 @@ export class PngDecoder implements Decoder {
       return undefined;
     }
 
-    let imageData: Uint8Array = new Uint8Array();
-
+    let imageData: Uint8Array | undefined = undefined;
     let width: number | undefined = this._info.width;
     let height: number | undefined = this._info.height;
 
     if (!this._info.isAnimated || frame === 0) {
+      let totalSize = 0;
+      const dataBlocks: Uint8Array[] = new Array<Uint8Array>();
       for (let i = 0, len = this._info.idat.length; i < len; ++i) {
         this._input.offset = this._info.idat[i];
         const chunkSize = this._input.readUint32();
         const chunkType = this._input.readString(4);
         const data = this._input.readBytes(chunkSize).toUint8Array();
-        imageData = new Uint8Array([...imageData, ...data]);
+        totalSize += data.length;
+        dataBlocks.push(data);
         const crc = this._input.readUint32();
         const computedCrc = PngDecoder.crc(chunkType, data);
         if (crc !== computedCrc) {
           throw new ImageError(`Invalid ${chunkType} checksum`);
         }
+      }
+      imageData = new Uint8Array(totalSize);
+      let offset = 0;
+      for (const data of dataBlocks) {
+        imageData.set(data, offset);
+        offset += data.length;
       }
     } else {
       if (frame < 0 || frame >= this._info.frames.length) {
@@ -916,15 +924,25 @@ export class PngDecoder implements Decoder {
       const f = this._info.frames[frame];
       width = f.width;
       height = f.height;
+      let totalSize = 0;
+      const dataBlocks: Uint8Array[] = new Array<Uint8Array>();
       for (let i = 0; i < f.fdat.length; ++i) {
         this._input.offset = f.fdat[i];
         const chunkSize = this._input.readUint32();
-        /* let chunkType: string = */
+        // fDat chunk header
         this._input.readString(4);
         // Sequence number
         this._input.skip(4);
-        const data = this._input.readBytes(chunkSize).toUint8Array();
-        imageData = new Uint8Array([...imageData, ...data]);
+        const data = this._input.readBytes(chunkSize - 4).toUint8Array();
+        totalSize += data.length;
+        dataBlocks.push(data);
+      }
+
+      imageData = new Uint8Array(totalSize);
+      let offset = 0;
+      for (const data of dataBlocks) {
+        imageData.set(data, offset);
+        offset += data.length;
       }
     }
 
@@ -941,7 +959,13 @@ export class PngDecoder implements Decoder {
       rgbChannelSet: rgbChannelSet,
     });
 
-    const uncompressed = inflate(imageData);
+    let uncompressed: Uint8Array | undefined = undefined;
+    try {
+      uncompressed = inflate(imageData);
+    } catch (error) {
+      console.error(error);
+      return undefined;
+    }
 
     // Input is the decompressed data.
     const input = new InputBuffer({
@@ -1031,27 +1055,52 @@ export class PngDecoder implements Decoder {
       return animation;
     }
 
-    let dispose: number | undefined = PngFrame.APNG_DISPOSE_OP_BACKGROUND;
-    let lastImage = new MemoryImage({
-      width: this._info!.width,
-      height: this._info!.height,
-    });
+    let lastImage: MemoryImage | undefined = undefined;
     for (let i = 0; i < this._info!.numFrames; ++i) {
-      // _frame = i;
-      lastImage = MemoryImage.from(lastImage);
-
       const frame = this._info!.frames[i];
       const image = this.decodeFrame(i);
       if (image === undefined) {
         continue;
       }
 
-      if (
-        dispose === PngFrame.APNG_DISPOSE_OP_BACKGROUND ||
-        dispose === PngFrame.APNG_DISPOSE_OP_PREVIOUS
-      ) {
-        lastImage.fill(this._info!.backgroundColor);
+      if (lastImage === undefined) {
+        lastImage = image;
+        // Convert to MS
+        lastImage.duration = Math.trunc(frame.delay * 1000);
+        animation.addFrame(lastImage);
+        continue;
       }
+
+      if (
+        image.width === lastImage.width &&
+        image.height === lastImage.height &&
+        frame.xOffset === 0 &&
+        frame.yOffset === 0 &&
+        frame.blend === PngFrame.APNG_BLEND_OP_SOURCE
+      ) {
+        lastImage = image;
+        // Convert to MS
+        lastImage.duration = Math.trunc(frame.delay * 1000);
+        animation.addFrame(lastImage);
+        continue;
+      }
+
+      const dispose = frame.dispose;
+      if (dispose === PngFrame.APNG_DISPOSE_OP_BACKGROUND) {
+        lastImage = new MemoryImage({
+          width: lastImage.width,
+          height: lastImage.height,
+        });
+        lastImage.fill(this._info!.backgroundColor);
+      } else if (dispose === PngFrame.APNG_DISPOSE_OP_PREVIOUS) {
+        lastImage = MemoryImage.from(lastImage);
+      } else {
+        lastImage = MemoryImage.from(lastImage);
+      }
+
+      // Convert to MS
+      lastImage.duration = Math.trunc(frame.delay * 1000);
+
       CopyIntoTransform.copyInto({
         dst: lastImage,
         src: image,
@@ -1059,9 +1108,8 @@ export class PngDecoder implements Decoder {
         dstY: frame.yOffset,
         blend: frame.blend === PngFrame.APNG_BLEND_OP_OVER,
       });
-      animation.addFrame(lastImage);
 
-      dispose = frame.dispose;
+      animation.addFrame(lastImage);
     }
 
     return animation;

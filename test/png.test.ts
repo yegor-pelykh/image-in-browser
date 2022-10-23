@@ -5,6 +5,7 @@ import {
   decodePng,
   encodePng,
   encodePngAnimation,
+  PngDecoder,
 } from '../src';
 import { ColorUtils } from '../src/common/color-utils';
 import { FrameAnimation } from '../src/common/frame-animation';
@@ -13,6 +14,12 @@ import { RgbChannelSet } from '../src/common/rgb-channel-set';
 import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
 
 describe('PNG', () => {
+  const resFiles = TestHelpers.listFiles(
+    TestFolder.res,
+    TestFormat.png,
+    '.png'
+  );
+
   test('encode', () => {
     const image = new MemoryImage({
       width: 64,
@@ -26,6 +33,41 @@ describe('PNG', () => {
       'encode.png',
       output
     );
+  });
+
+  test('decodeAnimation', () => {
+    type TestExampleInfo = {
+      fileName: string;
+      correctLength: number;
+    };
+    const testInfo: TestExampleInfo[] = [
+      {
+        fileName: 'test_apng.png',
+        correctLength: 2,
+      },
+      {
+        fileName: 'test_apng2.png',
+        correctLength: 60,
+      },
+      {
+        fileName: 'test_apng3.png',
+        correctLength: 19,
+      },
+    ];
+
+    for (const file of resFiles.filter((f) =>
+      testInfo.some((ti) => ti.fileName === f.name)
+    )) {
+      const input = TestHelpers.readFromFilePath(file.path);
+      const animation = new PngDecoder().decodeAnimation(input);
+      expect(animation).not.toBeUndefined();
+      if (animation !== undefined) {
+        const info = testInfo.find((ti) => ti.fileName === file.name);
+        if (info !== undefined) {
+          expect(animation.numFrames).toBe(info.correctLength);
+        }
+      }
+    }
   });
 
   test('encodeAnimation', () => {
@@ -141,12 +183,6 @@ describe('PNG', () => {
   //      interlacing:
   //        n - non-interlaced
   //        i - interlaced
-
-  const resFiles = TestHelpers.listFiles(
-    TestFolder.res,
-    TestFormat.png,
-    '.png'
-  );
 
   for (const file of resFiles) {
     test(`PNG ${file.name}`, () => {

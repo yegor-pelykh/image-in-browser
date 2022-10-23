@@ -159,7 +159,7 @@ export class InputBuffer {
    */
   public indexOf(value: number, offset = 0): number {
     for (
-      let i = this._offset + offset, end = this._offset + length;
+      let i = this._offset + offset, end = this._offset + this.length;
       i < end;
       ++i
     ) {

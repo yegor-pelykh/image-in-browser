@@ -182,6 +182,7 @@ export class MemoryImage {
   public get length(): number {
     return this.data.length;
   }
+
   /**
    * Create an image with the given dimensions and format.
    */
@@ -412,7 +413,7 @@ export class MemoryImage {
       }
       case ColorModel.luminance: {
         const bytes = new Uint8Array(this._width * this._height);
-        for (let i = 0, len = length; i < len; ++i) {
+        for (let i = 0, len = this.length; i < len; ++i) {
           bytes[i] = ColorUtils.getLuminance(this._data[i]);
         }
         return bytes;
@@ -434,7 +435,7 @@ export class MemoryImage {
    */
   public fillBackground(color: number): void {
     // Loop all pixels
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < this.length; i++) {
       // Value 0 means null pixel
       if (this._data[i] === 0) {
         // Set the pixel to the given color
