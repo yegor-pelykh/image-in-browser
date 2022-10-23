@@ -1600,6 +1600,12 @@ declare module "transform/copy-into" {
     }
 }
 declare module "formats/gif/gif-color-map" {
+    export interface GifColorMapInitOptions {
+        numColors: number;
+        bitsPerPixel?: number;
+        colors?: Uint8Array;
+        transparent?: number;
+    }
     export class GifColorMap {
         private readonly _colors;
         get colors(): Uint8Array;
@@ -1610,8 +1616,9 @@ declare module "formats/gif/gif-color-map" {
         private _transparent?;
         set transparent(v: number | undefined);
         get transparent(): number | undefined;
-        constructor(numColors: number);
+        constructor(options: GifColorMapInitOptions);
         private static bitSize;
+        static from(other: GifColorMap): GifColorMap;
         getByte(index: number): number;
         setByte(index: number, value: number): number;
         getColor(index: number): number;
@@ -1637,8 +1644,9 @@ declare module "formats/gif/gif-image-desc" {
         get height(): number;
         private readonly _interlaced;
         get interlaced(): boolean;
-        private readonly _colorMap?;
+        private _colorMap?;
         get colorMap(): GifColorMap | undefined;
+        set colorMap(v: GifColorMap | undefined);
         private _duration;
         set duration(v: number);
         get duration(): number;
@@ -2170,6 +2178,7 @@ declare module "formats/png/png-frame" {
         get dispose(): number | undefined;
         private _blend?;
         get blend(): number | undefined;
+        get delay(): number;
         constructor(options: PngFrameInitOptions);
     }
 }
