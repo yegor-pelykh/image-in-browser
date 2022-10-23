@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.8](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.7...v1.0.8) (2022-10-23)
+
+
+### Bug Fixes
+
+* Fix transparency issue with animated GIF images, fixes for APNG, other fixes for correct work ([a399e1e](https://github.com/yegor-pelykh/image-in-browser/commit/a399e1e70d1ad1a54c02ab24800f70508a7863a4))
+
 ### [1.0.7](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.6...v1.0.7) (2022-10-13)
 
 
