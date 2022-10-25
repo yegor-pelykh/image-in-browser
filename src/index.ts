@@ -14,6 +14,8 @@ import { JpegDecoder } from './formats/jpeg-decoder';
 import { JpegEncoder } from './formats/jpeg-encoder';
 import { PngDecoder } from './formats/png-decoder';
 import { PngEncoder } from './formats/png-encoder';
+import { TgaDecoder } from './formats/tga-decoder';
+import { TgaEncoder } from './formats/tga-encoder';
 
 // Export types from 'common' directory
 export { BitOperators } from './common/bit-operators';
@@ -53,6 +55,8 @@ export { JpegDecoder } from './formats/jpeg-decoder';
 export { JpegEncoder } from './formats/jpeg-encoder';
 export { PngDecoder } from './formats/png-decoder';
 export { PngEncoder } from './formats/png-encoder';
+export { TgaDecoder } from './formats/tga-decoder';
+export { TgaEncoder } from './formats/tga-encoder';
 
 /**
  * Find a [Decoder] that is able to decode the given image [data].
@@ -83,6 +87,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
   const bmp = new BmpDecoder();
   if (bmp.isValidFile(bytes)) {
     return bmp;
+  }
+
+  const tga = new TgaDecoder();
+  if (tga.isValidFile(bytes)) {
+    return tga;
   }
 
   const ico = new IcoDecoder();
@@ -132,6 +141,9 @@ export function getDecoderForNamedImage(name: string): Decoder | undefined {
   }
   if (n.endsWith('.png')) {
     return new PngDecoder();
+  }
+  if (n.endsWith('.tga')) {
+    return new TgaDecoder();
   }
   if (n.endsWith('.gif')) {
     return new GifDecoder();
@@ -193,6 +205,9 @@ export function encodeNamedImage(
   }
   if (n.endsWith('.png')) {
     return encodePng(image);
+  }
+  if (n.endsWith('.tga')) {
+    return encodeTga(image);
   }
   if (n.endsWith('.gif')) {
     return encodeGif(image);
@@ -261,6 +276,21 @@ export function encodePngAnimation(
   return new PngEncoder({
     level: level,
   }).encodeAnimation(animation);
+}
+
+/**
+ * Decode a Targa formatted image.
+ */
+export function decodeTga(data: TypedArray): MemoryImage | undefined {
+  const dataUint8 = new Uint8Array(data);
+  return new TgaDecoder().decodeImage(dataUint8);
+}
+
+/**
+ * Encode an image to the Targa format.
+ */
+export function encodeTga(image: MemoryImage): Uint8Array {
+  return new TgaEncoder().encodeImage(image);
 }
 
 /**
