@@ -215,24 +215,10 @@ export function decodeJpg(data: TypedArray): MemoryImage | undefined {
 }
 
 /**
- * Renamed to [decodeJpg], left for backward compatibility.
- */
-export function readJpg(data: TypedArray): MemoryImage | undefined {
-  return decodeJpg(data);
-}
-
-/**
  * Encode an image to the JPEG format.
  */
 export function encodeJpg(image: MemoryImage, quality = 100): Uint8Array {
   return new JpegEncoder(quality).encodeImage(image);
-}
-
-/**
- * Renamed to [encodeJpg], left for backward compatibility.
- */
-export function writeJpg(image: MemoryImage, quality = 100): Uint8Array {
-  return encodeJpg(image, quality);
 }
 
 /**
@@ -251,14 +237,6 @@ export function decodePngAnimation(
 ): FrameAnimation | undefined {
   const dataUint8 = new Uint8Array(data);
   return new PngDecoder().decodeAnimation(dataUint8);
-}
-
-/**
- * Renamed to [decodePng], left for backward compatibility.
- */
-export function readPng(data: TypedArray): MemoryImage | undefined {
-  const dataUint8 = new Uint8Array(data);
-  return decodePng(dataUint8);
 }
 
 /**
@@ -283,16 +261,6 @@ export function encodePngAnimation(
   return new PngEncoder({
     level: level,
   }).encodeAnimation(animation);
-}
-
-/**
- * Renamed to [encodePng], left for backward compatibility.
- */
-export function writePng(
-  image: MemoryImage,
-  level: CompressionLevel = 6
-): Uint8Array {
-  return encodePng(image, level);
 }
 
 /**
