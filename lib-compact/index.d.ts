@@ -1420,7 +1420,6 @@ declare module "formats/bmp-decoder" {
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
     import { BmpInfo } from "formats/bmp/bmp-info";
-    import { DecodeInfo } from "formats/decode-info";
     import { Decoder } from "formats/decoder";
     import { InputBuffer } from "formats/util/input-buffer";
     export class BmpDecoder implements Decoder {
@@ -1432,7 +1431,7 @@ declare module "formats/bmp-decoder" {
          * Is the given file a valid BMP image?
          */
         isValidFile(bytes: Uint8Array): boolean;
-        startDecode(bytes: Uint8Array): DecodeInfo | undefined;
+        startDecode(bytes: Uint8Array): BmpInfo | undefined;
         /**
          * Decode a single frame from the data stat was set with [startDecode].
          * If [frame] is out of the range of available frames, null is returned.
@@ -2339,7 +2338,6 @@ declare module "formats/ico-decoder" {
     import { FrameAnimation } from "common/frame-animation";
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
-    import { DecodeInfo } from "formats/decode-info";
     import { Decoder } from "formats/decoder";
     import { IcoInfo } from "formats/ico/ico-info";
     import { InputBuffer } from "formats/util/input-buffer";
@@ -2348,7 +2346,7 @@ declare module "formats/ico-decoder" {
         _icoInfo?: IcoInfo;
         get numFrames(): number;
         isValidFile(bytes: Uint8Array): boolean;
-        startDecode(bytes: Uint8Array): DecodeInfo | undefined;
+        startDecode(bytes: Uint8Array): IcoInfo | undefined;
         decodeFrame(frame: number): MemoryImage | undefined;
         decodeHdrFrame(frame: number): HdrImage | undefined;
         decodeAnimation(_: Uint8Array): FrameAnimation | undefined;
@@ -2806,8 +2804,8 @@ declare module "formats/jpeg-decoder" {
     import { FrameAnimation } from "common/frame-animation";
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
-    import { DecodeInfo } from "formats/decode-info";
     import { Decoder } from "formats/decoder";
+    import { JpegInfo } from "formats/jpeg/jpeg-info";
     /**
      * Decode a jpeg encoded image.
      */
@@ -2819,7 +2817,7 @@ declare module "formats/jpeg-decoder" {
          * Is the given file a valid JPEG image?
          */
         isValidFile(bytes: Uint8Array): boolean;
-        startDecode(bytes: Uint8Array): DecodeInfo | undefined;
+        startDecode(bytes: Uint8Array): JpegInfo | undefined;
         decodeFrame(_: number): MemoryImage | undefined;
         decodeHdrFrame(frame: number): HdrImage | undefined;
         decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
@@ -2887,6 +2885,82 @@ declare module "formats/jpeg-encoder" {
         encodeAnimation(_: FrameAnimation): Uint8Array | undefined;
     }
 }
+declare module "formats/tga/tga-info" {
+    /** @format */
+    import { DecodeInfo } from "formats/decode-info";
+    export interface TgaInfoInitOptions {
+        width?: number;
+        height?: number;
+        imageOffset?: number;
+        bitsPerPixel?: number;
+    }
+    export class TgaInfo implements DecodeInfo {
+        private readonly _width;
+        get width(): number;
+        protected readonly _height: number;
+        get height(): number;
+        private readonly _backgroundColor;
+        get backgroundColor(): number;
+        /**
+         * The number of frames that can be decoded.
+         */
+        private readonly _numFrames;
+        get numFrames(): number;
+        /**
+         *  Offset in the input file the image data starts at.
+         */
+        private readonly _imageOffset;
+        get imageOffset(): number | undefined;
+        /**
+         *  Bits per pixel.
+         */
+        private readonly _bitsPerPixel;
+        get bitsPerPixel(): number | undefined;
+        constructor(options?: TgaInfoInitOptions);
+    }
+}
+declare module "formats/tga-decoder" {
+    import { FrameAnimation } from "common/frame-animation";
+    import { MemoryImage } from "common/memory-image";
+    import { HdrImage } from "hdr/hdr-image";
+    import { Decoder } from "formats/decoder";
+    import { TgaInfo } from "formats/tga/tga-info";
+    import { InputBuffer } from "formats/util/input-buffer";
+    /**
+     * Decode a TGA image. This only supports the 24-bit uncompressed format.
+     */
+    export class TgaDecoder implements Decoder {
+        private _info;
+        get info(): TgaInfo | undefined;
+        private _input;
+        get input(): InputBuffer | undefined;
+        get numFrames(): number;
+        /**
+         * Is the given file a valid TGA image?
+         */
+        isValidFile(bytes: Uint8Array): boolean;
+        startDecode(bytes: Uint8Array): TgaInfo | undefined;
+        decodeFrame(_frame: number): MemoryImage | undefined;
+        decodeHdrFrame(frame: number): HdrImage | undefined;
+        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
+        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
+        decodeHdrImage(bytes: Uint8Array, frame?: number | undefined): HdrImage | undefined;
+    }
+}
+declare module "formats/tga-encoder" {
+    import { FrameAnimation } from "common/frame-animation";
+    import { MemoryImage } from "common/memory-image";
+    import { Encoder } from "formats/encoder";
+    /**
+     * Encode a TGA image. This only supports the 24-bit uncompressed format.
+     */
+    export class TgaEncoder implements Encoder {
+        private _supportsAnimation;
+        get supportsAnimation(): boolean;
+        encodeImage(image: MemoryImage): Uint8Array;
+        encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined;
+    }
+}
 declare module "index" {
     /** @format */
     import { FrameAnimation } from "common/frame-animation";
@@ -2926,6 +3000,8 @@ declare module "index" {
     export { JpegEncoder } from "formats/jpeg-encoder";
     export { PngDecoder } from "formats/png-decoder";
     export { PngEncoder } from "formats/png-encoder";
+    export { TgaDecoder } from "formats/tga-decoder";
+    export { TgaEncoder } from "formats/tga-encoder";
     /**
      * Find a [Decoder] that is able to decode the given image [data].
      * Use this is you don't know the type of image it is. Since this will
@@ -2971,17 +3047,9 @@ declare module "index" {
      */
     export function decodeJpg(data: TypedArray): MemoryImage | undefined;
     /**
-     * Renamed to [decodeJpg], left for backward compatibility.
-     */
-    export function readJpg(data: TypedArray): MemoryImage | undefined;
-    /**
      * Encode an image to the JPEG format.
      */
     export function encodeJpg(image: MemoryImage, quality?: number): Uint8Array;
-    /**
-     * Renamed to [encodeJpg], left for backward compatibility.
-     */
-    export function writeJpg(image: MemoryImage, quality?: number): Uint8Array;
     /**
      * Decode a PNG formatted image.
      */
@@ -2991,10 +3059,6 @@ declare module "index" {
      */
     export function decodePngAnimation(data: TypedArray): FrameAnimation | undefined;
     /**
-     * Renamed to [decodePng], left for backward compatibility.
-     */
-    export function readPng(data: TypedArray): MemoryImage | undefined;
-    /**
      * Encode an image to the PNG format.
      */
     export function encodePng(image: MemoryImage, level?: CompressionLevel): Uint8Array;
@@ -3003,9 +3067,13 @@ declare module "index" {
      */
     export function encodePngAnimation(animation: FrameAnimation, level?: CompressionLevel): Uint8Array | undefined;
     /**
-     * Renamed to [encodePng], left for backward compatibility.
+     * Decode a Targa formatted image.
      */
-    export function writePng(image: MemoryImage, level?: CompressionLevel): Uint8Array;
+    export function decodeTga(data: TypedArray): MemoryImage | undefined;
+    /**
+     * Encode an image to the Targa format.
+     */
+    export function encodeTga(image: MemoryImage): Uint8Array;
     /**
      * Decode a GIF formatted image (first frame for animations).
      */
