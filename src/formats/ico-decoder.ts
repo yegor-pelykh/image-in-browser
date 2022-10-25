@@ -6,7 +6,6 @@ import { MemoryImage } from '../common/memory-image';
 import { NotImplementedError } from '../error/not-implemented-error';
 import { HdrImage } from '../hdr/hdr-image';
 import { BitmapFileHeader } from './bmp/bitmap-file-header';
-import { DecodeInfo } from './decode-info';
 import { Decoder } from './decoder';
 import { DibDecoder } from './dib-decoder';
 import { IcoBmpInfo } from './ico/ico-bmp-info';
@@ -31,7 +30,7 @@ export class IcoDecoder implements Decoder {
     return this._icoInfo !== undefined;
   }
 
-  public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
+  public startDecode(bytes: Uint8Array): IcoInfo | undefined {
     this._input = new InputBuffer({
       buffer: bytes,
     });

@@ -5,7 +5,6 @@ import { MemoryImage } from '../common/memory-image';
 import { HdrImage } from '../hdr/hdr-image';
 import { BitmapFileHeader } from './bmp/bitmap-file-header';
 import { BmpInfo } from './bmp/bmp-info';
-import { DecodeInfo } from './decode-info';
 import { Decoder } from './decoder';
 import { InputBuffer } from './util/input-buffer';
 
@@ -33,7 +32,7 @@ export class BmpDecoder implements Decoder {
     );
   }
 
-  public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
+  public startDecode(bytes: Uint8Array): BmpInfo | undefined {
     if (!this.isValidFile(bytes)) {
       return undefined;
     }

@@ -4,7 +4,6 @@ import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
 import { ImageError } from '../error/image-error';
 import { HdrImage } from '../hdr/hdr-image';
-import { DecodeInfo } from './decode-info';
 import { Decoder } from './decoder';
 import { JpegData } from './jpeg/jpeg-data';
 import { JpegInfo } from './jpeg/jpeg-info';
@@ -29,7 +28,7 @@ export class JpegDecoder implements Decoder {
     return new JpegData().validate(bytes);
   }
 
-  public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
+  public startDecode(bytes: Uint8Array): JpegInfo | undefined {
     this.input = new InputBuffer({
       buffer: bytes,
       bigEndian: true,
