@@ -13,24 +13,18 @@ import { InputBuffer } from './util/input-buffer';
  * Decode a TGA image. This only supports the 24-bit uncompressed format.
  */
 export class TgaDecoder implements Decoder {
-  private _info: TgaInfo | undefined = undefined;
-  public get info(): TgaInfo | undefined {
-    return this._info;
-  }
+  private info: TgaInfo | undefined = undefined;
 
-  private _input: InputBuffer | undefined = undefined;
-  public get input(): InputBuffer | undefined {
-    return this._input;
-  }
+  private input: InputBuffer | undefined = undefined;
 
   public get numFrames(): number {
-    return this._info !== undefined ? 1 : 0;
+    return this.info !== undefined ? 1 : 0;
   }
 
   /**
    * Is the given file a valid TGA image?
    */
-  isValidFile(bytes: Uint8Array): boolean {
+  public isValidFile(bytes: Uint8Array): boolean {
     const input = new InputBuffer({
       buffer: bytes,
       bigEndian: true,
@@ -47,13 +41,13 @@ export class TgaDecoder implements Decoder {
     return true;
   }
 
-  startDecode(bytes: Uint8Array): TgaInfo | undefined {
-    this._input = new InputBuffer({
+  public startDecode(bytes: Uint8Array): TgaInfo | undefined {
+    this.input = new InputBuffer({
       buffer: bytes,
       bigEndian: true,
     });
 
-    const header = this._input.readBytes(18);
+    const header = this.input.readBytes(18);
     if (header.getByte(2) !== 2) {
       return undefined;
     }
@@ -65,36 +59,36 @@ export class TgaDecoder implements Decoder {
       (header.getByte(12) & 0xff) | ((header.getByte(13) & 0xff) << 8);
     const height =
       (header.getByte(14) & 0xff) | ((header.getByte(15) & 0xff) << 8);
-    const imageOffset = this._input.offset;
+    const imageOffset = this.input.offset;
     const bitsPerPixel = header.getByte(16);
 
-    this._info = new TgaInfo({
+    this.info = new TgaInfo({
       width: width,
       height: height,
       imageOffset: imageOffset,
       bitsPerPixel: bitsPerPixel,
     });
 
-    return this._info;
+    return this.info;
   }
 
-  decodeFrame(_frame: number): MemoryImage | undefined {
-    if (this._info === undefined || this._input === undefined) {
+  public decodeFrame(_frame: number): MemoryImage | undefined {
+    if (this.info === undefined || this.input === undefined) {
       return undefined;
     }
 
-    this._input.offset = this._info.imageOffset!;
+    this.input.offset = this.info.imageOffset!;
     const image = new MemoryImage({
-      width: this._info.width,
-      height: this._info.height,
+      width: this.info.width,
+      height: this.info.height,
       rgbChannelSet: RgbChannelSet.rgb,
     });
     for (let y = image.height - 1; y >= 0; --y) {
       for (let x = 0; x < image.width; ++x) {
-        const b = this._input.readByte();
-        const g = this._input.readByte();
-        const r = this._input.readByte();
-        const a = this._info.bitsPerPixel === 32 ? this._input.readByte() : 255;
+        const b = this.input.readByte();
+        const g = this.input.readByte();
+        const r = this.input.readByte();
+        const a = this.info.bitsPerPixel === 32 ? this.input.readByte() : 255;
         image.setPixel(x, y, ColorUtils.getColor(r, g, b, a));
       }
     }
@@ -102,7 +96,7 @@ export class TgaDecoder implements Decoder {
     return image;
   }
 
-  decodeHdrFrame(frame: number): HdrImage | undefined {
+  public decodeHdrFrame(frame: number): HdrImage | undefined {
     const img = this.decodeFrame(frame);
     if (img === undefined) {
       return undefined;
@@ -110,7 +104,7 @@ export class TgaDecoder implements Decoder {
     return HdrImage.fromImage(img);
   }
 
-  decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
+  public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
     const image = this.decodeImage(bytes);
     if (image === undefined) {
       return undefined;
@@ -126,7 +120,7 @@ export class TgaDecoder implements Decoder {
     return animation;
   }
 
-  decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
+  public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
     if (this.startDecode(bytes) === undefined) {
       return undefined;
     }
@@ -134,7 +128,7 @@ export class TgaDecoder implements Decoder {
     return this.decodeFrame(frame);
   }
 
-  decodeHdrImage(
+  public decodeHdrImage(
     bytes: Uint8Array,
     frame?: number | undefined
   ): HdrImage | undefined {

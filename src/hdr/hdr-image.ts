@@ -30,17 +30,35 @@ export class HdrImage {
    */
   private static Z = 'Z';
 
-  private readonly slices: Map<string, HdrSlice> = new Map<string, HdrSlice>();
+  private readonly _slices: Map<string, HdrSlice> = new Map<string, HdrSlice>();
+  public get slices(): Map<string, HdrSlice> {
+    return this._slices;
+  }
 
-  private red?: HdrSlice;
+  private _red: HdrSlice | undefined = undefined;
+  public get red(): HdrSlice | undefined {
+    return this._red;
+  }
 
-  private green?: HdrSlice;
+  private _green: HdrSlice | undefined = undefined;
+  public get green(): HdrSlice | undefined {
+    return this._green;
+  }
 
-  private blue?: HdrSlice;
+  private _blue: HdrSlice | undefined = undefined;
+  public get blue(): HdrSlice | undefined {
+    return this._blue;
+  }
 
-  private alpha?: HdrSlice;
+  private _alpha: HdrSlice | undefined = undefined;
+  public get alpha(): HdrSlice | undefined {
+    return this._alpha;
+  }
 
-  private depth?: HdrSlice;
+  private _depth: HdrSlice | undefined = undefined;
+  public get depth(): HdrSlice | undefined {
+    return this._depth;
+  }
 
   /**
    * Does the image have any color channels?
@@ -409,19 +427,19 @@ export class HdrImage {
     this.slices.set(ch, slice);
     switch (ch) {
       case HdrImage.R:
-        this.red = slice;
+        this._red = slice;
         break;
       case HdrImage.G:
-        this.green = slice;
+        this._green = slice;
         break;
       case HdrImage.B:
-        this.blue = slice;
+        this._blue = slice;
         break;
       case HdrImage.A:
-        this.alpha = slice;
+        this._alpha = slice;
         break;
       case HdrImage.Z:
-        this.depth = slice;
+        this._depth = slice;
         break;
     }
   }

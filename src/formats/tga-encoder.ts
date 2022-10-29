@@ -12,11 +12,11 @@ import { OutputBuffer } from './util/output-buffer';
  */
 export class TgaEncoder implements Encoder {
   private _supportsAnimation = false;
-  get supportsAnimation(): boolean {
+  public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
-  encodeImage(image: MemoryImage): Uint8Array {
+  public encodeImage(image: MemoryImage): Uint8Array {
     const out = new OutputBuffer({
       bigEndian: true,
     });
@@ -48,7 +48,7 @@ export class TgaEncoder implements Encoder {
     return out.getBytes();
   }
 
-  encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined {
+  public encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined {
     return undefined;
   }
 }

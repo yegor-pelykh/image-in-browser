@@ -26,7 +26,10 @@ export class HdrSlice {
    * [data] will be one of the type data lists, depending on the [type] and
    * [bitsPerSample]. 16-bit FLOAT slices will be stored in a [Uint16List].
    */
-  private readonly data: TypedArray;
+  private readonly _data: TypedArray;
+  public get data(): TypedArray {
+    return this._data;
+  }
 
   private readonly _name: string;
   public get name(): string {
@@ -86,7 +89,7 @@ export class HdrSlice {
     this._height = options.height;
     this._format = options.format;
     this._bitsPerSample = options.bitsPerSample;
-    this.data =
+    this._data =
       options.data ??
       HdrSlice.allocateDataForType(
         options.width * options.height,
@@ -150,7 +153,7 @@ export class HdrSlice {
    * Get the raw bytes of the data buffer.
    */
   public getBytes(): Uint8Array {
-    return new Uint8Array(this.data.buffer);
+    return new Uint8Array(this._data.buffer);
   }
 
   /**
@@ -160,12 +163,12 @@ export class HdrSlice {
   public getFloat(x: number, y: number): number {
     const pi = y * this._width + x;
     if (this._format === HdrSlice.INT || this._format === HdrSlice.UINT) {
-      return Math.trunc(this.data[pi]) / this.maxIntSize;
+      return Math.trunc(this._data[pi]) / this.maxIntSize;
     }
     const s =
       this._format === HdrSlice.FLOAT && this._bitsPerSample === 16
-        ? Half.halfToDouble(this.data[pi])
-        : this.data[pi];
+        ? Half.halfToDouble(this._data[pi])
+        : this._data[pi];
     return s;
   }
 
@@ -179,9 +182,9 @@ export class HdrSlice {
     }
     const pi = y * this._width + x;
     if (this._bitsPerSample === 16) {
-      this.data[pi] = Half.doubleToHalf(v);
+      this._data[pi] = Half.doubleToHalf(v);
     } else {
-      this.data[pi] = v;
+      this._data[pi] = v;
     }
   }
 
@@ -191,7 +194,7 @@ export class HdrSlice {
    */
   public getInt(x: number, y: number): number {
     const pi = y * this._width + x;
-    return Math.trunc(this.data[pi]);
+    return Math.trunc(this._data[pi]);
   }
 
   /**
@@ -200,6 +203,6 @@ export class HdrSlice {
    */
   public setInt(x: number, y: number, v: number): void {
     const pi = y * this._width + x;
-    this.data[pi] = Math.trunc(v);
+    this._data[pi] = Math.trunc(v);
   }
 }
