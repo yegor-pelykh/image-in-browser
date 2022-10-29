@@ -14,7 +14,8 @@ The following formats are currently supported for encoding/decoding:
 - ICO,
 - JPEG,
 - PNG,
-- TGA
+- TGA,
+- TIFF
 
 Fully compatible with the ES6 standard and provides typings for use with Typescript.
 
