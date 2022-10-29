@@ -398,11 +398,10 @@ declare module "common/memory-image" {
      * An image buffer where pixels are encoded into 32-bit unsigned ints (Uint32).
      *
      * Pixels are stored in 32-bit unsigned integers in #AARRGGBB format.
-     * This is to be consistent with the Flutter image data. You can use
-     * [getBytes] to access the pixel data at the byte (channel) level, optionally
-     * providing the format to get the image data as. You can use the letious color
-     * functions, such as [getRed], [getGreen], [getBlue], and [getAlpha] to access
-     * the individual channels of a given pixel color.
+     * You can use [getBytes] to access the pixel data at the byte (channel) level,
+     * optionally providing the format to get the image data as. You can use the
+     * letious color functions, such as [getRed], [getGreen], [getBlue], and [getAlpha]
+     * to access the individual channels of a given pixel color.
      *
      * If this image is a frame of an animation as decoded by the [decodeFrame]
      * method of [Decoder], then the [xOffset], [yOffset], [width] and [height]
@@ -506,8 +505,6 @@ declare module "common/memory-image" {
         /**
          *
          * [format] defines the order of color channels in [bytes].
-         * An HTML canvas element stores colors in Format.rgba format; a Flutter
-         * Image object stores colors in Format.rgba format.
          * The length of [bytes] should be (width * height) * format-byte-count,
          * where format-byte-count is 1, 3, or 4 depending on the number of
          * channels in the format (luminance, rgb, rgba, etc).
@@ -515,12 +512,6 @@ declare module "common/memory-image" {
          * The native format of an image is Format.rgba. If another format
          * is specified, the input data will be converted to rgba to store
          * in the Image.
-         *
-         * For example, given an Html Canvas, you could create an image:
-         * let bytes = canvas.getContext('2d').getImageData(0, 0,
-         *   canvas.width, canvas.height).data;
-         * let image = Image.fromBytes(canvas.width, canvas.height, bytes,
-         *                             format: Format.rgba);
          */
         static fromBytes(options: MemoryImageInitOptionsColorModel): MemoryImage;
         /**
@@ -651,6 +642,7 @@ declare module "common/frame-animation" {
         width?: number;
         height?: number;
         loopCount?: number;
+        frameType?: FrameType;
     }
     /**
      * Stores multiple images, most often as the frames of an animation.
@@ -870,7 +862,8 @@ declare module "hdr/hdr-slice" {
          * [data] will be one of the type data lists, depending on the [type] and
          * [bitsPerSample]. 16-bit FLOAT slices will be stored in a [Uint16List].
          */
-        private readonly data;
+        private readonly _data;
+        get data(): TypedArray;
         private readonly _name;
         get name(): string;
         private readonly _width;
@@ -954,12 +947,18 @@ declare module "hdr/hdr-image" {
          * Distance of the front of a sample from the viewer
          */
         private static Z;
-        private readonly slices;
-        private red?;
-        private green?;
-        private blue?;
-        private alpha?;
-        private depth?;
+        private readonly _slices;
+        get slices(): Map<string, HdrSlice>;
+        private _red;
+        get red(): HdrSlice | undefined;
+        private _green;
+        get green(): HdrSlice | undefined;
+        private _blue;
+        get blue(): HdrSlice | undefined;
+        private _alpha;
+        get alpha(): HdrSlice | undefined;
+        private _depth;
+        get depth(): HdrSlice | undefined;
         /**
          * Does the image have any color channels?
          */
@@ -1375,7 +1374,7 @@ declare module "formats/decoder" {
         startDecode(bytes: Uint8Array): DecodeInfo | undefined;
         /**
          * Decode a single frame from the data that was set with [startDecode].
-         * If [frame] is out of the range of available frames, null is returned.
+         * If [frame] is out of the range of available frames, undefined is returned.
          * Non animated image files will only have [frame] 0. An [Image]
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
@@ -1385,7 +1384,7 @@ declare module "formats/decoder" {
          * Decode a single high dynamic range (HDR) frame from the data that was set
          * with [startDecode]. If the format of the file does not support HDR images,
          * the regular image will be converted to an HDR image as (color / 255).
-         * If [frame] is out of the range of available frames, null is returned.
+         * If [frame] is out of the range of available frames, undefined is returned.
          * Non animated image files will only have [frame] 0. An [Image]
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
@@ -1394,13 +1393,13 @@ declare module "formats/decoder" {
         /**
          * Decode all of the frames from an animation. If the file is not an
          * animation, a single frame animation is returned. If there was a problem
-         * decoding the file, null is returned.
+         * decoding the file, undefined is returned.
          */
         decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
          * animated, the specified [frame] will be decoded. If there was a problem
-         * decoding the file, null is returned.
+         * decoding the file, undefined is returned.
          */
         decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
         /**
@@ -1408,7 +1407,7 @@ declare module "formats/decoder" {
          * it. HDR images are stored in floating-poing values. If the format of the
          * file does not support HDR images, the regular image will be converted to
          * an HDR image as (color / 255). If the file is animated, the specified
-         * [frame] will be decoded. If there was a problem decoding the file, null is
+         * [frame] will be decoded. If there was a problem decoding the file, undefined is
          * returned.
          */
         decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
@@ -1434,7 +1433,7 @@ declare module "formats/bmp-decoder" {
         startDecode(bytes: Uint8Array): BmpInfo | undefined;
         /**
          * Decode a single frame from the data stat was set with [startDecode].
-         * If [frame] is out of the range of available frames, null is returned.
+         * If [frame] is out of the range of available frames, undefined is returned.
          * Non animated image files will only have [frame] 0. An [AnimationFrame]
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
@@ -1444,13 +1443,13 @@ declare module "formats/bmp-decoder" {
         /**
          * Decode all of the frames from an animation. If the file is not an
          * animation, a single frame animation is returned. If there was a problem
-         * decoding the file, null is returned.
+         * decoding the file, undefined is returned.
          */
         decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
          * animated, the specified [frame] will be decoded. If there was a problem
-         * decoding the file, null is returned.
+         * decoding the file, undefined is returned.
          */
         decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
         decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
@@ -1473,7 +1472,7 @@ declare module "formats/encoder" {
          */
         encodeImage(image: MemoryImage): Uint8Array;
         /**
-         * Encode an animation. Not all formats support animation, and null
+         * Encode an animation. Not all formats support animation, and undefined
          * will be returned if not.
          */
         encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
@@ -1531,7 +1530,7 @@ declare module "formats/util/output-buffer" {
         /**
          * Return the subarray of the buffer in the range [start:end].
          * If [start] or [end] are < 0 then it is relative to the end of the buffer.
-         * If [end] is not specified (or null), then it is the end of the buffer.
+         * If [end] is not specified (or undefined), then it is the end of the buffer.
          * This is equivalent to the python list range operator.
          */
         subarray(start: number, end?: number): Uint8Array;
@@ -1783,7 +1782,7 @@ declare module "formats/gif-decoder" {
          * This routines read one gif data block at a time and buffers it internally
          * so that the decompression routine could access it.
          * The routine returns the next byte from its internal buffer (or read next
-         * block in if buffer empty) and returns null on failure.
+         * block in if buffer empty) and returns undefined on failure.
          */
         private bufferedInput;
         private initDecode;
@@ -1793,7 +1792,7 @@ declare module "formats/gif-decoder" {
         isValidFile(bytes: Uint8Array): boolean;
         /**
          * Validate the file is a Gif image and get information about it.
-         * If the file is not a valid Gif image, null is returned.
+         * If the file is not a valid Gif image, undefined is returned.
          */
         startDecode(bytes: Uint8Array): GifInfo | undefined;
         decodeFrame(frame: number): MemoryImage | undefined;
@@ -2732,11 +2731,6 @@ declare module "formats/jpeg/jpeg-scan" {
     }
 }
 declare module "formats/jpeg/jpeg-data" {
-    /**
-     * /* eslint-disable @typescript-eslint/no-non-null-assertion
-     *
-     * @format
-     */
     /** @format */
     import { ExifData } from "common/exif_data";
     import { MemoryImage } from "common/memory-image";
@@ -2925,15 +2919,12 @@ declare module "formats/tga-decoder" {
     import { HdrImage } from "hdr/hdr-image";
     import { Decoder } from "formats/decoder";
     import { TgaInfo } from "formats/tga/tga-info";
-    import { InputBuffer } from "formats/util/input-buffer";
     /**
      * Decode a TGA image. This only supports the 24-bit uncompressed format.
      */
     export class TgaDecoder implements Decoder {
-        private _info;
-        get info(): TgaInfo | undefined;
-        private _input;
-        get input(): InputBuffer | undefined;
+        private info;
+        private input;
         get numFrames(): number;
         /**
          * Is the given file a valid TGA image?
@@ -2961,6 +2952,563 @@ declare module "formats/tga-encoder" {
         encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined;
     }
 }
+declare module "formats/tiff/tiff-bit-reader" {
+    /** @format */
+    import { InputBuffer } from "formats/util/input-buffer";
+    export class TiffBitReader {
+        private static readonly BITMASK;
+        private bitBuffer;
+        private bitPosition;
+        private input;
+        constructor(input: InputBuffer);
+        /**
+         * Read a number of bits from the input stream.
+         */
+        readBits(numBits: number): number;
+        readByte(): number;
+        /**
+         *  Flush the rest of the bits in the buffer so the next read starts at the next byte.
+         */
+        flushByte(): number;
+    }
+}
+declare module "formats/tiff/tiff-entry" {
+    import { InputBuffer } from "formats/util/input-buffer";
+    export interface TiffEntryInitOptions {
+        tag: number;
+        type: number;
+        numValues: number;
+        p: InputBuffer;
+    }
+    export class TiffEntry {
+        private static readonly SIZE_OF_TYPE;
+        static readonly TYPE_BYTE = 1;
+        static readonly TYPE_ASCII = 2;
+        static readonly TYPE_SHORT = 3;
+        static readonly TYPE_LONG = 4;
+        static readonly TYPE_RATIONAL = 5;
+        static readonly TYPE_SBYTE = 6;
+        static readonly TYPE_UNDEFINED = 7;
+        static readonly TYPE_SSHORT = 8;
+        static readonly TYPE_SLONG = 9;
+        static readonly TYPE_SRATIONAL = 10;
+        static readonly TYPE_FLOAT = 11;
+        static readonly TYPE_DOUBLE = 12;
+        private _tag;
+        get tag(): number;
+        private _type;
+        get type(): number;
+        private _numValues;
+        get numValues(): number;
+        private _valueOffset;
+        get valueOffset(): number | undefined;
+        set valueOffset(v: number | undefined);
+        private _p;
+        get p(): InputBuffer;
+        get isValid(): boolean;
+        get typeSize(): number;
+        get isString(): boolean;
+        constructor(options: TiffEntryInitOptions);
+        private readValueInternal;
+        toString(): string;
+        readValue(): number;
+        readValues(): number[];
+        readString(): string;
+        read(): number[];
+    }
+}
+declare module "formats/tiff/tiff-fax-decoder" {
+    import { InputBuffer } from "formats/util/input-buffer";
+    export interface TiffFaxDecoderInitOptions {
+        fillOrder: number;
+        width: number;
+        height: number;
+    }
+    export class TiffFaxDecoder {
+        private static readonly TABLE1;
+        private static readonly TABLE2;
+        /**
+         * Table to be used when fillOrder = 2, for flipping bytes.
+         */
+        private static readonly FLIP_TABLE;
+        /**
+         * The main 10 bit white runs lookup table
+         */
+        private static readonly WHITE;
+        /**
+         * Additional make up codes for both White and Black runs
+         */
+        private static readonly ADDITIONAL_MAKEUP;
+        /**
+         * Initial black run look up table, uses the first 4 bits of a code
+         */
+        private static readonly INIT_BLACK;
+        private static readonly TWO_BIT_BLACK;
+        /**
+         * Main black run table, using the last 9 bits of possible 13 bit code
+         */
+        private static readonly BLACK;
+        private static readonly TWO_D_CODES;
+        private _width;
+        get width(): number;
+        private _height;
+        get height(): number;
+        private _fillOrder;
+        get fillOrder(): number;
+        private changingElemSize;
+        private prevChangingElems?;
+        private currChangingElems?;
+        private data;
+        private bitPointer;
+        private bytePointer;
+        private lastChangingElement;
+        private compression;
+        private uncompressedMode;
+        private fillBits;
+        private oneD;
+        constructor(options: TiffFaxDecoderInitOptions);
+        private nextNBits;
+        private nextLesserThan8Bits;
+        /**
+         * Move pointer backwards by given amount of bits
+         */
+        private updatePointer;
+        /**
+         * Move to the next byte boundary
+         */
+        private advancePointer;
+        private setToBlack;
+        private decodeNextScanline;
+        private readEOL;
+        private getNextChangingElement;
+        /**
+         * Returns run length
+         */
+        private decodeWhiteCodeWord;
+        /**
+         * Returns run length
+         */
+        private decodeBlackCodeWord;
+        /**
+         * One-dimensional decoding methods
+         */
+        decode1D(out: InputBuffer, compData: InputBuffer, startX: number, height: number): void;
+        /**
+         * Two-dimensional decoding methods
+         */
+        decode2D(out: InputBuffer, compData: InputBuffer, startX: number, height: number, tiffT4Options: number): void;
+        decodeT6(out: InputBuffer, compData: InputBuffer, startX: number, height: number, tiffT6Options: number): void;
+    }
+}
+declare module "formats/tiff/tiff-lzw-decoder" {
+    import { InputBuffer } from "formats/util/input-buffer";
+    export class LzwDecoder {
+        private static readonly LZ_MAX_CODE;
+        private static readonly NO_SUCH_CODE;
+        private static readonly AND_TABLE;
+        private readonly buffer;
+        private bitsToGet;
+        private bytePointer;
+        private nextData;
+        private nextBits;
+        private data;
+        private dataLength;
+        private out;
+        private outPointer;
+        private table;
+        private prefix;
+        private tableIndex?;
+        private bufferLength;
+        private addString;
+        private getString;
+        /**
+         * Returns the next 9, 10, 11 or 12 bits
+         */
+        private getNextCode;
+        /**
+         * Initialize the string table.
+         */
+        private initializeStringTable;
+        decode(p: InputBuffer, out: Uint8Array): void;
+    }
+}
+declare module "formats/tiff/tiff-image" {
+    import { MemoryImage } from "common/memory-image";
+    import { HdrImage } from "hdr/hdr-image";
+    import { InputBuffer } from "formats/util/input-buffer";
+    import { TiffEntry } from "formats/tiff/tiff-entry";
+    export class TiffImage {
+        static readonly COMPRESSION_NONE = 1;
+        static readonly COMPRESSION_CCITT_RLE = 2;
+        static readonly COMPRESSION_CCITT_FAX3 = 3;
+        static readonly COMPRESSION_CCITT_FAX4 = 4;
+        static readonly COMPRESSION_LZW = 5;
+        static readonly COMPRESSION_OLD_JPEG = 6;
+        static readonly COMPRESSION_JPEG = 7;
+        static readonly COMPRESSION_NEXT = 32766;
+        static readonly COMPRESSION_CCITT_RLEW = 32771;
+        static readonly COMPRESSION_PACKBITS = 32773;
+        static readonly COMPRESSION_THUNDERSCAN = 32809;
+        static readonly COMPRESSION_IT8CTPAD = 32895;
+        static readonly COMPRESSION_IT8LW = 32896;
+        static readonly COMPRESSION_IT8MP = 32897;
+        static readonly COMPRESSION_IT8BL = 32898;
+        static readonly COMPRESSION_PIXARFILM = 32908;
+        static readonly COMPRESSION_PIXARLOG = 32909;
+        static readonly COMPRESSION_DEFLATE = 32946;
+        static readonly COMPRESSION_ZIP = 8;
+        static readonly COMPRESSION_DCS = 32947;
+        static readonly COMPRESSION_JBIG = 34661;
+        static readonly COMPRESSION_SGILOG = 34676;
+        static readonly COMPRESSION_SGILOG24 = 34677;
+        static readonly COMPRESSION_JP2000 = 34712;
+        static readonly PHOTOMETRIC_BLACKISZERO = 1;
+        static readonly PHOTOMETRIC_RGB = 2;
+        static readonly TYPE_UNSUPPORTED = -1;
+        static readonly TYPE_BILEVEL = 0;
+        static readonly TYPE_GRAY_4BIT = 1;
+        static readonly TYPE_GRAY = 2;
+        static readonly TYPE_GRAY_ALPHA = 3;
+        static readonly TYPE_PALETTE = 4;
+        static readonly TYPE_RGB = 5;
+        static readonly TYPE_RGB_ALPHA = 6;
+        static readonly TYPE_YCBCR_SUB = 7;
+        static readonly TYPE_GENERIC = 8;
+        static readonly FORMAT_UINT = 1;
+        static readonly FORMAT_INT = 2;
+        static readonly FORMAT_FLOAT = 3;
+        static readonly TAG_ARTIST = 315;
+        static readonly TAG_BITS_PER_SAMPLE = 258;
+        static readonly TAG_CELL_LENGTH = 265;
+        static readonly TAG_CELL_WIDTH = 264;
+        static readonly TAG_COLOR_MAP = 320;
+        static readonly TAG_COMPRESSION = 259;
+        static readonly TAG_DATE_TIME = 306;
+        static readonly TAG_EXIF_IFD = 34665;
+        static readonly TAG_EXTRA_SAMPLES = 338;
+        static readonly TAG_FILL_ORDER = 266;
+        static readonly TAG_FREE_BYTE_COUNTS = 289;
+        static readonly TAG_FREE_OFFSETS = 288;
+        static readonly TAG_GRAY_RESPONSE_CURVE = 291;
+        static readonly TAG_GRAY_RESPONSE_UNIT = 290;
+        static readonly TAG_HOST_COMPUTER = 316;
+        static readonly TAG_ICC_PROFILE = 34675;
+        static readonly TAG_IMAGE_DESCRIPTION = 270;
+        static readonly TAG_IMAGE_LENGTH = 257;
+        static readonly TAG_IMAGE_WIDTH = 256;
+        static readonly TAG_IPTC = 33723;
+        static readonly TAG_MAKE = 271;
+        static readonly TAG_MAX_SAMPLE_VALUE = 281;
+        static readonly TAG_MIN_SAMPLE_VALUE = 280;
+        static readonly TAG_MODEL = 272;
+        static readonly TAG_NEW_SUBFILE_TYPE = 254;
+        static readonly TAG_ORIENTATION = 274;
+        static readonly TAG_PHOTOMETRIC_INTERPRETATION = 262;
+        static readonly TAG_PHOTOSHOP = 34377;
+        static readonly TAG_PLANAR_CONFIGURATION = 284;
+        static readonly TAG_PREDICTOR = 317;
+        static readonly TAG_RESOLUTION_UNIT = 296;
+        static readonly TAG_ROWS_PER_STRIP = 278;
+        static readonly TAG_SAMPLES_PER_PIXEL = 277;
+        static readonly TAG_SOFTWARE = 305;
+        static readonly TAG_STRIP_BYTE_COUNTS = 279;
+        static readonly TAG_STRIP_OFFSETS = 273;
+        static readonly TAG_SUBFILE_TYPE = 255;
+        static readonly TAG_T4_OPTIONS = 292;
+        static readonly TAG_T6_OPTIONS = 293;
+        static readonly TAG_THRESHOLDING = 263;
+        static readonly TAG_TILE_WIDTH = 322;
+        static readonly TAG_TILE_LENGTH = 323;
+        static readonly TAG_TILE_OFFSETS = 324;
+        static readonly TAG_TILE_BYTE_COUNTS = 325;
+        static readonly TAG_SAMPLE_FORMAT = 339;
+        static readonly TAG_XMP = 700;
+        static readonly TAG_X_RESOLUTION = 282;
+        static readonly TAG_Y_RESOLUTION = 283;
+        static readonly TAG_YCBCR_COEFFICIENTS = 529;
+        static readonly TAG_YCBCR_SUBSAMPLING = 530;
+        static readonly TAG_YCBCR_POSITIONING = 531;
+        static readonly TAG_NAME: Map<number, string>;
+        private readonly _tags;
+        get tags(): Map<number, TiffEntry>;
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private _photometricType;
+        get photometricType(): number | undefined;
+        private _compression;
+        get compression(): number;
+        private _bitsPerSample;
+        get bitsPerSample(): number;
+        private _samplesPerPixel;
+        get samplesPerPixel(): number;
+        private _sampleFormat;
+        get sampleFormat(): number;
+        private _imageType;
+        get imageType(): number;
+        private _isWhiteZero;
+        get isWhiteZero(): boolean;
+        private _predictor;
+        get predictor(): number;
+        private _chromaSubH;
+        get chromaSubH(): number;
+        private _chromaSubV;
+        get chromaSubV(): number;
+        private _tiled;
+        get tiled(): boolean;
+        private _tileWidth;
+        get tileWidth(): number;
+        private _tileHeight;
+        get tileHeight(): number;
+        private _tileOffsets;
+        get tileOffsets(): number[] | undefined;
+        private _tileByteCounts;
+        get tileByteCounts(): number[] | undefined;
+        private _tilesX;
+        get tilesX(): number;
+        private _tilesY;
+        get tilesY(): number;
+        private _tileSize;
+        get tileSize(): number | undefined;
+        private _fillOrder;
+        get fillOrder(): number;
+        private _t4Options;
+        get t4Options(): number;
+        private _t6Options;
+        get t6Options(): number;
+        private _extraSamples;
+        get extraSamples(): number | undefined;
+        private _colorMap;
+        get colorMap(): number[] | undefined;
+        private colorMapRed;
+        private colorMapGreen;
+        private colorMapBlue;
+        private image?;
+        private hdrImage?;
+        get isValid(): boolean;
+        constructor(p: InputBuffer);
+        private readTag;
+        private readTagList;
+        private decodeBilevelTile;
+        private decodeTile;
+        private jpegToImage;
+        /**
+         * Uncompress packbits compressed image data.
+         */
+        private decodePackbits;
+        decode(p: InputBuffer): MemoryImage;
+        decodeHdr(p: InputBuffer): HdrImage;
+        hasTag(tag: number): boolean;
+    }
+}
+declare module "formats/tiff/tiff-info" {
+    /** @format */
+    import { DecodeInfo } from "formats/decode-info";
+    import { TiffImage } from "formats/tiff/tiff-image";
+    export interface TiffInfoInitOptions {
+        bigEndian: boolean;
+        signature: number;
+        ifdOffset: number;
+        images: TiffImage[];
+    }
+    export class TiffInfo implements DecodeInfo {
+        private _bigEndian;
+        get bigEndian(): boolean;
+        private _signature;
+        get signature(): number;
+        private _ifdOffset;
+        get ifdOffset(): number;
+        private _images;
+        get images(): TiffImage[];
+        private _width;
+        get width(): number;
+        private _height;
+        get height(): number;
+        private _backgroundColor;
+        get backgroundColor(): number;
+        get numFrames(): number;
+        constructor(options: TiffInfoInitOptions);
+    }
+}
+declare module "formats/tiff-decoder" {
+    /** @format */
+    import { FrameAnimation } from "common/frame-animation";
+    import { MemoryImage } from "common/memory-image";
+    import { HdrImage } from "hdr/hdr-image";
+    import { Decoder } from "formats/decoder";
+    import { TiffInfo } from "formats/tiff/tiff-info";
+    export class TiffDecoder implements Decoder {
+        private static readonly TIFF_SIGNATURE;
+        private static readonly TIFF_LITTLE_ENDIAN;
+        private static readonly TIFF_BIG_ENDIAN;
+        private input;
+        private _info;
+        get info(): TiffInfo | undefined;
+        /**
+         * How many frames are available to be decoded. [startDecode] should have been called first.
+         * Non animated image files will have a single frame.
+         */
+        get numFrames(): number;
+        /**
+         * Read the TIFF header and IFD blocks.
+         */
+        private readHeader;
+        /**
+         * Is the given file a valid TIFF image?
+         */
+        isValidFile(bytes: Uint8Array): boolean;
+        /**
+         * Validate the file is a TIFF image and get information about it.
+         * If the file is not a valid TIFF image, undefined is returned.
+         */
+        startDecode(bytes: Uint8Array): TiffInfo | undefined;
+        /**
+         * Decode a single frame from the data stat was set with [startDecode].
+         * If [frame] is out of the range of available frames, undefined is returned.
+         * Non animated image files will only have [frame] 0. An [AnimationFrame]
+         * is returned, which provides the image, and top-left coordinates of the
+         * image, as animated frames may only occupy a subset of the canvas.
+         */
+        decodeFrame(frame: number): MemoryImage | undefined;
+        decodeHdrFrame(frame: number): HdrImage | undefined;
+        /**
+         * Decode all of the frames from an animation. If the file is not an
+         * animation, a single frame animation is returned. If there was a problem
+         * decoding the file, undefined is returned.
+         */
+        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
+        /**
+         * Decode the file and extract a single image from it. If the file is
+         * animated, the specified [frame] will be decoded. If there was a problem
+         * decoding the file, undefined is returned.
+         */
+        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
+        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
+    }
+}
+declare module "formats/tiff-encoder" {
+    /** @format */
+    import { FrameAnimation } from "common/frame-animation";
+    import { MemoryImage } from "common/memory-image";
+    import { HdrImage } from "hdr/hdr-image";
+    import { Encoder } from "formats/encoder";
+    /**
+     * Encode a TIFF image.
+     */
+    export class TiffEncoder implements Encoder {
+        private static readonly LITTLE_ENDIAN;
+        private static readonly SIGNATURE;
+        private _supportsAnimation;
+        get supportsAnimation(): boolean;
+        private writeHeader;
+        private writeImage;
+        private writeHdrImage;
+        private getSampleFormat;
+        private writeEntryUint16;
+        private writeEntryUint32;
+        encodeImage(image: MemoryImage): Uint8Array;
+        encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined;
+        encodeHdrImage(image: HdrImage): Uint8Array;
+    }
+}
+declare module "hdr/hdr-to-image" {
+    import { MemoryImage } from "common/memory-image";
+    import { HdrImage } from "hdr/hdr-image";
+    export abstract class HdrToImage {
+        /**
+         * Convert a high dynamic range image to a low dynamic range image,
+         * with optional exposure control.
+         */
+        static hdrToImage(hdr: HdrImage, exposure?: number): MemoryImage;
+    }
+}
+declare module "transform/copy-rotate" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    import { Interpolation } from "formats/util/interpolation";
+    export abstract class CopyRotateTransform {
+        /**
+         * Returns a copy of the [src] image, rotated by [angle] degrees.
+         */
+        static copyRotate(src: MemoryImage, angle: number, interpolation?: Interpolation): MemoryImage;
+    }
+}
+declare module "transform/flip-direction" {
+    /** @format */
+    export enum FlipDirection {
+        /**
+         * Flip the image horizontally.
+         */
+        horizontal = 0,
+        /**
+         * Flip the image vertically.
+         */
+        vertical = 1,
+        /**
+         * Flip the image both horizontally and vertically.
+         */
+        both = 2
+    }
+}
+declare module "transform/flip" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    import { FlipDirection } from "transform/flip-direction";
+    export abstract class FlipTransform {
+        /**
+         * Flips the [src] image using the given [mode], which can be one of:
+         * [Flip.horizontal], [Flip.vertical], or [Flip.both].
+         */
+        static flip(src: MemoryImage, direction: FlipDirection): MemoryImage;
+        /**
+         * Flip the [src] image vertically.
+         */
+        static flipVertical(src: MemoryImage): MemoryImage;
+        /**
+         * Flip the src image horizontally.
+         */
+        static flipHorizontal(src: MemoryImage): MemoryImage;
+    }
+}
+declare module "transform/bake-orientation" {
+    import { MemoryImage } from "common/memory-image";
+    export abstract class BakeOrientationTransform {
+        /**
+         * If [image] has an orientation value in its exif data, this will rotate the
+         * image so that it physically matches its orientation. This can be used to
+         * bake the orientation of the image for image formats that don't support exif
+         * data.
+         */
+        static bakeOrientation(image: MemoryImage): MemoryImage;
+    }
+}
+declare module "transform/copy-resize" {
+    import { MemoryImage } from "common/memory-image";
+    import { Interpolation } from "formats/util/interpolation";
+    export interface CopyResizeOptionsUsingWidth {
+        image: MemoryImage;
+        width: number;
+        height?: number;
+        interpolation?: Interpolation;
+    }
+    export interface CopyResizeOptionsUsingHeight {
+        image: MemoryImage;
+        height: number;
+        width?: number;
+        interpolation?: Interpolation;
+    }
+    export abstract class CopyResizeTransform {
+        /**
+         * Returns a resized copy of the [src] image.
+         * If [height] isn't specified, then it will be determined by the aspect
+         * ratio of [src] and [width].
+         * If [width] isn't specified, then it will be determined by the aspect ratio
+         * of [src] and [height].
+         */
+        static copyResize(options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
+    }
+}
 declare module "index" {
     /** @format */
     import { FrameAnimation } from "common/frame-animation";
@@ -2974,18 +3522,18 @@ declare module "index" {
     export { ColorModel } from "common/color-model";
     export { ColorUtils } from "common/color-utils";
     export { Color } from "common/color";
-    export { Crc32 } from "common/crc32";
+    export { Crc32, Crc32Parameters } from "common/crc32";
     export { DisposeMode } from "common/dispose-mode";
-    export { ExifData } from "common/exif_data";
-    export { FrameAnimation } from "common/frame-animation";
+    export { ExifData, ExifDataInitOptions, ExifDataType, } from "common/exif_data";
+    export { FrameAnimation, FrameAnimationInitOptions, } from "common/frame-animation";
     export { FrameType } from "common/frame-type";
     export { ICCProfileData } from "common/icc_profile_data";
     export { ICCPCompressionMode } from "common/iccp-compression-mode";
     export { ListUtils } from "common/list-utils";
-    export { MemoryImage } from "common/memory-image";
+    export { MemoryImage, MemoryImageInitOptions, MemoryImageInitOptionsColorModel, RgbMemoryImageInitOptions, } from "common/memory-image";
     export { RgbChannelSet } from "common/rgb-channel-set";
     export { TextCodec } from "common/text-codec";
-    export { CompressionLevel, TypedArray } from "common/typings";
+    export { CompressionLevel, TypedArray, BufferEncoding } from "common/typings";
     export { drawPixel } from "draw/draw-pixel";
     export { BmpDecoder } from "formats/bmp-decoder";
     export { BmpEncoder } from "formats/bmp-encoder";
@@ -2993,15 +3541,63 @@ declare module "index" {
     export { Decoder } from "formats/decoder";
     export { Encoder } from "formats/encoder";
     export { GifDecoder } from "formats/gif-decoder";
-    export { GifEncoder } from "formats/gif-encoder";
+    export { GifEncoder, GifEncoderInitOptions } from "formats/gif-encoder";
     export { IcoDecoder } from "formats/ico-decoder";
     export { IcoEncoder } from "formats/ico-encoder";
     export { JpegDecoder } from "formats/jpeg-decoder";
     export { JpegEncoder } from "formats/jpeg-encoder";
     export { PngDecoder } from "formats/png-decoder";
-    export { PngEncoder } from "formats/png-encoder";
+    export { PngEncoder, PngEncoderInitOptions } from "formats/png-encoder";
     export { TgaDecoder } from "formats/tga-decoder";
     export { TgaEncoder } from "formats/tga-encoder";
+    export { TiffDecoder } from "formats/tiff-decoder";
+    export { TiffEncoder } from "formats/tiff-encoder";
+    export { BitmapCompressionMode } from "formats/bmp/bitmap-compression-mode";
+    export { BitmapFileHeader } from "formats/bmp/bitmap-file-header";
+    export { BmpInfo } from "formats/bmp/bmp-info";
+    export { GifColorMap, GifColorMapInitOptions, } from "formats/gif/gif-color-map";
+    export { GifImageDesc } from "formats/gif/gif-image-desc";
+    export { GifInfo, GifInfoInitOptions } from "formats/gif/gif-info";
+    export { IcoBmpInfo } from "formats/ico/ico-bmp-info";
+    export { IcoInfoImage } from "formats/ico/ico-info-image";
+    export { IcoInfo } from "formats/ico/ico-info";
+    export { ComponentData } from "formats/jpeg/component-data";
+    export { JpegAdobe } from "formats/jpeg/jpeg-adobe";
+    export { JpegComponent } from "formats/jpeg/jpeg-component";
+    export { JpegData } from "formats/jpeg/jpeg-data";
+    export { JpegFrame } from "formats/jpeg/jpeg-frame";
+    export { JpegHuffman } from "formats/jpeg/jpeg-huffman";
+    export { JpegInfo } from "formats/jpeg/jpeg-info";
+    export { JpegJfif } from "formats/jpeg/jpeg-jfif";
+    export { JpegQuantize } from "formats/jpeg/jpeg-quantize";
+    export { JpegScan } from "formats/jpeg/jpeg-scan";
+    export { Jpeg } from "formats/jpeg/jpeg";
+    export { PngFrame, PngFrameInitOptions } from "formats/png/png-frame";
+    export { PngInfo, PngInfoInitOptions } from "formats/png/png-info";
+    export { TgaInfo } from "formats/tga/tga-info";
+    export { TiffBitReader } from "formats/tiff/tiff-bit-reader";
+    export { TiffEntry, TiffEntryInitOptions } from "formats/tiff/tiff-entry";
+    export { TiffFaxDecoder, TiffFaxDecoderInitOptions, } from "formats/tiff/tiff-fax-decoder";
+    export { TiffImage } from "formats/tiff/tiff-image";
+    export { TiffInfo, TiffInfoInitOptions } from "formats/tiff/tiff-info";
+    export { LzwDecoder } from "formats/tiff/tiff-lzw-decoder";
+    export { DitherKernel } from "formats/util/dither-kernel";
+    export { DitherPixel } from "formats/util/dither-pixel";
+    export { InputBuffer, InputBufferInitOptions, } from "formats/util/input-buffer";
+    export { Interpolation } from "formats/util/interpolation";
+    export { NeuralQuantizer } from "formats/util/neural-quantizer";
+    export { OutputBuffer, OutputBufferInitOptions, } from "formats/util/output-buffer";
+    export { Quantizer } from "formats/util/quantizer";
+    export { Half } from "hdr/half";
+    export { HdrImage } from "hdr/hdr-image";
+    export { HdrSlice, HdrSliceInitOptions } from "hdr/hdr-slice";
+    export { HdrToImage } from "hdr/hdr-to-image";
+    export { BakeOrientationTransform } from "transform/bake-orientation";
+    export { CopyIntoTransform, CopyIntoOptions } from "transform/copy-into";
+    export { CopyResizeTransform, CopyResizeOptionsUsingWidth, CopyResizeOptionsUsingHeight, } from "transform/copy-resize";
+    export { CopyRotateTransform } from "transform/copy-rotate";
+    export { FlipDirection } from "transform/flip-direction";
+    export { FlipTransform } from "transform/flip";
     /**
      * Find a [Decoder] that is able to decode the given image [data].
      * Use this is you don't know the type of image it is. Since this will
@@ -3114,6 +3710,20 @@ declare module "index" {
      */
     export function encodeGifAnimation(animation: FrameAnimation, samplingFactor?: number): Uint8Array | undefined;
     /**
+     * Decode a TIFF formatted image.
+     */
+    export function decodeTiff(data: TypedArray): MemoryImage | undefined;
+    /**
+     * Decode an multi-image (animated) TIFF file. If the tiff doesn't have
+     * multiple images, the animation will contain a single frame with the tiff's
+     * image.
+     */
+    export function decodeTiffAnimation(data: TypedArray): FrameAnimation | undefined;
+    /**
+     * Encode an image to the TIFF format.
+     */
+    export function encodeTiff(image: MemoryImage): Uint8Array;
+    /**
      * Decode a BMP formatted image.
      */
     export function decodeBmp(data: TypedArray): MemoryImage | undefined;
@@ -3133,90 +3743,4 @@ declare module "index" {
      * Decode an ICO image.
      */
     export function decodeIco(data: TypedArray): MemoryImage | undefined;
-}
-declare module "transform/copy-rotate" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { Interpolation } from "formats/util/interpolation";
-    export abstract class CopyRotateTransform {
-        /**
-         * Returns a copy of the [src] image, rotated by [angle] degrees.
-         */
-        static copyRotate(src: MemoryImage, angle: number, interpolation?: Interpolation): MemoryImage;
-    }
-}
-declare module "transform/flip-direction" {
-    /** @format */
-    export enum FlipDirection {
-        /**
-         * Flip the image horizontally.
-         */
-        horizontal = 0,
-        /**
-         * Flip the image vertically.
-         */
-        vertical = 1,
-        /**
-         * Flip the image both horizontally and vertically.
-         */
-        both = 2
-    }
-}
-declare module "transform/flip" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { FlipDirection } from "transform/flip-direction";
-    export abstract class FlipTransform {
-        /**
-         * Flips the [src] image using the given [mode], which can be one of:
-         * [Flip.horizontal], [Flip.vertical], or [Flip.both].
-         */
-        static flip(src: MemoryImage, direction: FlipDirection): MemoryImage;
-        /**
-         * Flip the [src] image vertically.
-         */
-        static flipVertical(src: MemoryImage): MemoryImage;
-        /**
-         * Flip the src image horizontally.
-         */
-        static flipHorizontal(src: MemoryImage): MemoryImage;
-    }
-}
-declare module "transform/bake-orientation" {
-    import { MemoryImage } from "common/memory-image";
-    export abstract class BakeOrientationTransform {
-        /**
-         * If [image] has an orientation value in its exif data, this will rotate the
-         * image so that it physically matches its orientation. This can be used to
-         * bake the orientation of the image for image formats that don't support exif
-         * data.
-         */
-        static bakeOrientation(image: MemoryImage): MemoryImage;
-    }
-}
-declare module "transform/copy-resize" {
-    import { MemoryImage } from "common/memory-image";
-    import { Interpolation } from "formats/util/interpolation";
-    export interface CopyResizeOptionsUsingWidth {
-        image: MemoryImage;
-        width: number;
-        height?: number;
-        interpolation?: Interpolation;
-    }
-    export interface CopyResizeOptionsUsingHeight {
-        image: MemoryImage;
-        height: number;
-        width?: number;
-        interpolation?: Interpolation;
-    }
-    export abstract class CopyResizeTransform {
-        /**
-         * Returns a resized copy of the [src] image.
-         * If [height] isn't specified, then it will be determined by the aspect
-         * ratio of [src] and [width].
-         * If [width] isn't specified, then it will be determined by the aspect ratio
-         * of [src] and [height].
-         */
-        static copyResize(options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
-    }
 }
