@@ -27,18 +27,30 @@ export { ColorChannel } from './common/color-channel';
 export { ColorModel } from './common/color-model';
 export { ColorUtils } from './common/color-utils';
 export { Color } from './common/color';
-export { Crc32 } from './common/crc32';
+export { Crc32, Crc32Parameters } from './common/crc32';
 export { DisposeMode } from './common/dispose-mode';
-export { ExifData } from './common/exif_data';
-export { FrameAnimation } from './common/frame-animation';
+export {
+  ExifData,
+  ExifDataInitOptions,
+  ExifDataType,
+} from './common/exif_data';
+export {
+  FrameAnimation,
+  FrameAnimationInitOptions,
+} from './common/frame-animation';
 export { FrameType } from './common/frame-type';
 export { ICCProfileData } from './common/icc_profile_data';
 export { ICCPCompressionMode } from './common/iccp-compression-mode';
 export { ListUtils } from './common/list-utils';
-export { MemoryImage } from './common/memory-image';
+export {
+  MemoryImage,
+  MemoryImageInitOptions,
+  MemoryImageInitOptionsColorModel,
+  RgbMemoryImageInitOptions,
+} from './common/memory-image';
 export { RgbChannelSet } from './common/rgb-channel-set';
 export { TextCodec } from './common/text-codec';
-export { CompressionLevel, TypedArray } from './common/typings';
+export { CompressionLevel, TypedArray, BufferEncoding } from './common/typings';
 
 // Export types from 'draw' directory
 export { drawPixel } from './draw/draw-pixel';
@@ -50,15 +62,91 @@ export { DecodeInfo } from './formats/decode-info';
 export { Decoder } from './formats/decoder';
 export { Encoder } from './formats/encoder';
 export { GifDecoder } from './formats/gif-decoder';
-export { GifEncoder } from './formats/gif-encoder';
+export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder';
 export { IcoDecoder } from './formats/ico-decoder';
 export { IcoEncoder } from './formats/ico-encoder';
 export { JpegDecoder } from './formats/jpeg-decoder';
 export { JpegEncoder } from './formats/jpeg-encoder';
 export { PngDecoder } from './formats/png-decoder';
-export { PngEncoder } from './formats/png-encoder';
+export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder';
 export { TgaDecoder } from './formats/tga-decoder';
 export { TgaEncoder } from './formats/tga-encoder';
+export { TiffDecoder } from './formats/tiff-decoder';
+export { TiffEncoder } from './formats/tiff-encoder';
+
+export { BitmapCompressionMode } from './formats/bmp/bitmap-compression-mode';
+export { BitmapFileHeader } from './formats/bmp/bitmap-file-header';
+export { BmpInfo } from './formats/bmp/bmp-info';
+
+export {
+  GifColorMap,
+  GifColorMapInitOptions,
+} from './formats/gif/gif-color-map';
+export { GifImageDesc } from './formats/gif/gif-image-desc';
+export { GifInfo, GifInfoInitOptions } from './formats/gif/gif-info';
+
+export { IcoBmpInfo } from './formats/ico/ico-bmp-info';
+export { IcoInfoImage } from './formats/ico/ico-info-image';
+export { IcoInfo } from './formats/ico/ico-info';
+
+export { ComponentData } from './formats/jpeg/component-data';
+export { JpegAdobe } from './formats/jpeg/jpeg-adobe';
+export { JpegComponent } from './formats/jpeg/jpeg-component';
+export { JpegData } from './formats/jpeg/jpeg-data';
+export { JpegFrame } from './formats/jpeg/jpeg-frame';
+export { JpegHuffman } from './formats/jpeg/jpeg-huffman';
+export { JpegInfo } from './formats/jpeg/jpeg-info';
+export { JpegJfif } from './formats/jpeg/jpeg-jfif';
+export { JpegQuantize } from './formats/jpeg/jpeg-quantize';
+export { JpegScan } from './formats/jpeg/jpeg-scan';
+export { Jpeg } from './formats/jpeg/jpeg';
+
+export { PngFrame, PngFrameInitOptions } from './formats/png/png-frame';
+export { PngInfo, PngInfoInitOptions } from './formats/png/png-info';
+
+export { TgaInfo } from './formats/tga/tga-info';
+
+export { TiffBitReader } from './formats/tiff/tiff-bit-reader';
+export { TiffEntry, TiffEntryInitOptions } from './formats/tiff/tiff-entry';
+export {
+  TiffFaxDecoder,
+  TiffFaxDecoderInitOptions,
+} from './formats/tiff/tiff-fax-decoder';
+export { TiffImage } from './formats/tiff/tiff-image';
+export { TiffInfo, TiffInfoInitOptions } from './formats/tiff/tiff-info';
+export { LzwDecoder } from './formats/tiff/tiff-lzw-decoder';
+
+export { DitherKernel } from './formats/util/dither-kernel';
+export { DitherPixel } from './formats/util/dither-pixel';
+export {
+  InputBuffer,
+  InputBufferInitOptions,
+} from './formats/util/input-buffer';
+export { Interpolation } from './formats/util/interpolation';
+export { NeuralQuantizer } from './formats/util/neural-quantizer';
+export {
+  OutputBuffer,
+  OutputBufferInitOptions,
+} from './formats/util/output-buffer';
+export { Quantizer } from './formats/util/quantizer';
+
+// Export types from 'hdr' directory
+export { Half } from './hdr/half';
+export { HdrImage } from './hdr/hdr-image';
+export { HdrSlice, HdrSliceInitOptions } from './hdr/hdr-slice';
+export { HdrToImage } from './hdr/hdr-to-image';
+
+// Export types from 'transform' directory
+export { BakeOrientationTransform } from './transform/bake-orientation';
+export { CopyIntoTransform, CopyIntoOptions } from './transform/copy-into';
+export {
+  CopyResizeTransform,
+  CopyResizeOptionsUsingWidth,
+  CopyResizeOptionsUsingHeight,
+} from './transform/copy-resize';
+export { CopyRotateTransform } from './transform/copy-rotate';
+export { FlipDirection } from './transform/flip-direction';
+export { FlipTransform } from './transform/flip';
 
 /**
  * Find a [Decoder] that is able to decode the given image [data].
