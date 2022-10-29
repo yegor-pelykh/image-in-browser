@@ -541,7 +541,7 @@ export class GifDecoder implements Decoder {
    * This routines read one gif data block at a time and buffers it internally
    * so that the decompression routine could access it.
    * The routine returns the next byte from its internal buffer (or read next
-   * block in if buffer empty) and returns null on failure.
+   * block in if buffer empty) and returns undefined on failure.
    */
   private bufferedInput(): number | undefined {
     let nextByte = 0;
@@ -590,7 +590,7 @@ export class GifDecoder implements Decoder {
 
   /**
    * Validate the file is a Gif image and get information about it.
-   * If the file is not a valid Gif image, null is returned.
+   * If the file is not a valid Gif image, undefined is returned.
    */
   public startDecode(bytes: Uint8Array): GifInfo | undefined {
     this.input = new InputBuffer({

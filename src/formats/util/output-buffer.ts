@@ -147,7 +147,7 @@ export class OutputBuffer {
   /**
    * Return the subarray of the buffer in the range [start:end].
    * If [start] or [end] are < 0 then it is relative to the end of the buffer.
-   * If [end] is not specified (or null), then it is the end of the buffer.
+   * If [end] is not specified (or undefined), then it is the end of the buffer.
    * This is equivalent to the python list range operator.
    */
   public subarray(start: number, end?: number): Uint8Array {

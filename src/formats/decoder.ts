@@ -65,7 +65,7 @@ export interface Decoder {
 
   /**
    * Decode a single frame from the data that was set with [startDecode].
-   * If [frame] is out of the range of available frames, null is returned.
+   * If [frame] is out of the range of available frames, undefined is returned.
    * Non animated image files will only have [frame] 0. An [Image]
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
@@ -76,7 +76,7 @@ export interface Decoder {
    * Decode a single high dynamic range (HDR) frame from the data that was set
    * with [startDecode]. If the format of the file does not support HDR images,
    * the regular image will be converted to an HDR image as (color / 255).
-   * If [frame] is out of the range of available frames, null is returned.
+   * If [frame] is out of the range of available frames, undefined is returned.
    * Non animated image files will only have [frame] 0. An [Image]
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
@@ -86,14 +86,14 @@ export interface Decoder {
   /**
    * Decode all of the frames from an animation. If the file is not an
    * animation, a single frame animation is returned. If there was a problem
-   * decoding the file, null is returned.
+   * decoding the file, undefined is returned.
    */
   decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
 
   /**
    * Decode the file and extract a single image from it. If the file is
    * animated, the specified [frame] will be decoded. If there was a problem
-   * decoding the file, null is returned.
+   * decoding the file, undefined is returned.
    */
   decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
 
@@ -102,7 +102,7 @@ export interface Decoder {
    * it. HDR images are stored in floating-poing values. If the format of the
    * file does not support HDR images, the regular image will be converted to
    * an HDR image as (color / 255). If the file is animated, the specified
-   * [frame] will be decoded. If there was a problem decoding the file, null is
+   * [frame] will be decoded. If there was a problem decoding the file, undefined is
    * returned.
    */
   decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;

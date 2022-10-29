@@ -116,7 +116,7 @@ export class BmpInfo implements DecodeInfo {
   public get ignoreAlphaChannel(): boolean {
     return (
       this._headerSize === 40 ||
-      // BITMAPV5HEADER with null alpha mask.
+      // BITMAPV5HEADER with undefined alpha mask.
       (this._headerSize === 124 && this._v5alphaMask === 0)
     );
   }

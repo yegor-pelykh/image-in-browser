@@ -18,7 +18,7 @@ export interface Encoder {
   encodeImage(image: MemoryImage): Uint8Array;
 
   /**
-   * Encode an animation. Not all formats support animation, and null
+   * Encode an animation. Not all formats support animation, and undefined
    * will be returned if not.
    */
   encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;

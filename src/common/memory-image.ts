@@ -39,11 +39,10 @@ export interface MemoryImageInitOptionsColorModel {
  * An image buffer where pixels are encoded into 32-bit unsigned ints (Uint32).
  *
  * Pixels are stored in 32-bit unsigned integers in #AARRGGBB format.
- * This is to be consistent with the Flutter image data. You can use
- * [getBytes] to access the pixel data at the byte (channel) level, optionally
- * providing the format to get the image data as. You can use the letious color
- * functions, such as [getRed], [getGreen], [getBlue], and [getAlpha] to access
- * the individual channels of a given pixel color.
+ * You can use [getBytes] to access the pixel data at the byte (channel) level,
+ * optionally providing the format to get the image data as. You can use the
+ * letious color functions, such as [getRed], [getGreen], [getBlue], and [getAlpha]
+ * to access the individual channels of a given pixel color.
  *
  * If this image is a frame of an animation as decoded by the [decodeFrame]
  * method of [Decoder], then the [xOffset], [yOffset], [width] and [height]
@@ -297,8 +296,6 @@ export class MemoryImage {
   /**
    *
    * [format] defines the order of color channels in [bytes].
-   * An HTML canvas element stores colors in Format.rgba format; a Flutter
-   * Image object stores colors in Format.rgba format.
    * The length of [bytes] should be (width * height) * format-byte-count,
    * where format-byte-count is 1, 3, or 4 depending on the number of
    * channels in the format (luminance, rgb, rgba, etc).
@@ -306,12 +303,6 @@ export class MemoryImage {
    * The native format of an image is Format.rgba. If another format
    * is specified, the input data will be converted to rgba to store
    * in the Image.
-   *
-   * For example, given an Html Canvas, you could create an image:
-   * let bytes = canvas.getContext('2d').getImageData(0, 0,
-   *   canvas.width, canvas.height).data;
-   * let image = Image.fromBytes(canvas.width, canvas.height, bytes,
-   *                             format: Format.rgba);
    */
   public static fromBytes(
     options: MemoryImageInitOptionsColorModel

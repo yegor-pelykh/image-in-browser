@@ -1,11 +1,3 @@
-/**
- * /* eslint-disable @typescript-eslint/no-non-null-assertion
- *
- * @format
- */
-
-/* eslint-disable no-continue */
-/* eslint-disable no-fallthrough */
 /** @format */
 
 import { ExifData } from '../../common/exif_data';
@@ -248,8 +240,10 @@ export class JpegData {
         // SOF0 (Start of Frame, Baseline DCT)
         case Jpeg.M_SOF0:
         // SOF1 (Start of Frame, Extended DCT)
+        // falls through
         case Jpeg.M_SOF1:
         // SOF2 (Start of Frame, Progressive DCT)
+        // falls through
         case Jpeg.M_SOF2:
           this.readFrame(marker, block);
           break;
@@ -356,8 +350,10 @@ export class JpegData {
         // SOF0 (Start of Frame, Baseline DCT)
         case Jpeg.M_SOF0:
         // SOF1 (Start of Frame, Extended DCT)
+        // falls through
         case Jpeg.M_SOF1:
         // SOF2 (Start of Frame, Progressive DCT)
+        // falls through
         case Jpeg.M_SOF2:
           hasSOF = true;
           break;
@@ -397,8 +393,10 @@ export class JpegData {
         // SOF0 (Start of Frame, Baseline DCT)
         case Jpeg.M_SOF0:
         // SOF1 (Start of Frame, Extended DCT)
+        // falls through
         case Jpeg.M_SOF1:
         // SOF2 (Start of Frame, Progressive DCT)
+        // falls through
         case Jpeg.M_SOF2:
           hasSOF = true;
           this.readFrame(marker, this.readBlock());

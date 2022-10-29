@@ -45,7 +45,7 @@ export class BmpDecoder implements Decoder {
 
   /**
    * Decode a single frame from the data stat was set with [startDecode].
-   * If [frame] is out of the range of available frames, null is returned.
+   * If [frame] is out of the range of available frames, undefined is returned.
    * Non animated image files will only have [frame] 0. An [AnimationFrame]
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
@@ -94,7 +94,7 @@ export class BmpDecoder implements Decoder {
   /**
    * Decode all of the frames from an animation. If the file is not an
    * animation, a single frame animation is returned. If there was a problem
-   * decoding the file, null is returned.
+   * decoding the file, undefined is returned.
    */
   public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
     if (!this.isValidFile(bytes)) {
@@ -115,7 +115,7 @@ export class BmpDecoder implements Decoder {
   /**
    * Decode the file and extract a single image from it. If the file is
    * animated, the specified [frame] will be decoded. If there was a problem
-   * decoding the file, null is returned.
+   * decoding the file, undefined is returned.
    */
   public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
     if (!this.isValidFile(bytes)) {

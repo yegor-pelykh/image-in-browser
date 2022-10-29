@@ -807,7 +807,6 @@ export class PngDecoder implements Decoder {
           break;
         }
         case 'fdAT': {
-          // @ts-ignore
           const sequenceNumber = this._input.readUint32();
           const frame = this._info!.frames[this._info!.frames.length - 1];
           frame.fdat.push(inputPos);
@@ -979,9 +978,6 @@ export class PngDecoder implements Decoder {
       this._info.colorLut = [];
       for (let i = 0; i < 256; i++) {
         const c = i;
-        // if (this._info.gamma != null) {
-        //     c = Math.trunc(Math.pow((c / 255.0), this._info.gamma) * 255.0);
-        // }
         this._info.colorLut.push(c);
       }
 
