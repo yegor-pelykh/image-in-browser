@@ -7,6 +7,7 @@ export interface FrameAnimationInitOptions {
   width?: number;
   height?: number;
   loopCount?: number;
+  frameType?: FrameType;
 }
 
 /**
@@ -124,6 +125,7 @@ export class FrameAnimation implements Iterable<MemoryImage> {
     this._width = options?.width ?? 0;
     this._height = options?.height ?? 0;
     this._loopCount = options?.loopCount ?? 0;
+    this._frameType = options?.frameType ?? FrameType.animation;
   }
 
   /**
