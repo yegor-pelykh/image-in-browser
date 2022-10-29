@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.1.0...v1.2.0) (2022-10-29)
+
+
+### Features
+
+* Added HdrToImage class for converting HdrImage to MemoryImage ([6ccf97d](https://github.com/yegor-pelykh/image-in-browser/commit/6ccf97d571a7e69eb42a04cd689fa00db1f5d52f))
+* Added support for encoding and decoding TIFF format ([6c1b408](https://github.com/yegor-pelykh/image-in-browser/commit/6c1b4082faea90a9e47804bff9f74b0031c99e97))
+* Minor change in the FrameAnimation constructor - added the ability to specify the frame type ([6fc0235](https://github.com/yegor-pelykh/image-in-browser/commit/6fc0235dafa0437ba8d2872a47d67d18404f2e82))
+
 ## [1.1.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.0.8...v1.1.0) (2022-10-25)
 
 
