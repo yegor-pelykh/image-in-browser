@@ -71,7 +71,7 @@ describe('ICO', () => {
         TestHelpers.writeToFile(
           TestFolder.out,
           TestFormat.ico,
-          TestHelpers.replaceExtension(file.name, '.png'),
+          TestHelpers.replaceFileName(file.name, (ext) => 'png'),
           output
         );
       }

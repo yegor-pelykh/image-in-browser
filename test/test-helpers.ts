@@ -57,9 +57,23 @@ export abstract class TestHelpers {
     throw new Error('Unknown test format specified');
   }
 
-  public static replaceExtension(fileName: string, toExt: string): string {
+  public static replaceFileName(
+    fileName: string,
+    toExtCallback?: (ext: string) => string,
+    toNameCallback?: (name: string) => string
+  ): string {
     const dotPos = fileName.lastIndexOf('.');
-    return fileName.substring(0, dotPos < 0 ? fileName.length : dotPos) + toExt;
+    const currentName = fileName.substring(
+      0,
+      dotPos < 0 ? fileName.length : dotPos
+    );
+    const currentExt = fileName.substring(
+      dotPos < 0 ? fileName.length : dotPos + 1,
+      fileName.length
+    );
+    return `${
+      toNameCallback !== undefined ? toNameCallback(currentName) : currentName
+    }.${toExtCallback !== undefined ? toExtCallback(currentExt) : currentExt}`;
   }
 
   public static preparePath(

@@ -41,7 +41,7 @@ describe('GIF', () => {
         TestHelpers.writeToFile(
           TestFolder.out,
           TestFormat.gif,
-          TestHelpers.replaceExtension(file.name, '.bmp'),
+          TestHelpers.replaceFileName(file.name, (ext) => 'bmp'),
           output
         );
       }
