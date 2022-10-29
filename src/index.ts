@@ -16,6 +16,8 @@ import { PngDecoder } from './formats/png-decoder';
 import { PngEncoder } from './formats/png-encoder';
 import { TgaDecoder } from './formats/tga-decoder';
 import { TgaEncoder } from './formats/tga-encoder';
+import { TiffDecoder } from './formats/tiff-decoder';
+import { TiffEncoder } from './formats/tiff-encoder';
 
 // Export types from 'common' directory
 export { BitOperators } from './common/bit-operators';
@@ -84,6 +86,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
     return gif;
   }
 
+  const tiff = new TiffDecoder();
+  if (tiff.isValidFile(bytes)) {
+    return tiff;
+  }
+
   const bmp = new BmpDecoder();
   if (bmp.isValidFile(bytes)) {
     return bmp;
@@ -147,6 +154,9 @@ export function getDecoderForNamedImage(name: string): Decoder | undefined {
   }
   if (n.endsWith('.gif')) {
     return new GifDecoder();
+  }
+  if (n.endsWith('.tif') || n.endsWith('.tiff')) {
+    return new TiffDecoder();
   }
   if (n.endsWith('.bmp')) {
     return new BmpDecoder();
@@ -353,6 +363,33 @@ export function encodeGifAnimation(
   return new GifEncoder({
     samplingFactor: samplingFactor,
   }).encodeAnimation(animation);
+}
+
+/**
+ * Decode a TIFF formatted image.
+ */
+export function decodeTiff(data: TypedArray): MemoryImage | undefined {
+  const dataUint8 = new Uint8Array(data);
+  return new TiffDecoder().decodeImage(dataUint8);
+}
+
+/**
+ * Decode an multi-image (animated) TIFF file. If the tiff doesn't have
+ * multiple images, the animation will contain a single frame with the tiff's
+ * image.
+ */
+export function decodeTiffAnimation(
+  data: TypedArray
+): FrameAnimation | undefined {
+  const dataUint8 = new Uint8Array(data);
+  return new TiffDecoder().decodeAnimation(dataUint8);
+}
+
+/**
+ * Encode an image to the TIFF format.
+ */
+export function encodeTiff(image: MemoryImage): Uint8Array {
+  return new TiffEncoder().encodeImage(image);
 }
 
 /**
