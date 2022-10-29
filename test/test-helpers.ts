@@ -21,6 +21,7 @@ export enum TestFormat {
   jpeg,
   png,
   tga,
+  tiff,
 }
 
 export enum TestFolder {
@@ -53,6 +54,8 @@ export abstract class TestHelpers {
         return 'png';
       case TestFormat.tga:
         return 'tga';
+      case TestFormat.tiff:
+        return 'tiff';
     }
     throw new Error('Unknown test format specified');
   }
