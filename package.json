@@ -17,6 +17,24 @@
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
+  "keywords": [
+    "convert",
+    "converter",
+    "browser",
+    "encode",
+    "decode",
+    "image",
+    "animation",
+    "bmp",
+    "gif",
+    "ico",
+    "jpg",
+    "jpeg",
+    "png",
+    "tga",
+    "tif",
+    "tiff"
+  ],
   "scripts": {
     "format-src": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" --no-error-on-unmatched-pattern",
     "format-test": "prettier --write \"test/**/*.ts\" \"test/**/*.js\" --no-error-on-unmatched-pattern",
