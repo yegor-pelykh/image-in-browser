@@ -14,7 +14,7 @@ import { TextCodec } from '../common/text-codec';
 import { ImageError } from '../error/image-error';
 import { NotImplementedError } from '../error/not-implemented-error';
 import { HdrImage } from '../hdr/hdr-image';
-import { CopyIntoTransform } from '../transform/copy-into';
+import { ImageTransform } from '../transform/image-transform';
 import { DecodeInfo } from './decode-info';
 import { Decoder } from './decoder';
 import { PngFrame } from './png/png-frame';
@@ -1097,7 +1097,7 @@ export class PngDecoder implements Decoder {
       // Convert to MS
       lastImage.duration = Math.trunc(frame.delay * 1000);
 
-      CopyIntoTransform.copyInto({
+      ImageTransform.copyInto({
         dst: lastImage,
         src: image,
         dstX: frame.xOffset,

@@ -137,16 +137,16 @@ export { HdrSlice, HdrSliceInitOptions } from './hdr/hdr-slice';
 export { HdrToImage } from './hdr/hdr-to-image';
 
 // Export types from 'transform' directory
-export { BakeOrientationTransform } from './transform/bake-orientation';
-export { CopyIntoTransform, CopyIntoOptions } from './transform/copy-into';
+export { CopyIntoOptions } from './transform/copy-into-options';
 export {
-  CopyResizeTransform,
-  CopyResizeOptionsUsingWidth,
   CopyResizeOptionsUsingHeight,
-} from './transform/copy-resize';
-export { CopyRotateTransform } from './transform/copy-rotate';
+  CopyResizeOptionsUsingWidth,
+} from './transform/copy-resize-options';
 export { FlipDirection } from './transform/flip-direction';
-export { FlipTransform } from './transform/flip';
+export { ImageTransform } from './transform/image-transform';
+export { TrimMode } from './transform/trim-mode';
+export { TrimSide } from './transform/trim-side';
+export { TrimTransform } from './transform/trim';
 
 /**
  * Find a [Decoder] that is able to decode the given image [data].

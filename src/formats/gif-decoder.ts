@@ -5,7 +5,7 @@ import { ListUtils } from '../common/list-utils';
 import { MemoryImage } from '../common/memory-image';
 import { ImageError } from '../error/image-error';
 import { HdrImage } from '../hdr/hdr-image';
-import { CopyIntoTransform } from '../transform/copy-into';
+import { ImageTransform } from '../transform/image-transform';
 import { Decoder } from './decoder';
 import { GifColorMap } from './gif/gif-color-map';
 import { GifImageDesc } from './gif/gif-image-desc';
@@ -729,7 +729,7 @@ export class GifDecoder implements Decoder {
         lastImage = MemoryImage.from(lastImage);
       }
 
-      CopyIntoTransform.copyInto({
+      ImageTransform.copyInto({
         dst: lastImage,
         src: image,
         dstX: frame.x,
