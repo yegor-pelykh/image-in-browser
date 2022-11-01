@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.2.1...v1.3.0) (2022-11-01)
+
+
+### Features
+
+* New version of drawing functions ([0193cd1](https://github.com/yegor-pelykh/image-in-browser/commit/0193cd1fd0f6046c60a9575dfc3b89d8ccc8fdb5))
+* Refactoring of existing image transformation functions, various new transformation functions have been added ([7caa9a1](https://github.com/yegor-pelykh/image-in-browser/commit/7caa9a1a25bffe9ec618e9e9e05cf6dea79056fc))
+
 ### [1.2.1](https://github.com/yegor-pelykh/image-in-browser/compare/v1.2.0...v1.2.1) (2022-10-29)
 
 ## [1.2.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.1.0...v1.2.0) (2022-10-29)
