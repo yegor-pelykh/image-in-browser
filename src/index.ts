@@ -41,6 +41,7 @@ export {
 export { FrameType } from './common/frame-type';
 export { ICCProfileData } from './common/icc_profile_data';
 export { ICCPCompressionMode } from './common/iccp-compression-mode';
+export { Line } from './common/line';
 export { ListUtils } from './common/list-utils';
 export {
   MemoryImage,
@@ -48,12 +49,18 @@ export {
   MemoryImageInitOptionsColorModel,
   RgbMemoryImageInitOptions,
 } from './common/memory-image';
+export { Point } from './common/point';
+export { Rectangle } from './common/rectangle';
 export { RgbChannelSet } from './common/rgb-channel-set';
 export { TextCodec } from './common/text-codec';
 export { CompressionLevel, TypedArray, BufferEncoding } from './common/typings';
 
 // Export types from 'draw' directory
-export { drawPixel } from './draw/draw-pixel';
+export { DrawImageOptions } from './draw/draw-image-options';
+export { DrawLineOptions } from './draw/draw-line-options';
+export { Draw } from './draw/draw';
+export { FillFloodOptions } from './draw/fill-flood-options';
+export { MaskFloodOptions } from './draw/mask-flood-options';
 
 // Export types from 'formats' directory
 export { BmpDecoder } from './formats/bmp-decoder';

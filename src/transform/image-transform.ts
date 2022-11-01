@@ -5,7 +5,6 @@ import { ColorUtils } from '../common/color-utils';
 import { ExifData } from '../common/exif_data';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
-import { drawPixel } from '../draw/draw-pixel';
 import { ImageError } from '../error/image-error';
 import { Interpolation } from '../formats/util/interpolation';
 import { Point } from '../common/point';
@@ -16,6 +15,7 @@ import {
   CopyResizeOptionsUsingWidth,
 } from './copy-resize-options';
 import { CopyIntoOptions } from './copy-into-options';
+import { Draw } from '../draw/draw';
 
 export abstract class ImageTransform {
   /**
@@ -381,10 +381,10 @@ export abstract class ImageTransform {
     if (options.blend) {
       for (let y = 0; y < options.srcH; ++y) {
         for (let x = 0; x < options.srcW; ++x) {
-          drawPixel(
+          const pos = new Point(options.dstX + x, options.dstY + y);
+          Draw.drawPixel(
             options.dst,
-            options.dstX + x,
-            options.dstY + y,
+            pos,
             options.src.getPixel(options.srcX + x, options.srcY + y)
           );
         }
@@ -452,15 +452,16 @@ export abstract class ImageTransform {
     center?: Point
   ): MemoryImage {
     const defaultRadius = Math.trunc(Math.min(src.width, src.height) / 2);
-    const c = center ?? {
-      x: Math.trunc(src.width / 2),
-      y: Math.trunc(src.height / 2),
-    };
+    const c =
+      center ??
+      new Point(Math.trunc(src.width / 2), Math.trunc(src.height / 2));
     let r = radius ?? defaultRadius;
 
     // Make sure center point is within the range of the src image
-    c.x = Clamp.clampInt(c.x, 0, src.width - 1);
-    c.y = Clamp.clampInt(c.y, 0, src.height - 1);
+    c.move(
+      Clamp.clampInt(c.x, 0, src.width - 1),
+      Clamp.clampInt(c.y, 0, src.height - 1)
+    );
     r = r < 1 ? defaultRadius : r;
 
     // topLeft.x
@@ -500,12 +501,12 @@ export abstract class ImageTransform {
       for (let x = 0; x < dst.width; ++x) {
         const u = x / (dst.width - 1);
         // bilinear interpolation
-        const srcPixelCoord = rect.topLeft
+        const srcPixelCoord = new Point(rect.left, rect.top)
           .mul(1 - u)
           .mul(1 - v)
-          .add(rect.topRight.mul(u).mul(1 - v))
-          .add(rect.bottomLeft.mul(1 - u).mul(v))
-          .add(rect.bottomRight.mul(u).mul(v));
+          .add(new Point(rect.right, rect.top).mul(u).mul(1 - v))
+          .add(new Point(rect.left, rect.bottom).mul(1 - u).mul(v))
+          .add(new Point(rect.right, rect.bottom).mul(u).mul(v));
         const srcPixel = src.getPixel(srcPixelCoord.xt, srcPixelCoord.yt);
         dst.setPixel(x, y, srcPixel);
       }
