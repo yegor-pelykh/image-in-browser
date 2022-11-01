@@ -2,13 +2,13 @@
 
 import { decodeJpg, encodeJpg } from '../src';
 import { JpegDecoder } from '../src/formats/jpeg-decoder';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('JPEG', () => {
   test('progressive', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.jpeg,
+      TestSection.jpeg,
       'progress.jpg'
     );
     const image = decodeJpg(input);
@@ -21,7 +21,7 @@ describe('JPEG', () => {
 
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.jpeg,
+    TestSection.jpeg,
     '.jpg'
   );
 
@@ -36,7 +36,7 @@ describe('JPEG', () => {
         const encoded = encodeJpg(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.jpeg,
+          TestSection.jpeg,
           file.name,
           encoded
         );
@@ -54,7 +54,7 @@ describe('JPEG', () => {
     test(`exif/orientation_${i}/landscape`, () => {
       const input = TestHelpers.readFromFile(
         TestFolder.res,
-        TestFormat.jpeg,
+        TestSection.jpeg,
         `landscape_${i}.jpg`
       );
       const image = decodeJpg(input);
@@ -63,7 +63,7 @@ describe('JPEG', () => {
         const output = encodeJpg(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.jpeg,
+          TestSection.jpeg,
           `landscape_${i}.jpg`,
           output
         );
@@ -73,7 +73,7 @@ describe('JPEG', () => {
     test(`exif/orientation_${i}/portrait`, () => {
       const input = TestHelpers.readFromFile(
         TestFolder.res,
-        TestFormat.jpeg,
+        TestSection.jpeg,
         `portrait_${i}.jpg`
       );
       const image = decodeJpg(input);
@@ -82,7 +82,7 @@ describe('JPEG', () => {
         const output = encodeJpg(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.jpeg,
+          TestSection.jpeg,
           `portrait_${i}.jpg`,
           output
         );

@@ -14,7 +14,8 @@ export interface FileInfo {
   path: string;
 }
 
-export enum TestFormat {
+export enum TestSection {
+  draw,
   bmp,
   gif,
   ico,
@@ -40,24 +41,26 @@ export abstract class TestHelpers {
     throw new Error('Unknown test folder specified');
   }
 
-  private static getTestFormat(format: TestFormat) {
-    switch (format) {
-      case TestFormat.bmp:
+  private static getTestSection(section: TestSection) {
+    switch (section) {
+      case TestSection.draw:
+        return 'draw';
+      case TestSection.bmp:
         return 'bmp';
-      case TestFormat.gif:
+      case TestSection.gif:
         return 'gif';
-      case TestFormat.ico:
+      case TestSection.ico:
         return 'ico';
-      case TestFormat.jpeg:
+      case TestSection.jpeg:
         return 'jpg';
-      case TestFormat.png:
+      case TestSection.png:
         return 'png';
-      case TestFormat.tga:
+      case TestSection.tga:
         return 'tga';
-      case TestFormat.tiff:
+      case TestSection.tiff:
         return 'tiff';
     }
-    throw new Error('Unknown test format specified');
+    throw new Error('Unknown test section specified');
   }
 
   public static replaceFileName(
@@ -81,13 +84,13 @@ export abstract class TestHelpers {
 
   public static preparePath(
     folder: TestFolder,
-    format: TestFormat,
+    section: TestSection,
     fileName?: string
   ): string {
     const dirPath = join(
       __dirname,
       this.getTestFolder(folder),
-      this.getTestFormat(format)
+      this.getTestSection(section)
     );
     if (!existsSync(dirPath)) {
       mkdirSync(dirPath, {
@@ -99,7 +102,7 @@ export abstract class TestHelpers {
 
   public static listFiles(
     folder: TestFolder,
-    format: TestFormat,
+    format: TestSection,
     endsWith?: string
   ): FileInfo[] {
     const dirPath = this.preparePath(folder, format);
@@ -125,20 +128,20 @@ export abstract class TestHelpers {
 
   public static readFromFile(
     folder: TestFolder,
-    format: TestFormat,
+    section: TestSection,
     fileName: string
   ): Buffer {
-    const path = this.preparePath(folder, format, fileName);
+    const path = this.preparePath(folder, section, fileName);
     return this.readFromFilePath(path);
   }
 
   public static writeToFile(
     folder: TestFolder,
-    format: TestFormat,
+    section: TestSection,
     fileName: string,
     data: string | NodeJS.ArrayBufferView
   ) {
-    const path = this.preparePath(folder, format, fileName);
+    const path = this.preparePath(folder, section, fileName);
     writeFileSync(path, data);
   }
 }

@@ -3,14 +3,14 @@
 import { decodeTiff, encodePng, encodeTiff } from '../src';
 import { HdrToImage } from '../src/hdr/hdr-to-image';
 import { TiffDecoder } from '../src/formats/tiff-decoder';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 import { TiffEntry } from '../src/formats/tiff/tiff-entry';
 import { TiffEncoder } from '../src/formats/tiff-encoder';
 
 describe('TIFF', () => {
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.tiff,
+    TestSection.tiff,
     '.tif'
   );
 
@@ -56,7 +56,7 @@ describe('TIFF', () => {
         const outputPng = encodePng(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.tiff,
+          TestSection.tiff,
           TestHelpers.replaceFileName(file.name, (_ext) => 'png'),
           outputPng
         );
@@ -64,7 +64,7 @@ describe('TIFF', () => {
         const outputTiff = encodeTiff(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.tiff,
+          TestSection.tiff,
           file.name,
           outputTiff
         );
@@ -78,7 +78,7 @@ describe('TIFF', () => {
           const png2 = encodePng(image);
           TestHelpers.writeToFile(
             TestFolder.out,
-            TestFormat.tiff,
+            TestSection.tiff,
             TestHelpers.replaceFileName(
               file.name,
               (_ext) => 'png',
@@ -94,7 +94,7 @@ describe('TIFF', () => {
   test('TIFF/dtm_test', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tiff,
+      TestSection.tiff,
       'dtm_test.tif'
     );
     const hdrImage = new TiffDecoder().decodeHdrImage(input);
@@ -106,7 +106,7 @@ describe('TIFF', () => {
       const output = encodePng(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'dtm_test.hdr.png',
         output
       );
@@ -116,7 +116,7 @@ describe('TIFF', () => {
   test('TIFF/tca32int', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tiff,
+      TestSection.tiff,
       'tca32int.tif'
     );
     const decoder = new TiffDecoder();
@@ -136,7 +136,7 @@ describe('TIFF', () => {
       const outputHdr = new TiffEncoder().encodeHdrImage(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'tca32int.tif',
         outputHdr
       );
@@ -145,7 +145,7 @@ describe('TIFF', () => {
       const output = encodePng(memImage);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'tca32int.hdr.png',
         output
       );
@@ -155,7 +155,7 @@ describe('TIFF', () => {
   test('TIFF/dtm64float', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tiff,
+      TestSection.tiff,
       'dtm64float.tif'
     );
     const decoder = new TiffDecoder();
@@ -175,7 +175,7 @@ describe('TIFF', () => {
       const outputHdr = new TiffEncoder().encodeHdrImage(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'dtm64float.tif',
         outputHdr
       );
@@ -184,7 +184,7 @@ describe('TIFF', () => {
       const output = encodePng(memImage);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'dtm64float.hdr.png',
         output
       );
@@ -194,7 +194,7 @@ describe('TIFF', () => {
   test('TIFF/startDecode', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tiff,
+      TestSection.tiff,
       'dtm64float.tif'
     );
     const decoder = new TiffDecoder();
@@ -215,7 +215,7 @@ describe('TIFF', () => {
   test('TIFF/float1x32', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tiff,
+      TestSection.tiff,
       'float1x32.tif'
     );
     const decoder = new TiffDecoder();
@@ -227,7 +227,7 @@ describe('TIFF', () => {
       const outputHdr = new TiffEncoder().encodeHdrImage(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'float1x32.tif',
         outputHdr
       );
@@ -236,7 +236,7 @@ describe('TIFF', () => {
       const outputPng = encodePng(memImage);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'float1x32.hdr.png',
         outputPng
       );
@@ -246,7 +246,7 @@ describe('TIFF', () => {
   test('TIFF/float32', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tiff,
+      TestSection.tiff,
       'float32.tif'
     );
     const decoder = new TiffDecoder();
@@ -258,7 +258,7 @@ describe('TIFF', () => {
       const outputHdr = new TiffEncoder().encodeHdrImage(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'float32.tif',
         outputHdr
       );
@@ -267,7 +267,7 @@ describe('TIFF', () => {
       const outputPng = encodePng(memImage);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tiff,
+        TestSection.tiff,
         'float32.hdr.png',
         outputPng
       );

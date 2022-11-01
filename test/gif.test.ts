@@ -6,18 +6,18 @@ import {
   encodeGif,
   encodeGifAnimation,
   encodePng,
+  ImageTransform,
 } from '../src';
 import { FrameAnimation } from '../src/common/frame-animation';
 import { MemoryImage } from '../src/common/memory-image';
 import { GifDecoder } from '../src/formats/gif-decoder';
 import { GifEncoder } from '../src/formats/gif-encoder';
-import { CopyResizeTransform } from '../src/transform/copy-resize';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('GIF', () => {
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.gif,
+    TestSection.gif,
     '.gif'
   );
 
@@ -40,7 +40,7 @@ describe('GIF', () => {
         const output = encodePng(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.gif,
+          TestSection.gif,
           TestHelpers.replaceFileName(file.name, (ext) => 'bmp'),
           output
         );
@@ -50,7 +50,7 @@ describe('GIF', () => {
 
   const carsFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.gif,
+    TestSection.gif,
     'cars.gif'
   );
 
@@ -75,7 +75,7 @@ describe('GIF', () => {
         if (output !== undefined) {
           TestHelpers.writeToFile(
             TestFolder.out,
-            TestFormat.gif,
+            TestSection.gif,
             file.name,
             output
           );
@@ -101,7 +101,7 @@ describe('GIF', () => {
     if (encoded !== undefined) {
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.gif,
+        TestSection.gif,
         'encodeAnimation.gif',
         encoded
       );
@@ -130,7 +130,7 @@ describe('GIF', () => {
     if (encoded !== undefined) {
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.gif,
+        TestSection.gif,
         'encodeAnimation_letiable_FPS.gif',
         encoded
       );
@@ -149,7 +149,7 @@ describe('GIF', () => {
   test('encodeImage', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.jpeg,
+      TestSection.jpeg,
       'jpeg444.jpg'
     );
     const image = decodeJpg(input);
@@ -160,7 +160,7 @@ describe('GIF', () => {
       if (output !== undefined) {
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.gif,
+          TestSection.gif,
           'jpeg444.gif',
           output
         );
@@ -171,13 +171,13 @@ describe('GIF', () => {
   test('encode_small_gif', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.jpeg,
+      TestSection.jpeg,
       'big_buck_bunny.jpg'
     );
     const image = decodeJpg(input);
     expect(image).not.toBeUndefined();
     if (image !== undefined) {
-      const resized = CopyResizeTransform.copyResize({
+      const resized = ImageTransform.copyResize({
         image: image,
         width: 16,
         height: 16,
@@ -185,7 +185,7 @@ describe('GIF', () => {
       const output = encodeGif(resized);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.gif,
+        TestSection.gif,
         'encode_small_gif.gif',
         output
       );

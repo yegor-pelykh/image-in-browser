@@ -11,12 +11,12 @@ import { ColorUtils } from '../src/common/color-utils';
 import { FrameAnimation } from '../src/common/frame-animation';
 import { MemoryImage } from '../src/common/memory-image';
 import { RgbChannelSet } from '../src/common/rgb-channel-set';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('PNG', () => {
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.png,
+    TestSection.png,
     '.png'
   );
 
@@ -29,7 +29,7 @@ describe('PNG', () => {
     const output = encodePng(image);
     TestHelpers.writeToFile(
       TestFolder.out,
-      TestFormat.png,
+      TestSection.png,
       'encode.png',
       output
     );
@@ -87,7 +87,7 @@ describe('PNG', () => {
     if (output !== undefined) {
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.png,
+        TestSection.png,
         'encodeAnimation.png',
         output
       );
@@ -113,7 +113,7 @@ describe('PNG', () => {
   test('decode', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.png,
+      TestSection.png,
       'decode.png'
     );
     const image = decodePng(input);
@@ -128,7 +128,7 @@ describe('PNG', () => {
       const output = encodePng(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.png,
+        TestSection.png,
         'decode.png',
         output
       );
@@ -138,7 +138,7 @@ describe('PNG', () => {
   test('iCCP', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.png,
+      TestSection.png,
       'iCCP.png'
     );
     const image = decodePng(input);
@@ -188,7 +188,7 @@ describe('PNG', () => {
     test(`PNG ${file.name}`, () => {
       const input = TestHelpers.readFromFile(
         TestFolder.res,
-        TestFormat.png,
+        TestSection.png,
         file.name
       );
       // X* png's are corrupted and are supposed to crash.
@@ -207,7 +207,7 @@ describe('PNG', () => {
             const output = encodePng(animation.getFrame(0));
             TestHelpers.writeToFile(
               TestFolder.out,
-              TestFormat.png,
+              TestSection.png,
               file.name,
               output
             );
@@ -216,7 +216,7 @@ describe('PNG', () => {
               const output = encodePng(animation.getFrame(i));
               TestHelpers.writeToFile(
                 TestFolder.out,
-                TestFormat.png,
+                TestSection.png,
                 `${file.name}-${i}.png`,
                 output
               );

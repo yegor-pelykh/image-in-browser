@@ -5,7 +5,7 @@ import { ColorUtils } from '../src/common/color-utils';
 import { MemoryImage } from '../src/common/memory-image';
 import { IcoDecoder } from '../src/formats/ico-decoder';
 import { IcoEncoder } from '../src/formats/ico-encoder';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('ICO', () => {
   test('encode', () => {
@@ -17,7 +17,7 @@ describe('ICO', () => {
     const output = encodeIco(image);
     TestHelpers.writeToFile(
       TestFolder.out,
-      TestFormat.ico,
+      TestSection.ico,
       'encode.ico',
       output
     );
@@ -33,7 +33,7 @@ describe('ICO', () => {
     const output2 = new IcoEncoder().encodeImages([image, image2]);
     TestHelpers.writeToFile(
       TestFolder.out,
-      TestFormat.ico,
+      TestSection.ico,
       'encode2.ico',
       output2
     );
@@ -49,7 +49,7 @@ describe('ICO', () => {
     const output3 = new IcoEncoder().encodeImages([image, image2, image3]);
     TestHelpers.writeToFile(
       TestFolder.out,
-      TestFormat.ico,
+      TestSection.ico,
       'encode3.ico',
       output3
     );
@@ -57,7 +57,7 @@ describe('ICO', () => {
 
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.ico,
+    TestSection.ico,
     '.ico'
   );
 
@@ -70,7 +70,7 @@ describe('ICO', () => {
         const output = encodePng(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.ico,
+          TestSection.ico,
           TestHelpers.replaceFileName(file.name, (ext) => 'png'),
           output
         );

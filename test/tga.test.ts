@@ -1,12 +1,12 @@
 /** @format */
 
 import { decodeTga, encodePng, encodeTga } from '../src';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('TGA', () => {
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.tga,
+    TestSection.tga,
     '.tga'
   );
 
@@ -19,7 +19,7 @@ describe('TGA', () => {
         const output = encodePng(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.tga,
+          TestSection.tga,
           TestHelpers.replaceFileName(file.name, (ext) => 'png'),
           output
         );
@@ -30,7 +30,7 @@ describe('TGA', () => {
   test('decode/encode', () => {
     const input = TestHelpers.readFromFile(
       TestFolder.res,
-      TestFormat.tga,
+      TestSection.tga,
       'globe.tga'
     );
 
@@ -45,7 +45,7 @@ describe('TGA', () => {
       const output = encodeTga(image);
       TestHelpers.writeToFile(
         TestFolder.out,
-        TestFormat.tga,
+        TestSection.tga,
         'globe.tga',
         output
       );

@@ -3,7 +3,7 @@
 import { decodeBmp, encodeBmp } from '../src';
 import { ColorUtils } from '../src/common/color-utils';
 import { MemoryImage } from '../src/common/memory-image';
-import { TestFolder, TestFormat, TestHelpers } from './test-helpers';
+import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('BMP', () => {
   test('encode', () => {
@@ -15,12 +15,12 @@ describe('BMP', () => {
 
     const png = encodeBmp(image);
 
-    TestHelpers.writeToFile(TestFolder.out, TestFormat.bmp, 'encode.bmp', png);
+    TestHelpers.writeToFile(TestFolder.out, TestSection.bmp, 'encode.bmp', png);
   });
 
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
-    TestFormat.bmp,
+    TestSection.bmp,
     '.bmp'
   );
 
@@ -33,7 +33,7 @@ describe('BMP', () => {
         const output = encodeBmp(image);
         TestHelpers.writeToFile(
           TestFolder.out,
-          TestFormat.bmp,
+          TestSection.bmp,
           file.name,
           output
         );
