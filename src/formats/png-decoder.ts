@@ -618,7 +618,6 @@ export class PngDecoder implements Decoder {
       }
     }
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const inputPos = this._input.position;
       let chunkSize = this._input.readUint32();

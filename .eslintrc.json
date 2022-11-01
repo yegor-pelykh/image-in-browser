@@ -63,6 +63,12 @@
         "no-case-declarations": [
             "warn"
         ],
+        "no-constant-condition": [
+          "error",
+          {
+            "checkLoops": false
+          }
+        ],
         "no-duplicate-imports": [
             "warn"
         ],
