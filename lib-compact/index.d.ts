@@ -1550,34 +1550,85 @@ declare module "formats/bmp-encoder" {
         encodeAnimation(_: FrameAnimation): Uint8Array | undefined;
     }
 }
-declare module "draw/draw-pixel" {
-    import { MemoryImage } from "common/memory-image";
+declare module "common/point" {
     /**
-     * Draw a single pixel into the image, applying alpha and opacity blending.
+     * 2-dimensional point
+     *
+     * @format
      */
-    export function drawPixel(image: MemoryImage, x: number, y: number, color: number, opacity?: number): MemoryImage;
+    export class Point {
+        private _x;
+        private _y;
+        get x(): number;
+        get y(): number;
+        get xt(): number;
+        get yt(): number;
+        constructor(x: number, y: number);
+        static from(other: Point): Point;
+        move(x: number, y: number): Point;
+        offset(dx: number, dy: number): Point;
+        mul(n: number): Point;
+        add(p: Point): Point;
+        equals(other: unknown): boolean;
+    }
 }
-declare module "transform/copy-into" {
+declare module "common/rectangle" {
+    export class Rectangle {
+        private _left;
+        private _top;
+        private _right;
+        private _bottom;
+        private _width;
+        private _height;
+        get left(): number;
+        get top(): number;
+        get right(): number;
+        get bottom(): number;
+        get width(): number;
+        get height(): number;
+        constructor(x1: number, y1: number, x2: number, y2: number);
+        static fromXYWH(x: number, y: number, width: number, height: number): Rectangle;
+        static from(other: Rectangle): Rectangle;
+        private initialize;
+    }
+}
+declare module "transform/flip-direction" {
+    /** @format */
+    export enum FlipDirection {
+        /**
+         * Flip the image horizontally.
+         */
+        horizontal = 0,
+        /**
+         * Flip the image vertically.
+         */
+        vertical = 1,
+        /**
+         * Flip the image both horizontally and vertically.
+         */
+        both = 2
+    }
+}
+declare module "transform/copy-resize-options" {
     /** @format */
     import { MemoryImage } from "common/memory-image";
-    /**
-     * Copies a rectangular portion of one image to another image. [dst] is the
-     * destination image, [src] is the source image identifier.
-     *
-     * In other words, copyInto will take an rectangular area from src of
-     * width [src_w] and height [src_h] at position ([src_x],[src_y]) and place it
-     * in a rectangular area of [dst] of width [dst_w] and height [dst_h] at
-     * position ([dst_x],[dst_y]).
-     *
-     * If the source and destination coordinates and width and heights differ,
-     * appropriate stretching or shrinking of the image fragment will be performed.
-     * The coordinates refer to the upper left corner. This function can be used to
-     * copy regions within the same image (if [dst] is the same as [src])
-     * but if the regions overlap the results will be unpredictable.
-     *
-     * [dstX] and [dstY] represent the X and Y position where the [src] will start
-     * printing.
-     */
+    import { Interpolation } from "formats/util/interpolation";
+    export interface CopyResizeOptionsUsingWidth {
+        image: MemoryImage;
+        width: number;
+        height?: number;
+        interpolation?: Interpolation;
+    }
+    export interface CopyResizeOptionsUsingHeight {
+        image: MemoryImage;
+        height: number;
+        width?: number;
+        interpolation?: Interpolation;
+    }
+}
+declare module "transform/copy-into-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
     export interface CopyIntoOptions {
         dst: MemoryImage;
         src: MemoryImage;
@@ -1590,11 +1641,311 @@ declare module "transform/copy-into" {
         blend?: boolean;
         center?: boolean;
     }
-    export abstract class CopyIntoTransform {
+}
+declare module "common/color" {
+    /**
+     * Image pixel colors are instantiated as an int object rather than an instance
+     * of the Color class in order to reduce object allocations.
+     */
+    export abstract class Color {
         /**
+         * Create a color value from RGB values in the range [0, 255].
+         *
+         * The channel order of a uint32 encoded color is BGRA.
+         */
+        static fromRgb(red: number, green: number, blue: number): number;
+        /**
+         * Create a color value from RGBA values in the range [0, 255].
+         *
+         * The channel order of a uint32 encoded color is BGRA.
+         */
+        static fromRgba(red: number, green: number, blue: number, alpha: number): number;
+        /**
+         * Create a color value from HSL values in the range [0, 1].
+         */
+        static fromHsl(hue: number, saturation: number, lightness: number): number;
+        /**
+         * Create a color value from HSV values in the range [0, 1].
+         */
+        static fromHsv(hue: number, saturation: number, value: number): number;
+        /**
+         * Create a color value from XYZ values.
+         */
+        static fromXyz(x: number, y: number, z: number): number;
+        /**
+         * Create a color value from CIE-L*ab values.
+         */
+        static fromLab(L: number, a: number, b: number): number;
+        /**
+         * Compare colors from a 3 or 4 dimensional color space
+         */
+        static distance(c1: number[], c2: number[], compareAlpha: boolean): number;
+    }
+}
+declare module "common/line" {
+    export class Line {
+        private _startX;
+        private _startY;
+        private _endX;
+        private _endY;
+        private _dx;
+        private _dy;
+        get startX(): number;
+        get startY(): number;
+        get endX(): number;
+        get endY(): number;
+        get dx(): number;
+        get dy(): number;
+        constructor(x1: number, y1: number, x2: number, y2: number);
+        static from(other: Line): Line;
+        private initialize;
+        moveStart(x: number, y: number): void;
+        moveEnd(x: number, y: number): void;
+    }
+}
+declare module "draw/draw-image-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface DrawImageOptions {
+        dst: MemoryImage;
+        src: MemoryImage;
+        dstX?: number;
+        dstY?: number;
+        dstW?: number;
+        dstH?: number;
+        srcX?: number;
+        srcY?: number;
+        srcW?: number;
+        srcH?: number;
+        blend?: boolean;
+    }
+}
+declare module "draw/draw-line-options" {
+    /** @format */
+    import { Line } from "common/line";
+    import { MemoryImage } from "common/memory-image";
+    export interface DrawLineOptions {
+        image: MemoryImage;
+        line: Line;
+        color: number;
+        antialias?: boolean;
+        thickness?: number;
+    }
+}
+declare module "draw/fill-flood-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface FillFloodOptions {
+        src: MemoryImage;
+        x: number;
+        y: number;
+        color: number;
+        threshold?: number;
+        compareAlpha?: boolean;
+    }
+}
+declare module "draw/mask-flood-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface MaskFloodOptions {
+        src: MemoryImage;
+        x: number;
+        y: number;
+        threshold?: number;
+        compareAlpha?: boolean;
+        fillValue?: number;
+    }
+}
+declare module "draw/draw" {
+    import { MemoryImage } from "common/memory-image";
+    import { Point } from "common/point";
+    import { Rectangle } from "common/rectangle";
+    import { DrawImageOptions } from "draw/draw-image-options";
+    import { DrawLineOptions } from "draw/draw-line-options";
+    import { FillFloodOptions } from "draw/fill-flood-options";
+    import { MaskFloodOptions } from "draw/mask-flood-options";
+    export abstract class Draw {
+        private static readonly OUTCODE_INSIDE;
+        private static readonly OUTCODE_LEFT;
+        private static readonly OUTCODE_RIGHT;
+        private static readonly OUTCODE_BOTTOM;
+        private static readonly OUTCODE_TOP;
+        /**
+         * Calculate the pixels that make up the circumference of a circle on the
+         * given [image], centered at [center] and the given [radius].
+         *
+         * The returned list of points is sorted, first by the x coordinate, and
+         * second by the y coordinate.
+         */
+        private static calculateCircumference;
+        /**
+         * Compute the bit code for a point [p] using the clip rectangle [rect]
+         */
+        private static computeOutCode;
+        /**
+         * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
+         * [line] is a [Line] object.
+         * [rect] is a [Rectangle] object.
+         * Results are stored in [line].
+         * If [line] falls completely outside of [rect], false is returned, otherwise
+         * true is returned.
+         */
+        private static clipLine;
+        private static testPixelLabColorDistance;
+        /**
+         * Adam Milazzo (2015). A More Efficient Flood Fill.
+         * http://www.adammil.net/blog/v126_A_More_Efficient_Flood_Fill.html
+         */
+        private static fill4;
+        private static fill4Core;
+        /**
+         * Draw a circle into the [image] with a center of [x0],[y0] and
+         * the given [radius] and [color].
+         */
+        static drawCircle(image: MemoryImage, center: Point, radius: number, color: number): MemoryImage;
+        /**
+         * Draw and fill a circle into the [image] with a [center]
+         * and the given [radius] and [color].
+         *
+         * The algorithm uses the same logic as [drawCircle] to calculate each point
+         * around the circle's circumference. Then it iterates through every point,
+         * finding the smallest and largest y-coordinate values for a given x-
+         * coordinate.
+         *
+         * Once found, it draws a line connecting those two points. The circle is thus
+         * filled one vertical slice at a time (each slice being 1-pixel wide).
+         */
+        static fillCircle(image: MemoryImage, center: Point, radius: number, color: number): MemoryImage;
+        /**
+         * Draw the image [src] onto the image [dst].
+         *
+         * In other words, drawImage will take an rectangular area from src of
+         * width [src_w] and height [src_h] at position ([src_x],[src_y]) and place it
+         * in a rectangular area of [dst] of width [dst_w] and height [dst_h] at
+         * position ([dst_x],[dst_y]).
+         *
+         * If the source and destination coordinates and width and heights differ,
+         * appropriate stretching or shrinking of the image fragment will be performed.
+         * The coordinates refer to the upper left corner. This function can be used to
+         * copy regions within the same image (if [dst] is the same as [src])
+         * but if the regions overlap the results will be unpredictable.
+         */
+        static drawImage(options: DrawImageOptions): MemoryImage;
+        /**
+         * Draw a line into [image].
+         *
+         * If [antialias] is true then the line is drawn with smooth edges.
+         * [thickness] determines how thick the line should be drawn, in pixels.
+         */
+        static drawLine(options: DrawLineOptions): MemoryImage;
+        /**
+         * Draw a single pixel into the image, applying alpha and opacity blending.
+         */
+        static drawPixel(image: MemoryImage, pos: Point, color: number, opacity?: number): MemoryImage;
+        /**
+         * Draw a rectangle in the image [dst] with the [color].
+         */
+        static drawRect(dst: MemoryImage, rect: Rectangle, color: number): MemoryImage;
+        /**
+         * Fill the 4-connected shape containing [x],[y] in the image [src] with the
+         * given [color].
+         */
+        static fillFlood(options: FillFloodOptions): MemoryImage;
+        /**
+         * Create a mask describing the 4-connected shape containing [x],[y] in the
+         * image [src].
+         */
+        static maskFlood(options: MaskFloodOptions): Uint8Array;
+        /**
+         * Fill a rectangle in the image [src] with the given [color] with the corners
+         * [x1],[y1] and [x2],[y2].
+         */
+        static fillRect(src: MemoryImage, rect: Rectangle, color: number): MemoryImage;
+        /**
+         * Set all of the pixels of an [image] to the given [color].
+         */
+        static fill(image: MemoryImage, color: number): MemoryImage;
+    }
+}
+declare module "transform/image-transform" {
+    import { MemoryImage } from "common/memory-image";
+    import { Interpolation } from "formats/util/interpolation";
+    import { Point } from "common/point";
+    import { Rectangle } from "common/rectangle";
+    import { FlipDirection } from "transform/flip-direction";
+    import { CopyResizeOptionsUsingHeight, CopyResizeOptionsUsingWidth } from "transform/copy-resize-options";
+    import { CopyIntoOptions } from "transform/copy-into-options";
+    export abstract class ImageTransform {
+        /**
+         * Returns a copy of the [src] image, rotated by [angle] degrees.
+         */
+        static copyRotate(src: MemoryImage, angle: number, interpolation?: Interpolation): MemoryImage;
+        /**
+         * If [image] has an orientation value in its exif data, this will rotate the
+         * image so that it physically matches its orientation. This can be used to
+         * bake the orientation of the image for image formats that don't support exif
+         * data.
+         */
+        static bakeOrientation(image: MemoryImage): MemoryImage;
+        /**
+         * Returns a resized copy of the [src] image.
+         * If [height] isn't specified, then it will be determined by the aspect
+         * ratio of [src] and [width].
+         * If [width] isn't specified, then it will be determined by the aspect ratio
+         * of [src] and [height].
+         */
+        static copyResize(options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
+        /**
+         * Returns a resized and square cropped copy of the [src] image of [size] size.
+         */
+        static copyResizeCropSquare(src: MemoryImage, size: number): MemoryImage;
+        /**
+         * Copies a rectangular portion of one image to another image. [dst] is the
+         * destination image, [src] is the source image identifier.
+         *
+         * In other words, copyInto will take an rectangular area from src of
+         * width [srcW] and height [srcH] at position ([srcX],[srcY]) and place it
+         * in a rectangular area of [dst] of width [dstW] and height [dstH] at
+         * position ([dstX],[dstY]).
+         *
+         * If the source and destination coordinates and width and heights differ,
+         * appropriate stretching or shrinking of the image fragment will be performed.
+         * The coordinates refer to the upper left corner. This function can be used to
+         * copy regions within the same image (if [dst] is the same as [src])
+         * but if the regions overlap the results will be unpredictable.
+         *
+         * [dstX] and [dstY] represent the X and Y position where the [src] will start
+         * printing.
+         *
          * if [center] is true, the [src] will be centered in [dst].
          */
         static copyInto(options: CopyIntoOptions): MemoryImage;
+        /**
+         * Returns a cropped copy of [src].
+         */
+        static copyCrop(src: MemoryImage, x: number, y: number, w: number, h: number): MemoryImage;
+        /**
+         * Returns a round cropped copy of [src].
+         */
+        static copyCropCircle(src: MemoryImage, radius?: number, center?: Point): MemoryImage;
+        /**
+         * Returns a copy of the [src] image, where the given rectangle
+         * has been mapped to the full image.
+         */
+        static copyRectify(src: MemoryImage, rect: Rectangle, toImage?: MemoryImage): MemoryImage;
+        /**
+         * Flips the [src] image using the given [mode], which can be one of:
+         * [FlipDirection.horizontal], [FlipDirection.vertical], or [FlipDirection.both].
+         */
+        static flip(src: MemoryImage, direction: FlipDirection): MemoryImage;
+        /**
+         * Flip the [src] image vertically.
+         */
+        static flipVertical(src: MemoryImage): MemoryImage;
+        /**
+         * Flip the src image horizontally.
+         */
+        static flipHorizontal(src: MemoryImage): MemoryImage;
     }
 }
 declare module "formats/gif/gif-color-map" {
@@ -2081,46 +2432,6 @@ declare module "formats/ico/ico-info" {
         get backgroundColor(): number;
         constructor(numFrames: number, type?: number, images?: IcoInfoImage[]);
         static read(input: InputBuffer): IcoInfo | undefined;
-    }
-}
-declare module "common/color" {
-    /**
-     * Image pixel colors are instantiated as an int object rather than an instance
-     * of the Color class in order to reduce object allocations.
-     */
-    export abstract class Color {
-        /**
-         * Create a color value from RGB values in the range [0, 255].
-         *
-         * The channel order of a uint32 encoded color is BGRA.
-         */
-        static fromRgb(red: number, green: number, blue: number): number;
-        /**
-         * Create a color value from RGBA values in the range [0, 255].
-         *
-         * The channel order of a uint32 encoded color is BGRA.
-         */
-        static fromRgba(red: number, green: number, blue: number, alpha: number): number;
-        /**
-         * Create a color value from HSL values in the range [0, 1].
-         */
-        static fromHsl(hue: number, saturation: number, lightness: number): number;
-        /**
-         * Create a color value from HSV values in the range [0, 1].
-         */
-        static fromHsv(hue: number, saturation: number, value: number): number;
-        /**
-         * Create a color value from XYZ values.
-         */
-        static fromXyz(x: number, y: number, z: number): number;
-        /**
-         * Create a color value from CIE-L*ab values.
-         */
-        static fromLab(L: number, a: number, b: number): number;
-        /**
-         * Compare colors from a 3 or 4 dimensional color space
-         */
-        static distance(c1: number[], c2: number[], compareAlpha: boolean): number;
     }
 }
 declare module "common/crc32" {
@@ -3423,90 +3734,76 @@ declare module "hdr/hdr-to-image" {
         static hdrToImage(hdr: HdrImage, exposure?: number): MemoryImage;
     }
 }
-declare module "transform/copy-rotate" {
+declare module "transform/trim-mode" {
     /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { Interpolation } from "formats/util/interpolation";
-    export abstract class CopyRotateTransform {
+    export enum TrimMode {
         /**
-         * Returns a copy of the [src] image, rotated by [angle] degrees.
+         * Trim an image to the top-left and bottom-right most non-transparent pixels
          */
-        static copyRotate(src: MemoryImage, angle: number, interpolation?: Interpolation): MemoryImage;
+        transparent = 0,
+        /**
+         * Trim an image to the top-left and bottom-right most pixels that are not the
+         * same as the top-left most pixel of the image.
+         */
+        topLeftColor = 1,
+        /**
+         * Trim an image to the top-left and bottom-right most pixels that are not the
+         * same as the bottom-right most pixel of the image.
+         */
+        bottomRightColor = 2
     }
 }
-declare module "transform/flip-direction" {
+declare module "transform/trim-side" {
     /** @format */
-    export enum FlipDirection {
+    export class TrimSide {
         /**
-         * Flip the image horizontally.
+         * Trim the image down from the top.
          */
-        horizontal = 0,
+        static readonly top: TrimSide;
         /**
-         * Flip the image vertically.
+         * Trim the image up from the bottom.
          */
-        vertical = 1,
+        static readonly bottom: TrimSide;
         /**
-         * Flip the image both horizontally and vertically.
+         * Trim the left edge of the image.
          */
-        both = 2
+        static readonly left: TrimSide;
+        /**
+         * Trim the right edge of the image.
+         */
+        static readonly right: TrimSide;
+        /**
+         * Trim all edges of the image.
+         */
+        static readonly all: TrimSide;
+        private value;
+        constructor(...sides: [number | TrimSide, ...(number | TrimSide)[]]);
+        has(side: TrimSide): boolean;
     }
 }
-declare module "transform/flip" {
-    /** @format */
+declare module "transform/trim" {
     import { MemoryImage } from "common/memory-image";
-    import { FlipDirection } from "transform/flip-direction";
-    export abstract class FlipTransform {
+    import { TrimMode } from "transform/trim-mode";
+    import { TrimSide } from "transform/trim-side";
+    export abstract class TrimTransform {
         /**
-         * Flips the [src] image using the given [mode], which can be one of:
-         * [Flip.horizontal], [Flip.vertical], or [Flip.both].
+         * Find the crop area to be used by the trim function.
+         * Returns the Rectangle. You could pass these constraints
+         * to the [copyCrop] function to crop the image.
          */
-        static flip(src: MemoryImage, direction: FlipDirection): MemoryImage;
+        private static findTrim;
         /**
-         * Flip the [src] image vertically.
+         * Automatically crops the image by finding the corners of the image that
+         * meet the [mode] criteria (not transparent or a different color).
+         *
+         * [mode] can be either [TrimMode.transparent], [TrimMode.topLeftColor] or
+         * [TrimMode.bottomRightColor].
+         *
+         * [sides] can be used to control which sides of the image get trimmed,
+         * and can be any combination of [TrimSide.top], [TrimSide.bottom], [TrimSide.left],
+         * and [TrimSide.right].
          */
-        static flipVertical(src: MemoryImage): MemoryImage;
-        /**
-         * Flip the src image horizontally.
-         */
-        static flipHorizontal(src: MemoryImage): MemoryImage;
-    }
-}
-declare module "transform/bake-orientation" {
-    import { MemoryImage } from "common/memory-image";
-    export abstract class BakeOrientationTransform {
-        /**
-         * If [image] has an orientation value in its exif data, this will rotate the
-         * image so that it physically matches its orientation. This can be used to
-         * bake the orientation of the image for image formats that don't support exif
-         * data.
-         */
-        static bakeOrientation(image: MemoryImage): MemoryImage;
-    }
-}
-declare module "transform/copy-resize" {
-    import { MemoryImage } from "common/memory-image";
-    import { Interpolation } from "formats/util/interpolation";
-    export interface CopyResizeOptionsUsingWidth {
-        image: MemoryImage;
-        width: number;
-        height?: number;
-        interpolation?: Interpolation;
-    }
-    export interface CopyResizeOptionsUsingHeight {
-        image: MemoryImage;
-        height: number;
-        width?: number;
-        interpolation?: Interpolation;
-    }
-    export abstract class CopyResizeTransform {
-        /**
-         * Returns a resized copy of the [src] image.
-         * If [height] isn't specified, then it will be determined by the aspect
-         * ratio of [src] and [width].
-         * If [width] isn't specified, then it will be determined by the aspect ratio
-         * of [src] and [height].
-         */
-        static copyResize(options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
+        static trim(src: MemoryImage, mode?: TrimMode, sides?: TrimSide): MemoryImage;
     }
 }
 declare module "index" {
@@ -3529,12 +3826,19 @@ declare module "index" {
     export { FrameType } from "common/frame-type";
     export { ICCProfileData } from "common/icc_profile_data";
     export { ICCPCompressionMode } from "common/iccp-compression-mode";
+    export { Line } from "common/line";
     export { ListUtils } from "common/list-utils";
     export { MemoryImage, MemoryImageInitOptions, MemoryImageInitOptionsColorModel, RgbMemoryImageInitOptions, } from "common/memory-image";
+    export { Point } from "common/point";
+    export { Rectangle } from "common/rectangle";
     export { RgbChannelSet } from "common/rgb-channel-set";
     export { TextCodec } from "common/text-codec";
     export { CompressionLevel, TypedArray, BufferEncoding } from "common/typings";
-    export { drawPixel } from "draw/draw-pixel";
+    export { DrawImageOptions } from "draw/draw-image-options";
+    export { DrawLineOptions } from "draw/draw-line-options";
+    export { Draw } from "draw/draw";
+    export { FillFloodOptions } from "draw/fill-flood-options";
+    export { MaskFloodOptions } from "draw/mask-flood-options";
     export { BmpDecoder } from "formats/bmp-decoder";
     export { BmpEncoder } from "formats/bmp-encoder";
     export { DecodeInfo } from "formats/decode-info";
@@ -3592,12 +3896,13 @@ declare module "index" {
     export { HdrImage } from "hdr/hdr-image";
     export { HdrSlice, HdrSliceInitOptions } from "hdr/hdr-slice";
     export { HdrToImage } from "hdr/hdr-to-image";
-    export { BakeOrientationTransform } from "transform/bake-orientation";
-    export { CopyIntoTransform, CopyIntoOptions } from "transform/copy-into";
-    export { CopyResizeTransform, CopyResizeOptionsUsingWidth, CopyResizeOptionsUsingHeight, } from "transform/copy-resize";
-    export { CopyRotateTransform } from "transform/copy-rotate";
+    export { CopyIntoOptions } from "transform/copy-into-options";
+    export { CopyResizeOptionsUsingHeight, CopyResizeOptionsUsingWidth, } from "transform/copy-resize-options";
     export { FlipDirection } from "transform/flip-direction";
-    export { FlipTransform } from "transform/flip";
+    export { ImageTransform } from "transform/image-transform";
+    export { TrimMode } from "transform/trim-mode";
+    export { TrimSide } from "transform/trim-side";
+    export { TrimTransform } from "transform/trim";
     /**
      * Find a [Decoder] that is able to decode the given image [data].
      * Use this is you don't know the type of image it is. Since this will
