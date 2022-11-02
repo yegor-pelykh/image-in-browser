@@ -1,10 +1,10 @@
 /** @format */
 
 import { ExifData } from '../../common/exif_data';
+import { InputBuffer } from '../../common/input-buffer';
 import { ListUtils } from '../../common/list-utils';
 import { MemoryImage } from '../../common/memory-image';
 import { ImageError } from '../../error/image-error';
-import { InputBuffer } from '../util/input-buffer';
 import { ComponentData } from './component-data';
 import { Jpeg } from './jpeg';
 import { JpegAdobe } from './jpeg-adobe';

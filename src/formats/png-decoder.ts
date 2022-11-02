@@ -7,6 +7,7 @@ import { Crc32 } from '../common/crc32';
 import { FrameAnimation } from '../common/frame-animation';
 import { ICCPCompressionMode } from '../common/iccp-compression-mode';
 import { ICCProfileData } from '../common/icc_profile_data';
+import { InputBuffer } from '../common/input-buffer';
 import { ListUtils } from '../common/list-utils';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
@@ -19,7 +20,6 @@ import { DecodeInfo } from './decode-info';
 import { Decoder } from './decoder';
 import { PngFrame } from './png/png-frame';
 import { PngInfo } from './png/png-info';
-import { InputBuffer } from './util/input-buffer';
 
 /**
  * Decode a PNG encoded image.

@@ -3,10 +3,10 @@
 import { ColorUtils } from '../common/color-utils';
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { BitmapFileHeader } from './bmp/bitmap-file-header';
 import { Encoder } from './encoder';
-import { OutputBuffer } from './util/output-buffer';
 
 /**
  * Encode a BMP image.

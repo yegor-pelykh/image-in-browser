@@ -1,13 +1,13 @@
 /** @format */
 
+import { DitherKernel } from '../common/dither-kernel';
+import { DitherPixel } from '../common/dither-pixel';
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
+import { NeuralQuantizer } from '../common/neural-quantizer';
+import { OutputBuffer } from '../common/output-buffer';
 import { TextCodec } from '../common/text-codec';
 import { Encoder } from './encoder';
-import { DitherKernel } from './util/dither-kernel';
-import { DitherPixel } from './util/dither-pixel';
-import { NeuralQuantizer } from './util/neural-quantizer';
-import { OutputBuffer } from './util/output-buffer';
 
 export interface GifEncoderInitOptions {
   delay?: number;

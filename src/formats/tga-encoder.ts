@@ -3,9 +3,9 @@
 import { ColorUtils } from '../common/color-utils';
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { Encoder } from './encoder';
-import { OutputBuffer } from './util/output-buffer';
 
 /**
  * Encode a TGA image. This only supports the 24-bit uncompressed format.

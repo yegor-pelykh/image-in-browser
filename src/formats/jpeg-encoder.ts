@@ -4,9 +4,9 @@ import { Clamp } from '../common/clamp';
 import { ExifData } from '../common/exif_data';
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { Encoder } from './encoder';
 import { Jpeg } from './jpeg/jpeg';
-import { OutputBuffer } from './util/output-buffer';
 
 /**
  * Encode an image to the JPEG format.

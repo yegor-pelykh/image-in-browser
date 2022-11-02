@@ -8,11 +8,11 @@ import { DisposeMode } from '../common/dispose-mode';
 import { FrameAnimation } from '../common/frame-animation';
 import { ICCProfileData } from '../common/icc_profile_data';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { TextCodec } from '../common/text-codec';
 import { CompressionLevel } from '../common/typings';
 import { Encoder } from './encoder';
-import { OutputBuffer } from './util/output-buffer';
 
 export interface PngEncoderInitOptions {
   filter?: number;

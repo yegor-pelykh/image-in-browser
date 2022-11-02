@@ -1,7 +1,7 @@
 /** @format */
 
+import { InputBuffer } from '../../common/input-buffer';
 import { ImageError } from '../../error/image-error';
-import { InputBuffer } from '../util/input-buffer';
 
 export class LzwDecoder {
   private static readonly LZ_MAX_CODE = 4095;

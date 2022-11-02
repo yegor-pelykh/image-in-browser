@@ -1,7 +1,7 @@
 /** @format */
 
-import { ColorUtils } from '../../common/color-utils';
-import { MemoryImage } from '../../common/memory-image';
+import { ColorUtils } from './color-utils';
+import { MemoryImage } from './memory-image';
 import { Quantizer } from './quantizer';
 
 /**

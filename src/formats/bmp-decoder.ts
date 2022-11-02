@@ -1,12 +1,12 @@
 /** @format */
 
 import { FrameAnimation } from '../common/frame-animation';
+import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../common/memory-image';
 import { HdrImage } from '../hdr/hdr-image';
 import { BitmapFileHeader } from './bmp/bitmap-file-header';
 import { BmpInfo } from './bmp/bmp-info';
 import { Decoder } from './decoder';
-import { InputBuffer } from './util/input-buffer';
 
 export class BmpDecoder implements Decoder {
   protected input?: InputBuffer;

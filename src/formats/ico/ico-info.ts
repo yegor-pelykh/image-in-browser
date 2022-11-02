@@ -1,7 +1,7 @@
 /** @format */
 
+import { InputBuffer } from '../../common/input-buffer';
 import { DecodeInfo } from '../decode-info';
-import { InputBuffer } from '../util/input-buffer';
 import { IcoInfoImage } from './ico-info-image';
 
 const TYPE_ICO = 1;

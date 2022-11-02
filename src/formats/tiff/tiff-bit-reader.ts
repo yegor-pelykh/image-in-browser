@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../util/input-buffer';
+import { InputBuffer } from '../../common/input-buffer';
 
 export class TiffBitReader {
   private static readonly BITMASK = [0, 1, 3, 7, 15, 31, 63, 127, 255];
@@ -41,7 +41,7 @@ export class TiffBitReader {
     }
 
     if (nBits > 0) {
-      if (this.bitPosition == 0) {
+      if (this.bitPosition === 0) {
         this.bitPosition = 8;
         this.bitBuffer = this.input.readByte();
       }

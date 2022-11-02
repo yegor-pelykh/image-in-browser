@@ -1,8 +1,10 @@
 /** @format */
 
 import { FrameAnimation } from '../common/frame-animation';
+import { InputBuffer } from '../common/input-buffer';
 import { ListUtils } from '../common/list-utils';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { NotImplementedError } from '../error/not-implemented-error';
 import { HdrImage } from '../hdr/hdr-image';
 import { BitmapFileHeader } from './bmp/bitmap-file-header';
@@ -11,8 +13,6 @@ import { DibDecoder } from './dib-decoder';
 import { IcoBmpInfo } from './ico/ico-bmp-info';
 import { IcoInfo } from './ico/ico-info';
 import { PngDecoder } from './png-decoder';
-import { InputBuffer } from './util/input-buffer';
-import { OutputBuffer } from './util/output-buffer';
 
 export class IcoDecoder implements Decoder {
   _input?: InputBuffer;

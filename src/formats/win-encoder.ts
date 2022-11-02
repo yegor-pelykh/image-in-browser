@@ -2,10 +2,10 @@
 
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { ImageError } from '../error/image-error';
 import { Encoder } from './encoder';
 import { PngEncoder } from './png-encoder';
-import { OutputBuffer } from './util/output-buffer';
 
 export abstract class WinEncoder implements Encoder {
   protected _type = 0;

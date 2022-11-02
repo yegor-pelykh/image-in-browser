@@ -29,6 +29,8 @@ export { ColorUtils } from './common/color-utils';
 export { Color } from './common/color';
 export { Crc32, Crc32Parameters } from './common/crc32';
 export { DisposeMode } from './common/dispose-mode';
+export { DitherKernel } from './common/dither-kernel';
+export { DitherPixel } from './common/dither-pixel';
 export {
   ExifData,
   ExifDataInitOptions,
@@ -41,6 +43,8 @@ export {
 export { FrameType } from './common/frame-type';
 export { ICCProfileData } from './common/icc_profile_data';
 export { ICCPCompressionMode } from './common/iccp-compression-mode';
+export { InputBuffer, InputBufferInitOptions } from './common/input-buffer';
+export { Interpolation } from './common/interpolation';
 export { Line } from './common/line';
 export { ListUtils } from './common/list-utils';
 export {
@@ -49,7 +53,10 @@ export {
   MemoryImageInitOptionsColorModel,
   RgbMemoryImageInitOptions,
 } from './common/memory-image';
+export { NeuralQuantizer } from './common/neural-quantizer';
+export { OutputBuffer, OutputBufferInitOptions } from './common/output-buffer';
 export { Point } from './common/point';
+export { Quantizer } from './common/quantizer';
 export { Rectangle } from './common/rectangle';
 export { RgbChannelSet } from './common/rgb-channel-set';
 export { TextCodec } from './common/text-codec';
@@ -122,20 +129,6 @@ export {
 export { TiffImage } from './formats/tiff/tiff-image';
 export { TiffInfo, TiffInfoInitOptions } from './formats/tiff/tiff-info';
 export { LzwDecoder } from './formats/tiff/tiff-lzw-decoder';
-
-export { DitherKernel } from './formats/util/dither-kernel';
-export { DitherPixel } from './formats/util/dither-pixel';
-export {
-  InputBuffer,
-  InputBufferInitOptions,
-} from './formats/util/input-buffer';
-export { Interpolation } from './formats/util/interpolation';
-export { NeuralQuantizer } from './formats/util/neural-quantizer';
-export {
-  OutputBuffer,
-  OutputBufferInitOptions,
-} from './formats/util/output-buffer';
-export { Quantizer } from './formats/util/quantizer';
 
 // Export types from 'hdr' directory
 export { Half } from './hdr/half';

@@ -1,7 +1,7 @@
 /** @format */
 
-import { MemoryImage } from '../../common/memory-image';
 import { DitherKernel } from './dither-kernel';
+import { MemoryImage } from './memory-image';
 import { NeuralQuantizer } from './neural-quantizer';
 
 export abstract class DitherPixel {

@@ -2,12 +2,12 @@
 
 import { FrameAnimation } from '../common/frame-animation';
 import { FrameType } from '../common/frame-type';
+import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../common/memory-image';
 import { HdrImage } from '../hdr/hdr-image';
 import { Decoder } from './decoder';
 import { TiffImage } from './tiff/tiff-image';
 import { TiffInfo } from './tiff/tiff-info';
-import { InputBuffer } from './util/input-buffer';
 
 export class TiffDecoder implements Decoder {
   private static readonly TIFF_SIGNATURE = 42;

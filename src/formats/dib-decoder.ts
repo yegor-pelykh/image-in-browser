@@ -1,8 +1,8 @@
 /** @format */
 
+import { InputBuffer } from '../common/input-buffer';
 import { BmpDecoder } from './bmp-decoder';
 import { BmpInfo } from './bmp/bmp-info';
-import { InputBuffer } from './util/input-buffer';
 
 export class DibDecoder extends BmpDecoder {
   constructor(input: InputBuffer, info: BmpInfo) {

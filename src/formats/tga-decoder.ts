@@ -2,12 +2,12 @@
 
 import { ColorUtils } from '../common/color-utils';
 import { FrameAnimation } from '../common/frame-animation';
+import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { HdrImage } from '../hdr/hdr-image';
 import { Decoder } from './decoder';
 import { TgaInfo } from './tga/tga-info';
-import { InputBuffer } from './util/input-buffer';
 
 /**
  * Decode a TGA image. This only supports the 24-bit uncompressed format.

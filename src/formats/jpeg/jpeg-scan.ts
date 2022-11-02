@@ -1,13 +1,7 @@
-/**
- * /* eslint-disable @typescript-eslint/no-non-null-assertion
- *
- * @format
- */
-
 /** @format */
 
+import { InputBuffer } from '../../common/input-buffer';
 import { ImageError } from '../../error/image-error';
-import { InputBuffer } from '../util/input-buffer';
 import { Jpeg } from './jpeg';
 import { JpegComponent } from './jpeg-component';
 import { JpegFrame } from './jpeg-frame';

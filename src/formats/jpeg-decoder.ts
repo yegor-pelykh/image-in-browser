@@ -1,13 +1,13 @@
 /** @format */
 
 import { FrameAnimation } from '../common/frame-animation';
+import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../common/memory-image';
 import { ImageError } from '../error/image-error';
 import { HdrImage } from '../hdr/hdr-image';
 import { Decoder } from './decoder';
 import { JpegData } from './jpeg/jpeg-data';
 import { JpegInfo } from './jpeg/jpeg-info';
-import { InputBuffer } from './util/input-buffer';
 
 /**
  * Decode a jpeg encoded image.

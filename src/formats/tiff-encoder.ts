@@ -2,12 +2,12 @@
 
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
+import { OutputBuffer } from '../common/output-buffer';
 import { HdrImage } from '../hdr/hdr-image';
 import { HdrSlice } from '../hdr/hdr-slice';
 import { Encoder } from './encoder';
 import { TiffEntry } from './tiff/tiff-entry';
 import { TiffImage } from './tiff/tiff-image';
-import { OutputBuffer } from './util/output-buffer';
 
 /**
  * Encode a TIFF image.

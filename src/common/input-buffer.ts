@@ -1,8 +1,8 @@
 /** @format */
 
-import { BitOperators } from '../../common/bit-operators';
-import { TextCodec } from '../../common/text-codec';
-import { ImageError } from '../../error/image-error';
+import { ImageError } from '../error/image-error';
+import { BitOperators } from './bit-operators';
+import { TextCodec } from './text-codec';
 
 export interface InputBufferInitOptions {
   buffer: Uint8Array;

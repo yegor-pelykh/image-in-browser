@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../util/input-buffer';
+import { InputBuffer } from '../../common/input-buffer';
 
 export class JpegJfif {
   private _thumbWidth: number;

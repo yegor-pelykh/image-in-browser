@@ -1,7 +1,7 @@
 /** @format */
 
-import { ListUtils } from '../../common/list-utils';
 import { InputBuffer } from './input-buffer';
+import { ListUtils } from './list-utils';
 
 export interface OutputBufferInitOptions {
   bigEndian?: boolean;

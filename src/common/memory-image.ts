@@ -2,7 +2,6 @@
 
 import { ExifData } from './exif_data';
 import { ICCProfileData } from './icc_profile_data';
-import { Interpolation } from '../formats/util/interpolation';
 import { ListUtils } from './list-utils';
 import { ColorUtils } from './color-utils';
 import { RgbChannelSet } from './rgb-channel-set';
@@ -10,6 +9,7 @@ import { DisposeMode } from './dispose-mode';
 import { BlendMode } from './blend-mode';
 import { ColorModel } from './color-model';
 import { ImageError } from '../error/image-error';
+import { Interpolation } from './interpolation';
 
 export interface RgbMemoryImageInitOptions {
   width: number;
@@ -981,6 +981,57 @@ export class MemoryImage {
     }
     const averageGray = (r + g + b) / 3.0;
     return asDouble ? averageGray : Math.trunc(averageGray);
+  }
+
+  /**
+   * Find the minimum and maximum color value in the image.
+   * Returns an object with [min] and [max] properties.
+   */
+  public getColorExtremes(): {
+    min: number;
+    max: number;
+  } {
+    let min = 255;
+    let max = 0;
+    for (let i = 0; i < this.length; ++i) {
+      const c = this.getPixelByIndex(i);
+      const r = ColorUtils.getRed(c);
+      const g = ColorUtils.getGreen(c);
+      const b = ColorUtils.getBlue(c);
+
+      if (r < min) {
+        min = r;
+      }
+      if (r > max) {
+        max = r;
+      }
+      if (g < min) {
+        min = g;
+      }
+      if (g > max) {
+        max = g;
+      }
+      if (b < min) {
+        min = b;
+      }
+      if (b > max) {
+        max = b;
+      }
+      if (this.rgbChannelSet === RgbChannelSet.rgba) {
+        const a = ColorUtils.getAlpha(c);
+        if (a < min) {
+          min = a;
+        }
+        if (a > max) {
+          max = a;
+        }
+      }
+    }
+
+    return {
+      min: min,
+      max: max,
+    };
   }
 
   public addTextData(data: Map<string, string>): void {

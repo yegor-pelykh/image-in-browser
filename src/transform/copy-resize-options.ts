@@ -1,7 +1,7 @@
 /** @format */
 
+import { Interpolation } from '../common/interpolation';
 import { MemoryImage } from '../common/memory-image';
-import { Interpolation } from '../formats/util/interpolation';
 
 export interface CopyResizeOptionsUsingWidth {
   image: MemoryImage;

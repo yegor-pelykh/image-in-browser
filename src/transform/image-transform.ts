@@ -6,7 +6,6 @@ import { ExifData } from '../common/exif_data';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { ImageError } from '../error/image-error';
-import { Interpolation } from '../formats/util/interpolation';
 import { Point } from '../common/point';
 import { Rectangle } from '../common/rectangle';
 import { FlipDirection } from './flip-direction';
@@ -16,6 +15,7 @@ import {
 } from './copy-resize-options';
 import { CopyIntoOptions } from './copy-into-options';
 import { Draw } from '../draw/draw';
+import { Interpolation } from '../common/interpolation';
 
 export abstract class ImageTransform {
   /**

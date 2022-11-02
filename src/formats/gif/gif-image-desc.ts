@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../util/input-buffer';
+import { InputBuffer } from '../../common/input-buffer';
 import { GifColorMap } from './gif-color-map';
 
 export class GifImageDesc {

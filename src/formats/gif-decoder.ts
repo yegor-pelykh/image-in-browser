@@ -1,6 +1,7 @@
 /** @format */
 
 import { FrameAnimation } from '../common/frame-animation';
+import { InputBuffer } from '../common/input-buffer';
 import { ListUtils } from '../common/list-utils';
 import { MemoryImage } from '../common/memory-image';
 import { ImageError } from '../error/image-error';
@@ -10,7 +11,6 @@ import { Decoder } from './decoder';
 import { GifColorMap } from './gif/gif-color-map';
 import { GifImageDesc } from './gif/gif-image-desc';
 import { GifInfo } from './gif/gif-info';
-import { InputBuffer } from './util/input-buffer';
 
 /**
  * A decoder for the GIF image format. This supports both single frame and

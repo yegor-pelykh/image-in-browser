@@ -2,10 +2,10 @@
 
 import { BitOperators } from '../../common/bit-operators';
 import { ColorUtils } from '../../common/color-utils';
+import { InputBuffer } from '../../common/input-buffer';
 import { ImageError } from '../../error/image-error';
 import { NotImplementedError } from '../../error/not-implemented-error';
 import { DecodeInfo } from '../decode-info';
-import { InputBuffer } from '../util/input-buffer';
 import { BitmapCompressionMode } from './bitmap-compression-mode';
 import { BitmapFileHeader } from './bitmap-file-header';
 
