@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.3.0...v1.4.0) (2022-11-02)
+
+
+### Features
+
+* Added various image filters ([0095758](https://github.com/yegor-pelykh/image-in-browser/commit/0095758cb7452b37f48a768c1ef16f92ed5b132d))
+
 ## [1.3.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.2.1...v1.3.0) (2022-11-01)
 
 
