@@ -15,8 +15,9 @@ export interface FileInfo {
 }
 
 export enum TestSection {
-  draw,
   bmp,
+  draw,
+  filter,
   gif,
   ico,
   jpeg,
@@ -43,10 +44,12 @@ export abstract class TestHelpers {
 
   private static getTestSection(section: TestSection) {
     switch (section) {
-      case TestSection.draw:
-        return 'draw';
       case TestSection.bmp:
         return 'bmp';
+      case TestSection.draw:
+        return 'draw';
+      case TestSection.filter:
+        return 'filter';
       case TestSection.gif:
         return 'gif';
       case TestSection.ico:
