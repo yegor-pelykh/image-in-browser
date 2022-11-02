@@ -41,6 +41,7 @@ export {
   FrameAnimationInitOptions,
 } from './common/frame-animation';
 export { FrameType } from './common/frame-type';
+export { HeapNode } from './common/heap-node';
 export { ICCProfileData } from './common/icc_profile_data';
 export { ICCPCompressionMode } from './common/iccp-compression-mode';
 export { InputBuffer, InputBufferInitOptions } from './common/input-buffer';
@@ -54,9 +55,12 @@ export {
   RgbMemoryImageInitOptions,
 } from './common/memory-image';
 export { NeuralQuantizer } from './common/neural-quantizer';
+export { OctreeNode } from './common/octree-node';
+export { OctreeQuantizer } from './common/octree-quantizer';
 export { OutputBuffer, OutputBufferInitOptions } from './common/output-buffer';
 export { Point } from './common/point';
 export { Quantizer } from './common/quantizer';
+export { RandomUtils } from './common/random-utils';
 export { Rectangle } from './common/rectangle';
 export { RgbChannelSet } from './common/rgb-channel-set';
 export { TextCodec } from './common/text-codec';
@@ -68,6 +72,19 @@ export { DrawLineOptions } from './draw/draw-line-options';
 export { Draw } from './draw/draw';
 export { FillFloodOptions } from './draw/fill-flood-options';
 export { MaskFloodOptions } from './draw/mask-flood-options';
+
+// Export types from 'filter' directory
+export { AdjustColorOptions } from './filter/adjust-color-options';
+export { ColorOffsetOptions } from './filter/color-offset-options';
+export { ConvolutionOptions } from './filter/convolution-options';
+export { ImageFilter } from './filter/image-filter';
+export { NoiseType } from './filter/noise-type';
+export { PixelateMode } from './filter/pixelate-mode';
+export { QuantizeMethod } from './filter/quantize-method';
+export { QuantizeOptions } from './filter/quantize-options';
+export { RemapColorsOptions } from './filter/remap-colors-options';
+export { SeparableKernel } from './filter/separable-kernel';
+export { VignetteOptions } from './filter/vignette-options';
 
 // Export types from 'formats' directory
 export { BmpDecoder } from './formats/bmp-decoder';
