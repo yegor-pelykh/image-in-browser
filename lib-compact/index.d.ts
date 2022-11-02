@@ -95,15 +95,6 @@ declare module "common/icc_profile_data" {
         decompressed(): Uint8Array;
     }
 }
-declare module "formats/util/interpolation" {
-    /** @format */
-    export enum Interpolation {
-        nearest = 0,
-        linear = 1,
-        cubic = 2,
-        average = 3
-    }
-}
 declare module "common/color-channel" {
     /** @format */
     export enum ColorChannel {
@@ -364,15 +355,24 @@ declare module "common/color-model" {
         luminance = 6
     }
 }
+declare module "common/interpolation" {
+    /** @format */
+    export enum Interpolation {
+        nearest = 0,
+        linear = 1,
+        cubic = 2,
+        average = 3
+    }
+}
 declare module "common/memory-image" {
     /** @format */
     import { ExifData } from "common/exif_data";
     import { ICCProfileData } from "common/icc_profile_data";
-    import { Interpolation } from "formats/util/interpolation";
     import { RgbChannelSet } from "common/rgb-channel-set";
     import { DisposeMode } from "common/dispose-mode";
     import { BlendMode } from "common/blend-mode";
     import { ColorModel } from "common/color-model";
+    import { Interpolation } from "common/interpolation";
     export interface RgbMemoryImageInitOptions {
         width: number;
         height: number;
@@ -631,6 +631,14 @@ declare module "common/memory-image" {
          * Return the average gray value of the image.
          */
         getWhiteBalance(asDouble?: boolean): number;
+        /**
+         * Find the minimum and maximum color value in the image.
+         * Returns an object with [min] and [max] properties.
+         */
+        getColorExtremes(): {
+            min: number;
+            max: number;
+        };
         addTextData(data: Map<string, string>): void;
     }
 }
@@ -735,6 +743,151 @@ declare module "common/frame-animation" {
          * Get the iterator for looping over the animation.
          */
         [Symbol.iterator](): Iterator<MemoryImage, MemoryImage, undefined>;
+    }
+}
+declare module "common/text-codec" {
+    export abstract class TextCodec {
+        static readonly utf8Decoder: TextDecoder;
+        static readonly latin1Decoder: TextDecoder;
+        static getCodePoints(str: string): Uint8Array;
+    }
+}
+declare module "common/input-buffer" {
+    export interface InputBufferInitOptions {
+        buffer: Uint8Array;
+        offset?: number;
+        length?: number;
+        bigEndian?: boolean;
+    }
+    /**
+     * A buffer that can be read as a stream of bytes.
+     */
+    export class InputBuffer {
+        private readonly _buffer;
+        get buffer(): Uint8Array;
+        private _bigEndian;
+        set bigEndian(v: boolean);
+        get bigEndian(): boolean;
+        private _offset;
+        set offset(v: number);
+        get offset(): number;
+        private _start;
+        get start(): number;
+        private _end;
+        get end(): number;
+        /**
+         *  The current read position relative to the start of the buffer.
+         */
+        get position(): number;
+        /**
+         * How many bytes are left in the stream.
+         */
+        get length(): number;
+        /**
+         * Is the current position at the end of the stream?
+         */
+        get isEOS(): boolean;
+        /**
+         * Create a InputStream for reading from an Array<int>
+         */
+        constructor(options: InputBufferInitOptions);
+        /**
+         * Create a copy of [other].
+         */
+        static from(other: InputBuffer, offset?: number, length?: number): InputBuffer;
+        /**
+         * Reset to the beginning of the stream.
+         */
+        rewind(): void;
+        /**
+         * Access the buffer relative from the current position.
+         */
+        getByte(index: number): number;
+        /**
+         * Set a buffer element relative to the current position.
+         */
+        setByte(index: number, value: number): number;
+        /**
+         * Set a range of bytes in this buffer to [value], at [start] offset from the
+         * current read position, and [length] number of bytes.
+         */
+        memset(start: number, length: number, value: number): void;
+        /**
+         * Return a InputStream to read a subset of this stream. It does not
+         * move the read position of this stream. [position] is specified relative
+         * to the start of the buffer. If [position] is not specified, the current
+         * read position is used. If [length] is not specified, the remainder of this
+         * stream is used.
+         */
+        subarray(count: number, position?: number, offset?: number): InputBuffer;
+        /**
+         * Returns the position of the given [value] within the buffer, starting
+         * from the current read position with the given [offset]. The position
+         * returned is relative to the start of the buffer, or -1 if the [value]
+         * was not found.
+         */
+        indexOf(value: number, offset?: number): number;
+        /**
+         * Read [count] bytes from an [offset] of the current read position, without
+         * moving the read position.
+         */
+        peekBytes(count: number, offset?: number): InputBuffer;
+        /**
+         * Move the read position by [count] bytes.
+         */
+        skip(count: number): void;
+        /**
+         * Read a single byte.
+         */
+        readByte(): number;
+        readInt8(): number;
+        /**
+         * Read [count] bytes from the stream.
+         */
+        readBytes(count: number): InputBuffer;
+        /**
+         * Read a null-terminated string, or if [length] is provided, that number of
+         * bytes returned as a string.
+         */
+        readString(length?: number): string;
+        /**
+         * Read a null-terminated UTF-8 string.
+         */
+        readStringUtf8(): string;
+        /**
+         * Read a 16-bit word from the stream.
+         */
+        readUint16(): number;
+        /**
+         * Read a 16-bit word from the stream.
+         */
+        readInt16(): number;
+        /**
+         * Read a 24-bit word from the stream.
+         */
+        readUint24(): number;
+        /**
+         * Read a 32-bit word from the stream.
+         */
+        readUint32(): number;
+        /**
+         * Read a signed 32-bit integer from the stream.
+         */
+        readInt32(): number;
+        /**
+         * Read a 32-bit float.
+         */
+        readFloat32(): number;
+        /**
+         * Read a 64-bit float.
+         */
+        readFloat64(): number;
+        /**
+         * Read a 64-bit word form the stream.
+         */
+        readUint64(): bigint;
+        toUint8Array(offset?: number, length?: number): Uint8Array;
+        toUint32Array(offset?: number): Uint32Array;
     }
 }
 declare module "error/not-implemented-error" {
@@ -1065,153 +1218,9 @@ declare module "hdr/hdr-image" {
         toFloatRgba(): Float32Array;
     }
 }
-declare module "common/text-codec" {
-    export abstract class TextCodec {
-        static readonly utf8Decoder: TextDecoder;
-        static readonly latin1Decoder: TextDecoder;
-        static getCodePoints(str: string): Uint8Array;
-    }
-}
-declare module "formats/util/input-buffer" {
-    export interface InputBufferInitOptions {
-        buffer: Uint8Array;
-        offset?: number;
-        length?: number;
-        bigEndian?: boolean;
-    }
-    /**
-     * A buffer that can be read as a stream of bytes.
-     */
-    export class InputBuffer {
-        private readonly _buffer;
-        get buffer(): Uint8Array;
-        private _bigEndian;
-        set bigEndian(v: boolean);
-        get bigEndian(): boolean;
-        private _offset;
-        set offset(v: number);
-        get offset(): number;
-        private _start;
-        get start(): number;
-        private _end;
-        get end(): number;
-        /**
-         *  The current read position relative to the start of the buffer.
-         */
-        get position(): number;
-        /**
-         * How many bytes are left in the stream.
-         */
-        get length(): number;
-        /**
-         * Is the current position at the end of the stream?
-         */
-        get isEOS(): boolean;
-        /**
-         * Create a InputStream for reading from an Array<int>
-         */
-        constructor(options: InputBufferInitOptions);
-        /**
-         * Create a copy of [other].
-         */
-        static from(other: InputBuffer, offset?: number, length?: number): InputBuffer;
-        /**
-         * Reset to the beginning of the stream.
-         */
-        rewind(): void;
-        /**
-         * Access the buffer relative from the current position.
-         */
-        getByte(index: number): number;
-        /**
-         * Set a buffer element relative to the current position.
-         */
-        setByte(index: number, value: number): number;
-        /**
-         * Set a range of bytes in this buffer to [value], at [start] offset from the
-         * current read position, and [length] number of bytes.
-         */
-        memset(start: number, length: number, value: number): void;
-        /**
-         * Return a InputStream to read a subset of this stream. It does not
-         * move the read position of this stream. [position] is specified relative
-         * to the start of the buffer. If [position] is not specified, the current
-         * read position is used. If [length] is not specified, the remainder of this
-         * stream is used.
-         */
-        subarray(count: number, position?: number, offset?: number): InputBuffer;
-        /**
-         * Returns the position of the given [value] within the buffer, starting
-         * from the current read position with the given [offset]. The position
-         * returned is relative to the start of the buffer, or -1 if the [value]
-         * was not found.
-         */
-        indexOf(value: number, offset?: number): number;
-        /**
-         * Read [count] bytes from an [offset] of the current read position, without
-         * moving the read position.
-         */
-        peekBytes(count: number, offset?: number): InputBuffer;
-        /**
-         * Move the read position by [count] bytes.
-         */
-        skip(count: number): void;
-        /**
-         * Read a single byte.
-         */
-        readByte(): number;
-        readInt8(): number;
-        /**
-         * Read [count] bytes from the stream.
-         */
-        readBytes(count: number): InputBuffer;
-        /**
-         * Read a null-terminated string, or if [length] is provided, that number of
-         * bytes returned as a string.
-         */
-        readString(length?: number): string;
-        /**
-         * Read a null-terminated UTF-8 string.
-         */
-        readStringUtf8(): string;
-        /**
-         * Read a 16-bit word from the stream.
-         */
-        readUint16(): number;
-        /**
-         * Read a 16-bit word from the stream.
-         */
-        readInt16(): number;
-        /**
-         * Read a 24-bit word from the stream.
-         */
-        readUint24(): number;
-        /**
-         * Read a 32-bit word from the stream.
-         */
-        readUint32(): number;
-        /**
-         * Read a signed 32-bit integer from the stream.
-         */
-        readInt32(): number;
-        /**
-         * Read a 32-bit float.
-         */
-        readFloat32(): number;
-        /**
-         * Read a 64-bit float.
-         */
-        readFloat64(): number;
-        /**
-         * Read a 64-bit word form the stream.
-         */
-        readUint64(): bigint;
-        toUint8Array(offset?: number, length?: number): Uint8Array;
-        toUint32Array(offset?: number): Uint32Array;
-    }
-}
 declare module "formats/bmp/bitmap-file-header" {
-    import { InputBuffer } from "formats/util/input-buffer";
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
     export class BitmapFileHeader {
         static readonly BMP_HEADER_FILETYPE: number;
         private readonly _fileLength;
@@ -1256,8 +1265,8 @@ declare module "formats/bmp/bitmap-compression-mode" {
     }
 }
 declare module "formats/bmp/bmp-info" {
+    import { InputBuffer } from "common/input-buffer";
     import { DecodeInfo } from "formats/decode-info";
-    import { InputBuffer } from "formats/util/input-buffer";
     import { BitmapCompressionMode } from "formats/bmp/bitmap-compression-mode";
     import { BitmapFileHeader } from "formats/bmp/bitmap-file-header";
     export class BmpInfo implements DecodeInfo {
@@ -1416,11 +1425,11 @@ declare module "formats/decoder" {
 declare module "formats/bmp-decoder" {
     /** @format */
     import { FrameAnimation } from "common/frame-animation";
+    import { InputBuffer } from "common/input-buffer";
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
     import { BmpInfo } from "formats/bmp/bmp-info";
     import { Decoder } from "formats/decoder";
-    import { InputBuffer } from "formats/util/input-buffer";
     export class BmpDecoder implements Decoder {
         protected input?: InputBuffer;
         protected info?: BmpInfo;
@@ -1455,31 +1464,9 @@ declare module "formats/bmp-decoder" {
         decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
     }
 }
-declare module "formats/encoder" {
+declare module "common/output-buffer" {
     /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
-    /**
-     * Base class for image format encoders.
-     */
-    export interface Encoder {
-        /**
-         * Does this encoder support animation?
-         */
-        get supportsAnimation(): boolean;
-        /**
-         * Encode a single image.
-         */
-        encodeImage(image: MemoryImage): Uint8Array;
-        /**
-         * Encode an animation. Not all formats support animation, and undefined
-         * will be returned if not.
-         */
-        encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
-    }
-}
-declare module "formats/util/output-buffer" {
-    import { InputBuffer } from "formats/util/input-buffer";
+    import { InputBuffer } from "common/input-buffer";
     export interface OutputBufferInitOptions {
         bigEndian?: boolean;
         size?: number;
@@ -1534,6 +1521,29 @@ declare module "formats/util/output-buffer" {
          * This is equivalent to the python list range operator.
          */
         subarray(start: number, end?: number): Uint8Array;
+    }
+}
+declare module "formats/encoder" {
+    /** @format */
+    import { FrameAnimation } from "common/frame-animation";
+    import { MemoryImage } from "common/memory-image";
+    /**
+     * Base class for image format encoders.
+     */
+    export interface Encoder {
+        /**
+         * Does this encoder support animation?
+         */
+        get supportsAnimation(): boolean;
+        /**
+         * Encode a single image.
+         */
+        encodeImage(image: MemoryImage): Uint8Array;
+        /**
+         * Encode an animation. Not all formats support animation, and undefined
+         * will be returned if not.
+         */
+        encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
     }
 }
 declare module "formats/bmp-encoder" {
@@ -1611,8 +1621,8 @@ declare module "transform/flip-direction" {
 }
 declare module "transform/copy-resize-options" {
     /** @format */
+    import { Interpolation } from "common/interpolation";
     import { MemoryImage } from "common/memory-image";
-    import { Interpolation } from "formats/util/interpolation";
     export interface CopyResizeOptionsUsingWidth {
         image: MemoryImage;
         width: number;
@@ -1869,12 +1879,12 @@ declare module "draw/draw" {
 }
 declare module "transform/image-transform" {
     import { MemoryImage } from "common/memory-image";
-    import { Interpolation } from "formats/util/interpolation";
     import { Point } from "common/point";
     import { Rectangle } from "common/rectangle";
     import { FlipDirection } from "transform/flip-direction";
     import { CopyResizeOptionsUsingHeight, CopyResizeOptionsUsingWidth } from "transform/copy-resize-options";
     import { CopyIntoOptions } from "transform/copy-into-options";
+    import { Interpolation } from "common/interpolation";
     export abstract class ImageTransform {
         /**
          * Returns a copy of the [src] image, rotated by [angle] degrees.
@@ -1980,7 +1990,7 @@ declare module "formats/gif/gif-color-map" {
 }
 declare module "formats/gif/gif-image-desc" {
     /** @format */
-    import { InputBuffer } from "formats/util/input-buffer";
+    import { InputBuffer } from "common/input-buffer";
     import { GifColorMap } from "formats/gif/gif-color-map";
     export class GifImageDesc {
         private readonly _x;
@@ -2157,7 +2167,7 @@ declare module "formats/gif-decoder" {
         decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
     }
 }
-declare module "formats/util/dither-kernel" {
+declare module "common/dither-kernel" {
     /** @format */
     export enum DitherKernel {
         None = 0,
@@ -2167,7 +2177,7 @@ declare module "formats/util/dither-kernel" {
         Atkinson = 4
     }
 }
-declare module "formats/util/quantizer" {
+declare module "common/quantizer" {
     /** @format */
     export interface Quantizer {
         /**
@@ -2176,9 +2186,9 @@ declare module "formats/util/quantizer" {
         getQuantizedColor(c: number): number;
     }
 }
-declare module "formats/util/neural-quantizer" {
+declare module "common/neural-quantizer" {
     import { MemoryImage } from "common/memory-image";
-    import { Quantizer } from "formats/util/quantizer";
+    import { Quantizer } from "common/quantizer";
     /**
      * Compute a color map with a given number of colors that best represents
      * the given image.
@@ -2278,11 +2288,11 @@ declare module "formats/util/neural-quantizer" {
         getIndexMap(image: MemoryImage): Uint8Array;
     }
 }
-declare module "formats/util/dither-pixel" {
+declare module "common/dither-pixel" {
     /** @format */
+    import { DitherKernel } from "common/dither-kernel";
     import { MemoryImage } from "common/memory-image";
-    import { DitherKernel } from "formats/util/dither-kernel";
-    import { NeuralQuantizer } from "formats/util/neural-quantizer";
+    import { NeuralQuantizer } from "common/neural-quantizer";
     export abstract class DitherPixel {
         private static ditherKernels;
         static getDitherPixels(image: MemoryImage, quantizer: NeuralQuantizer, kernel: DitherKernel, serpentine: boolean): Uint8Array;
@@ -2290,10 +2300,10 @@ declare module "formats/util/dither-pixel" {
 }
 declare module "formats/gif-encoder" {
     /** @format */
+    import { DitherKernel } from "common/dither-kernel";
     import { FrameAnimation } from "common/frame-animation";
     import { MemoryImage } from "common/memory-image";
     import { Encoder } from "formats/encoder";
-    import { DitherKernel } from "formats/util/dither-kernel";
     export interface GifEncoderInitOptions {
         delay?: number;
         repeat?: number;
@@ -2377,9 +2387,9 @@ declare module "formats/gif-encoder" {
 }
 declare module "formats/dib-decoder" {
     /** @format */
+    import { InputBuffer } from "common/input-buffer";
     import { BmpDecoder } from "formats/bmp-decoder";
     import { BmpInfo } from "formats/bmp/bmp-info";
-    import { InputBuffer } from "formats/util/input-buffer";
     export class DibDecoder extends BmpDecoder {
         constructor(input: InputBuffer, info: BmpInfo);
     }
@@ -2414,8 +2424,8 @@ declare module "formats/ico/ico-info-image" {
 }
 declare module "formats/ico/ico-info" {
     /** @format */
+    import { InputBuffer } from "common/input-buffer";
     import { DecodeInfo } from "formats/decode-info";
-    import { InputBuffer } from "formats/util/input-buffer";
     import { IcoInfoImage } from "formats/ico/ico-info-image";
     export class IcoInfo implements DecodeInfo {
         private readonly _type?;
@@ -2563,12 +2573,12 @@ declare module "formats/png/png-info" {
 }
 declare module "formats/png-decoder" {
     import { FrameAnimation } from "common/frame-animation";
+    import { InputBuffer } from "common/input-buffer";
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
     import { DecodeInfo } from "formats/decode-info";
     import { Decoder } from "formats/decoder";
     import { PngInfo } from "formats/png/png-info";
-    import { InputBuffer } from "formats/util/input-buffer";
     /**
      * Decode a PNG encoded image.
      */
@@ -2646,11 +2656,11 @@ declare module "formats/png-decoder" {
 declare module "formats/ico-decoder" {
     /** @format */
     import { FrameAnimation } from "common/frame-animation";
+    import { InputBuffer } from "common/input-buffer";
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
     import { Decoder } from "formats/decoder";
     import { IcoInfo } from "formats/ico/ico-info";
-    import { InputBuffer } from "formats/util/input-buffer";
     export class IcoDecoder implements Decoder {
         _input?: InputBuffer;
         _icoInfo?: IcoInfo;
@@ -2950,7 +2960,7 @@ declare module "formats/jpeg/jpeg-info" {
 }
 declare module "formats/jpeg/jpeg-jfif" {
     /** @format */
-    import { InputBuffer } from "formats/util/input-buffer";
+    import { InputBuffer } from "common/input-buffer";
     export class JpegJfif {
         private _thumbWidth;
         get thumbWidth(): number;
@@ -2982,7 +2992,8 @@ declare module "formats/jpeg/jpeg-quantize" {
     }
 }
 declare module "formats/jpeg/jpeg-scan" {
-    import { InputBuffer } from "formats/util/input-buffer";
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
     import { JpegComponent } from "formats/jpeg/jpeg-component";
     import { JpegFrame } from "formats/jpeg/jpeg-frame";
     export class JpegScan {
@@ -3044,8 +3055,8 @@ declare module "formats/jpeg/jpeg-scan" {
 declare module "formats/jpeg/jpeg-data" {
     /** @format */
     import { ExifData } from "common/exif_data";
+    import { InputBuffer } from "common/input-buffer";
     import { MemoryImage } from "common/memory-image";
-    import { InputBuffer } from "formats/util/input-buffer";
     import { ComponentData } from "formats/jpeg/component-data";
     import { JpegAdobe } from "formats/jpeg/jpeg-adobe";
     import { JpegFrame } from "formats/jpeg/jpeg-frame";
@@ -3265,7 +3276,7 @@ declare module "formats/tga-encoder" {
 }
 declare module "formats/tiff/tiff-bit-reader" {
     /** @format */
-    import { InputBuffer } from "formats/util/input-buffer";
+    import { InputBuffer } from "common/input-buffer";
     export class TiffBitReader {
         private static readonly BITMASK;
         private bitBuffer;
@@ -3284,7 +3295,8 @@ declare module "formats/tiff/tiff-bit-reader" {
     }
 }
 declare module "formats/tiff/tiff-entry" {
-    import { InputBuffer } from "formats/util/input-buffer";
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
     export interface TiffEntryInitOptions {
         tag: number;
         type: number;
@@ -3329,7 +3341,8 @@ declare module "formats/tiff/tiff-entry" {
     }
 }
 declare module "formats/tiff/tiff-fax-decoder" {
-    import { InputBuffer } from "formats/util/input-buffer";
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
     export interface TiffFaxDecoderInitOptions {
         fillOrder: number;
         width: number;
@@ -3412,7 +3425,8 @@ declare module "formats/tiff/tiff-fax-decoder" {
     }
 }
 declare module "formats/tiff/tiff-lzw-decoder" {
-    import { InputBuffer } from "formats/util/input-buffer";
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
     export class LzwDecoder {
         private static readonly LZ_MAX_CODE;
         private static readonly NO_SUCH_CODE;
@@ -3444,9 +3458,9 @@ declare module "formats/tiff/tiff-lzw-decoder" {
     }
 }
 declare module "formats/tiff/tiff-image" {
+    import { InputBuffer } from "common/input-buffer";
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
-    import { InputBuffer } from "formats/util/input-buffer";
     import { TiffEntry } from "formats/tiff/tiff-entry";
     export class TiffImage {
         static readonly COMPRESSION_NONE = 1;
@@ -3723,6 +3737,399 @@ declare module "formats/tiff-encoder" {
         encodeHdrImage(image: HdrImage): Uint8Array;
     }
 }
+declare module "common/octree-node" {
+    /** @format */
+    export class OctreeNode {
+        private _r;
+        get r(): number;
+        set r(v: number);
+        private _g;
+        get g(): number;
+        set g(v: number);
+        private _b;
+        get b(): number;
+        set b(v: number);
+        private _count;
+        get count(): number;
+        set count(v: number);
+        private _heapIndex;
+        get heapIndex(): number;
+        set heapIndex(v: number);
+        private _parent;
+        get parent(): OctreeNode | undefined;
+        private _children;
+        get children(): Array<OctreeNode | undefined>;
+        private _childCount;
+        get childCount(): number;
+        set childCount(v: number);
+        private _childIndex;
+        get childIndex(): number;
+        private _flags;
+        get flags(): number;
+        set flags(v: number);
+        private _depth;
+        get depth(): number;
+        constructor(childIndex: number, depth: number, parent?: OctreeNode);
+    }
+}
+declare module "common/heap-node" {
+    /** @format */
+    import { OctreeNode } from "common/octree-node";
+    export class HeapNode {
+        private _buf;
+        get buf(): Array<OctreeNode | undefined>;
+        get n(): number;
+    }
+}
+declare module "common/octree-quantizer" {
+    import { MemoryImage } from "common/memory-image";
+    import { Quantizer } from "common/quantizer";
+    /**
+     * Color quantization using octree,
+     * from https://rosettacode.org/wiki/Color_quantization/C
+     */
+    export class OctreeQuantizer implements Quantizer {
+        private static readonly ON_INHEAP;
+        private readonly root;
+        constructor(image: MemoryImage, numberOfColors?: number);
+        private nodeInsert;
+        private popHeap;
+        private heapAdd;
+        private downHeap;
+        private upHeap;
+        private nodeFold;
+        private compareNode;
+        /**
+         * Find the index of the closest color to [c] in the [colorMap].
+         */
+        getQuantizedColor(c: number): number;
+    }
+}
+declare module "common/random-utils" {
+    /** @format */
+    export abstract class RandomUtils {
+        /**
+         * Return a random variable between [-1,1].
+         */
+        static crand(): number;
+        /**
+         * Return a random variable following a gaussian distribution and a standard
+         * deviation of 1.
+         */
+        static grand(): number;
+        /**
+         * Return a random variable following a Poisson distribution of parameter [z].
+         */
+        static prand(z: number): number;
+    }
+}
+declare module "filter/adjust-color-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface AdjustColorOptions {
+        src: MemoryImage;
+        blacks?: number;
+        whites?: number;
+        mids?: number;
+        contrast?: number;
+        saturation?: number;
+        brightness?: number;
+        gamma?: number;
+        exposure?: number;
+        hue?: number;
+        amount?: number;
+    }
+}
+declare module "filter/color-offset-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface ColorOffsetOptions {
+        src: MemoryImage;
+        red?: number;
+        green?: number;
+        blue?: number;
+        alpha?: number;
+    }
+}
+declare module "filter/convolution-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface ConvolutionOptions {
+        src: MemoryImage;
+        filter: number[];
+        div?: number;
+        offset?: number;
+    }
+}
+declare module "filter/noise-type" {
+    /** @format */
+    export enum NoiseType {
+        gaussian = 0,
+        uniform = 1,
+        saltPepper = 2,
+        poisson = 3,
+        rice = 4
+    }
+}
+declare module "filter/pixelate-mode" {
+    /** @format */
+    export enum PixelateMode {
+        /**
+         * Use the top-left pixel of a block for the block color.
+         */
+        upperLeft = 0,
+        /**
+         * Use the average of the pixels within a block for the block color.
+         */
+        average = 1
+    }
+}
+declare module "filter/quantize-method" {
+    /** @format */
+    export enum QuantizeMethod {
+        neuralNet = 0,
+        octree = 1
+    }
+}
+declare module "filter/quantize-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    import { QuantizeMethod } from "filter/quantize-method";
+    export interface QuantizeOptions {
+        src: MemoryImage;
+        numberOfColors?: number;
+        method?: QuantizeMethod;
+    }
+}
+declare module "filter/remap-colors-options" {
+    /** @format */
+    import { ColorChannel } from "common/color-channel";
+    import { MemoryImage } from "common/memory-image";
+    export interface RemapColorsOptions {
+        src: MemoryImage;
+        red?: ColorChannel;
+        green?: ColorChannel;
+        blue?: ColorChannel;
+        alpha?: ColorChannel;
+    }
+}
+declare module "filter/separable-kernel" {
+    import { MemoryImage } from "common/memory-image";
+    /**
+     * A kernel object to use with [separableConvolution] filtering.
+     */
+    export class SeparableKernel {
+        private readonly coefficients;
+        private readonly size;
+        /**
+         * Get the number of coefficients in the kernel.
+         */
+        get length(): number;
+        /**
+         * Create a separable convolution kernel for the given [radius].
+         */
+        constructor(size: number);
+        private reflect;
+        private applyCoeffsLine;
+        /**
+         * Get a coefficient from the kernel.
+         */
+        getCoefficient(index: number): number;
+        /**
+         * Set a coefficient in the kernel.
+         */
+        setCoefficient(index: number, c: number): void;
+        /**
+         * Apply the kernel to the [src] image, storing the results in [dst],
+         * for a single dimension. If [horizontal is true, the filter will be
+         * applied to the horizontal axis, otherwise it will be appied to the
+         * vertical axis.
+         */
+        apply(src: MemoryImage, dst: MemoryImage, horizontal?: boolean): void;
+        /**
+         * Scale all of the coefficients by [s].
+         */
+        scaleCoefficients(s: number): void;
+    }
+}
+declare module "filter/vignette-options" {
+    /** @format */
+    import { MemoryImage } from "common/memory-image";
+    export interface VignetteOptions {
+        src: MemoryImage;
+        start?: number;
+        end?: number;
+        amount?: number;
+    }
+}
+declare module "filter/image-filter" {
+    import { MemoryImage } from "common/memory-image";
+    import { AdjustColorOptions } from "filter/adjust-color-options";
+    import { ColorOffsetOptions } from "filter/color-offset-options";
+    import { ConvolutionOptions } from "filter/convolution-options";
+    import { NoiseType } from "filter/noise-type";
+    import { PixelateMode } from "filter/pixelate-mode";
+    import { QuantizeOptions } from "filter/quantize-options";
+    import { RemapColorsOptions } from "filter/remap-colors-options";
+    import { SeparableKernel } from "filter/separable-kernel";
+    import { VignetteOptions } from "filter/vignette-options";
+    export abstract class ImageFilter {
+        private static readonly gaussianKernelCache;
+        private static smoothVignetteStep;
+        /**
+         * Adjust the color of the [src] image using various color transformations.
+         *
+         * [blacks] defines the black level of the image, as a color.
+         *
+         * [whites] defines the white level of the image, as a color.
+         *
+         * [mids] defines the mid level of hte image, as a color.
+         *
+         * [contrast] increases (> 1) / decreases (< 1) the contrast of the image by
+         * pushing colors away/toward neutral gray, where at 0 the image is entirely
+         * neutral gray (0 contrast), 1, the image is not adjusted and > 1 the
+         * image increases contrast.
+         *
+         * [saturation] increases (> 1) / decreases (< 1) the saturation of the image
+         * by pushing colors away/toward their grayscale value, where 0 is grayscale
+         * and 1 is the original image, and > 1 the image becomes more saturated.
+         *
+         * [brightness] is a constant scalar of the image colors. At 0 the image
+         * is black, 1 unmodified, and > 1 the image becomes brighter.
+         *
+         * [gamma] is an exponential scalar of the image colors. At < 1 the image
+         * becomes brighter, and > 1 the image becomes darker. A [gamma] of 1/2.2
+         * will convert the image colors to linear color space.
+         *
+         * [exposure] is an exponential scalar of the image as rgb* pow(2, exposure).
+         * At 0, the image is unmodified; as the exposure increases, the image
+         * brightens.
+         *
+         * [hue] shifts the hue component of the image colors in degrees. A [hue] of
+         * 0 will have no affect, and a [hue] of 45 will shift the hue of all colors
+         * by 45 degrees.
+         *
+         * [amount] controls how much affect this filter has on the [src] image, where
+         * 0 has no effect and 1 has full effect.
+         */
+        static adjustColor(options: AdjustColorOptions): MemoryImage;
+        /**
+         * Set the [brightness] level for the image [src].
+         * [brightness] is an offset that is added to the red, green, and blue channels
+         * of every pixel.
+         */
+        static brightness(src: MemoryImage, brightness: number): MemoryImage;
+        /**
+         * Generate a normal map from a heightfield bump image.
+         *
+         * The red channel of the [src] image is used as an input, 0 represents a low
+         * height and 1 a high value. The optional [strength] parameter allows to set
+         * the strength of the normal image.
+         */
+        static bumpToNormal(src: MemoryImage, strength?: number): MemoryImage;
+        /**
+         * Add the [red], [green], [blue] and [alpha] values to the [src] image
+         * colors, a per-channel brightness.
+         */
+        static colorOffset(options: ColorOffsetOptions): MemoryImage;
+        /**
+         * Set the [contrast] level for the image [src].
+         *
+         * [contrast] values below 100 will decrees the contrast of the image,
+         * and values above 100 will increase the contrast. A contrast of 100
+         * will have no affect.
+         */
+        static contrast(src: MemoryImage, contrast: number): MemoryImage;
+        /**
+         * Apply a 3x3 convolution filter to the [src] image. [filter] should be a
+         * list of 9 numbers.
+         *
+         * The rgb channels will be divided by [filterDiv] and add [offset], allowing
+         * filters to normalize and offset the filtered pixel value.
+         */
+        static convolution(options: ConvolutionOptions): MemoryImage;
+        /**
+         * Apply an emboss convolution filter.
+         */
+        static emboss(src: MemoryImage): MemoryImage;
+        /**
+         * Apply gaussian blur to the [src] image. [radius] determines how many pixels
+         * away from the current pixel should contribute to the blur, where 0 is no
+         * blur and the larger the radius, the stronger the blur.
+         */
+        static gaussianBlur(src: MemoryImage, radius: number): MemoryImage;
+        /**
+         * Convert the image to grayscale.
+         */
+        static grayscale(src: MemoryImage): MemoryImage;
+        /**
+         * Invert the colors of the [src] image.
+         */
+        static invert(src: MemoryImage): MemoryImage;
+        /**
+         * Add random noise to pixel values. [sigma] determines how strong the effect
+         * should be. [type] should be one of the following: [NoiseType.gaussian],
+         * [NoiseType.uniform], [NoiseType.saltPepper], [NoiseType.poisson],
+         * or [NoiseType.rice].
+         */
+        static noise(image: MemoryImage, sigma: number, type?: NoiseType): MemoryImage;
+        /**
+         * Linearly normalize the colors of the image. All color values will be mapped
+         * to the range [minValue], [maxValue] inclusive.
+         */
+        static normalize(src: MemoryImage, minValue: number, maxValue: number): MemoryImage;
+        /**
+         * Pixelate the [src] image.
+         *
+         * [blockSize] determines the size of the pixelated blocks.
+         * If [mode] is [PixelateMode.upperLeft] then the upper-left corner of the block
+         * will be used for the block color. Otherwise if [mode] is [PixelateMode.average],
+         * the average of all the pixels in the block will be used for the block color.
+         */
+        static pixelate(src: MemoryImage, blockSize: number, mode?: PixelateMode): MemoryImage;
+        /**
+         * Quantize the number of colors in image to 256.
+         */
+        static quantize(options: QuantizeOptions): MemoryImage;
+        /**
+         * Remap the color channels of the image.
+         * [red], [green], [blue] and [alpha] should be set to one of the following:
+         * [ColorChannel.red], [ColorChannel.green], [ColorChannel.blue], [ColorChannel.alpha], or
+         * [ColorChannel.luminance]. For example,
+         * remapColors({src: src, red: ColorChannel.green, green: ColorChannel.red});
+         * will swap the red and green channels of the image.
+         * remapColors({src: src, alpha: ColorChannel.luminance})
+         * will set the alpha channel to the luminance (grayscale) of the image.
+         */
+        static remapColors(options: RemapColorsOptions): MemoryImage;
+        static scaleRgba(src: MemoryImage, r: number, g: number, b: number, a: number): MemoryImage;
+        /**
+         * Apply a generic separable convolution filter the [src] image, using the
+         * given [kernel].
+         *
+         * [gaussianBlur] is an example of such a filter.
+         */
+        static separableConvolution(src: MemoryImage, kernel: SeparableKernel): MemoryImage;
+        /**
+         * Apply sepia tone to the image.
+         *
+         * [amount] controls the strength of the effect, in the range 0.0 - 1.0.
+         */
+        static sepia(src: MemoryImage, amount?: number): MemoryImage;
+        /**
+         * Apply a smoothing convolution filter to the [src] image.
+         *
+         * [w] is the weight of the current pixel being filtered. If it's greater than
+         * 1, it will make the image sharper.
+         */
+        static smooth(src: MemoryImage, w: number): MemoryImage;
+        /**
+         * Apply Sobel edge detection filtering to the [src] Image.
+         */
+        static sobel(src: MemoryImage, amount?: number): MemoryImage;
+        static vignette(options: VignetteOptions): MemoryImage;
+    }
+}
 declare module "hdr/hdr-to-image" {
     import { MemoryImage } from "common/memory-image";
     import { HdrImage } from "hdr/hdr-image";
@@ -3821,15 +4228,26 @@ declare module "index" {
     export { Color } from "common/color";
     export { Crc32, Crc32Parameters } from "common/crc32";
     export { DisposeMode } from "common/dispose-mode";
+    export { DitherKernel } from "common/dither-kernel";
+    export { DitherPixel } from "common/dither-pixel";
     export { ExifData, ExifDataInitOptions, ExifDataType, } from "common/exif_data";
     export { FrameAnimation, FrameAnimationInitOptions, } from "common/frame-animation";
     export { FrameType } from "common/frame-type";
+    export { HeapNode } from "common/heap-node";
     export { ICCProfileData } from "common/icc_profile_data";
     export { ICCPCompressionMode } from "common/iccp-compression-mode";
+    export { InputBuffer, InputBufferInitOptions } from "common/input-buffer";
+    export { Interpolation } from "common/interpolation";
     export { Line } from "common/line";
     export { ListUtils } from "common/list-utils";
     export { MemoryImage, MemoryImageInitOptions, MemoryImageInitOptionsColorModel, RgbMemoryImageInitOptions, } from "common/memory-image";
+    export { NeuralQuantizer } from "common/neural-quantizer";
+    export { OctreeNode } from "common/octree-node";
+    export { OctreeQuantizer } from "common/octree-quantizer";
+    export { OutputBuffer, OutputBufferInitOptions } from "common/output-buffer";
     export { Point } from "common/point";
+    export { Quantizer } from "common/quantizer";
+    export { RandomUtils } from "common/random-utils";
     export { Rectangle } from "common/rectangle";
     export { RgbChannelSet } from "common/rgb-channel-set";
     export { TextCodec } from "common/text-codec";
@@ -3839,6 +4257,17 @@ declare module "index" {
     export { Draw } from "draw/draw";
     export { FillFloodOptions } from "draw/fill-flood-options";
     export { MaskFloodOptions } from "draw/mask-flood-options";
+    export { AdjustColorOptions } from "filter/adjust-color-options";
+    export { ColorOffsetOptions } from "filter/color-offset-options";
+    export { ConvolutionOptions } from "filter/convolution-options";
+    export { ImageFilter } from "filter/image-filter";
+    export { NoiseType } from "filter/noise-type";
+    export { PixelateMode } from "filter/pixelate-mode";
+    export { QuantizeMethod } from "filter/quantize-method";
+    export { QuantizeOptions } from "filter/quantize-options";
+    export { RemapColorsOptions } from "filter/remap-colors-options";
+    export { SeparableKernel } from "filter/separable-kernel";
+    export { VignetteOptions } from "filter/vignette-options";
     export { BmpDecoder } from "formats/bmp-decoder";
     export { BmpEncoder } from "formats/bmp-encoder";
     export { DecodeInfo } from "formats/decode-info";
@@ -3885,13 +4314,6 @@ declare module "index" {
     export { TiffImage } from "formats/tiff/tiff-image";
     export { TiffInfo, TiffInfoInitOptions } from "formats/tiff/tiff-info";
     export { LzwDecoder } from "formats/tiff/tiff-lzw-decoder";
-    export { DitherKernel } from "formats/util/dither-kernel";
-    export { DitherPixel } from "formats/util/dither-pixel";
-    export { InputBuffer, InputBufferInitOptions, } from "formats/util/input-buffer";
-    export { Interpolation } from "formats/util/interpolation";
-    export { NeuralQuantizer } from "formats/util/neural-quantizer";
-    export { OutputBuffer, OutputBufferInitOptions, } from "formats/util/output-buffer";
-    export { Quantizer } from "formats/util/quantizer";
     export { Half } from "hdr/half";
     export { HdrImage } from "hdr/hdr-image";
     export { HdrSlice, HdrSliceInitOptions } from "hdr/hdr-slice";
