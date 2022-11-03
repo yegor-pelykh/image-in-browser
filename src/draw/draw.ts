@@ -470,14 +470,9 @@ export abstract class Draw {
     const srcY = options.srcY ?? 0;
     const srcW = options.srcW ?? options.src.width;
     const srcH = options.srcH ?? options.src.height;
-    const dstW =
-      options.dstW ?? options.dst.width < options.src.width
-        ? options.dst.width
-        : options.src.width;
+    const dstW = options.dstW ?? Math.min(options.dst.width, options.src.width);
     const dstH =
-      options.dstH ?? options.dst.height < options.src.height
-        ? options.dst.height
-        : options.src.height;
+      options.dstH ?? Math.min(options.dst.height, options.src.height);
     const blend = options.blend ?? true;
 
     if (blend) {
