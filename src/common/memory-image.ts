@@ -39,16 +39,16 @@ export interface MemoryImageInitOptionsColorModel {
  * An image buffer where pixels are encoded into 32-bit unsigned ints (Uint32).
  *
  * Pixels are stored in 32-bit unsigned integers in #AARRGGBB format.
- * You can use [getBytes] to access the pixel data at the byte (channel) level,
+ * You can use **getBytes** to access the pixel data at the byte (channel) level,
  * optionally providing the format to get the image data as. You can use the
- * letious color functions, such as [getRed], [getGreen], [getBlue], and [getAlpha]
+ * letious color functions, such as **getRed**, **getGreen**, **getBlue**, and **getAlpha**
  * to access the individual channels of a given pixel color.
  *
- * If this image is a frame of an animation as decoded by the [decodeFrame]
- * method of [Decoder], then the [xOffset], [yOffset], [width] and [height]
+ * If this image is a frame of an animation as decoded by the **decodeFrame**
+ * method of **Decoder**, then the **xOffset**, **yOffset**, **width** and **height**
  * determine the area of the canvas this image should be drawn into,
  * as some frames of an animation only modify part of the canvas (recording
- * the part of the frame that actually changes). The [decodeAnimation] method
+ * the part of the frame that actually changes). The **decodeAnimation** method
  * will always return the fully composed animation, so these coordinate
  * properties are not used.
  */
@@ -295,8 +295,8 @@ export class MemoryImage {
 
   /**
    *
-   * [format] defines the order of color channels in [bytes].
-   * The length of [bytes] should be (width * height) * format-byte-count,
+   * **format** defines the order of color channels in **data**.
+   * The length of **data** should be (width * height) * format-byte-count,
    * where format-byte-count is 1, 3, or 4 depending on the number of
    * channels in the format (luminance, rgb, rgba, etc).
    *
@@ -339,7 +339,7 @@ export class MemoryImage {
    * color channels directly, or to pass it to something like an
    * Html canvas context.
    *
-   * Specifying the [format] will convert the image data to the specified
+   * Specifying the **format** will convert the image data to the specified
    * format. Images are stored internally in Format.rgba format; any
    * other format will require a conversion.
    *
@@ -414,7 +414,7 @@ export class MemoryImage {
   }
 
   /**
-   * Set all of the pixels of the image to the given [color].
+   * Set all of the pixels of the image to the given **color**.
    */
   public fill(color: number): MemoryImage {
     this._data.fill(color);
@@ -422,7 +422,7 @@ export class MemoryImage {
   }
 
   /**
-   * Set all of the empty pixels (for png's) of the image to the given [color].
+   * Set all of the empty pixels (for png's) of the image to the given **color**.
    */
   public fillBackground(color: number): void {
     // Loop all pixels
@@ -436,7 +436,7 @@ export class MemoryImage {
   }
 
   /**
-   * Add the colors of [other] to the pixels of this image.
+   * Add the colors of **other** to the pixels of this image.
    */
   public addImage(other: MemoryImage): MemoryImage {
     const h = Math.min(this._height, other._height);
@@ -462,7 +462,7 @@ export class MemoryImage {
   }
 
   /**
-   * Subtract the colors of [other] from the pixels of this image.
+   * Subtract the colors of **other** from the pixels of this image.
    */
   public subtractImage(other: MemoryImage): MemoryImage {
     const h = Math.min(this._height, other._height);
@@ -488,7 +488,7 @@ export class MemoryImage {
   }
 
   /**
-   * Multiply the colors of [other] with the pixels of this image.
+   * Multiply the colors of **other** with the pixels of this image.
    */
   public multiplyImage(other: MemoryImage): MemoryImage {
     const h = Math.min(this._height, other._height);
@@ -514,7 +514,7 @@ export class MemoryImage {
   }
 
   /**
-   * OR the colors of [other] to the pixels of this image.
+   * OR the colors of **other** to the pixels of this image.
    */
   public orImage(other: MemoryImage): MemoryImage {
     const h = Math.min(this._height, other._height);
@@ -540,7 +540,7 @@ export class MemoryImage {
   }
 
   /**
-   * AND the colors of [other] with the pixels of this image.
+   * AND the colors of **other** with the pixels of this image.
    */
   public andImage(other: MemoryImage): MemoryImage {
     const h = Math.min(this._height, other._height);
@@ -566,7 +566,7 @@ export class MemoryImage {
   }
 
   /**
-   * Modula the colors of [other] with the pixels of this image.
+   * Modula the colors of **other** with the pixels of this image.
    */
   public modImage(other: MemoryImage): MemoryImage {
     const h = Math.min(this._height, other._height);
@@ -592,7 +592,7 @@ export class MemoryImage {
   }
 
   /**
-   * Get a pixel from the buffer. No range checking is done.\
+   * Get a pixel from the buffer. No range checking is done.
    */
   public getPixelByIndex(index: number): number {
     return this._data[index];
@@ -606,7 +606,7 @@ export class MemoryImage {
   }
 
   /**
-   * Get the buffer index for the [x], [y] pixel coordinates.
+   * Get the buffer index for the **x**, **y** pixel coordinates.
    * No range checking is done.
    */
   public getBufferIndex(x: number, y: number): number {
@@ -614,14 +614,14 @@ export class MemoryImage {
   }
 
   /**
-   * Is the given [x], [y] pixel coordinates within the resolution of the image.
+   * Is the given **x**, **y** pixel coordinates within the resolution of the image.
    */
   public boundsSafe(x: number, y: number): boolean {
     return x >= 0 && x < this._width && y >= 0 && y < this._height;
   }
 
   /**
-   * Get the pixel from the given [x], [y] coordinate. Color is encoded in a
+   * Get the pixel from the given **x**, **y** coordinate. Color is encoded in a
    * Uint32 as #AABBGGRR. No range checking is done.
    */
   public getPixel(x: number, y: number): number {
@@ -630,7 +630,7 @@ export class MemoryImage {
   }
 
   /**
-   * Get the pixel from the given [x], [y] coordinate. Color is encoded in a
+   * Get the pixel from the given **x**, **y** coordinate. Color is encoded in a
    * Uint32 as #AABBGGRR. If the pixel coordinates are out of bounds, 0 is
    * returned.
    */
@@ -640,7 +640,7 @@ export class MemoryImage {
   }
 
   /**
-   * Get the pixel using the given [interpolation] type for non-integer pixel
+   * Get the pixel using the given **interpolation** type for non-integer pixel
    * coordinates.
    */
   public getPixelInterpolate(
@@ -902,7 +902,7 @@ export class MemoryImage {
   }
 
   /**
-   * Set the pixel at the given [x], [y] coordinate to the [color].
+   * Set the pixel at the given **x**, **y** coordinate to the **color**.
    * No range checking is done.
    */
   public setPixel(x: number, y: number, color: number): void {
@@ -911,7 +911,7 @@ export class MemoryImage {
   }
 
   /**
-   * Set the pixel at the given [x], [y] coordinate to the [color].
+   * Set the pixel at the given **x**, **y** coordinate to the **color**.
    * If the pixel coordinates are out of bounds, nothing is done.
    */
   public setPixelSafe(x: number, y: number, color: number): void {
@@ -922,11 +922,11 @@ export class MemoryImage {
   }
 
   /**
-   * Set the pixel at the given [x], [y] coordinate to the color
-   * [r], [g], [b], [a].
+   * Set the pixel at the given **x**, **y** coordinate to the color
+   * **r**, **g**, **b**, **a**.
    *
    * This simply replaces the existing color, it does not do any alpha
-   * blending. Use [drawPixel] for that. No range checking is done.
+   * blending. Use **drawPixel** for that. No range checking is done.
    */
   public setPixelRgba(
     x: number,
@@ -961,7 +961,7 @@ export class MemoryImage {
 
   /**
    * Find the minimum and maximum color value in the image.
-   * Returns an object with [min] and [max] properties.
+   * Returns an object with **min** and **max** properties.
    */
   public getColorExtremes(): {
     min: number;

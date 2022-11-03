@@ -164,7 +164,7 @@ export class OctreeQuantizer implements Quantizer {
   }
 
   /**
-   * Find the index of the closest color to [c] in the [colorMap].
+   * Find the index of the closest color to **c** in the **colorMap**.
    */
   public getQuantizedColor(c: number): number {
     let r = Color.getRed(c);

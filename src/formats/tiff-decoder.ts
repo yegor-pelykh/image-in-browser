@@ -22,7 +22,7 @@ export class TiffDecoder implements Decoder {
   }
 
   /**
-   * How many frames are available to be decoded. [startDecode] should have been called first.
+   * How many frames are available to be decoded. **startDecode** should have been called first.
    * Non animated image files will have a single frame.
    */
   public get numFrames(): number {
@@ -113,9 +113,9 @@ export class TiffDecoder implements Decoder {
   }
 
   /**
-   * Decode a single frame from the data stat was set with [startDecode].
-   * If [frame] is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have [frame] 0. An [AnimationFrame]
+   * Decode a single frame from the data stat was set with **startDecode**.
+   * If **frame** is out of the range of available frames, undefined is returned.
+   * Non animated image files will only have **frame** 0. An **AnimationFrame**
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
    */
@@ -160,7 +160,7 @@ export class TiffDecoder implements Decoder {
 
   /**
    * Decode the file and extract a single image from it. If the file is
-   * animated, the specified [frame] will be decoded. If there was a problem
+   * animated, the specified **frame** will be decoded. If there was a problem
    * decoding the file, undefined is returned.
    */
   public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {

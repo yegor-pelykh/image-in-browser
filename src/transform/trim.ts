@@ -12,7 +12,7 @@ export abstract class TrimTransform {
   /**
    * Find the crop area to be used by the trim function.
    * Returns the Rectangle. You could pass these constraints
-   * to the [copyCrop] function to crop the image.
+   * to the **copyCrop** function to crop the image.
    */
   private static findTrim(
     src: MemoryImage,
@@ -88,14 +88,14 @@ export abstract class TrimTransform {
 
   /**
    * Automatically crops the image by finding the corners of the image that
-   * meet the [mode] criteria (not transparent or a different color).
+   * meet the **mode** criteria (not transparent or a different color).
    *
-   * [mode] can be either [TrimMode.transparent], [TrimMode.topLeftColor] or
-   * [TrimMode.bottomRightColor].
+   * **mode** can be either **TrimMode.transparent**, **TrimMode.topLeftColor** or
+   * **TrimMode.bottomRightColor**.
    *
-   * [sides] can be used to control which sides of the image get trimmed,
-   * and can be any combination of [TrimSide.top], [TrimSide.bottom], [TrimSide.left],
-   * and [TrimSide.right].
+   * **sides** can be used to control which sides of the image get trimmed,
+   * and can be any combination of **TrimSide.top**, **TrimSide.bottom**, **TrimSide.left**,
+   * and **TrimSide.right**.
    */
   public static trim(
     src: MemoryImage,

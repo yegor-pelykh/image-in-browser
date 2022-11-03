@@ -357,11 +357,11 @@ export class GifEncoder implements Encoder {
   }
 
   /**
-   * Encode the images that were added with [addFrame].
+   * Encode the images that were added with **addFrame**.
    * After this has been called (returning the finishes GIF),
-   * calling [addFrame] for a new animation or image is safe again.
+   * calling **addFrame** for a new animation or image is safe again.
    *
-   * [addFrame] will not encode the first image passed and after that
+   * **addFrame** will not encode the first image passed and after that
    * always encode the previous image. Hence, the last image needs to be
    * encoded here.
    */
@@ -398,9 +398,9 @@ export class GifEncoder implements Encoder {
   }
 
   /**
-   * This adds the frame passed to [image].
-   * After the last frame has been added, [finish] is required to be called.
-   * Optional frame [duration] is in 1/100 sec.
+   * This adds the frame passed to **image**.
+   * After the last frame has been added, **finish** is required to be called.
+   * Optional frame **duration** is in 1/100 sec.
    * */
   public addFrame(image: MemoryImage, duration?: number): void {
     if (this.outputBuffer === undefined) {

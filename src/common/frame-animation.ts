@@ -15,13 +15,13 @@ export interface FrameAnimationInitOptions {
  *
  * Some formats support multiple images that are not
  * to be interpreted as animation, but rather multiple pages of a document.
- * The [FrameAnimation] container is still used to store the images for these files.
- * The [frameType] property is used to differentiate multi-page documents from
- * multi-frame animations, where it is set to [FrameType.page] for documents
- * and [FrameType.animation] for animated frames.
+ * The **FrameAnimation** container is still used to store the images for these files.
+ * The **frameType** property is used to differentiate multi-page documents from
+ * multi-frame animations, where it is set to **FrameType.page** for documents
+ * and **FrameType.animation** for animated frames.
  *
- * All [Decoder] classes support decoding to an [FrameAnimation], where the
- * [FrameAnimation] will only contain a single frame for single image formats
+ * All **Decoder** classes support decoding to an **FrameAnimation**, where the
+ * **FrameAnimation** will only contain a single frame for single image formats
  * such as JPEG, or if the file doesn't contain any animation such as a single
  * image GIF. If you want to generically support both animated and non-animated
  * files, you can always decode to an animation and if the animation has only
@@ -29,9 +29,9 @@ export interface FrameAnimationInitOptions {
  *
  * In some cases, the frames of the animation may only provide a portion of the
  * canvas, such as the case of animations encoding only the changing pixels
- * from one frame to the next. The [width] and [height] and [backgroundColor]
- * properties of the [FrameAnimation] provide information about the canvas that
- * contains the animation, and the [Image] frames provide information about
+ * from one frame to the next. The **width** and **height** and **backgroundColor**
+ * properties of the **FrameAnimation** provide information about the canvas that
+ * contains the animation, and the **MemoryImage** frames provide information about
  * how to draw the particular frame, such as the area of the canvas to draw
  * into, and if the canvas should be cleared prior to drawing the frame.
  */
@@ -69,8 +69,8 @@ export class FrameAnimation implements Iterable<MemoryImage> {
   }
 
   /**
-   * How should the frames be interpreted?  If [FrameType.animation], the
-   * frames are part of an animated sequence. If [FrameType.page], the frames
+   * How should the frames be interpreted?  If **FrameType.animation**, the
+   * frames are part of an animated sequence. If **FrameType.page**, the frames
    * are the pages of a document.
    */
   private _frameType: FrameType = FrameType.animation;
@@ -129,7 +129,7 @@ export class FrameAnimation implements Iterable<MemoryImage> {
   }
 
   /**
-   * Get the frame at the given[index].
+   * Get the frame at the given **index**.
    */
   public getFrame(index: number): MemoryImage {
     return this.frames[index];

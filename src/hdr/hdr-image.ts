@@ -176,7 +176,7 @@ export class HdrImage {
   }
 
   /**
-   * Create a copy of the [other] HdrImage.
+   * Create a copy of the **other** HdrImage.
    */
   public static from(other: HdrImage): HdrImage {
     const image = new HdrImage();
@@ -187,8 +187,8 @@ export class HdrImage {
   }
 
   /**
-   * Create an HDR image from a LDR [Image] by transforming the channel values
-   * to the range [0, 1].
+   * Create an HDR image from a LDR **MemoryImage** by transforming the channel values
+   * to the range [**0**, **1**].
    */
   public static fromImage(
     other: MemoryImage,
@@ -249,7 +249,7 @@ export class HdrImage {
   }
 
   /**
-   * Get the value of the red channel at the given pixel coordinates [x], [y].
+   * Get the value of the red channel at the given pixel coordinates **x**, **y**.
    */
   public getRed(x: number, y: number): number {
     if (this.red !== undefined) {
@@ -260,7 +260,7 @@ export class HdrImage {
   }
 
   /**
-   * Set the value of the red channel at the given pixel coordinates [x], [y].
+   * Set the value of the red channel at the given pixel coordinates **x**, **y**.
    */
   public setRed(x: number, y: number, c: number): void {
     if (this.red !== undefined) {
@@ -279,7 +279,7 @@ export class HdrImage {
   }
 
   /**
-   * Get the value of the green channel at the given pixel coordinates [x], [y].
+   * Get the value of the green channel at the given pixel coordinates **x**, **y**.
    */
   public getGreen(x: number, y: number): number {
     if (this.green !== undefined) {
@@ -292,7 +292,7 @@ export class HdrImage {
   }
 
   /**
-   * Set the value of the green channel at the given pixel coordinates [x], [y].
+   * Set the value of the green channel at the given pixel coordinates **x**, **y**.
    */
   public setGreen(x: number, y: number, c: number): void {
     if (this.green !== undefined) {
@@ -311,7 +311,7 @@ export class HdrImage {
   }
 
   /**
-   * Get the value of the blue channel at the given pixel coordinates [x], [y].
+   * Get the value of the blue channel at the given pixel coordinates **x**, **y**.
    */
   public getBlue(x: number, y: number): number {
     if (this.blue !== undefined) {
@@ -323,7 +323,7 @@ export class HdrImage {
     }
   }
   /**
-   * Set the value of the blue channel at the given pixel coordinates [x], [y].
+   * Set the value of the blue channel at the given pixel coordinates **x**, **y**.
    */
   public setBlue(x: number, y: number, c: number): void {
     if (this.blue !== undefined) {
@@ -342,7 +342,7 @@ export class HdrImage {
   }
 
   /**
-   * Get the value of the alpha channel at the given pixel coordinates [x], [y].
+   * Get the value of the alpha channel at the given pixel coordinates **x**, **y**.
    */
   public getAlpha(x: number, y: number): number {
     if (this.alpha !== undefined) {
@@ -355,7 +355,7 @@ export class HdrImage {
   }
 
   /**
-   * Set the value of the alpha channel at the given pixel coordinates [x], [y].
+   * Set the value of the alpha channel at the given pixel coordinates **x**, **y**.
    */
   public setAlpha(x: number, y: number, c: number): void {
     if (this.alpha !== undefined) {
@@ -374,7 +374,7 @@ export class HdrImage {
   }
 
   /**
-   * Get the value of the depth channel at the given pixel coordinates [x], [y].
+   * Get the value of the depth channel at the given pixel coordinates **x**, **y**.
    */
   public getDepth(x: number, y: number): number {
     if (this.depth !== undefined) {
@@ -387,7 +387,7 @@ export class HdrImage {
   }
 
   /**
-   * Set the value of the depth channel at the given pixel coordinates [x], [y].
+   * Set the value of the depth channel at the given pixel coordinates **x**, **y**.
    */
   public setDepth(x: number, y: number, c: number): void {
     if (this.depth !== undefined) {
@@ -420,7 +420,7 @@ export class HdrImage {
   }
 
   /**
-   * Add a channel [slice] to the
+   * Add a channel **slice** to the
    */
   public addChannel(slice: HdrSlice): void {
     const ch = slice.name;

@@ -4,7 +4,7 @@ import { Color } from '../common/color';
 import { MemoryImage } from '../common/memory-image';
 
 /**
- * A kernel object to use with [separableConvolution] filtering.
+ * A kernel object to use with **separableConvolution** filtering.
  */
 export class SeparableKernel {
   private readonly coefficients: number[];
@@ -18,7 +18,7 @@ export class SeparableKernel {
   }
 
   /**
-   * Create a separable convolution kernel for the given [radius].
+   * Create a separable convolution kernel for the given **radius**.
    */
   constructor(size: number) {
     this.size = size;
@@ -90,8 +90,8 @@ export class SeparableKernel {
   }
 
   /**
-   * Apply the kernel to the [src] image, storing the results in [dst],
-   * for a single dimension. If [horizontal is true, the filter will be
+   * Apply the kernel to the **src** image, storing the results in **dst**,
+   * for a single dimension. If **horizontal** is true, the filter will be
    * applied to the horizontal axis, otherwise it will be appied to the
    * vertical axis.
    */
@@ -108,7 +108,7 @@ export class SeparableKernel {
   }
 
   /**
-   * Scale all of the coefficients by [s].
+   * Scale all of the coefficients by **s**.
    */
   public scaleCoefficients(s: number): void {
     for (let i = 0; i < this.coefficients.length; ++i) {

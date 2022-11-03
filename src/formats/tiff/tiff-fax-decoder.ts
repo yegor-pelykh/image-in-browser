@@ -53,7 +53,7 @@ export class TiffFaxDecoder {
   ];
 
   /**
-   * Table to be used when fillOrder = 2, for flipping bytes.
+   * Table to be used when **fillOrder** = 2, for flipping bytes.
    */
   private static readonly FLIP_TABLE: number[] = [
     0, -128, 64, -64, 32, -96, 96, -32, 16, -112, 80, -48, 48, -80, 112, -16, 8,

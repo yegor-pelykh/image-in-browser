@@ -165,7 +165,7 @@ export { TrimSide } from './transform/trim-side';
 export { TrimTransform } from './transform/trim';
 
 /**
- * Find a [Decoder] that is able to decode the given image [data].
+ * Find a **Decoder** that is able to decode the given image **data**.
  * Use this is you don't know the type of image it is. Since this will
  * validate the image against all known decoders, it is potentially very slow.
  */
@@ -228,8 +228,8 @@ export function decodeImage(data: TypedArray): MemoryImage | undefined {
 
 /**
  * Decode the given image file bytes by first identifying the format of the
- * file and using that decoder to decode the file into an [Animation]
- * containing one or more [Image] frames.
+ * file and using that decoder to decode the file into an **FrameAnimation**
+ * containing one or more **MemoryImage** frames.
  */
 export function decodeAnimation(data: TypedArray): FrameAnimation | undefined {
   const decoder = findDecoderForData(data);
@@ -241,8 +241,8 @@ export function decodeAnimation(data: TypedArray): FrameAnimation | undefined {
 }
 
 /**
- * Return the [Decoder] that can decode image with the given [name],
- * by looking at the file extension. See also [findDecoderForData] to
+ * Return the **Decoder** that can decode image with the given **name**,
+ * by looking at the file extension. See also **findDecoderForData** to
  * determine the decoder to use given the bytes of the file.
  */
 export function getDecoderForNamedImage(name: string): Decoder | undefined {
@@ -273,8 +273,8 @@ export function getDecoderForNamedImage(name: string): Decoder | undefined {
 
 /**
  * Identify the format of the image using the file extension of the given
- * [name], and decode the given file [bytes] to an [FrameAnimation] with one or more
- * [MemoryImage] frames. See also [decodeAnimation].
+ * **name**, and decode the given file **bytes** to an **FrameAnimation** with one or more
+ * **MemoryImage** frames. See also **decodeAnimation**.
  */
 export function decodeNamedAnimation(
   data: TypedArray,
@@ -290,8 +290,8 @@ export function decodeNamedAnimation(
 
 /**
  * Identify the format of the image using the file extension of the given
- * [name], and decode the given file [bytes] to a single frame [Image]. See
- * also [decodeImage].
+ * **name**, and decode the given file **data** to a single frame **MemoryImage**. See
+ * also **decodeImage**.
  */
 export function decodeNamedImage(
   data: TypedArray,
@@ -307,7 +307,7 @@ export function decodeNamedImage(
 
 /**
  * Identify the format of the image and encode it with the appropriate
- * [Encoder].
+ * **Encoder**.
  */
 export function encodeNamedImage(
   image: MemoryImage,
@@ -429,14 +429,14 @@ export function decodeGifAnimation(
 /**
  * Encode an image to the GIF format.
  *
- * The [samplingFactor] specifies the sampling factor for
- * NeuQuant image quantization. It is responsible for reducing
+ * The **samplingFactor** specifies the sampling factor for
+ * image quantization. It is responsible for reducing
  * the amount of unique colors in your images to 256.
  * According to https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/,
  * a sampling factor of 10 gives you a reasonable trade-off between
  * image quality and quantization speed.
  * If you know that you have less than 256 colors in your frames
- * anyway, you should supply a very large [samplingFactor] for maximum performance.
+ * anyway, you should supply a very large **samplingFactor** for maximum performance.
  */
 export function encodeGif(image: MemoryImage, samplingFactor = 10): Uint8Array {
   return new GifEncoder({
@@ -447,22 +447,22 @@ export function encodeGif(image: MemoryImage, samplingFactor = 10): Uint8Array {
 /**
  * Encode an animation to the GIF format.
  *
- * The [samplingFactor] specifies the sampling factor for
+ * The **samplingFactor** specifies the sampling factor for
  * NeuQuant image quantization. It is responsible for reducing
  * the amount of unique colors in your images to 256.
  * According to https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/,
  * a sampling factor of 10 gives you a reasonable trade-off between
  * image quality and quantization speed.
  * If you know that you have less than 256 colors in your frames
- * anyway, you should supply a very large [samplingFactor] for maximum performance.
+ * anyway, you should supply a very large **samplingFactor** for maximum performance.
  *
- * Here, `30` is used a default value for the [samplingFactor] as
+ * Here, `30` is used a default value for the **samplingFactor** as
  * encoding animations is usually a process that takes longer than
- * encoding a single image (see [encodeGif]).
+ * encoding a single image (see **encodeGif**).
  */
 export function encodeGifAnimation(
   animation: FrameAnimation,
-  samplingFactor = 30
+  samplingFactor = 10
 ): Uint8Array | undefined {
   return new GifEncoder({
     samplingFactor: samplingFactor,

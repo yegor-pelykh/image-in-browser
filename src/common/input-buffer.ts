@@ -82,7 +82,7 @@ export class InputBuffer {
   }
 
   /**
-   * Create a copy of [other].
+   * Create a copy of **other**.
    */
   public static from(other: InputBuffer, offset?: number, length?: number) {
     const offsetFromOther = offset ?? 0;
@@ -122,8 +122,8 @@ export class InputBuffer {
   }
 
   /**
-   * Set a range of bytes in this buffer to [value], at [start] offset from the
-   * current read position, and [length] number of bytes.
+   * Set a range of bytes in this buffer to **value**, at **start** offset from the
+   * current read position, and **length** number of bytes.
    */
   public memset(start: number, length: number, value: number): void {
     this._buffer.fill(
@@ -135,9 +135,9 @@ export class InputBuffer {
 
   /**
    * Return a InputStream to read a subset of this stream. It does not
-   * move the read position of this stream. [position] is specified relative
-   * to the start of the buffer. If [position] is not specified, the current
-   * read position is used. If [length] is not specified, the remainder of this
+   * move the read position of this stream. **position** is specified relative
+   * to the start of the buffer. If **position** is not specified, the current
+   * read position is used. If **length** is not specified, the remainder of this
    * stream is used.
    */
   public subarray(count: number, position?: number, offset = 0): InputBuffer {
@@ -152,9 +152,9 @@ export class InputBuffer {
   }
 
   /**
-   * Returns the position of the given [value] within the buffer, starting
-   * from the current read position with the given [offset]. The position
-   * returned is relative to the start of the buffer, or -1 if the [value]
+   * Returns the position of the given **value** within the buffer, starting
+   * from the current read position with the given **offset**. The position
+   * returned is relative to the start of the buffer, or -1 if the **value**
    * was not found.
    */
   public indexOf(value: number, offset = 0): number {
@@ -171,7 +171,7 @@ export class InputBuffer {
   }
 
   /**
-   * Read [count] bytes from an [offset] of the current read position, without
+   * Read **count** bytes from an **offset** of the current read position, without
    * moving the read position.
    */
   public peekBytes(count: number, offset = 0): InputBuffer {
@@ -179,7 +179,7 @@ export class InputBuffer {
   }
 
   /**
-   * Move the read position by [count] bytes.
+   * Move the read position by **count** bytes.
    */
   public skip(count: number): void {
     this._offset += count;
@@ -197,7 +197,7 @@ export class InputBuffer {
   }
 
   /**
-   * Read [count] bytes from the stream.
+   * Read **count** bytes from the stream.
    */
   public readBytes(count: number): InputBuffer {
     const bytes = this.subarray(count);
@@ -206,7 +206,7 @@ export class InputBuffer {
   }
 
   /**
-   * Read a null-terminated string, or if [length] is provided, that number of
+   * Read a null-terminated string, or if **length** is provided, that number of
    * bytes returned as a string.
    */
   public readString(length?: number): string {

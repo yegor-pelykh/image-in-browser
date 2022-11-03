@@ -101,14 +101,14 @@ export class NeuralQuantizer implements Quantizer {
   private freq!: number[];
 
   /**
-   * How many colors are in the [colorMap]?
+   * How many colors are in the **colorMap**?
    */
   get numColors(): number {
     return this.netSize;
   }
 
   /**
-   * 10 is a reasonable [samplingFactor] according to
+   * 10 is a reasonable **samplingFactor** according to
    * https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/.
    */
   constructor(image: MemoryImage, numberOfColors = 256, samplingFactor = 10) {
@@ -194,7 +194,6 @@ export class NeuralQuantizer implements Quantizer {
     // finds best neuron (min dist-bias) and returns position
     // for frequently chosen neurons, freq[i] is high and bias[i] is negative
     // bias[i] = gamma*((1/netsize)-freq[i])
-
     let bestd = 1.0e30;
     let bestBiasDist: number = bestd;
     let bestpos = -1;
@@ -554,7 +553,7 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /**
-   * Get a color from the [colorMap].
+   * Get a color from the **colorMap**.
    */
   public color(index: number): number {
     return Color.getColor(
@@ -565,7 +564,7 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /**
-   * Find the index of the closest color to [c] in the [colorMap].
+   * Find the index of the closest color to **c** in the **colorMap**.
    */
   public lookup(c: number): number {
     const r = Color.getRed(c);
@@ -575,14 +574,14 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /**
-   * Find the index of the closest color to [r],[g],[b] in the [colorMap].
+   * Find the index of the closest color to **r**,**g**,**b** in the **colorMap**.
    */
   public lookupRGB(r: number, g: number, b: number): number {
     return this.inxSearch(b, g, r);
   }
 
   /**
-   * Find the color closest to [c] in the [colorMap].
+   * Find the color closest to **c** in the **colorMap**.
    */
   public getQuantizedColor(c: number): number {
     const r = Color.getRed(c);
@@ -599,7 +598,7 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /**
-   * Convert the [image] to an index map, mapping to this [colorMap].
+   * Convert the **image** to an index map, mapping to this **colorMap**.
    */
   public getIndexMap(image: MemoryImage): Uint8Array {
     const map = new Uint8Array(image.width * image.height);

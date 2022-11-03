@@ -5,8 +5,8 @@ import { BitOperators } from '../common/bit-operators';
 /**
  * A 16-bit floating-point number, used by high-dynamic-range image formats
  * as a more efficient storage for floating-point values that don't require
- * full 32-bit precision. A list of Half floats can be stored in a [Uint16List],
- * and converted to a double using the [HalfToDouble] static method.
+ * full 32-bit precision. A list of Half floats can be stored in a **Uint16Array**,
+ * and converted to a double using the **halfToDouble()** static method.
  *
  * This class is derived from the OpenEXR library.
  */

@@ -880,7 +880,7 @@ export class PngDecoder implements Decoder {
   }
 
   /**
-   * Decode the frame (assuming [startDecode] has already been called).
+   * Decode the frame (assuming **startDecode** has already been called).
    */
   public decodeFrame(frame: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {

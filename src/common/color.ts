@@ -11,7 +11,7 @@ import { ColorChannel } from './color-channel';
  */
 export abstract class Color {
   /**
-   * Create a color value from RGB values in the range [0, 255].
+   * Create a color value from RGB values in the range [**0**, **255**].
    *
    * The channel order of a uint32 encoded color is BGRA.
    */
@@ -20,7 +20,7 @@ export abstract class Color {
   }
 
   /**
-   * Create a color value from RGBA values in the range [0, 255].
+   * Create a color value from RGBA values in the range [**0**, **255**].
    *
    * The channel order of a uint32 encoded color is BGRA.
    */
@@ -34,7 +34,7 @@ export abstract class Color {
   }
 
   /**
-   * Create a color value from HSL values in the range [0, 1].
+   * Create a color value from HSL values in the range [**0**, **1**].
    */
   public static fromHsl(
     hue: number,
@@ -46,7 +46,7 @@ export abstract class Color {
   }
 
   /**
-   * Create a color value from HSV values in the range [0, 1].
+   * Create a color value from HSV values in the range [**0**, **1**].
    */
   public static fromHsv(
     hue: number,
@@ -66,7 +66,7 @@ export abstract class Color {
   }
 
   /**
-   * Create a color value from CIE-L*ab values.
+   * Create a color value from CIE-L*a*b values.
    */
   public static fromLab(L: number, a: number, b: number): number {
     const rgb = Color.labToRgb(L, a, b);
@@ -97,8 +97,8 @@ export abstract class Color {
   }
 
   /**
-   * Returns a new color of [src] alpha-blended onto [dst]. The opacity of [src]
-   * is additionally scaled by [fraction] / 255.
+   * Returns a new color of **src** alpha-blended onto **dst**. The opacity of **src**
+   * is additionally scaled by **fraction** / **255**.
    */
   public static alphaBlendColors(
     dst: number,
@@ -134,7 +134,7 @@ export abstract class Color {
   }
 
   /**
-   * Get the [channel] from the [color].
+   * Get the **channel** from the **color**.
    */
   public static getChannel(color: number, channel: ColorChannel): number {
     if (channel === ColorChannel.red) {
@@ -150,21 +150,21 @@ export abstract class Color {
   }
 
   /**
-   * Get the alpha channel from the [color].
+   * Get the alpha channel from the **color**.
    */
   public static getAlpha(color: number): number {
     return (color >> 24) & 0xff;
   }
 
   /**
-   * Get the blue channel from the [color].
+   * Get the blue channel from the **color**.
    */
   public static getBlue(color: number): number {
     return (color >> 16) & 0xff;
   }
 
   /**
-   * Get the color with the given [r], [g], [b], and [a] components.
+   * Get the color with the given **r**, **g**, **b**, and **a** components.
    * The channel order of a uint32 encoded color is RGBA.
    */
   public static getColor(r: number, g: number, b: number, a = 255): number {
@@ -184,14 +184,14 @@ export abstract class Color {
   }
 
   /**
-   * Get the green channel from the [color].
+   * Get the green channel from the **color**.
    */
   public static getGreen(color: number): number {
     return (color >> 8) & 0xff;
   }
 
   /**
-   * Returns the luminance (grayscale) value of the [color].
+   * Returns the luminance (grayscale) value of the **color**.
    */
   public static getLuminance(color: number): number {
     const r = Color.getRed(color);
@@ -208,43 +208,43 @@ export abstract class Color {
   }
 
   /**
-   * Get the red channel from the [color].
+   * Get the red channel from the **color**.
    */
   public static getRed(color: number): number {
     return color & 0xff;
   }
 
   /**
-   * Check if [color] is white
+   * Check if **color** is white
    */
   public static isBlack(color: number): boolean {
     return (color & 0xffffff) === 0x0;
   }
 
   /**
-   * Check if [color] is white
+   * Check if **color** is white
    */
   public static isWhite(color: number): boolean {
     return (color & 0xffffff) === 0xffffff;
   }
 
   /**
-   * Returns a new color where the alpha channel of [color] has been replaced by [value].
+   * Returns a new color where the alpha channel of **color** has been replaced by **value**.
    */
   public static setAlpha(color: number, value: number): number {
     return (color & 0x00ffffff) | (Clamp.clampInt255(value) << 24);
   }
 
   /**
-   * Returns a new color where the blue channel of [color] has been replaced by [value].
+   * Returns a new color where the blue channel of **color** has been replaced by **value**.
    */
   public static setBlue(color: number, value: number): number {
     return (color & 0xff00ffff) | (Clamp.clampInt255(value) << 16);
   }
 
   /**
-   * Returns a new color, where the given [color]'s [channel] has been
-   * replaced with the given [value].
+   * Returns a new color, where the given **color**'s **channel** has been
+   * replaced with the given **value**.
    */
   public static setChannel(
     color: number,
@@ -264,16 +264,16 @@ export abstract class Color {
   }
 
   /**
-   * Returns a new color where the green channel of [color] has been replaced
-   * by [value].
+   * Returns a new color where the green channel of **color** has been replaced
+   * by **value**.
    */
   public static setGreen(color: number, value: number): number {
     return (color & 0xffff00ff) | (Clamp.clampInt255(value) << 8);
   }
 
   /**
-   * Returns a new color where the red channel of [color] has been replaced
-   * by [value].
+   * Returns a new color where the red channel of **color** has been replaced
+   * by **value**.
    */
   public static setRed(color: number, value: number): number {
     return (color & 0xffffff00) | Clamp.clampInt255(value);
@@ -281,8 +281,8 @@ export abstract class Color {
 
   /**
    * Convert an HSL color to RGB, where h is specified in normalized degrees
-   * [0, 1] (where 1 is 360-degrees); s and l are in the range [0, 1].
-   * Returns a list [r, g, b] with values in the range [0, 255].
+   * [**0**, **1**] (where 1 is 360-degrees); s and l are in the range [**0**, **1**].
+   * Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
    */
   public static hslToRgb(
     hue: number,
@@ -333,8 +333,8 @@ export abstract class Color {
 
   /**
    * Convert an HSV color to RGB, where h is specified in normalized degrees
-   * [0, 1] (where 1 is 360-degrees); s and l are in the range [0, 1].
-   * Returns a list [r, g, b] with values in the range [0, 255].
+   * [**0**, **1**] (where 1 is 360-degrees); s and l are in the range [**0**, **1**].
+   * Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
    */
   public static hsvToRgb(
     hue: number,
@@ -395,8 +395,8 @@ export abstract class Color {
   }
 
   /**
-   * Convert an RGB color to HSL, where r, g and b are in the range [0, 255].
-   * Returns a list [h, s, l] with values in the range [0, 1].
+   * Convert an RGB color to HSL, where **r**, **g** and **b** are in the range [**0**, **255**].
+   * Returns a list [**h**, **s**, **l**] with values in the range [**0**, **1**].
    */
   public static rgbToHsl(r: number, g: number, b: number): number[] {
     const ri = r / 255.0;
@@ -492,8 +492,8 @@ export abstract class Color {
   }
 
   /**
-   * Convert a CMYK color to RGB, where c, m, y, k values are in the range
-   * [0, 255]. Returns a list [r, g, b] with values in the range [0, 255].
+   * Convert a CMYK color to RGB, where **c**, **m**, **y**, **k** values are in the range
+   * [**0**, **255**]. Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
    */
   public static cmykToRgb(
     c: number,

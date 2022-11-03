@@ -19,7 +19,7 @@ import { Color } from '../common/color';
 
 export abstract class ImageTransform {
   /**
-   * Returns a copy of the [src] image, rotated by [angle] degrees.
+   * Returns a copy of the **src** image, rotated by **angle** degrees.
    */
   public static copyRotate(
     src: MemoryImage,
@@ -126,7 +126,7 @@ export abstract class ImageTransform {
   }
 
   /**
-   * If [image] has an orientation value in its exif data, this will rotate the
+   * If **image** has an orientation value in its exif data, this will rotate the
    * image so that it physically matches its orientation. This can be used to
    * bake the orientation of the image for image formats that don't support exif
    * data.
@@ -166,11 +166,11 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Returns a resized copy of the [src] image.
-   * If [height] isn't specified, then it will be determined by the aspect
-   * ratio of [src] and [width].
-   * If [width] isn't specified, then it will be determined by the aspect ratio
-   * of [src] and [height].
+   * Returns a resized copy of the **src** image.
+   * If **height** isn't specified, then it will be determined by the aspect
+   * ratio of **src** and **width**.
+   * If **width** isn't specified, then it will be determined by the aspect ratio
+   * of **src** and **height**.
    */
   public static copyResize(
     options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight
@@ -282,7 +282,7 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Returns a resized and square cropped copy of the [src] image of [size] size.
+   * Returns a resized and square cropped copy of the **src** image of **size** size.
    */
   public static copyResizeCropSquare(
     src: MemoryImage,
@@ -330,24 +330,24 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Copies a rectangular portion of one image to another image. [dst] is the
-   * destination image, [src] is the source image identifier.
+   * Copies a rectangular portion of one image to another image. **dst** is the
+   * destination image, **src** is the source image identifier.
    *
-   * In other words, copyInto will take an rectangular area from src of
-   * width [srcW] and height [srcH] at position ([srcX],[srcY]) and place it
-   * in a rectangular area of [dst] of width [dstW] and height [dstH] at
-   * position ([dstX],[dstY]).
+   * In other words, copyInto will take an rectangular area from **src** of
+   * width **srcW** and height **srcH** at position (**srcX**,**srcY**) and place it
+   * in a rectangular area of **dst** of width **dstW** and height **dstH** at
+   * position (**dstX**,**dstY**).
    *
    * If the source and destination coordinates and width and heights differ,
    * appropriate stretching or shrinking of the image fragment will be performed.
    * The coordinates refer to the upper left corner. This function can be used to
-   * copy regions within the same image (if [dst] is the same as [src])
+   * copy regions within the same image (if **dst** is the same as **src**)
    * but if the regions overlap the results will be unpredictable.
    *
-   * [dstX] and [dstY] represent the X and Y position where the [src] will start
+   * **dstX** and **dstY** represent the X and Y position where the **src** will start
    * printing.
    *
-   * if [center] is true, the [src] will be centered in [dst].
+   * if **center** is true, the **src** will be centered in **dst**.
    */
   public static copyInto(options: CopyIntoOptions): MemoryImage {
     options.dstX ??= 0;
@@ -361,7 +361,7 @@ export abstract class ImageTransform {
 
     if (options.center) {
       {
-        // If [src] is wider than [dst]
+        // If src is wider than dst
         let wdt = options.dst.width - options.src.width;
         if (wdt < 0) {
           wdt = 0;
@@ -369,7 +369,7 @@ export abstract class ImageTransform {
         options.dstX = Math.floor(wdt / 2);
       }
       {
-        // If [src] is higher than [dst]
+        // If src is higher than dst
         let hight = options.dst.height - options.src.height;
         if (hight < 0) {
           hight = 0;
@@ -405,7 +405,7 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Returns a cropped copy of [src].
+   * Returns a cropped copy of **src**.
    */
   public static copyCrop(
     src: MemoryImage,
@@ -444,7 +444,7 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Returns a round cropped copy of [src].
+   * Returns a round cropped copy of **src**.
    */
   public static copyCropCircle(
     src: MemoryImage,
@@ -487,7 +487,7 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Returns a copy of the [src] image, where the given rectangle
+   * Returns a copy of the **src** image, where the given rectangle
    * has been mapped to the full image.
    */
   public static copyRectify(
@@ -515,8 +515,8 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Flips the [src] image using the given [mode], which can be one of:
-   * [FlipDirection.horizontal], [FlipDirection.vertical], or [FlipDirection.both].
+   * Flips the **src** image using the given **mode**, which can be one of:
+   * **FlipDirection.horizontal**, **FlipDirection.vertical**, or **FlipDirection.both**.
    */
   public static flip(src: MemoryImage, direction: FlipDirection): MemoryImage {
     switch (direction) {
@@ -535,7 +535,7 @@ export abstract class ImageTransform {
   }
 
   /**
-   * Flip the [src] image vertically.
+   * Flip the **src** image vertically.
    */
   public static flipVertical(src: MemoryImage): MemoryImage {
     const w = src.width;

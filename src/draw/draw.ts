@@ -28,7 +28,7 @@ export abstract class Draw {
 
   /**
    * Calculate the pixels that make up the circumference of a circle on the
-   * given [image], centered at [center] and the given [radius].
+   * given **image**, centered at **center** and the given **radius**.
    *
    * The returned list of points is sorted, first by the x coordinate, and
    * second by the y coordinate.
@@ -105,7 +105,7 @@ export abstract class Draw {
   }
 
   /**
-   * Compute the bit code for a point [p] using the clip rectangle [rect]
+   * Compute the bit code for a point **p** using the clip rectangle **rect**
    */
   private static computeOutCode(rect: Rectangle, p: Point): number {
     // initialized as being inside of clip window
@@ -131,10 +131,10 @@ export abstract class Draw {
 
   /**
    * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
-   * [line] is a [Line] object.
-   * [rect] is a [Rectangle] object.
-   * Results are stored in [line].
-   * If [line] falls completely outside of [rect], false is returned, otherwise
+   * **line** is a **Line** object.
+   * **rect** is a **Rectangle** object.
+   * Results are stored in **line**.
+   * If **line** falls completely outside of **rect**, false is returned, otherwise
    * true is returned.
    */
   private static clipLine(rect: Rectangle, line: Line): boolean {
@@ -383,8 +383,8 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a circle into the [image] with a center of [x0],[y0] and
-   * the given [radius] and [color].
+   * Draw a circle into the **image** with a center of **center** and
+   * the given **radius** and **color**.
    */
   public static drawCircle(
     image: MemoryImage,
@@ -400,10 +400,10 @@ export abstract class Draw {
   }
 
   /**
-   * Draw and fill a circle into the [image] with a [center]
-   * and the given [radius] and [color].
+   * Draw and fill a circle into the **image** with a **center**
+   * and the given **radius** and **color**.
    *
-   * The algorithm uses the same logic as [drawCircle] to calculate each point
+   * The algorithm uses the same logic as **drawCircle** to calculate each point
    * around the circle's circumference. Then it iterates through every point,
    * finding the smallest and largest y-coordinate values for a given x-
    * coordinate.
@@ -450,17 +450,17 @@ export abstract class Draw {
   }
 
   /**
-   * Draw the image [src] onto the image [dst].
+   * Draw the image **src** onto the image **dst**.
    *
-   * In other words, drawImage will take an rectangular area from src of
-   * width [src_w] and height [src_h] at position ([src_x],[src_y]) and place it
-   * in a rectangular area of [dst] of width [dst_w] and height [dst_h] at
-   * position ([dst_x],[dst_y]).
+   * In other words, drawImage will take an rectangular area from **src** of
+   * width **srcW** and height **srcH** at position (**srcX**,**srY**) and place it
+   * in a rectangular area of **dst** of width **dstW** and height **dstH** at
+   * position (**dstX**,**dstY**).
    *
    * If the source and destination coordinates and width and heights differ,
    * appropriate stretching or shrinking of the image fragment will be performed.
    * The coordinates refer to the upper left corner. This function can be used to
-   * copy regions within the same image (if [dst] is the same as [src])
+   * copy regions within the same image (if **dst** is the same as **src**)
    * but if the regions overlap the results will be unpredictable.
    */
   public static drawImage(options: DrawImageOptions): MemoryImage {
@@ -505,10 +505,10 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a line into [image].
+   * Draw a line into **image**.
    *
-   * If [antialias] is true then the line is drawn with smooth edges.
-   * [thickness] determines how thick the line should be drawn, in pixels.
+   * If **antialias** is true then the line is drawn with smooth edges.
+   * **thickness** determines how thick the line should be drawn, in pixels.
    */
   public static drawLine(options: DrawLineOptions): MemoryImage {
     const line = Line.from(options.line);
@@ -802,7 +802,7 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a rectangle in the image [dst] with the [color].
+   * Draw a rectangle in the image **dst** with the **color**.
    */
   public static drawRect(
     dst: MemoryImage,
@@ -833,8 +833,8 @@ export abstract class Draw {
   }
 
   /**
-   * Fill the 4-connected shape containing [x],[y] in the image [src] with the
-   * given [color].
+   * Fill the 4-connected shape containing **x**,**y** in the image **src** with the
+   * given **color**.
    */
   public static fillFlood(options: FillFloodOptions): MemoryImage {
     const threshold = options.threshold ?? 0;
@@ -880,8 +880,8 @@ export abstract class Draw {
   }
 
   /**
-   * Create a mask describing the 4-connected shape containing [x],[y] in the
-   * image [src].
+   * Create a mask describing the 4-connected shape containing **x**,**y** in the
+   * image **src**.
    */
   public static maskFlood(options: MaskFloodOptions): Uint8Array {
     const threshold = options.threshold ?? 0;
@@ -933,8 +933,8 @@ export abstract class Draw {
   }
 
   /**
-   * Fill a rectangle in the image [src] with the given [color] with the corners
-   * [x1],[y1] and [x2],[y2].
+   * Fill a rectangle in the image **src** with the given **color** with the
+   * coordinates defined by **rect**.
    */
   public static fillRect(
     src: MemoryImage,
@@ -972,7 +972,7 @@ export abstract class Draw {
   }
 
   /**
-   * Set all of the pixels of an [image] to the given [color].
+   * Set all of the pixels of an **image** to the given **color**.
    */
   public static fill(image: MemoryImage, color: number): MemoryImage {
     return image.fill(color);

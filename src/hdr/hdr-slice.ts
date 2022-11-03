@@ -22,11 +22,11 @@ export class HdrSlice {
   public static INT = 1;
   public static FLOAT = 3;
 
-  /**
-   * [data] will be one of the type data lists, depending on the [type] and
-   * [bitsPerSample]. 16-bit FLOAT slices will be stored in a [Uint16List].
-   */
   private readonly _data: TypedArray;
+  /**
+   * **data** will be one of the type data lists, depending on the **type** and
+   * **bitsPerSample**. 16-bit FLOAT slices will be stored in a **Uint16Array**.
+   */
   public get data(): TypedArray {
     return this._data;
   }
@@ -47,8 +47,8 @@ export class HdrSlice {
   }
 
   /**
-   * Indicates the type of data stored by the slice, either [HdrSlice.INT],
-   * [HdrSlice.FLOAT], or [HdrSlice.UINT].
+   * Indicates the type of data stored by the slice, either **HdrSlice.INT**,
+   * **HdrSlice.FLOAT**, or **HdrSlice.UINT**.
    */
   private readonly _format: number;
   public get format(): number {
@@ -136,7 +136,7 @@ export class HdrSlice {
   }
 
   /**
-   * Create a copy of the [other] HdrSlice.
+   * Create a copy of the **other** HdrSlice.
    */
   public static from(other: HdrSlice): HdrSlice {
     return new HdrSlice({
@@ -157,8 +157,8 @@ export class HdrSlice {
   }
 
   /**
-   * Get the float value of the sample at the coordinates [x],[y].
-   * [Half] samples are converted to double.
+   * Get the float value of the sample at the coordinates **x**,**y**.
+   * **Half** samples are converted to double.
    */
   public getFloat(x: number, y: number): number {
     const pi = y * this._width + x;
@@ -173,8 +173,8 @@ export class HdrSlice {
   }
 
   /**
-   * Set the float value of the sample at the coordinates [x],[y] for
-   * [FLOAT] slices.
+   * Set the float value of the sample at the coordinates **x**,**y** for
+   * **FLOAT** slices.
    */
   public setFloat(x: number, y: number, v: number): void {
     if (this._format !== HdrSlice.FLOAT) {
@@ -189,7 +189,7 @@ export class HdrSlice {
   }
 
   /**
-   * Get the int value of the sample at the coordinates [x],[y].
+   * Get the int value of the sample at the coordinates **x**,**y**.
    * An exception will occur if the slice stores FLOAT data.
    */
   public getInt(x: number, y: number): number {
@@ -198,8 +198,8 @@ export class HdrSlice {
   }
 
   /**
-   * Set the int value of the sample at the coordinates [x],[y] for [INT] and
-   * [UINT] slices.
+   * Set the int value of the sample at the coordinates **x**,**y** for **INT** and
+   * **UINT** slices.
    */
   public setInt(x: number, y: number, v: number): void {
     const pi = y * this._width + x;

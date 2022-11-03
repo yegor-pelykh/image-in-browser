@@ -2,7 +2,7 @@
 
 export abstract class RandomUtils {
   /**
-   * Return a random variable between [-1,1].
+   * Return a random variable between [**-1**,**1**].
    */
   public static crand(): number {
     return 1 - 2 * Math.random();
@@ -25,7 +25,7 @@ export abstract class RandomUtils {
   }
 
   /**
-   * Return a random variable following a Poisson distribution of parameter [z].
+   * Return a random variable following a Poisson distribution of parameter **z**.
    */
   public static prand(z: number): number {
     if (z <= 1e-10) {

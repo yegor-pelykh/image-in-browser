@@ -41,39 +41,39 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Adjust the color of the [src] image using various color transformations.
+   * Adjust the color of the **src** image using various color transformations.
    *
-   * [blacks] defines the black level of the image, as a color.
+   * **blacks** defines the black level of the image, as a color.
    *
-   * [whites] defines the white level of the image, as a color.
+   * **whites** defines the white level of the image, as a color.
    *
-   * [mids] defines the mid level of hte image, as a color.
+   * **mids** defines the mid level of hte image, as a color.
    *
-   * [contrast] increases (> 1) / decreases (< 1) the contrast of the image by
+   * **contrast** increases (> 1) / decreases (< 1) the contrast of the image by
    * pushing colors away/toward neutral gray, where at 0 the image is entirely
    * neutral gray (0 contrast), 1, the image is not adjusted and > 1 the
    * image increases contrast.
    *
-   * [saturation] increases (> 1) / decreases (< 1) the saturation of the image
+   * **saturation** increases (> 1) / decreases (< 1) the saturation of the image
    * by pushing colors away/toward their grayscale value, where 0 is grayscale
    * and 1 is the original image, and > 1 the image becomes more saturated.
    *
-   * [brightness] is a constant scalar of the image colors. At 0 the image
+   * **brightness** is a constant scalar of the image colors. At 0 the image
    * is black, 1 unmodified, and > 1 the image becomes brighter.
    *
-   * [gamma] is an exponential scalar of the image colors. At < 1 the image
-   * becomes brighter, and > 1 the image becomes darker. A [gamma] of 1/2.2
+   * **gamma** is an exponential scalar of the image colors. At < 1 the image
+   * becomes brighter, and > 1 the image becomes darker. A **gamma** of 1/2.2
    * will convert the image colors to linear color space.
    *
-   * [exposure] is an exponential scalar of the image as rgb* pow(2, exposure).
+   * **exposure** is an exponential scalar of the image as rgb* pow(2, exposure).
    * At 0, the image is unmodified; as the exposure increases, the image
    * brightens.
    *
-   * [hue] shifts the hue component of the image colors in degrees. A [hue] of
-   * 0 will have no affect, and a [hue] of 45 will shift the hue of all colors
+   * **hue** shifts the hue component of the image colors in degrees. A **hue** of
+   * 0 will have no affect, and a **hue** of 45 will shift the hue of all colors
    * by 45 degrees.
    *
-   * [amount] controls how much affect this filter has on the [src] image, where
+   * **amount** controls how much affect this filter has on the **src** image, where
    * 0 has no effect and 1 has full effect.
    */
   public static adjustColor(options: AdjustColorOptions): MemoryImage {
@@ -248,8 +248,8 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Set the [brightness] level for the image [src].
-   * [brightness] is an offset that is added to the red, green, and blue channels
+   * Set the **brightness** level for the image **src**.
+   * **brightness** is an offset that is added to the red, green, and blue channels
    * of every pixel.
    */
   public static brightness(src: MemoryImage, brightness: number): MemoryImage {
@@ -268,10 +268,10 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Generate a normal map from a heightfield bump image.
+   * Generate a normal map from a height-field bump image.
    *
-   * The red channel of the [src] image is used as an input, 0 represents a low
-   * height and 1 a high value. The optional [strength] parameter allows to set
+   * The red channel of the **src** image is used as an input, 0 represents a low
+   * height and 1 a high value. The optional **strength** parameter allows to set
    * the strength of the normal image.
    */
   public static bumpToNormal(src: MemoryImage, strength = 2): MemoryImage {
@@ -316,7 +316,7 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Add the [red], [green], [blue] and [alpha] values to the [src] image
+   * Add the **red**, **green**, **blue** and **alpha** values to the **src** image
    * colors, a per-channel brightness.
    */
   public static colorOffset(options: ColorOffsetOptions): MemoryImage {
@@ -332,9 +332,9 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Set the [contrast] level for the image [src].
+   * Set the **contrast** level for the image **src**.
    *
-   * [contrast] values below 100 will decrees the contrast of the image,
+   * **contrast** values below 100 will decrees the contrast of the image,
    * and values above 100 will increase the contrast. A contrast of 100
    * will have no affect.
    */
@@ -361,10 +361,10 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Apply a 3x3 convolution filter to the [src] image. [filter] should be a
+   * Apply a 3x3 convolution filter to the **src** image. **filter** should be a
    * list of 9 numbers.
    *
-   * The rgb channels will be divided by [filterDiv] and add [offset], allowing
+   * The rgb channels will divided by **div** and add **offset**, allowing
    * filters to normalize and offset the filtered pixel value.
    */
   public static convolution(options: ConvolutionOptions): MemoryImage {
@@ -421,7 +421,7 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Apply gaussian blur to the [src] image. [radius] determines how many pixels
+   * Apply gaussian blur to the **src** image. **radius** determines how many pixels
    * away from the current pixel should contribute to the blur, where 0 is no
    * blur and the larger the radius, the stronger the blur.
    */
@@ -473,7 +473,7 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Invert the colors of the [src] image.
+   * Invert the colors of the **src** image.
    */
   public static invert(src: MemoryImage): MemoryImage {
     const p = src.getBytes();
@@ -486,10 +486,10 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Add random noise to pixel values. [sigma] determines how strong the effect
-   * should be. [type] should be one of the following: [NoiseType.gaussian],
-   * [NoiseType.uniform], [NoiseType.saltPepper], [NoiseType.poisson],
-   * or [NoiseType.rice].
+   * Add random noise to pixel values. **sigma** determines how strong the effect
+   * should be. **type** should be one of the following: **NoiseType.gaussian**,
+   * **NoiseType.uniform**, **NoiseType.saltPepper**, **NoiseType.poisson**,
+   * or **NoiseType.rice**.
    */
   public static noise(
     image: MemoryImage,
@@ -604,7 +604,7 @@ export abstract class ImageFilter {
 
   /**
    * Linearly normalize the colors of the image. All color values will be mapped
-   * to the range [minValue], [maxValue] inclusive.
+   * to the range **minValue**, **maxValue** inclusive.
    */
   public static normalize(
     src: MemoryImage,
@@ -636,11 +636,11 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Pixelate the [src] image.
+   * Pixelate the **src** image.
    *
-   * [blockSize] determines the size of the pixelated blocks.
-   * If [mode] is [PixelateMode.upperLeft] then the upper-left corner of the block
-   * will be used for the block color. Otherwise if [mode] is [PixelateMode.average],
+   * **blockSize** determines the size of the pixelated blocks.
+   * If **mode** is **PixelateMode.upperLeft** then the upper-left corner of the block
+   * will be used for the block color. Otherwise if **mode** is **PixelateMode.average**,
    * the average of all the pixels in the block will be used for the block color.
    */
   public static pixelate(
@@ -737,12 +737,12 @@ export abstract class ImageFilter {
 
   /**
    * Remap the color channels of the image.
-   * [red], [green], [blue] and [alpha] should be set to one of the following:
-   * [ColorChannel.red], [ColorChannel.green], [ColorChannel.blue], [ColorChannel.alpha], or
-   * [ColorChannel.luminance]. For example,
-   * remapColors({src: src, red: ColorChannel.green, green: ColorChannel.red});
+   * **red**, **green**, **blue** and **alpha** should be set to one of the following:
+   * **ColorChannel.red**, **ColorChannel.green**, **ColorChannel.blue**, **ColorChannel.alpha**, or
+   * **ColorChannel.luminance**. For example,
+   * **_remapColors({ src: src, red: ColorChannel.green, green: ColorChannel.red })_**
    * will swap the red and green channels of the image.
-   * remapColors({src: src, alpha: ColorChannel.luminance})
+   * **_remapColors({ src: src, alpha: ColorChannel.luminance })_**
    * will set the alpha channel to the luminance (grayscale) of the image.
    */
   public static remapColors(options: RemapColorsOptions): MemoryImage {
@@ -797,10 +797,10 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Apply a generic separable convolution filter the [src] image, using the
-   * given [kernel].
+   * Apply a generic separable convolution filter the **src** image, using the
+   * given **kernel**.
    *
-   * [gaussianBlur] is an example of such a filter.
+   * **gaussianBlur** is an example of such a filter.
    */
   public static separableConvolution(
     src: MemoryImage,
@@ -817,7 +817,7 @@ export abstract class ImageFilter {
   /**
    * Apply sepia tone to the image.
    *
-   * [amount] controls the strength of the effect, in the range 0.0 - 1.0.
+   * **amount** controls the strength of the effect, in the range **0**-**1**.
    */
   public static sepia(src: MemoryImage, amount = 1): MemoryImage {
     if (amount === 0) {
@@ -839,9 +839,9 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Apply a smoothing convolution filter to the [src] image.
+   * Apply a smoothing convolution filter to the **src** image.
    *
-   * [w] is the weight of the current pixel being filtered. If it's greater than
+   * **w** is the weight of the current pixel being filtered. If it's greater than
    * 1, it will make the image sharper.
    */
   public static smooth(src: MemoryImage, w: number): MemoryImage {
@@ -855,7 +855,7 @@ export abstract class ImageFilter {
   }
 
   /**
-   * Apply Sobel edge detection filtering to the [src] Image.
+   * Apply Sobel edge detection filtering to the **src** Image.
    */
   public static sobel(src: MemoryImage, amount = 1): MemoryImage {
     const invAmount = 1 - amount;
