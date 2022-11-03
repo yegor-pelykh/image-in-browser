@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from '../common/color-utils';
+import { Color } from '../common/color';
 import { FrameAnimation } from '../common/frame-animation';
 import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../common/memory-image';
@@ -89,7 +89,7 @@ export class TgaDecoder implements Decoder {
         const g = this.input.readByte();
         const r = this.input.readByte();
         const a = this.info.bitsPerPixel === 32 ? this.input.readByte() : 255;
-        image.setPixel(x, y, ColorUtils.getColor(r, g, b, a));
+        image.setPixel(x, y, Color.getColor(r, g, b, a));
       }
     }
 

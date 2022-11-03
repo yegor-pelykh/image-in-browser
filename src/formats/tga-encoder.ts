@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from '../common/color-utils';
+import { Color } from '../common/color';
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
@@ -36,11 +36,11 @@ export class TgaEncoder implements Encoder {
     for (let y = image.height - 1; y >= 0; --y) {
       for (let x = 0; x < image.width; ++x) {
         const c = image.getPixel(x, y);
-        out.writeByte(ColorUtils.getBlue(c));
-        out.writeByte(ColorUtils.getGreen(c));
-        out.writeByte(ColorUtils.getRed(c));
+        out.writeByte(Color.getBlue(c));
+        out.writeByte(Color.getGreen(c));
+        out.writeByte(Color.getRed(c));
         if (image.rgbChannelSet === RgbChannelSet.rgba) {
-          out.writeByte(ColorUtils.getAlpha(c));
+          out.writeByte(Color.getAlpha(c));
         }
       }
     }

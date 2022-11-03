@@ -1,7 +1,7 @@
 /** @format */
 
 import { BitOperators } from '../../common/bit-operators';
-import { ColorUtils } from '../../common/color-utils';
+import { Color } from '../../common/color';
 import { ExifData } from '../../common/exif_data';
 import { MemoryImage } from '../../common/memory-image';
 import { RgbChannelSet } from '../../common/rgb-channel-set';
@@ -304,7 +304,7 @@ export abstract class JpegQuantize {
           for (let x = 0; x < jpeg.width; x++) {
             const x1 = x >> hShift1;
             const Y = component1Line[x1];
-            const c = ColorUtils.getColor(Y, Y, Y);
+            const c = Color.getColor(Y, Y, Y);
             if (orientation === 2) {
               image.setPixel(w1 - x, y, c);
             } else if (orientation === 3) {
@@ -399,7 +399,7 @@ export abstract class JpegQuantize {
             R = this.clamp8(BitOperators.shiftR(R, 8));
             G = this.clamp8(BitOperators.shiftR(G, 8));
             B = this.clamp8(BitOperators.shiftR(B, 8));
-            const c = ColorUtils.getColor(R, G, B);
+            const c = Color.getColor(R, G, B);
             if (orientation === 2) {
               image.setPixel(w1 - x, y, c);
             } else if (orientation === 3) {
@@ -489,7 +489,7 @@ export abstract class JpegQuantize {
             R = BitOperators.shiftR(C * K, 8);
             G = BitOperators.shiftR(M * K, 8);
             B = BitOperators.shiftR(Ye * K, 8);
-            const c = ColorUtils.getColor(R, G, B);
+            const c = Color.getColor(R, G, B);
             if (orientation === 2) {
               image.setPixel(w1 - x, y, c);
             } else if (orientation === 3) {

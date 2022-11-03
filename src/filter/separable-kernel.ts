@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from '../common/color-utils';
+import { Color } from '../common/color';
 import { MemoryImage } from '../common/memory-image';
 
 /**
@@ -54,13 +54,13 @@ export class SeparableKernel {
 
         const sc = horizontal ? src.getPixel(gr, y) : src.getPixel(y, gr);
 
-        r += coeff * ColorUtils.getRed(sc);
-        g += coeff * ColorUtils.getGreen(sc);
-        b += coeff * ColorUtils.getBlue(sc);
-        a += coeff * ColorUtils.getAlpha(sc);
+        r += coeff * Color.getRed(sc);
+        g += coeff * Color.getGreen(sc);
+        b += coeff * Color.getBlue(sc);
+        a += coeff * Color.getAlpha(sc);
       }
 
-      const c = ColorUtils.getColor(
+      const c = Color.getColor(
         r > 255 ? 255 : r,
         g > 255 ? 255 : g,
         b > 255 ? 255 : b,

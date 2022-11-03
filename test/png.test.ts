@@ -1,13 +1,13 @@
 /** @format */
 
 import {
+  Color,
   decodeAnimation,
   decodePng,
   encodePng,
   encodePngAnimation,
   PngDecoder,
 } from '../src';
-import { ColorUtils } from '../src/common/color-utils';
 import { FrameAnimation } from '../src/common/frame-animation';
 import { MemoryImage } from '../src/common/memory-image';
 import { RgbChannelSet } from '../src/common/rgb-channel-set';
@@ -25,7 +25,7 @@ describe('PNG', () => {
       width: 64,
       height: 64,
     });
-    image.fill(ColorUtils.getColor(100, 200, 255));
+    image.fill(Color.getColor(100, 200, 255));
     const output = encodePng(image);
     TestHelpers.writeToFile(
       TestFolder.out,
@@ -121,7 +121,7 @@ describe('PNG', () => {
     if (image !== undefined) {
       expect(image.width).toBe(64);
       expect(image.height).toBe(64);
-      const c = ColorUtils.getColor(100, 200, 255);
+      const c = Color.getColor(100, 200, 255);
       for (let i = 0, len = image.length; i < len; ++i) {
         expect(image.getPixelByIndex(i)).toBe(c);
       }

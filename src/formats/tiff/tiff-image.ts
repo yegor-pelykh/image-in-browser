@@ -3,7 +3,7 @@
 import { inflate } from 'uzip';
 import { BitOperators } from '../../common/bit-operators';
 import { Clamp } from '../../common/clamp';
-import { ColorUtils } from '../../common/color-utils';
+import { Color } from '../../common/color';
 import { InputBuffer } from '../../common/input-buffer';
 import { MemoryImage } from '../../common/memory-image';
 import { ImageError } from '../../error/image-error';
@@ -800,13 +800,13 @@ export class TiffImage {
                   this._photometricType === 3 &&
                   this._colorMap !== undefined
                 ) {
-                  c = ColorUtils.getColor(
+                  c = Color.getColor(
                     this._colorMap[this.colorMapRed + gray],
                     this._colorMap[this.colorMapGreen + gray],
                     this._colorMap[this.colorMapBlue + gray]
                   );
                 } else {
-                  c = ColorUtils.getColor(gray, gray, gray);
+                  c = Color.getColor(gray, gray, gray);
                 }
                 this.image.setPixel(px, py, c);
               }
@@ -849,13 +849,13 @@ export class TiffImage {
                   this._photometricType === 3 &&
                   this._colorMap !== undefined
                 ) {
-                  c = ColorUtils.getColor(
+                  c = Color.getColor(
                     this._colorMap[this.colorMapRed + gray],
                     this._colorMap[this.colorMapGreen + gray],
                     this._colorMap[this.colorMapBlue + gray]
                   );
                 } else {
-                  c = ColorUtils.getColor(gray, gray, gray);
+                  c = Color.getColor(gray, gray, gray);
                 }
 
                 this.image.setPixel(px, py, c);
@@ -911,7 +911,7 @@ export class TiffImage {
                   : this._bitsPerSample === 32
                   ? alpha >> 24
                   : alpha;
-              const c = ColorUtils.getColor(gray, gray, gray, alpha);
+              const c = Color.getColor(gray, gray, gray, alpha);
               this.image.setPixel(px, py, c);
             }
           } else if (this._samplesPerPixel === 3) {
@@ -941,7 +941,7 @@ export class TiffImage {
                 const ri = Clamp.clampInt255(r * 255);
                 const gi = Clamp.clampInt255(g * 255);
                 const bi = Clamp.clampInt255(b * 255);
-                const c = ColorUtils.getColor(ri, gi, bi);
+                const c = Color.getColor(ri, gi, bi);
                 this.image.setPixel(px, py, c);
               }
             } else {
@@ -1014,7 +1014,7 @@ export class TiffImage {
                     : this._bitsPerSample === 32
                     ? b >> 24
                     : b;
-                const c = ColorUtils.getColor(r, g, b);
+                const c = Color.getColor(r, g, b);
                 this.image.setPixel(px, py, c);
               }
             }
@@ -1051,7 +1051,7 @@ export class TiffImage {
                 const gi = Clamp.clampInt255(g * 255);
                 const bi = Clamp.clampInt255(b * 255);
                 const ai = Clamp.clampInt255(a * 255);
-                const c = ColorUtils.getColor(ri, gi, bi, ai);
+                const c = Color.getColor(ri, gi, bi, ai);
                 this.image.setPixel(px, py, c);
               }
             } else {
@@ -1144,7 +1144,7 @@ export class TiffImage {
                     : this._bitsPerSample === 32
                     ? a >> 24
                     : a;
-                const c = ColorUtils.getColor(r, g, b, a);
+                const c = Color.getColor(r, g, b, a);
                 this.image.setPixel(px, py, c);
               }
             }

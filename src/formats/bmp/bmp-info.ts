@@ -1,7 +1,7 @@
 /** @format */
 
 import { BitOperators } from '../../common/bit-operators';
-import { ColorUtils } from '../../common/color-utils';
+import { Color } from '../../common/color';
 import { InputBuffer } from '../../common/input-buffer';
 import { ImageError } from '../../error/image-error';
 import { NotImplementedError } from '../../error/not-implemented-error';
@@ -196,13 +196,13 @@ export class BmpInfo implements DecodeInfo {
       const g = input.readByte();
       const r = input.readByte();
       const a = aDefault ?? input.readByte();
-      return ColorUtils.getColor(r, g, b, this.ignoreAlphaChannel ? 255 : a);
+      return Color.getColor(r, g, b, this.ignoreAlphaChannel ? 255 : a);
     } else {
       const r = input.readByte();
       const b = input.readByte();
       const g = input.readByte();
       const a = aDefault ?? input.readByte();
-      return ColorUtils.getColor(r, b, g, this.ignoreAlphaChannel ? 255 : a);
+      return Color.getColor(r, b, g, this.ignoreAlphaChannel ? 255 : a);
     }
   }
 

@@ -1,12 +1,12 @@
 /** @format */
 
-import { ColorUtils } from '../common/color-utils';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { Rectangle } from '../common/rectangle';
 import { TrimMode } from './trim-mode';
 import { TrimSide } from './trim-side';
 import { ImageTransform } from './image-transform';
+import { Color } from '../common/color';
 
 export abstract class TrimTransform {
   /**
@@ -39,7 +39,7 @@ export abstract class TrimTransform {
       for (let x = 0; x < w; ++x) {
         const c = src.getPixel(x, y);
         if (
-          (mode === TrimMode.transparent && ColorUtils.getAlpha(c) !== 0) ||
+          (mode === TrimMode.transparent && Color.getAlpha(c) !== 0) ||
           (mode !== TrimMode.transparent && c !== bg)
         ) {
           if (xmin > x) {

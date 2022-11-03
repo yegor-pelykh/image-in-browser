@@ -2,7 +2,7 @@
 
 import { deflate } from 'uzip';
 import { BlendMode } from '../common/blend-mode';
-import { ColorUtils } from '../common/color-utils';
+import { Color } from '../common/color';
 import { Crc32 } from '../common/crc32';
 import { DisposeMode } from '../common/dispose-mode';
 import { FrameAnimation } from '../common/frame-animation';
@@ -115,28 +115,28 @@ export class PngEncoder implements Encoder {
 
     out[oindex++] = PngEncoder.FILTER_SUB;
 
-    out[oindex++] = ColorUtils.getRed(image.getPixel(0, row));
-    out[oindex++] = ColorUtils.getGreen(image.getPixel(0, row));
-    out[oindex++] = ColorUtils.getBlue(image.getPixel(0, row));
+    out[oindex++] = Color.getRed(image.getPixel(0, row));
+    out[oindex++] = Color.getGreen(image.getPixel(0, row));
+    out[oindex++] = Color.getBlue(image.getPixel(0, row));
     if (image.rgbChannelSet === RgbChannelSet.rgba) {
-      out[oindex++] = ColorUtils.getAlpha(image.getPixel(0, row));
+      out[oindex++] = Color.getAlpha(image.getPixel(0, row));
     }
 
     for (let x = 1; x < image.width; ++x) {
-      const ar = ColorUtils.getRed(image.getPixel(x - 1, row));
-      const ag = ColorUtils.getGreen(image.getPixel(x - 1, row));
-      const ab = ColorUtils.getBlue(image.getPixel(x - 1, row));
+      const ar = Color.getRed(image.getPixel(x - 1, row));
+      const ag = Color.getGreen(image.getPixel(x - 1, row));
+      const ab = Color.getBlue(image.getPixel(x - 1, row));
 
-      const r = ColorUtils.getRed(image.getPixel(x, row));
-      const g = ColorUtils.getGreen(image.getPixel(x, row));
-      const b = ColorUtils.getBlue(image.getPixel(x, row));
+      const r = Color.getRed(image.getPixel(x, row));
+      const g = Color.getGreen(image.getPixel(x, row));
+      const b = Color.getBlue(image.getPixel(x, row));
 
       out[oindex++] = (r - ar) & 0xff;
       out[oindex++] = (g - ag) & 0xff;
       out[oindex++] = (b - ab) & 0xff;
       if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const aa = ColorUtils.getAlpha(image.getPixel(x - 1, row));
-        const a = ColorUtils.getAlpha(image.getPixel(x, row));
+        const aa = Color.getAlpha(image.getPixel(x - 1, row));
+        const a = Color.getAlpha(image.getPixel(x, row));
         out[oindex++] = (a - aa) & 0xff;
       }
     }
@@ -155,22 +155,20 @@ export class PngEncoder implements Encoder {
     out[oindex++] = PngEncoder.FILTER_UP;
 
     for (let x = 0; x < image.width; ++x) {
-      const br = row === 0 ? 0 : ColorUtils.getRed(image.getPixel(x, row - 1));
-      const bg =
-        row === 0 ? 0 : ColorUtils.getGreen(image.getPixel(x, row - 1));
-      const bb = row === 0 ? 0 : ColorUtils.getBlue(image.getPixel(x, row - 1));
+      const br = row === 0 ? 0 : Color.getRed(image.getPixel(x, row - 1));
+      const bg = row === 0 ? 0 : Color.getGreen(image.getPixel(x, row - 1));
+      const bb = row === 0 ? 0 : Color.getBlue(image.getPixel(x, row - 1));
 
-      const xr = ColorUtils.getRed(image.getPixel(x, row));
-      const xg = ColorUtils.getGreen(image.getPixel(x, row));
-      const xb = ColorUtils.getBlue(image.getPixel(x, row));
+      const xr = Color.getRed(image.getPixel(x, row));
+      const xg = Color.getGreen(image.getPixel(x, row));
+      const xb = Color.getBlue(image.getPixel(x, row));
 
       out[oindex++] = (xr - br) & 0xff;
       out[oindex++] = (xg - bg) & 0xff;
       out[oindex++] = (xb - bb) & 0xff;
       if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const ba =
-          row === 0 ? 0 : ColorUtils.getAlpha(image.getPixel(x, row - 1));
-        const xa = ColorUtils.getAlpha(image.getPixel(x, row));
+        const ba = row === 0 ? 0 : Color.getAlpha(image.getPixel(x, row - 1));
+        const xa = Color.getAlpha(image.getPixel(x, row));
         out[oindex++] = (xa - ba) & 0xff;
       }
     }
@@ -189,28 +187,25 @@ export class PngEncoder implements Encoder {
     out[oindex++] = PngEncoder.FILTER_AVERAGE;
 
     for (let x = 0; x < image.width; ++x) {
-      const ar = x === 0 ? 0 : ColorUtils.getRed(image.getPixel(x - 1, row));
-      const ag = x === 0 ? 0 : ColorUtils.getGreen(image.getPixel(x - 1, row));
-      const ab = x === 0 ? 0 : ColorUtils.getBlue(image.getPixel(x - 1, row));
+      const ar = x === 0 ? 0 : Color.getRed(image.getPixel(x - 1, row));
+      const ag = x === 0 ? 0 : Color.getGreen(image.getPixel(x - 1, row));
+      const ab = x === 0 ? 0 : Color.getBlue(image.getPixel(x - 1, row));
 
-      const br = row === 0 ? 0 : ColorUtils.getRed(image.getPixel(x, row - 1));
-      const bg =
-        row === 0 ? 0 : ColorUtils.getGreen(image.getPixel(x, row - 1));
-      const bb = row === 0 ? 0 : ColorUtils.getBlue(image.getPixel(x, row - 1));
+      const br = row === 0 ? 0 : Color.getRed(image.getPixel(x, row - 1));
+      const bg = row === 0 ? 0 : Color.getGreen(image.getPixel(x, row - 1));
+      const bb = row === 0 ? 0 : Color.getBlue(image.getPixel(x, row - 1));
 
-      const xr = ColorUtils.getRed(image.getPixel(x, row));
-      const xg = ColorUtils.getGreen(image.getPixel(x, row));
-      const xb = ColorUtils.getBlue(image.getPixel(x, row));
+      const xr = Color.getRed(image.getPixel(x, row));
+      const xg = Color.getGreen(image.getPixel(x, row));
+      const xb = Color.getBlue(image.getPixel(x, row));
 
       out[oindex++] = (xr - ((ar + br) >> 1)) & 0xff;
       out[oindex++] = (xg - ((ag + bg) >> 1)) & 0xff;
       out[oindex++] = (xb - ((ab + bb) >> 1)) & 0xff;
       if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const aa =
-          x === 0 ? 0 : ColorUtils.getAlpha(image.getPixel(x - 1, row));
-        const ba =
-          row === 0 ? 0 : ColorUtils.getAlpha(image.getPixel(x, row - 1));
-        const xa = ColorUtils.getAlpha(image.getPixel(x, row));
+        const aa = x === 0 ? 0 : Color.getAlpha(image.getPixel(x - 1, row));
+        const ba = row === 0 ? 0 : Color.getAlpha(image.getPixel(x, row - 1));
+        const xa = Color.getAlpha(image.getPixel(x, row));
         out[oindex++] = (xa - ((aa + ba) >> 1)) & 0xff;
       }
     }
@@ -241,31 +236,28 @@ export class PngEncoder implements Encoder {
 
     out[oindex++] = PngEncoder.FILTER_PAETH;
     for (let x = 0; x < image.width; ++x) {
-      const ar = x === 0 ? 0 : ColorUtils.getRed(image.getPixel(x - 1, row));
-      const ag = x === 0 ? 0 : ColorUtils.getGreen(image.getPixel(x - 1, row));
-      const ab = x === 0 ? 0 : ColorUtils.getBlue(image.getPixel(x - 1, row));
+      const ar = x === 0 ? 0 : Color.getRed(image.getPixel(x - 1, row));
+      const ag = x === 0 ? 0 : Color.getGreen(image.getPixel(x - 1, row));
+      const ab = x === 0 ? 0 : Color.getBlue(image.getPixel(x - 1, row));
 
-      const br = row === 0 ? 0 : ColorUtils.getRed(image.getPixel(x, row - 1));
-      const bg =
-        row === 0 ? 0 : ColorUtils.getGreen(image.getPixel(x, row - 1));
-      const bb = row === 0 ? 0 : ColorUtils.getBlue(image.getPixel(x, row - 1));
+      const br = row === 0 ? 0 : Color.getRed(image.getPixel(x, row - 1));
+      const bg = row === 0 ? 0 : Color.getGreen(image.getPixel(x, row - 1));
+      const bb = row === 0 ? 0 : Color.getBlue(image.getPixel(x, row - 1));
 
       const cr =
-        row === 0 || x === 0
-          ? 0
-          : ColorUtils.getRed(image.getPixel(x - 1, row - 1));
+        row === 0 || x === 0 ? 0 : Color.getRed(image.getPixel(x - 1, row - 1));
       const cg =
         row === 0 || x === 0
           ? 0
-          : ColorUtils.getGreen(image.getPixel(x - 1, row - 1));
+          : Color.getGreen(image.getPixel(x - 1, row - 1));
       const cb =
         row === 0 || x === 0
           ? 0
-          : ColorUtils.getBlue(image.getPixel(x - 1, row - 1));
+          : Color.getBlue(image.getPixel(x - 1, row - 1));
 
-      const xr = ColorUtils.getRed(image.getPixel(x, row));
-      const xg = ColorUtils.getGreen(image.getPixel(x, row));
-      const xb = ColorUtils.getBlue(image.getPixel(x, row));
+      const xr = Color.getRed(image.getPixel(x, row));
+      const xg = Color.getGreen(image.getPixel(x, row));
+      const xb = Color.getBlue(image.getPixel(x, row));
 
       const pr = PngEncoder.paethPredictor(ar, br, cr);
       const pg = PngEncoder.paethPredictor(ag, bg, cg);
@@ -275,15 +267,13 @@ export class PngEncoder implements Encoder {
       out[oindex++] = (xg - pg) & 0xff;
       out[oindex++] = (xb - pb) & 0xff;
       if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const aa =
-          x === 0 ? 0 : ColorUtils.getAlpha(image.getPixel(x - 1, row));
-        const ba =
-          row === 0 ? 0 : ColorUtils.getAlpha(image.getPixel(x, row - 1));
+        const aa = x === 0 ? 0 : Color.getAlpha(image.getPixel(x - 1, row));
+        const ba = row === 0 ? 0 : Color.getAlpha(image.getPixel(x, row - 1));
         const ca =
           row === 0 || x === 0
             ? 0
-            : ColorUtils.getAlpha(image.getPixel(x - 1, row - 1));
-        const xa = ColorUtils.getAlpha(image.getPixel(x, row));
+            : Color.getAlpha(image.getPixel(x - 1, row - 1));
+        const xa = Color.getAlpha(image.getPixel(x, row));
         const pa = PngEncoder.paethPredictor(aa, ba, ca);
         out[oindex++] = (xa - pa) & 0xff;
       }
@@ -302,11 +292,11 @@ export class PngEncoder implements Encoder {
     out[oindex++] = PngEncoder.FILTER_NONE;
     for (let x = 0; x < image.width; ++x) {
       const c = image.getPixel(x, row);
-      out[oindex++] = ColorUtils.getRed(c);
-      out[oindex++] = ColorUtils.getGreen(c);
-      out[oindex++] = ColorUtils.getBlue(c);
+      out[oindex++] = Color.getRed(c);
+      out[oindex++] = Color.getGreen(c);
+      out[oindex++] = Color.getBlue(c);
       if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        out[oindex++] = ColorUtils.getAlpha(image.getPixel(x, row));
+        out[oindex++] = Color.getAlpha(image.getPixel(x, row));
       }
     }
     return oindex;

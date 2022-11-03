@@ -1,7 +1,6 @@
 /** @format */
 
 import { Clamp } from '../common/clamp';
-import { ColorUtils } from '../common/color-utils';
 import { ExifData } from '../common/exif_data';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
@@ -16,6 +15,7 @@ import {
 import { CopyIntoOptions } from './copy-into-options';
 import { Draw } from '../draw/draw';
 import { Interpolation } from '../common/interpolation';
+import { Color } from '../common/color';
 
 export abstract class ImageTransform {
   /**
@@ -243,7 +243,7 @@ export abstract class ImageTransform {
           dst.setPixel(
             x,
             y,
-            ColorUtils.getColor(
+            Color.getColor(
               Math.floor(r / np),
               Math.floor(g / np),
               Math.floor(b / np),

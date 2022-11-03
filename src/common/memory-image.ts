@@ -3,13 +3,13 @@
 import { ExifData } from './exif_data';
 import { ICCProfileData } from './icc_profile_data';
 import { ListUtils } from './list-utils';
-import { ColorUtils } from './color-utils';
 import { RgbChannelSet } from './rgb-channel-set';
 import { DisposeMode } from './dispose-mode';
 import { BlendMode } from './blend-mode';
 import { ColorModel } from './color-model';
 import { ImageError } from '../error/image-error';
 import { Interpolation } from './interpolation';
+import { Color } from './color';
 
 export interface RgbMemoryImageInitOptions {
   width: number;
@@ -405,7 +405,7 @@ export class MemoryImage {
       case ColorModel.luminance: {
         const bytes = new Uint8Array(this._width * this._height);
         for (let i = 0, len = this.length; i < len; ++i) {
-          bytes[i] = ColorUtils.getLuminance(this._data[i]);
+          bytes[i] = Color.getLuminance(this._data[i]);
         }
         return bytes;
       }
@@ -444,22 +444,18 @@ export class MemoryImage {
     for (let y = 0; y < h; ++y) {
       for (let x = 0; x < w; ++x) {
         const c1 = this.getPixel(x, y);
-        const r1 = ColorUtils.getRed(c1);
-        const g1 = ColorUtils.getGreen(c1);
-        const b1 = ColorUtils.getBlue(c1);
-        const a1 = ColorUtils.getAlpha(c1);
+        const r1 = Color.getRed(c1);
+        const g1 = Color.getGreen(c1);
+        const b1 = Color.getBlue(c1);
+        const a1 = Color.getAlpha(c1);
 
         const c2 = other.getPixel(x, y);
-        const r2 = ColorUtils.getRed(c2);
-        const g2 = ColorUtils.getGreen(c2);
-        const b2 = ColorUtils.getBlue(c2);
-        const a2 = ColorUtils.getAlpha(c2);
+        const r2 = Color.getRed(c2);
+        const g2 = Color.getGreen(c2);
+        const b2 = Color.getBlue(c2);
+        const a2 = Color.getAlpha(c2);
 
-        this.setPixel(
-          x,
-          y,
-          ColorUtils.getColor(r1 + r2, g1 + g2, b1 + b2, a1 + a2)
-        );
+        this.setPixel(x, y, Color.getColor(r1 + r2, g1 + g2, b1 + b2, a1 + a2));
       }
     }
     return this;
@@ -474,22 +470,18 @@ export class MemoryImage {
     for (let y = 0; y < h; ++y) {
       for (let x = 0; x < w; ++x) {
         const c1 = this.getPixel(x, y);
-        const r1 = ColorUtils.getRed(c1);
-        const g1 = ColorUtils.getGreen(c1);
-        const b1 = ColorUtils.getBlue(c1);
-        const a1 = ColorUtils.getAlpha(c1);
+        const r1 = Color.getRed(c1);
+        const g1 = Color.getGreen(c1);
+        const b1 = Color.getBlue(c1);
+        const a1 = Color.getAlpha(c1);
 
         const c2 = other.getPixel(x, y);
-        const r2 = ColorUtils.getRed(c2);
-        const g2 = ColorUtils.getGreen(c2);
-        const b2 = ColorUtils.getBlue(c2);
-        const a2 = ColorUtils.getAlpha(c2);
+        const r2 = Color.getRed(c2);
+        const g2 = Color.getGreen(c2);
+        const b2 = Color.getBlue(c2);
+        const a2 = Color.getAlpha(c2);
 
-        this.setPixel(
-          x,
-          y,
-          ColorUtils.getColor(r1 - r2, g1 - g2, b1 - b2, a1 - a2)
-        );
+        this.setPixel(x, y, Color.getColor(r1 - r2, g1 - g2, b1 - b2, a1 - a2));
       }
     }
     return this;
@@ -504,22 +496,18 @@ export class MemoryImage {
     for (let y = 0; y < h; ++y) {
       for (let x = 0; x < w; ++x) {
         const c1 = this.getPixel(x, y);
-        const r1 = ColorUtils.getRed(c1);
-        const g1 = ColorUtils.getGreen(c1);
-        const b1 = ColorUtils.getBlue(c1);
-        const a1 = ColorUtils.getAlpha(c1);
+        const r1 = Color.getRed(c1);
+        const g1 = Color.getGreen(c1);
+        const b1 = Color.getBlue(c1);
+        const a1 = Color.getAlpha(c1);
 
         const c2 = other.getPixel(x, y);
-        const r2 = ColorUtils.getRed(c2);
-        const g2 = ColorUtils.getGreen(c2);
-        const b2 = ColorUtils.getBlue(c2);
-        const a2 = ColorUtils.getAlpha(c2);
+        const r2 = Color.getRed(c2);
+        const g2 = Color.getGreen(c2);
+        const b2 = Color.getBlue(c2);
+        const a2 = Color.getAlpha(c2);
 
-        this.setPixel(
-          x,
-          y,
-          ColorUtils.getColor(r1 * r2, g1 * g2, b1 * b2, a1 * a2)
-        );
+        this.setPixel(x, y, Color.getColor(r1 * r2, g1 * g2, b1 * b2, a1 * a2));
       }
     }
     return this;
@@ -534,22 +522,18 @@ export class MemoryImage {
     for (let y = 0; y < h; ++y) {
       for (let x = 0; x < w; ++x) {
         const c1 = this.getPixel(x, y);
-        const r1 = ColorUtils.getRed(c1);
-        const g1 = ColorUtils.getGreen(c1);
-        const b1 = ColorUtils.getBlue(c1);
-        const a1 = ColorUtils.getAlpha(c1);
+        const r1 = Color.getRed(c1);
+        const g1 = Color.getGreen(c1);
+        const b1 = Color.getBlue(c1);
+        const a1 = Color.getAlpha(c1);
 
         const c2 = other.getPixel(x, y);
-        const r2 = ColorUtils.getRed(c2);
-        const g2 = ColorUtils.getGreen(c2);
-        const b2 = ColorUtils.getBlue(c2);
-        const a2 = ColorUtils.getAlpha(c2);
+        const r2 = Color.getRed(c2);
+        const g2 = Color.getGreen(c2);
+        const b2 = Color.getBlue(c2);
+        const a2 = Color.getAlpha(c2);
 
-        this.setPixel(
-          x,
-          y,
-          ColorUtils.getColor(r1 | r2, g1 | g2, b1 | b2, a1 | a2)
-        );
+        this.setPixel(x, y, Color.getColor(r1 | r2, g1 | g2, b1 | b2, a1 | a2));
       }
     }
     return this;
@@ -564,22 +548,18 @@ export class MemoryImage {
     for (let y = 0; y < h; ++y) {
       for (let x = 0; x < w; ++x) {
         const c1 = this.getPixel(x, y);
-        const r1 = ColorUtils.getRed(c1);
-        const g1 = ColorUtils.getGreen(c1);
-        const b1 = ColorUtils.getBlue(c1);
-        const a1 = ColorUtils.getAlpha(c1);
+        const r1 = Color.getRed(c1);
+        const g1 = Color.getGreen(c1);
+        const b1 = Color.getBlue(c1);
+        const a1 = Color.getAlpha(c1);
 
         const c2 = other.getPixel(x, y);
-        const r2 = ColorUtils.getRed(c2);
-        const g2 = ColorUtils.getGreen(c2);
-        const b2 = ColorUtils.getBlue(c2);
-        const a2 = ColorUtils.getAlpha(c2);
+        const r2 = Color.getRed(c2);
+        const g2 = Color.getGreen(c2);
+        const b2 = Color.getBlue(c2);
+        const a2 = Color.getAlpha(c2);
 
-        this.setPixel(
-          x,
-          y,
-          ColorUtils.getColor(r1 & r2, g1 & g2, b1 & b2, a1 & a2)
-        );
+        this.setPixel(x, y, Color.getColor(r1 & r2, g1 & g2, b1 & b2, a1 & a2));
       }
     }
     return this;
@@ -594,22 +574,18 @@ export class MemoryImage {
     for (let y = 0; y < h; ++y) {
       for (let x = 0; x < w; ++x) {
         const c1 = this.getPixel(x, y);
-        const r1 = ColorUtils.getRed(c1);
-        const g1 = ColorUtils.getGreen(c1);
-        const b1 = ColorUtils.getBlue(c1);
-        const a1 = ColorUtils.getAlpha(c1);
+        const r1 = Color.getRed(c1);
+        const g1 = Color.getGreen(c1);
+        const b1 = Color.getBlue(c1);
+        const a1 = Color.getAlpha(c1);
 
         const c2 = other.getPixel(x, y);
-        const r2 = ColorUtils.getRed(c2);
-        const g2 = ColorUtils.getGreen(c2);
-        const b2 = ColorUtils.getBlue(c2);
-        const a2 = ColorUtils.getAlpha(c2);
+        const r2 = Color.getRed(c2);
+        const g2 = Color.getGreen(c2);
+        const b2 = Color.getBlue(c2);
+        const a2 = Color.getAlpha(c2);
 
-        this.setPixel(
-          x,
-          y,
-          ColorUtils.getColor(r1 % r2, g1 % g2, b1 % b2, a1 % a2)
-        );
+        this.setPixel(x, y, Color.getColor(r1 % r2, g1 % g2, b1 % b2, a1 % a2));
       }
     }
     return this;
@@ -709,30 +685,30 @@ export class MemoryImage {
     const inn =
       nx >= this._width || ny >= this._height ? icc : this.getPixelSafe(nx, ny);
 
-    return ColorUtils.getColor(
+    return Color.getColor(
       linear(
-        ColorUtils.getRed(icc),
-        ColorUtils.getRed(inc),
-        ColorUtils.getRed(icn),
-        ColorUtils.getRed(inn)
+        Color.getRed(icc),
+        Color.getRed(inc),
+        Color.getRed(icn),
+        Color.getRed(inn)
       ),
       linear(
-        ColorUtils.getGreen(icc),
-        ColorUtils.getGreen(inc),
-        ColorUtils.getGreen(icn),
-        ColorUtils.getGreen(inn)
+        Color.getGreen(icc),
+        Color.getGreen(inc),
+        Color.getGreen(icn),
+        Color.getGreen(inn)
       ),
       linear(
-        ColorUtils.getBlue(icc),
-        ColorUtils.getBlue(inc),
-        ColorUtils.getBlue(icn),
-        ColorUtils.getBlue(inn)
+        Color.getBlue(icc),
+        Color.getBlue(inc),
+        Color.getBlue(icn),
+        Color.getBlue(inn)
       ),
       linear(
-        ColorUtils.getAlpha(icc),
-        ColorUtils.getAlpha(inc),
-        ColorUtils.getAlpha(icn),
-        ColorUtils.getAlpha(inn)
+        Color.getAlpha(icc),
+        Color.getAlpha(inc),
+        Color.getAlpha(icn),
+        Color.getAlpha(inn)
       )
     );
   }
@@ -779,32 +755,32 @@ export class MemoryImage {
 
     const ip0 = cubic(
       dx,
-      ColorUtils.getRed(ipp),
-      ColorUtils.getRed(icp),
-      ColorUtils.getRed(inp),
-      ColorUtils.getRed(iap)
+      Color.getRed(ipp),
+      Color.getRed(icp),
+      Color.getRed(inp),
+      Color.getRed(iap)
     );
 
     const ip1 = cubic(
       dx,
-      ColorUtils.getGreen(ipp),
-      ColorUtils.getGreen(icp),
-      ColorUtils.getGreen(inp),
-      ColorUtils.getGreen(iap)
+      Color.getGreen(ipp),
+      Color.getGreen(icp),
+      Color.getGreen(inp),
+      Color.getGreen(iap)
     );
     const ip2 = cubic(
       dx,
-      ColorUtils.getBlue(ipp),
-      ColorUtils.getBlue(icp),
-      ColorUtils.getBlue(inp),
-      ColorUtils.getBlue(iap)
+      Color.getBlue(ipp),
+      Color.getBlue(icp),
+      Color.getBlue(inp),
+      Color.getBlue(iap)
     );
     const ip3 = cubic(
       dx,
-      ColorUtils.getAlpha(ipp),
-      ColorUtils.getAlpha(icp),
-      ColorUtils.getAlpha(inp),
-      ColorUtils.getAlpha(iap)
+      Color.getAlpha(ipp),
+      Color.getAlpha(icp),
+      Color.getAlpha(inp),
+      Color.getAlpha(iap)
     );
 
     const ipc = px < 0 ? icc : this.getPixelSafe(px, y);
@@ -813,31 +789,31 @@ export class MemoryImage {
 
     const Ic0 = cubic(
       dx,
-      ColorUtils.getRed(ipc),
-      ColorUtils.getRed(icc),
-      ColorUtils.getRed(inc),
-      ColorUtils.getRed(iac)
+      Color.getRed(ipc),
+      Color.getRed(icc),
+      Color.getRed(inc),
+      Color.getRed(iac)
     );
     const Ic1 = cubic(
       dx,
-      ColorUtils.getGreen(ipc),
-      ColorUtils.getGreen(icc),
-      ColorUtils.getGreen(inc),
-      ColorUtils.getGreen(iac)
+      Color.getGreen(ipc),
+      Color.getGreen(icc),
+      Color.getGreen(inc),
+      Color.getGreen(iac)
     );
     const Ic2 = cubic(
       dx,
-      ColorUtils.getBlue(ipc),
-      ColorUtils.getBlue(icc),
-      ColorUtils.getBlue(inc),
-      ColorUtils.getBlue(iac)
+      Color.getBlue(ipc),
+      Color.getBlue(icc),
+      Color.getBlue(inc),
+      Color.getBlue(iac)
     );
     const Ic3 = cubic(
       dx,
-      ColorUtils.getAlpha(ipc),
-      ColorUtils.getAlpha(icc),
-      ColorUtils.getAlpha(inc),
-      ColorUtils.getAlpha(iac)
+      Color.getAlpha(ipc),
+      Color.getAlpha(icc),
+      Color.getAlpha(inc),
+      Color.getAlpha(iac)
     );
 
     const ipn = px < 0 || ny >= this._height ? icc : this.getPixelSafe(px, ny);
@@ -849,31 +825,31 @@ export class MemoryImage {
 
     const in0 = cubic(
       dx,
-      ColorUtils.getRed(ipn),
-      ColorUtils.getRed(icn),
-      ColorUtils.getRed(inn),
-      ColorUtils.getRed(ian)
+      Color.getRed(ipn),
+      Color.getRed(icn),
+      Color.getRed(inn),
+      Color.getRed(ian)
     );
     const in1 = cubic(
       dx,
-      ColorUtils.getGreen(ipn),
-      ColorUtils.getGreen(icn),
-      ColorUtils.getGreen(inn),
-      ColorUtils.getGreen(ian)
+      Color.getGreen(ipn),
+      Color.getGreen(icn),
+      Color.getGreen(inn),
+      Color.getGreen(ian)
     );
     const in2 = cubic(
       dx,
-      ColorUtils.getBlue(ipn),
-      ColorUtils.getBlue(icn),
-      ColorUtils.getBlue(inn),
-      ColorUtils.getBlue(ian)
+      Color.getBlue(ipn),
+      Color.getBlue(icn),
+      Color.getBlue(inn),
+      Color.getBlue(ian)
     );
     const in3 = cubic(
       dx,
-      ColorUtils.getAlpha(ipn),
-      ColorUtils.getAlpha(icn),
-      ColorUtils.getAlpha(inn),
-      ColorUtils.getAlpha(ian)
+      Color.getAlpha(ipn),
+      Color.getAlpha(icn),
+      Color.getAlpha(inn),
+      Color.getAlpha(ian)
     );
 
     const ipa = px < 0 || ay >= this._height ? icc : this.getPixelSafe(px, ay);
@@ -885,31 +861,31 @@ export class MemoryImage {
 
     const ia0 = cubic(
       dx,
-      ColorUtils.getRed(ipa),
-      ColorUtils.getRed(ica),
-      ColorUtils.getRed(ina),
-      ColorUtils.getRed(iaa)
+      Color.getRed(ipa),
+      Color.getRed(ica),
+      Color.getRed(ina),
+      Color.getRed(iaa)
     );
     const ia1 = cubic(
       dx,
-      ColorUtils.getGreen(ipa),
-      ColorUtils.getGreen(ica),
-      ColorUtils.getGreen(ina),
-      ColorUtils.getGreen(iaa)
+      Color.getGreen(ipa),
+      Color.getGreen(ica),
+      Color.getGreen(ina),
+      Color.getGreen(iaa)
     );
     const ia2 = cubic(
       dx,
-      ColorUtils.getBlue(ipa),
-      ColorUtils.getBlue(ica),
-      ColorUtils.getBlue(ina),
-      ColorUtils.getBlue(iaa)
+      Color.getBlue(ipa),
+      Color.getBlue(ica),
+      Color.getBlue(ina),
+      Color.getBlue(iaa)
     );
     const ia3 = cubic(
       dx,
-      ColorUtils.getAlpha(ipa),
-      ColorUtils.getAlpha(ica),
-      ColorUtils.getAlpha(ina),
-      ColorUtils.getAlpha(iaa)
+      Color.getAlpha(ipa),
+      Color.getAlpha(ica),
+      Color.getAlpha(ina),
+      Color.getAlpha(iaa)
     );
 
     const c0 = cubic(dy, ip0, Ic0, in0, ia0);
@@ -917,7 +893,7 @@ export class MemoryImage {
     const c2 = cubic(dy, ip2, Ic2, in2, ia2);
     const c3 = cubic(dy, ip3, Ic3, in3, ia3);
 
-    return ColorUtils.getColor(
+    return Color.getColor(
       Math.trunc(c0),
       Math.trunc(c1),
       Math.trunc(c2),
@@ -961,7 +937,7 @@ export class MemoryImage {
     a = 0xff
   ): void {
     const index = this.getBufferIndex(x, y);
-    this._data[index] = ColorUtils.getColor(r, g, b, a);
+    this._data[index] = Color.getColor(r, g, b, a);
   }
 
   /**
@@ -974,9 +950,9 @@ export class MemoryImage {
     let b = 0.0;
     let t = 1;
     for (let i = 0; i < len; ++i) {
-      r += (ColorUtils.getRed(this._data[i]) - r) / t;
-      g += (ColorUtils.getGreen(this._data[i]) - g) / t;
-      b += (ColorUtils.getBlue(this._data[i]) - b) / t;
+      r += (Color.getRed(this._data[i]) - r) / t;
+      g += (Color.getGreen(this._data[i]) - g) / t;
+      b += (Color.getBlue(this._data[i]) - b) / t;
       ++t;
     }
     const averageGray = (r + g + b) / 3.0;
@@ -995,9 +971,9 @@ export class MemoryImage {
     let max = 0;
     for (let i = 0; i < this.length; ++i) {
       const c = this.getPixelByIndex(i);
-      const r = ColorUtils.getRed(c);
-      const g = ColorUtils.getGreen(c);
-      const b = ColorUtils.getBlue(c);
+      const r = Color.getRed(c);
+      const g = Color.getGreen(c);
+      const b = Color.getBlue(c);
 
       if (r < min) {
         min = r;
@@ -1018,7 +994,7 @@ export class MemoryImage {
         max = b;
       }
       if (this.rgbChannelSet === RgbChannelSet.rgba) {
-        const a = ColorUtils.getAlpha(c);
+        const a = Color.getAlpha(c);
         if (a < min) {
           min = a;
         }

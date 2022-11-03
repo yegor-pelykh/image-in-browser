@@ -25,7 +25,6 @@ export { BlendMode } from './common/blend-mode';
 export { Clamp } from './common/clamp';
 export { ColorChannel } from './common/color-channel';
 export { ColorModel } from './common/color-model';
-export { ColorUtils } from './common/color-utils';
 export { Color } from './common/color';
 export { Crc32, Crc32Parameters } from './common/crc32';
 export { DisposeMode } from './common/dispose-mode';

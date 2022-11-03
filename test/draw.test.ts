@@ -1,7 +1,6 @@
 /** @format */
 
-import { Draw, encodePng } from '../src';
-import { ColorUtils } from '../src/common/color-utils';
+import { Color, Draw, encodePng } from '../src';
 import { Line } from '../src/common/line';
 import { MemoryImage } from '../src/common/memory-image';
 import { Point } from '../src/common/point';
@@ -17,12 +16,12 @@ describe('Draw', () => {
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.drawCircle(
         image,
         new Point(32, 32),
         radius,
-        ColorUtils.getColor(255, 255, 255)
+        Color.getColor(255, 255, 255)
       );
       const encoded = encodePng(image);
       expect(encoded).not.toBeUndefined();
@@ -46,12 +45,12 @@ describe('Draw', () => {
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.fillCircle(
         image,
         new Point(32, 32),
         radius,
-        ColorUtils.getColor(255, 255, 255)
+        Color.getColor(255, 255, 255)
       );
       const encoded = encodePng(image);
       expect(encoded).not.toBeUndefined();
@@ -75,12 +74,12 @@ describe('Draw', () => {
         width: size,
         height: size,
       });
-      src.fill(ColorUtils.getColor(255, 255, 255));
+      src.fill(Color.getColor(255, 255, 255));
       const image = new MemoryImage({
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.drawImage({
         dst: image,
         src: src,
@@ -108,7 +107,7 @@ describe('Draw', () => {
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.drawLine({
         image: image,
         line: new Line(
@@ -117,7 +116,7 @@ describe('Draw', () => {
           center.x + size,
           center.y + size
         ),
-        color: ColorUtils.getColor(255, 255, 255),
+        color: Color.getColor(255, 255, 255),
       });
       const encoded = encodePng(image);
       expect(encoded).not.toBeUndefined();
@@ -138,14 +137,14 @@ describe('Draw', () => {
       width: 64,
       height: 64,
     });
-    image.fill(ColorUtils.getColor(0, 0, 0));
+    image.fill(Color.getColor(0, 0, 0));
     for (let xi = 0; xi < image.width; xi++) {
       for (let yi = 0; yi < image.height; yi++) {
         if ((xi % 2 === 0) !== (yi % 2 === 0)) {
           Draw.drawPixel(
             image,
             new Point(xi, yi),
-            ColorUtils.getColor(255, 255, 255)
+            Color.getColor(255, 255, 255)
           );
         }
       }
@@ -171,7 +170,7 @@ describe('Draw', () => {
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.drawRect(
         image,
         new Rectangle(
@@ -180,7 +179,7 @@ describe('Draw', () => {
           center.x + size,
           center.y + size
         ),
-        ColorUtils.getColor(255, 255, 255)
+        Color.getColor(255, 255, 255)
       );
       const encoded = encodePng(image);
       expect(encoded).not.toBeUndefined();
@@ -205,7 +204,7 @@ describe('Draw', () => {
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.drawRect(
         image,
         new Rectangle(
@@ -214,13 +213,13 @@ describe('Draw', () => {
           center.x + size,
           center.y + size
         ),
-        ColorUtils.getColor(255, 255, 255)
+        Color.getColor(255, 255, 255)
       );
       Draw.fillFlood({
         src: image,
         x: center.x,
         y: center.y,
-        color: ColorUtils.getColor(255, 0, 0),
+        color: Color.getColor(255, 0, 0),
       });
       const encoded = encodePng(image);
       expect(encoded).not.toBeUndefined();
@@ -245,7 +244,7 @@ describe('Draw', () => {
         width: 64,
         height: 64,
       });
-      image.fill(ColorUtils.getColor(0, 0, 0));
+      image.fill(Color.getColor(0, 0, 0));
       Draw.fillRect(
         image,
         new Rectangle(
@@ -254,7 +253,7 @@ describe('Draw', () => {
           center.x + size,
           center.y + size
         ),
-        ColorUtils.getColor(255, 255, 255)
+        Color.getColor(255, 255, 255)
       );
       const encoded = encodePng(image);
       expect(encoded).not.toBeUndefined();

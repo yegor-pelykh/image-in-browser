@@ -1,7 +1,6 @@
 /** @format */
 
-import { decodeBmp, encodeBmp } from '../src';
-import { ColorUtils } from '../src/common/color-utils';
+import { Color, decodeBmp, encodeBmp } from '../src';
 import { MemoryImage } from '../src/common/memory-image';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
@@ -11,7 +10,7 @@ describe('BMP', () => {
       width: 64,
       height: 64,
     });
-    image.fill(ColorUtils.getColor(100, 200, 255));
+    image.fill(Color.getColor(100, 200, 255));
 
     const png = encodeBmp(image);
 

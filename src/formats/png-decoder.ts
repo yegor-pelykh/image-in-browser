@@ -2,7 +2,6 @@
 
 import { inflate } from 'uzip';
 import { Color } from '../common/color';
-import { ColorUtils } from '../common/color-utils';
 import { Crc32 } from '../common/crc32';
 import { FrameAnimation } from '../common/frame-animation';
 import { ICCPCompressionMode } from '../common/iccp-compression-mode';
@@ -426,11 +425,11 @@ export class PngDecoder implements Decoder {
             ((this._info!.transparency[0] & 0xff) << 24) |
             (this._info!.transparency[1] & 0xff);
           if (raw[0] === a) {
-            return ColorUtils.getColor(g, g, g, 0);
+            return Color.getColor(g, g, g, 0);
           }
         }
 
-        return ColorUtils.getColor(g, g, g);
+        return Color.getColor(g, g, g);
       }
       case PngDecoder.RGB: {
         let r = 0;
@@ -479,11 +478,11 @@ export class PngDecoder implements Decoder {
             ((this._info!.transparency[4] & 0xff) << 8) |
             (this._info!.transparency[5] & 0xff);
           if (raw[0] === tr && raw[1] === tg && raw[2] === tb) {
-            return ColorUtils.getColor(r, g, b, 0);
+            return Color.getColor(r, g, b, 0);
           }
         }
 
-        return ColorUtils.getColor(r, g, b);
+        return Color.getColor(r, g, b);
       }
       case PngDecoder.INDEXED: {
         const p = raw[0] * 3;
@@ -495,14 +494,14 @@ export class PngDecoder implements Decoder {
             : 255;
 
         if (p >= this._info!.palette!.length) {
-          return ColorUtils.getColor(255, 255, 255, a);
+          return Color.getColor(255, 255, 255, a);
         }
 
         const r = this._info!.palette![p]!;
         const g = this._info!.palette![p + 1]!;
         const b = this._info!.palette![p + 2]!;
 
-        return ColorUtils.getColor(r, g, b, a);
+        return Color.getColor(r, g, b, a);
       }
       case PngDecoder.GRAYSCALE_ALPHA: {
         let g = 0;
@@ -532,7 +531,7 @@ export class PngDecoder implements Decoder {
 
         g = this._info!.colorLut![g]!;
 
-        return ColorUtils.getColor(g, g, g, a);
+        return Color.getColor(g, g, g, a);
       }
       case PngDecoder.RGBA: {
         let r = 0;
@@ -576,7 +575,7 @@ export class PngDecoder implements Decoder {
         g = this._info!.colorLut![g]!;
         b = this._info!.colorLut![b]!;
 
-        return ColorUtils.getColor(r, g, b, a);
+        return Color.getColor(r, g, b, a);
       }
     }
 

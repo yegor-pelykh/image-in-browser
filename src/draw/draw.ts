@@ -2,7 +2,6 @@
 
 import { Clamp } from '../common/clamp';
 import { Color } from '../common/color';
-import { ColorUtils } from '../common/color-utils';
 import { Line } from '../common/line';
 import { MemoryImage } from '../common/memory-image';
 import { Point } from '../common/point';
@@ -225,13 +224,13 @@ export abstract class Draw {
   ): boolean {
     const pixel = src.getPixel(x, y);
     const compareAlpha = refColor.length > 3;
-    const pixelColor = ColorUtils.rgbToLab(
-      ColorUtils.getRed(pixel),
-      ColorUtils.getGreen(pixel),
-      ColorUtils.getBlue(pixel)
+    const pixelColor = Color.rgbToLab(
+      Color.getRed(pixel),
+      Color.getGreen(pixel),
+      Color.getBlue(pixel)
     );
     if (compareAlpha) {
-      pixelColor.push(ColorUtils.getAlpha(pixel));
+      pixelColor.push(Color.getAlpha(pixel));
     }
     return Color.distance(pixelColor, refColor, compareAlpha) > threshold;
   }
@@ -797,10 +796,7 @@ export abstract class Draw {
     if (image.boundsSafe(pos.xt, pos.yt)) {
       const index = image.getBufferIndex(pos.xt, pos.yt);
       const dst = image.getPixelByIndex(index);
-      image.setPixelByIndex(
-        index,
-        ColorUtils.alphaBlendColors(dst, color, opacity)
-      );
+      image.setPixelByIndex(index, Color.alphaBlendColors(dst, color, opacity));
     }
     return image;
   }
@@ -848,18 +844,18 @@ export abstract class Draw {
 
     let srcColor = options.src.getPixel(options.x, options.y);
     if (!compareAlpha) {
-      srcColor = ColorUtils.setAlpha(srcColor, 0);
+      srcColor = Color.setAlpha(srcColor, 0);
     }
 
     let array: FillFloodTestPixel | undefined = undefined;
     if (threshold > 0) {
-      const lab = ColorUtils.rgbToLab(
-        ColorUtils.getRed(srcColor),
-        ColorUtils.getGreen(srcColor),
-        ColorUtils.getBlue(srcColor)
+      const lab = Color.rgbToLab(
+        Color.getRed(srcColor),
+        Color.getGreen(srcColor),
+        Color.getBlue(srcColor)
       );
       if (compareAlpha) {
-        lab.push(ColorUtils.getAlpha(srcColor));
+        lab.push(Color.getAlpha(srcColor));
       }
       array = (y: number, x: number) =>
         visited[y * options.src.width + x] === 0 &&
@@ -867,7 +863,7 @@ export abstract class Draw {
     } else if (!compareAlpha) {
       array = (y: number, x: number) =>
         visited[y * options.src.width + x] === 0 &&
-        ColorUtils.setAlpha(options.src.getPixel(x, y), 0) !== srcColor;
+        Color.setAlpha(options.src.getPixel(x, y), 0) !== srcColor;
     } else {
       array = (y: number, x: number) =>
         visited[y * options.src.width + x] === 0 &&
@@ -896,20 +892,20 @@ export abstract class Draw {
 
     let srcColor = options.src.getPixel(options.x, options.y);
     if (!compareAlpha) {
-      srcColor = ColorUtils.setAlpha(srcColor, 0);
+      srcColor = Color.setAlpha(srcColor, 0);
     }
 
     const ret = new Uint8Array(options.src.width * options.src.height);
 
     let array: FillFloodTestPixel | undefined = undefined;
     if (threshold > 0) {
-      const lab = ColorUtils.rgbToLab(
-        ColorUtils.getRed(srcColor),
-        ColorUtils.getGreen(srcColor),
-        ColorUtils.getBlue(srcColor)
+      const lab = Color.rgbToLab(
+        Color.getRed(srcColor),
+        Color.getGreen(srcColor),
+        Color.getBlue(srcColor)
       );
       if (compareAlpha) {
-        lab.push(ColorUtils.getAlpha(srcColor));
+        lab.push(Color.getAlpha(srcColor));
       }
       array = (y: number, x: number) =>
         visited[y * options.src.width + x] === 0 &&
@@ -919,7 +915,7 @@ export abstract class Draw {
       array = (y: number, x: number) =>
         visited[y * options.src.width + x] === 0 &&
         (ret[y * options.src.width + x] !== 0 ||
-          ColorUtils.setAlpha(options.src.getPixel(x, y), 0) !== srcColor);
+          Color.setAlpha(options.src.getPixel(x, y), 0) !== srcColor);
     } else {
       array = (y: number, x: number) =>
         visited[y * options.src.width + x] === 0 &&
@@ -951,7 +947,7 @@ export abstract class Draw {
     const _y1 = Clamp.clamp(rect.bottom, 0, src.height - 1);
 
     // If no blending is necessary, use a faster fill method.
-    if (ColorUtils.getAlpha(color) === 255) {
+    if (Color.getAlpha(color) === 255) {
       const w = src.width;
       let start = _y0 * w + _x0;
       let end = start + (_x1 - _x0) + 1;
@@ -966,7 +962,7 @@ export abstract class Draw {
         for (let sx = _x0; sx <= _x1; ++sx, ++pi) {
           src.setPixelByIndex(
             pi,
-            ColorUtils.alphaBlendColors(src.getPixelByIndex(pi), color)
+            Color.alphaBlendColors(src.getPixelByIndex(pi), color)
           );
         }
       }

@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from '../../common/color-utils';
+import { Color } from '../../common/color';
 
 export interface GifColorMapInitOptions {
   numColors: number;
@@ -70,7 +70,7 @@ export class GifColorMap {
   public getColor(index: number): number {
     const ci = index * 3;
     const a = index === this._transparent ? 0 : 255;
-    return ColorUtils.getColor(
+    return Color.getColor(
       this._colors[ci],
       this._colors[ci + 1],
       this._colors[ci + 2],

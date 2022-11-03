@@ -1,8 +1,8 @@
 /** @format */
 
 import { Clamp } from '../common/clamp';
+import { Color } from '../common/color';
 import { ColorChannel } from '../common/color-channel';
-import { ColorUtils } from '../common/color-utils';
 import { MemoryImage } from '../common/memory-image';
 import { NeuralQuantizer } from '../common/neural-quantizer';
 import { OctreeQuantizer } from '../common/octree-quantizer';
@@ -129,43 +129,23 @@ export abstract class ImageFilter {
     let mb = 0;
     if (useBlacksWhitesMids) {
       br =
-        options.blacks !== undefined
-          ? ColorUtils.getRed(options.blacks) / 255
-          : 0;
+        options.blacks !== undefined ? Color.getRed(options.blacks) / 255 : 0;
       bg =
-        options.blacks !== undefined
-          ? ColorUtils.getGreen(options.blacks) / 255
-          : 0;
+        options.blacks !== undefined ? Color.getGreen(options.blacks) / 255 : 0;
       bb =
-        options.blacks !== undefined
-          ? ColorUtils.getBlue(options.blacks) / 255
-          : 0;
+        options.blacks !== undefined ? Color.getBlue(options.blacks) / 255 : 0;
 
       wr =
-        options.whites !== undefined
-          ? ColorUtils.getRed(options.whites) / 255
-          : 1;
+        options.whites !== undefined ? Color.getRed(options.whites) / 255 : 1;
       wg =
-        options.whites !== undefined
-          ? ColorUtils.getGreen(options.whites) / 255
-          : 1;
+        options.whites !== undefined ? Color.getGreen(options.whites) / 255 : 1;
       wb =
-        options.whites !== undefined
-          ? ColorUtils.getBlue(options.whites) / 255
-          : 1;
+        options.whites !== undefined ? Color.getBlue(options.whites) / 255 : 1;
 
-      mr =
-        options.mids !== undefined
-          ? ColorUtils.getRed(options.mids) / 255
-          : 0.5;
+      mr = options.mids !== undefined ? Color.getRed(options.mids) / 255 : 0.5;
       mg =
-        options.mids !== undefined
-          ? ColorUtils.getGreen(options.mids) / 255
-          : 0.5;
-      mb =
-        options.mids !== undefined
-          ? ColorUtils.getBlue(options.mids) / 255
-          : 0.5;
+        options.mids !== undefined ? Color.getGreen(options.mids) / 255 : 0.5;
+      mb = options.mids !== undefined ? Color.getBlue(options.mids) / 255 : 0.5;
 
       mr = 1 / (1 + 2 * (mr - 0.5));
       mg = 1 / (1 + 2 * (mg - 0.5));
@@ -299,15 +279,15 @@ export abstract class ImageFilter {
 
     for (let y = 0; y < src.height; ++y) {
       for (let x = 0; x < src.width; ++x) {
-        const height = ColorUtils.getRed(src.getPixel(x, y)) / 255;
+        const height = Color.getRed(src.getPixel(x, y)) / 255;
         let du =
           (height -
-            ColorUtils.getRed(src.getPixel(x < src.width - 1 ? x + 1 : x, y)) /
+            Color.getRed(src.getPixel(x < src.width - 1 ? x + 1 : x, y)) /
               255) *
           strength;
         let dv =
           (height -
-            ColorUtils.getRed(src.getPixel(x, y < src.height - 1 ? y + 1 : y)) /
+            Color.getRed(src.getPixel(x, y < src.height - 1 ? y + 1 : y)) /
               255) *
           strength;
         const z = Math.abs(du) + Math.abs(dv);
@@ -396,15 +376,15 @@ export abstract class ImageFilter {
         let r = 0;
         let g = 0;
         let b = 0;
-        const a = ColorUtils.getAlpha(c);
+        const a = Color.getAlpha(c);
         for (let j = 0, fi = 0; j < 3; ++j) {
           const yv = Math.min(Math.max(y - 1 + j, 0), options.src.height - 1);
           for (let i = 0; i < 3; ++i, ++fi) {
             const xv = Math.min(Math.max(x - 1 + i, 0), options.src.width - 1);
             const c2 = tmp.getPixel(xv, yv);
-            r += ColorUtils.getRed(c2) * options.filter[fi];
-            g += ColorUtils.getGreen(c2) * options.filter[fi];
-            b += ColorUtils.getBlue(c2) * options.filter[fi];
+            r += Color.getRed(c2) * options.filter[fi];
+            g += Color.getGreen(c2) * options.filter[fi];
+            b += Color.getBlue(c2) * options.filter[fi];
           }
         }
 
@@ -419,7 +399,7 @@ export abstract class ImageFilter {
         g = g > 255 ? 255 : g < 0 ? 0 : g;
         b = b > 255 ? 255 : b < 0 ? 0 : b;
 
-        options.src.setPixel(x, y, ColorUtils.getColor(r, g, b, a));
+        options.src.setPixel(x, y, Color.getColor(r, g, b, a));
       }
     }
 
@@ -484,7 +464,7 @@ export abstract class ImageFilter {
   public static grayscale(src: MemoryImage): MemoryImage {
     const p = src.getBytes();
     for (let i = 0, len = p.length; i < len; i += 4) {
-      const l = ColorUtils.getLuminanceRgb(p[i], p[i + 1], p[i + 2]);
+      const l = Color.getLuminanceRgb(p[i], p[i + 1], p[i + 2]);
       p[i] = l;
       p[i + 1] = l;
       p[i + 2] = l;
@@ -539,33 +519,25 @@ export abstract class ImageFilter {
       case NoiseType.gaussian:
         for (let i = 0; i < len; ++i) {
           const c = image.getPixelByIndex(i);
-          const r = Math.trunc(
-            ColorUtils.getRed(c) + nsigma * RandomUtils.grand()
-          );
+          const r = Math.trunc(Color.getRed(c) + nsigma * RandomUtils.grand());
           const g = Math.trunc(
-            ColorUtils.getGreen(c) + nsigma * RandomUtils.grand()
+            Color.getGreen(c) + nsigma * RandomUtils.grand()
           );
-          const b = Math.trunc(
-            ColorUtils.getBlue(c) + nsigma * RandomUtils.grand()
-          );
-          const a = ColorUtils.getAlpha(c);
-          image.setPixelByIndex(i, ColorUtils.getColor(r, g, b, a));
+          const b = Math.trunc(Color.getBlue(c) + nsigma * RandomUtils.grand());
+          const a = Color.getAlpha(c);
+          image.setPixelByIndex(i, Color.getColor(r, g, b, a));
         }
         break;
       case NoiseType.uniform:
         for (let i = 0; i < len; ++i) {
           const c = image.getPixelByIndex(i);
-          const r = Math.trunc(
-            ColorUtils.getRed(c) + nsigma * RandomUtils.crand()
-          );
+          const r = Math.trunc(Color.getRed(c) + nsigma * RandomUtils.crand());
           const g = Math.trunc(
-            ColorUtils.getGreen(c) + nsigma * RandomUtils.crand()
+            Color.getGreen(c) + nsigma * RandomUtils.crand()
           );
-          const b = Math.trunc(
-            ColorUtils.getBlue(c) + nsigma * RandomUtils.crand()
-          );
-          const a = ColorUtils.getAlpha(c);
-          image.setPixelByIndex(i, ColorUtils.getColor(r, g, b, a));
+          const b = Math.trunc(Color.getBlue(c) + nsigma * RandomUtils.crand());
+          const a = Color.getAlpha(c);
+          image.setPixelByIndex(i, Color.getColor(r, g, b, a));
         }
         break;
       case NoiseType.saltPepper:
@@ -582,19 +554,19 @@ export abstract class ImageFilter {
             const r = Math.random() < 0.5 ? max : min;
             const g = Math.random() < 0.5 ? max : min;
             const b = Math.random() < 0.5 ? max : min;
-            const a = ColorUtils.getAlpha(c);
-            image.setPixelByIndex(i, ColorUtils.getColor(r, g, b, a));
+            const a = Color.getAlpha(c);
+            image.setPixelByIndex(i, Color.getColor(r, g, b, a));
           }
         }
         break;
       case NoiseType.poisson:
         for (let i = 0; i < len; ++i) {
           const c = image.getPixelByIndex(i);
-          const r = RandomUtils.prand(ColorUtils.getRed(c));
-          const g = RandomUtils.prand(ColorUtils.getGreen(c));
-          const b = RandomUtils.prand(ColorUtils.getBlue(c));
-          const a = ColorUtils.getAlpha(c);
-          image.setPixelByIndex(i, ColorUtils.getColor(r, g, b, a));
+          const r = RandomUtils.prand(Color.getRed(c));
+          const g = RandomUtils.prand(Color.getGreen(c));
+          const b = RandomUtils.prand(Color.getBlue(c));
+          const a = Color.getAlpha(c);
+          image.setPixelByIndex(i, Color.getColor(r, g, b, a));
         }
         break;
       case NoiseType.rice: {
@@ -602,26 +574,26 @@ export abstract class ImageFilter {
         for (let i = 0; i < len; ++i) {
           const c = image.getPixelByIndex(i);
 
-          let val0 = ColorUtils.getRed(c) / sqrt2;
+          let val0 = Color.getRed(c) / sqrt2;
           let re = val0 + nsigma * RandomUtils.grand();
           let im = val0 + nsigma * RandomUtils.grand();
           let val = Math.sqrt(re * re + im * im);
           const r = Math.trunc(val);
 
-          val0 = ColorUtils.getGreen(c) / sqrt2;
+          val0 = Color.getGreen(c) / sqrt2;
           re = val0 + nsigma * RandomUtils.grand();
           im = val0 + nsigma * RandomUtils.grand();
           val = Math.sqrt(re * re + im * im);
           const g = Math.trunc(val);
 
-          val0 = ColorUtils.getBlue(c) / sqrt2;
+          val0 = Color.getBlue(c) / sqrt2;
           re = val0 + nsigma * RandomUtils.grand();
           im = val0 + nsigma * RandomUtils.grand();
           val = Math.sqrt(re * re + im * im);
           const b = Math.trunc(val);
 
-          const a = ColorUtils.getAlpha(c);
-          image.setPixelByIndex(i, ColorUtils.getColor(r, g, b, a));
+          const a = Color.getAlpha(c);
+          image.setPixelByIndex(i, Color.getColor(r, g, b, a));
         }
         break;
       }
@@ -709,16 +681,16 @@ export abstract class ImageFilter {
                   continue;
                 }
                 const c = src.getPixel(x + cx, y + cy);
-                a += ColorUtils.getAlpha(c);
-                r += ColorUtils.getRed(c);
-                g += ColorUtils.getGreen(c);
-                b += ColorUtils.getBlue(c);
+                a += Color.getAlpha(c);
+                r += Color.getRed(c);
+                g += Color.getGreen(c);
+                b += Color.getBlue(c);
                 total++;
               }
             }
 
             if (total > 0) {
-              const c = ColorUtils.getColor(
+              const c = Color.getColor(
                 Math.trunc(r / total),
                 Math.trunc(g / total),
                 Math.trunc(b / total),
@@ -792,7 +764,7 @@ export abstract class ImageFilter {
         blue === ColorChannel.luminance ||
         alpha === ColorChannel.luminance
       ) {
-        l[4] = ColorUtils.getLuminanceRgb(l[0], l[1], l[2]);
+        l[4] = Color.getLuminanceRgb(l[0], l[1], l[2]);
       }
       p[i] = l[red];
       p[i + 1] = l[green];
@@ -857,7 +829,7 @@ export abstract class ImageFilter {
       const r = p[i];
       const g = p[i + 1];
       const b = p[i + 2];
-      const y = ColorUtils.getLuminanceRgb(r, g, b);
+      const y = Color.getLuminanceRgb(r, g, b);
       p[i] = Clamp.clampInt255(amount * (y + 38) + (1.0 - amount) * r);
       p[i + 1] = Clamp.clampInt255(amount * (y + 18) + (1.0 - amount) * g);
       p[i + 2] = Clamp.clampInt255(amount * (y - 31) + (1.0 - amount) * b);

@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from '../common/color-utils';
+import { Color } from '../common/color';
 import { FrameAnimation } from '../common/frame-animation';
 import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
@@ -54,11 +54,11 @@ export class BmpEncoder implements Encoder {
     for (let y = 0, pi = 0; y < image.height; ++y) {
       for (let x = 0; x < image.width; ++x, ++pi) {
         const rgba = image.getPixelByIndex(pi);
-        out.writeByte(ColorUtils.getBlue(rgba));
-        out.writeByte(ColorUtils.getGreen(rgba));
-        out.writeByte(ColorUtils.getRed(rgba));
+        out.writeByte(Color.getBlue(rgba));
+        out.writeByte(Color.getGreen(rgba));
+        out.writeByte(Color.getRed(rgba));
         if (bytesPerPixel === 4) {
-          out.writeByte(ColorUtils.getAlpha(rgba));
+          out.writeByte(Color.getAlpha(rgba));
         }
       }
 

@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from './color-utils';
+import { Color } from './color';
 import { MemoryImage } from './memory-image';
 import { Quantizer } from './quantizer';
 
@@ -337,9 +337,9 @@ export class NeuralQuantizer implements Quantizer {
     let i = 0;
     while (i < samplePixels) {
       const p = image.getPixelByIndex(pos);
-      const red = ColorUtils.getRed(p);
-      const green = ColorUtils.getGreen(p);
-      const blue = ColorUtils.getBlue(p);
+      const red = Color.getRed(p);
+      const green = Color.getGreen(p);
+      const blue = Color.getBlue(p);
 
       if (i === 0) {
         // Remember background colour
@@ -557,7 +557,7 @@ export class NeuralQuantizer implements Quantizer {
    * Get a color from the [colorMap].
    */
   public color(index: number): number {
-    return ColorUtils.getColor(
+    return Color.getColor(
       this._colorMap8[index * 3],
       this._colorMap8[index * 3 + 1],
       this._colorMap8[index * 3 + 2]
@@ -568,9 +568,9 @@ export class NeuralQuantizer implements Quantizer {
    * Find the index of the closest color to [c] in the [colorMap].
    */
   public lookup(c: number): number {
-    const r = ColorUtils.getRed(c);
-    const g = ColorUtils.getGreen(c);
-    const b = ColorUtils.getBlue(c);
+    const r = Color.getRed(c);
+    const g = Color.getGreen(c);
+    const b = Color.getBlue(c);
     return this.inxSearch(b, g, r);
   }
 
@@ -585,12 +585,12 @@ export class NeuralQuantizer implements Quantizer {
    * Find the color closest to [c] in the [colorMap].
    */
   public getQuantizedColor(c: number): number {
-    const r = ColorUtils.getRed(c);
-    const g = ColorUtils.getGreen(c);
-    const b = ColorUtils.getBlue(c);
-    const a = ColorUtils.getAlpha(c);
+    const r = Color.getRed(c);
+    const g = Color.getGreen(c);
+    const b = Color.getBlue(c);
+    const a = Color.getAlpha(c);
     const i = this.inxSearch(b, g, r) * 3;
-    return ColorUtils.getColor(
+    return Color.getColor(
       this._colorMap8[i],
       this._colorMap8[i + 1],
       this._colorMap8[i + 2],

@@ -1,7 +1,6 @@
 /** @format */
 
-import { encodeIco, encodePng } from '../src';
-import { ColorUtils } from '../src/common/color-utils';
+import { Color, encodeIco, encodePng } from '../src';
 import { MemoryImage } from '../src/common/memory-image';
 import { IcoDecoder } from '../src/formats/ico-decoder';
 import { IcoEncoder } from '../src/formats/ico-encoder';
@@ -13,7 +12,7 @@ describe('ICO', () => {
       width: 64,
       height: 64,
     });
-    image.fill(ColorUtils.getColor(100, 200, 255));
+    image.fill(Color.getColor(100, 200, 255));
     const output = encodeIco(image);
     TestHelpers.writeToFile(
       TestFolder.out,
@@ -28,7 +27,7 @@ describe('ICO', () => {
       width: 64,
       height: 64,
     });
-    image2.fill(ColorUtils.getColor(100, 255, 200));
+    image2.fill(Color.getColor(100, 255, 200));
 
     const output2 = new IcoEncoder().encodeImages([image, image2]);
     TestHelpers.writeToFile(
@@ -44,7 +43,7 @@ describe('ICO', () => {
       width: 32,
       height: 64,
     });
-    image3.fill(ColorUtils.getColor(255, 100, 200));
+    image3.fill(Color.getColor(255, 100, 200));
 
     const output3 = new IcoEncoder().encodeImages([image, image2, image3]);
     TestHelpers.writeToFile(

@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUtils } from './color-utils';
+import { Color } from './color';
 import { HeapNode } from './heap-node';
 import { MemoryImage } from './memory-image';
 import { OctreeNode } from './octree-node';
@@ -20,9 +20,9 @@ export class OctreeQuantizer implements Quantizer {
     const heap = new HeapNode();
     for (let si = 0; si < image.length; ++si) {
       const c = image.getPixelByIndex(si);
-      const r = ColorUtils.getRed(c);
-      const g = ColorUtils.getGreen(c);
-      const b = ColorUtils.getBlue(c);
+      const r = Color.getRed(c);
+      const g = Color.getGreen(c);
+      const b = Color.getBlue(c);
       this.heapAdd(heap, this.nodeInsert(this.root, r, g, b));
     }
 
@@ -167,9 +167,9 @@ export class OctreeQuantizer implements Quantizer {
    * Find the index of the closest color to [c] in the [colorMap].
    */
   public getQuantizedColor(c: number): number {
-    let r = ColorUtils.getRed(c);
-    let g = ColorUtils.getGreen(c);
-    let b = ColorUtils.getBlue(c);
+    let r = Color.getRed(c);
+    let g = Color.getGreen(c);
+    let b = Color.getBlue(c);
     let root: OctreeNode | undefined = this.root;
 
     for (let bit = 1 << 7; bit !== 0; bit >>= 1) {
@@ -186,6 +186,6 @@ export class OctreeQuantizer implements Quantizer {
     r = root!.r;
     g = root!.g;
     b = root!.b;
-    return ColorUtils.getColor(r, g, b);
+    return Color.getColor(r, g, b);
   }
 }
