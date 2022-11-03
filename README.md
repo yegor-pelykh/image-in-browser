@@ -93,7 +93,7 @@ Decoding is the process by which the byte content of an image file is converted 
 
 The following functions provide a high level interface for decoding images. You can also use the format specific Decoder classes to access format-specific data.
 
-> ℹ️ These methods accept input of type `TypedArray`, which is short union of types: `Int8Array` | `Int16Array` | `Int32Array` | `Uint8Array` | `Uint16Array` | `Uint32Array` | `Float32Array` | `Float64Array`.
+> ℹ️ These methods take input of type `TypedArray`, which is short union of types: `Int8Array` | `Int16Array` | `Int32Array` | `Uint8Array` | `Uint16Array` | `Uint32Array` | `Float32Array` | `Float64Array`.
 
 ## Generic Decoding Functions
 
