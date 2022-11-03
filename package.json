@@ -1,7 +1,7 @@
 {
   "name": "image-in-browser",
   "version": "1.4.2",
-  "description": "Package for converting images between different formats that works in the browser (no need for server Node.js)",
+  "description": "Package for encoding / decoding images, transforming images, applying filters, drawing primitives on images on the client side (no need for server Node.js)",
   "author": "Yegor Pelykh <yegor.dev@gmail.com>",
   "license": "MIT",
   "repository": {
