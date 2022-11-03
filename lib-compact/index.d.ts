@@ -95,216 +95,6 @@ declare module "common/icc_profile_data" {
         decompressed(): Uint8Array;
     }
 }
-declare module "common/color-channel" {
-    /** @format */
-    export enum ColorChannel {
-        /**
-         * Red channel of a color.
-         */
-        red = 0,
-        /**
-         * Green channel of a color.
-         */
-        green = 1,
-        /**
-         * Blue channel of a color.
-         */
-        blue = 2,
-        /**
-         * Alpha channel of a color.
-         */
-        alpha = 3,
-        /**
-         * Luminance (brightness) of a color.
-         */
-        luminance = 4
-    }
-}
-declare module "common/clamp" {
-    /** @format */
-    export abstract class Clamp {
-        static clamp(number: number, low: number, high: number): number;
-        /**
-         * Clamp [x] to [a] [b]
-         */
-        static clampInt(x: number, a: number, b: number): number;
-        /**
-         * Clamp [x] to [0, 255]
-         */
-        static clampInt255(x: number): number;
-    }
-}
-declare module "common/bit-operators" {
-    /** @format */
-    export abstract class BitOperators {
-        private static readonly uint8arr;
-        private static readonly uint8ToInt8arr;
-        private static readonly uint16arr;
-        private static readonly uint16ToInt16arr;
-        private static readonly uint32arr;
-        private static readonly uint32ToInt32arr;
-        private static readonly uint32ToFloat32arr;
-        private static readonly int32arr;
-        private static readonly int32ToUint32arr;
-        private static readonly uint64arr;
-        private static readonly uint64ToFloat64arr;
-        static signed(bits: number, value: number): number;
-        static shiftR(v: number, n: number): number;
-        static shiftL(v: number, n: number): number;
-        /**
-         * Binary conversion to an int8. This is equivalent in C to
-         * typecasting to a char.
-         */
-        static toInt8(d: number): number;
-        /**
-         * Binary conversion to an int16. This is equivalent in C to
-         * typecasting to a short.
-         */
-        static toInt16(d: number): number;
-        /**
-         * Binary conversion to an int32. This is equivalent in C to
-         * typecasting to signed int.
-         */
-        static toInt32(d: number): number;
-        /**
-         * Binary conversion to a float32. This is equivalent in C to
-         * typecasting to float.
-         */
-        static toFloat32(d: number): number;
-        /**
-         * Binary conversion to a float64. This is equivalent in C to
-         * typecasting to double.
-         */
-        static toFloat64(d: bigint): number;
-        /**
-         * Binary conversion of an int32 to a uint32. This is equivalent in C to
-         * typecasting to unsigned int.
-         */
-        static toUint32(d: number): number;
-        static debugBits32(value?: number): string;
-    }
-}
-declare module "common/color-utils" {
-    /** @format */
-    import { ColorChannel } from "common/color-channel";
-    export abstract class ColorUtils {
-        /**
-         * Returns a new color of [src] alpha-blended onto [dst]. The opacity of [src]
-         * is additionally scaled by [fraction] / 255.
-         */
-        static alphaBlendColors(dst: number, src: number, fraction?: number): number;
-        /**
-         * Get the [channel] from the [color].
-         */
-        static getChannel(color: number, channel: ColorChannel): number;
-        /**
-         * Get the alpha channel from the [color].
-         */
-        static getAlpha(color: number): number;
-        /**
-         * Get the blue channel from the [color].
-         */
-        static getBlue(color: number): number;
-        /**
-         * Get the color with the given [r], [g], [b], and [a] components.
-         * The channel order of a uint32 encoded color is RGBA.
-         */
-        static getColor(r: number, g: number, b: number, a?: number): number;
-        /**
-         * Get the green channel from the [color].
-         */
-        static getGreen(color: number): number;
-        /**
-         * Returns the luminance (grayscale) value of the [color].
-         */
-        static getLuminance(color: number): number;
-        /**
-         * Returns the luminance (grayscale) value of the color.
-         */
-        static getLuminanceRgb(r: number, g: number, b: number): number;
-        /**
-         * Get the red channel from the [color].
-         */
-        static getRed(color: number): number;
-        /**
-         * Check if [color] is white
-         */
-        static isBlack(color: number): boolean;
-        /**
-         * Check if [color] is white
-         */
-        static isWhite(color: number): boolean;
-        /**
-         * Returns a new color where the alpha channel of [color] has been replaced by [value].
-         */
-        static setAlpha(color: number, value: number): number;
-        /**
-         * Returns a new color where the blue channel of [color] has been replaced by [value].
-         */
-        static setBlue(color: number, value: number): number;
-        /**
-         * Returns a new color, where the given [color]'s [channel] has been
-         * replaced with the given [value].
-         */
-        static setChannel(color: number, channel: ColorChannel, value: number): number;
-        /**
-         * Returns a new color where the green channel of [color] has been replaced
-         * by [value].
-         */
-        static setGreen(color: number, value: number): number;
-        /**
-         * Returns a new color where the red channel of [color] has been replaced
-         * by [value].
-         */
-        static setRed(color: number, value: number): number;
-        /**
-         * Convert an HSL color to RGB, where h is specified in normalized degrees
-         * [0, 1] (where 1 is 360-degrees); s and l are in the range [0, 1].
-         * Returns a list [r, g, b] with values in the range [0, 255].
-         */
-        static hslToRgb(hue: number, saturation: number, lightness: number): number[];
-        /**
-         * Convert an HSV color to RGB, where h is specified in normalized degrees
-         * [0, 1] (where 1 is 360-degrees); s and l are in the range [0, 1].
-         * Returns a list [r, g, b] with values in the range [0, 255].
-         */
-        static hsvToRgb(hue: number, saturation: number, brightness: number): number[];
-        /**
-         * Convert an RGB color to HSL, where r, g and b are in the range [0, 255].
-         * Returns a list [h, s, l] with values in the range [0, 1].
-         */
-        static rgbToHsl(r: number, g: number, b: number): number[];
-        /**
-         * Convert a CIE-L*a*b color to XYZ.
-         */
-        static labToXyz(l: number, a: number, b: number): number[];
-        /**
-         * Convert an XYZ color to RGB.
-         */
-        static xyzToRgb(x: number, y: number, z: number): number[];
-        /**
-         * Convert a CMYK color to RGB, where c, m, y, k values are in the range
-         * [0, 255]. Returns a list [r, g, b] with values in the range [0, 255].
-         */
-        static cmykToRgb(c: number, m: number, y: number, k: number): number[];
-        /**
-         * Convert a CIE-L*a*b color to RGB.
-         */
-        static labToRgb(l: number, a: number, b: number): number[];
-        /**
-         * Convert a RGB color to XYZ.
-         */
-        static rgbToXyz(r: number, g: number, b: number): number[];
-        /**
-         * Convert a XYZ color to CIE-L*a*b.
-         */
-        static xyzToLab(x: number, y: number, z: number): number[];
-        /**
-         * Convert a RGB color to CIE-L*a*b.
-         */
-        static rgbToLab(r: number, g: number, b: number): number[];
-    }
-}
 declare module "common/rgb-channel-set" {
     /** @format */
     export enum RgbChannelSet {
@@ -364,6 +154,251 @@ declare module "common/interpolation" {
         average = 3
     }
 }
+declare module "common/bit-operators" {
+    /** @format */
+    export abstract class BitOperators {
+        private static readonly uint8arr;
+        private static readonly uint8ToInt8arr;
+        private static readonly uint16arr;
+        private static readonly uint16ToInt16arr;
+        private static readonly uint32arr;
+        private static readonly uint32ToInt32arr;
+        private static readonly uint32ToFloat32arr;
+        private static readonly int32arr;
+        private static readonly int32ToUint32arr;
+        private static readonly uint64arr;
+        private static readonly uint64ToFloat64arr;
+        static signed(bits: number, value: number): number;
+        static shiftR(v: number, n: number): number;
+        static shiftL(v: number, n: number): number;
+        /**
+         * Binary conversion to an int8. This is equivalent in C to
+         * typecasting to a char.
+         */
+        static toInt8(d: number): number;
+        /**
+         * Binary conversion to an int16. This is equivalent in C to
+         * typecasting to a short.
+         */
+        static toInt16(d: number): number;
+        /**
+         * Binary conversion to an int32. This is equivalent in C to
+         * typecasting to signed int.
+         */
+        static toInt32(d: number): number;
+        /**
+         * Binary conversion to a float32. This is equivalent in C to
+         * typecasting to float.
+         */
+        static toFloat32(d: number): number;
+        /**
+         * Binary conversion to a float64. This is equivalent in C to
+         * typecasting to double.
+         */
+        static toFloat64(d: bigint): number;
+        /**
+         * Binary conversion of an int32 to a uint32. This is equivalent in C to
+         * typecasting to unsigned int.
+         */
+        static toUint32(d: number): number;
+        static debugBits32(value?: number): string;
+    }
+}
+declare module "common/clamp" {
+    /** @format */
+    export abstract class Clamp {
+        static clamp(number: number, low: number, high: number): number;
+        /**
+         * Clamp **x** to [**a**, **b**]
+         */
+        static clampInt(x: number, a: number, b: number): number;
+        /**
+         * Clamp **x** to [**0**, **255**]
+         */
+        static clampInt255(x: number): number;
+    }
+}
+declare module "common/color-channel" {
+    /** @format */
+    export enum ColorChannel {
+        /**
+         * Red channel of a color.
+         */
+        red = 0,
+        /**
+         * Green channel of a color.
+         */
+        green = 1,
+        /**
+         * Blue channel of a color.
+         */
+        blue = 2,
+        /**
+         * Alpha channel of a color.
+         */
+        alpha = 3,
+        /**
+         * Luminance (brightness) of a color.
+         */
+        luminance = 4
+    }
+}
+declare module "common/color" {
+    import { ColorChannel } from "common/color-channel";
+    /**
+     * Image pixel colors are instantiated as an int object rather than an instance
+     * of the Color class in order to reduce object allocations.
+     */
+    export abstract class Color {
+        /**
+         * Create a color value from RGB values in the range [**0**, **255**].
+         *
+         * The channel order of a uint32 encoded color is BGRA.
+         */
+        static fromRgb(red: number, green: number, blue: number): number;
+        /**
+         * Create a color value from RGBA values in the range [**0**, **255**].
+         *
+         * The channel order of a uint32 encoded color is BGRA.
+         */
+        static fromRgba(red: number, green: number, blue: number, alpha: number): number;
+        /**
+         * Create a color value from HSL values in the range [**0**, **1**].
+         */
+        static fromHsl(hue: number, saturation: number, lightness: number): number;
+        /**
+         * Create a color value from HSV values in the range [**0**, **1**].
+         */
+        static fromHsv(hue: number, saturation: number, value: number): number;
+        /**
+         * Create a color value from XYZ values.
+         */
+        static fromXyz(x: number, y: number, z: number): number;
+        /**
+         * Create a color value from CIE-L*a*b values.
+         */
+        static fromLab(L: number, a: number, b: number): number;
+        /**
+         * Compare colors from a 3 or 4 dimensional color space
+         */
+        static distance(c1: number[], c2: number[], compareAlpha: boolean): number;
+        /**
+         * Returns a new color of **src** alpha-blended onto **dst**. The opacity of **src**
+         * is additionally scaled by **fraction** / **255**.
+         */
+        static alphaBlendColors(dst: number, src: number, fraction?: number): number;
+        /**
+         * Get the **channel** from the **color**.
+         */
+        static getChannel(color: number, channel: ColorChannel): number;
+        /**
+         * Get the alpha channel from the **color**.
+         */
+        static getAlpha(color: number): number;
+        /**
+         * Get the blue channel from the **color**.
+         */
+        static getBlue(color: number): number;
+        /**
+         * Get the color with the given **r**, **g**, **b**, and **a** components.
+         * The channel order of a uint32 encoded color is RGBA.
+         */
+        static getColor(r: number, g: number, b: number, a?: number): number;
+        /**
+         * Get the green channel from the **color**.
+         */
+        static getGreen(color: number): number;
+        /**
+         * Returns the luminance (grayscale) value of the **color**.
+         */
+        static getLuminance(color: number): number;
+        /**
+         * Returns the luminance (grayscale) value of the color.
+         */
+        static getLuminanceRgb(r: number, g: number, b: number): number;
+        /**
+         * Get the red channel from the **color**.
+         */
+        static getRed(color: number): number;
+        /**
+         * Check if **color** is white
+         */
+        static isBlack(color: number): boolean;
+        /**
+         * Check if **color** is white
+         */
+        static isWhite(color: number): boolean;
+        /**
+         * Returns a new color where the alpha channel of **color** has been replaced by **value**.
+         */
+        static setAlpha(color: number, value: number): number;
+        /**
+         * Returns a new color where the blue channel of **color** has been replaced by **value**.
+         */
+        static setBlue(color: number, value: number): number;
+        /**
+         * Returns a new color, where the given **color**'s **channel** has been
+         * replaced with the given **value**.
+         */
+        static setChannel(color: number, channel: ColorChannel, value: number): number;
+        /**
+         * Returns a new color where the green channel of **color** has been replaced
+         * by **value**.
+         */
+        static setGreen(color: number, value: number): number;
+        /**
+         * Returns a new color where the red channel of **color** has been replaced
+         * by **value**.
+         */
+        static setRed(color: number, value: number): number;
+        /**
+         * Convert an HSL color to RGB, where h is specified in normalized degrees
+         * [**0**, **1**] (where 1 is 360-degrees); s and l are in the range [**0**, **1**].
+         * Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
+         */
+        static hslToRgb(hue: number, saturation: number, lightness: number): number[];
+        /**
+         * Convert an HSV color to RGB, where h is specified in normalized degrees
+         * [**0**, **1**] (where 1 is 360-degrees); s and l are in the range [**0**, **1**].
+         * Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
+         */
+        static hsvToRgb(hue: number, saturation: number, brightness: number): number[];
+        /**
+         * Convert an RGB color to HSL, where **r**, **g** and **b** are in the range [**0**, **255**].
+         * Returns a list [**h**, **s**, **l**] with values in the range [**0**, **1**].
+         */
+        static rgbToHsl(r: number, g: number, b: number): number[];
+        /**
+         * Convert a CIE-L*a*b color to XYZ.
+         */
+        static labToXyz(l: number, a: number, b: number): number[];
+        /**
+         * Convert an XYZ color to RGB.
+         */
+        static xyzToRgb(x: number, y: number, z: number): number[];
+        /**
+         * Convert a CMYK color to RGB, where **c**, **m**, **y**, **k** values are in the range
+         * [**0**, **255**]. Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
+         */
+        static cmykToRgb(c: number, m: number, y: number, k: number): number[];
+        /**
+         * Convert a CIE-L*a*b color to RGB.
+         */
+        static labToRgb(l: number, a: number, b: number): number[];
+        /**
+         * Convert a RGB color to XYZ.
+         */
+        static rgbToXyz(r: number, g: number, b: number): number[];
+        /**
+         * Convert a XYZ color to CIE-L*a*b.
+         */
+        static xyzToLab(x: number, y: number, z: number): number[];
+        /**
+         * Convert a RGB color to CIE-L*a*b.
+         */
+        static rgbToLab(r: number, g: number, b: number): number[];
+    }
+}
 declare module "common/memory-image" {
     /** @format */
     import { ExifData } from "common/exif_data";
@@ -398,16 +433,16 @@ declare module "common/memory-image" {
      * An image buffer where pixels are encoded into 32-bit unsigned ints (Uint32).
      *
      * Pixels are stored in 32-bit unsigned integers in #AARRGGBB format.
-     * You can use [getBytes] to access the pixel data at the byte (channel) level,
+     * You can use **getBytes** to access the pixel data at the byte (channel) level,
      * optionally providing the format to get the image data as. You can use the
-     * letious color functions, such as [getRed], [getGreen], [getBlue], and [getAlpha]
+     * letious color functions, such as **getRed**, **getGreen**, **getBlue**, and **getAlpha**
      * to access the individual channels of a given pixel color.
      *
-     * If this image is a frame of an animation as decoded by the [decodeFrame]
-     * method of [Decoder], then the [xOffset], [yOffset], [width] and [height]
+     * If this image is a frame of an animation as decoded by the **decodeFrame**
+     * method of **Decoder**, then the **xOffset**, **yOffset**, **width** and **height**
      * determine the area of the canvas this image should be drawn into,
      * as some frames of an animation only modify part of the canvas (recording
-     * the part of the frame that actually changes). The [decodeAnimation] method
+     * the part of the frame that actually changes). The **decodeAnimation** method
      * will always return the fully composed animation, so these coordinate
      * properties are not used.
      */
@@ -504,8 +539,8 @@ declare module "common/memory-image" {
         static from(other: MemoryImage): MemoryImage;
         /**
          *
-         * [format] defines the order of color channels in [bytes].
-         * The length of [bytes] should be (width * height) * format-byte-count,
+         * **format** defines the order of color channels in **data**.
+         * The length of **data** should be (width * height) * format-byte-count,
          * where format-byte-count is 1, 3, or 4 depending on the number of
          * channels in the format (luminance, rgb, rgba, etc).
          *
@@ -523,7 +558,7 @@ declare module "common/memory-image" {
          * color channels directly, or to pass it to something like an
          * Html canvas context.
          *
-         * Specifying the [format] will convert the image data to the specified
+         * Specifying the **format** will convert the image data to the specified
          * format. Images are stored internally in Format.rgba format; any
          * other format will require a conversion.
          *
@@ -535,39 +570,39 @@ declare module "common/memory-image" {
          */
         getBytes(colorModel?: ColorModel): Uint8Array;
         /**
-         * Set all of the pixels of the image to the given [color].
+         * Set all of the pixels of the image to the given **color**.
          */
         fill(color: number): MemoryImage;
         /**
-         * Set all of the empty pixels (for png's) of the image to the given [color].
+         * Set all of the empty pixels (for png's) of the image to the given **color**.
          */
         fillBackground(color: number): void;
         /**
-         * Add the colors of [other] to the pixels of this image.
+         * Add the colors of **other** to the pixels of this image.
          */
         addImage(other: MemoryImage): MemoryImage;
         /**
-         * Subtract the colors of [other] from the pixels of this image.
+         * Subtract the colors of **other** from the pixels of this image.
          */
         subtractImage(other: MemoryImage): MemoryImage;
         /**
-         * Multiply the colors of [other] with the pixels of this image.
+         * Multiply the colors of **other** with the pixels of this image.
          */
         multiplyImage(other: MemoryImage): MemoryImage;
         /**
-         * OR the colors of [other] to the pixels of this image.
+         * OR the colors of **other** to the pixels of this image.
          */
         orImage(other: MemoryImage): MemoryImage;
         /**
-         * AND the colors of [other] with the pixels of this image.
+         * AND the colors of **other** with the pixels of this image.
          */
         andImage(other: MemoryImage): MemoryImage;
         /**
-         * Modula the colors of [other] with the pixels of this image.
+         * Modula the colors of **other** with the pixels of this image.
          */
         modImage(other: MemoryImage): MemoryImage;
         /**
-         * Get a pixel from the buffer. No range checking is done.\
+         * Get a pixel from the buffer. No range checking is done.
          */
         getPixelByIndex(index: number): number;
         /**
@@ -575,27 +610,27 @@ declare module "common/memory-image" {
          */
         setPixelByIndex(index: number, color: number): void;
         /**
-         * Get the buffer index for the [x], [y] pixel coordinates.
+         * Get the buffer index for the **x**, **y** pixel coordinates.
          * No range checking is done.
          */
         getBufferIndex(x: number, y: number): number;
         /**
-         * Is the given [x], [y] pixel coordinates within the resolution of the image.
+         * Is the given **x**, **y** pixel coordinates within the resolution of the image.
          */
         boundsSafe(x: number, y: number): boolean;
         /**
-         * Get the pixel from the given [x], [y] coordinate. Color is encoded in a
+         * Get the pixel from the given **x**, **y** coordinate. Color is encoded in a
          * Uint32 as #AABBGGRR. No range checking is done.
          */
         getPixel(x: number, y: number): number;
         /**
-         * Get the pixel from the given [x], [y] coordinate. Color is encoded in a
+         * Get the pixel from the given **x**, **y** coordinate. Color is encoded in a
          * Uint32 as #AABBGGRR. If the pixel coordinates are out of bounds, 0 is
          * returned.
          */
         getPixelSafe(x: number, y: number): number;
         /**
-         * Get the pixel using the given [interpolation] type for non-integer pixel
+         * Get the pixel using the given **interpolation** type for non-integer pixel
          * coordinates.
          */
         getPixelInterpolate(fx: number, fy: number, interpolation?: Interpolation): number;
@@ -610,21 +645,21 @@ declare module "common/memory-image" {
          */
         getPixelCubic(fx: number, fy: number): number;
         /**
-         * Set the pixel at the given [x], [y] coordinate to the [color].
+         * Set the pixel at the given **x**, **y** coordinate to the **color**.
          * No range checking is done.
          */
         setPixel(x: number, y: number, color: number): void;
         /**
-         * Set the pixel at the given [x], [y] coordinate to the [color].
+         * Set the pixel at the given **x**, **y** coordinate to the **color**.
          * If the pixel coordinates are out of bounds, nothing is done.
          */
         setPixelSafe(x: number, y: number, color: number): void;
         /**
-         * Set the pixel at the given [x], [y] coordinate to the color
-         * [r], [g], [b], [a].
+         * Set the pixel at the given **x**, **y** coordinate to the color
+         * **r**, **g**, **b**, **a**.
          *
          * This simply replaces the existing color, it does not do any alpha
-         * blending. Use [drawPixel] for that. No range checking is done.
+         * blending. Use **drawPixel** for that. No range checking is done.
          */
         setPixelRgba(x: number, y: number, r: number, g: number, b: number, a?: number): void;
         /**
@@ -633,7 +668,7 @@ declare module "common/memory-image" {
         getWhiteBalance(asDouble?: boolean): number;
         /**
          * Find the minimum and maximum color value in the image.
-         * Returns an object with [min] and [max] properties.
+         * Returns an object with **min** and **max** properties.
          */
         getColorExtremes(): {
             min: number;
@@ -657,13 +692,13 @@ declare module "common/frame-animation" {
      *
      * Some formats support multiple images that are not
      * to be interpreted as animation, but rather multiple pages of a document.
-     * The [FrameAnimation] container is still used to store the images for these files.
-     * The [frameType] property is used to differentiate multi-page documents from
-     * multi-frame animations, where it is set to [FrameType.page] for documents
-     * and [FrameType.animation] for animated frames.
+     * The **FrameAnimation** container is still used to store the images for these files.
+     * The **frameType** property is used to differentiate multi-page documents from
+     * multi-frame animations, where it is set to **FrameType.page** for documents
+     * and **FrameType.animation** for animated frames.
      *
-     * All [Decoder] classes support decoding to an [FrameAnimation], where the
-     * [FrameAnimation] will only contain a single frame for single image formats
+     * All **Decoder** classes support decoding to an **FrameAnimation**, where the
+     * **FrameAnimation** will only contain a single frame for single image formats
      * such as JPEG, or if the file doesn't contain any animation such as a single
      * image GIF. If you want to generically support both animated and non-animated
      * files, you can always decode to an animation and if the animation has only
@@ -671,9 +706,9 @@ declare module "common/frame-animation" {
      *
      * In some cases, the frames of the animation may only provide a portion of the
      * canvas, such as the case of animations encoding only the changing pixels
-     * from one frame to the next. The [width] and [height] and [backgroundColor]
-     * properties of the [FrameAnimation] provide information about the canvas that
-     * contains the animation, and the [Image] frames provide information about
+     * from one frame to the next. The **width** and **height** and **backgroundColor**
+     * properties of the **FrameAnimation** provide information about the canvas that
+     * contains the animation, and the **MemoryImage** frames provide information about
      * how to draw the particular frame, such as the area of the canvas to draw
      * into, and if the canvas should be cleared prior to drawing the frame.
      */
@@ -699,8 +734,8 @@ declare module "common/frame-animation" {
         private _loopCount;
         get loopCount(): number;
         /**
-         * How should the frames be interpreted?  If [FrameType.animation], the
-         * frames are part of an animated sequence. If [FrameType.page], the frames
+         * How should the frames be interpreted?  If **FrameType.animation**, the
+         * frames are part of an animated sequence. If **FrameType.page**, the frames
          * are the pages of a document.
          */
         private _frameType;
@@ -732,7 +767,7 @@ declare module "common/frame-animation" {
         get isNotEmpty(): boolean;
         constructor(options?: FrameAnimationInitOptions);
         /**
-         * Get the frame at the given[index].
+         * Get the frame at the given **index**.
          */
         getFrame(index: number): MemoryImage;
         /**
@@ -792,7 +827,7 @@ declare module "common/input-buffer" {
          */
         constructor(options: InputBufferInitOptions);
         /**
-         * Create a copy of [other].
+         * Create a copy of **other**.
          */
         static from(other: InputBuffer, offset?: number, length?: number): InputBuffer;
         /**
@@ -808,32 +843,32 @@ declare module "common/input-buffer" {
          */
         setByte(index: number, value: number): number;
         /**
-         * Set a range of bytes in this buffer to [value], at [start] offset from the
-         * current read position, and [length] number of bytes.
+         * Set a range of bytes in this buffer to **value**, at **start** offset from the
+         * current read position, and **length** number of bytes.
          */
         memset(start: number, length: number, value: number): void;
         /**
          * Return a InputStream to read a subset of this stream. It does not
-         * move the read position of this stream. [position] is specified relative
-         * to the start of the buffer. If [position] is not specified, the current
-         * read position is used. If [length] is not specified, the remainder of this
+         * move the read position of this stream. **position** is specified relative
+         * to the start of the buffer. If **position** is not specified, the current
+         * read position is used. If **length** is not specified, the remainder of this
          * stream is used.
          */
         subarray(count: number, position?: number, offset?: number): InputBuffer;
         /**
-         * Returns the position of the given [value] within the buffer, starting
-         * from the current read position with the given [offset]. The position
-         * returned is relative to the start of the buffer, or -1 if the [value]
+         * Returns the position of the given **value** within the buffer, starting
+         * from the current read position with the given **offset**. The position
+         * returned is relative to the start of the buffer, or -1 if the **value**
          * was not found.
          */
         indexOf(value: number, offset?: number): number;
         /**
-         * Read [count] bytes from an [offset] of the current read position, without
+         * Read **count** bytes from an **offset** of the current read position, without
          * moving the read position.
          */
         peekBytes(count: number, offset?: number): InputBuffer;
         /**
-         * Move the read position by [count] bytes.
+         * Move the read position by **count** bytes.
          */
         skip(count: number): void;
         /**
@@ -842,11 +877,11 @@ declare module "common/input-buffer" {
         readByte(): number;
         readInt8(): number;
         /**
-         * Read [count] bytes from the stream.
+         * Read **count** bytes from the stream.
          */
         readBytes(count: number): InputBuffer;
         /**
-         * Read a null-terminated string, or if [length] is provided, that number of
+         * Read a null-terminated string, or if **length** is provided, that number of
          * bytes returned as a string.
          */
         readString(length?: number): string;
@@ -903,8 +938,8 @@ declare module "hdr/half" {
     /**
      * A 16-bit floating-point number, used by high-dynamic-range image formats
      * as a more efficient storage for floating-point values that don't require
-     * full 32-bit precision. A list of Half floats can be stored in a [Uint16List],
-     * and converted to a double using the [HalfToDouble] static method.
+     * full 32-bit precision. A list of Half floats can be stored in a **Uint16Array**,
+     * and converted to a double using the **halfToDouble()** static method.
      *
      * This class is derived from the OpenEXR library.
      */
@@ -1011,11 +1046,11 @@ declare module "hdr/hdr-slice" {
         static UINT: number;
         static INT: number;
         static FLOAT: number;
-        /**
-         * [data] will be one of the type data lists, depending on the [type] and
-         * [bitsPerSample]. 16-bit FLOAT slices will be stored in a [Uint16List].
-         */
         private readonly _data;
+        /**
+         * **data** will be one of the type data lists, depending on the **type** and
+         * **bitsPerSample**. 16-bit FLOAT slices will be stored in a **Uint16Array**.
+         */
         get data(): TypedArray;
         private readonly _name;
         get name(): string;
@@ -1024,8 +1059,8 @@ declare module "hdr/hdr-slice" {
         private readonly _height;
         get height(): number;
         /**
-         * Indicates the type of data stored by the slice, either [HdrSlice.INT],
-         * [HdrSlice.FLOAT], or [HdrSlice.UINT].
+         * Indicates the type of data stored by the slice, either **HdrSlice.INT**,
+         * **HdrSlice.FLOAT**, or **HdrSlice.UINT**.
          */
         private readonly _format;
         get format(): number;
@@ -1042,7 +1077,7 @@ declare module "hdr/hdr-slice" {
         constructor(options: HdrSliceInitOptions);
         private static allocateDataForType;
         /**
-         * Create a copy of the [other] HdrSlice.
+         * Create a copy of the **other** HdrSlice.
          */
         static from(other: HdrSlice): HdrSlice;
         /**
@@ -1050,23 +1085,23 @@ declare module "hdr/hdr-slice" {
          */
         getBytes(): Uint8Array;
         /**
-         * Get the float value of the sample at the coordinates [x],[y].
-         * [Half] samples are converted to double.
+         * Get the float value of the sample at the coordinates **x**,**y**.
+         * **Half** samples are converted to double.
          */
         getFloat(x: number, y: number): number;
         /**
-         * Set the float value of the sample at the coordinates [x],[y] for
-         * [FLOAT] slices.
+         * Set the float value of the sample at the coordinates **x**,**y** for
+         * **FLOAT** slices.
          */
         setFloat(x: number, y: number, v: number): void;
         /**
-         * Get the int value of the sample at the coordinates [x],[y].
+         * Get the int value of the sample at the coordinates **x**,**y**.
          * An exception will occur if the slice stores FLOAT data.
          */
         getInt(x: number, y: number): number;
         /**
-         * Set the int value of the sample at the coordinates [x],[y] for [INT] and
-         * [UINT] slices.
+         * Set the int value of the sample at the coordinates **x**,**y** for **INT** and
+         * **UINT** slices.
          */
         setInt(x: number, y: number, v: number): void;
     }
@@ -1146,56 +1181,56 @@ declare module "hdr/hdr-image" {
          */
         static create(width: number, height: number, channels: number, type: number, bitsPerSample: number): HdrImage;
         /**
-         * Create a copy of the [other] HdrImage.
+         * Create a copy of the **other** HdrImage.
          */
         static from(other: HdrImage): HdrImage;
         /**
-         * Create an HDR image from a LDR [Image] by transforming the channel values
-         * to the range [0, 1].
+         * Create an HDR image from a LDR **MemoryImage** by transforming the channel values
+         * to the range [**0**, **1**].
          */
         static fromImage(other: MemoryImage, type?: number, bitsPerSample?: number): HdrImage;
         /**
-         * Get the value of the red channel at the given pixel coordinates [x], [y].
+         * Get the value of the red channel at the given pixel coordinates **x**, **y**.
          */
         getRed(x: number, y: number): number;
         /**
-         * Set the value of the red channel at the given pixel coordinates [x], [y].
+         * Set the value of the red channel at the given pixel coordinates **x**, **y**.
          */
         setRed(x: number, y: number, c: number): void;
         setRedInt(x: number, y: number, c: number): void;
         /**
-         * Get the value of the green channel at the given pixel coordinates [x], [y].
+         * Get the value of the green channel at the given pixel coordinates **x**, **y**.
          */
         getGreen(x: number, y: number): number;
         /**
-         * Set the value of the green channel at the given pixel coordinates [x], [y].
+         * Set the value of the green channel at the given pixel coordinates **x**, **y**.
          */
         setGreen(x: number, y: number, c: number): void;
         setGreenInt(x: number, y: number, c: number): void;
         /**
-         * Get the value of the blue channel at the given pixel coordinates [x], [y].
+         * Get the value of the blue channel at the given pixel coordinates **x**, **y**.
          */
         getBlue(x: number, y: number): number;
         /**
-         * Set the value of the blue channel at the given pixel coordinates [x], [y].
+         * Set the value of the blue channel at the given pixel coordinates **x**, **y**.
          */
         setBlue(x: number, y: number, c: number): void;
         setBlueInt(x: number, y: number, c: number): void;
         /**
-         * Get the value of the alpha channel at the given pixel coordinates [x], [y].
+         * Get the value of the alpha channel at the given pixel coordinates **x**, **y**.
          */
         getAlpha(x: number, y: number): number;
         /**
-         * Set the value of the alpha channel at the given pixel coordinates [x], [y].
+         * Set the value of the alpha channel at the given pixel coordinates **x**, **y**.
          */
         setAlpha(x: number, y: number, c: number): void;
         setAlphaInt(x: number, y: number, c: number): void;
         /**
-         * Get the value of the depth channel at the given pixel coordinates [x], [y].
+         * Get the value of the depth channel at the given pixel coordinates **x**, **y**.
          */
         getDepth(x: number, y: number): number;
         /**
-         * Set the value of the depth channel at the given pixel coordinates [x], [y].
+         * Set the value of the depth channel at the given pixel coordinates **x**, **y**.
          */
         setDepth(x: number, y: number, c: number): void;
         setDepthInt(x: number, y: number, c: number): void;
@@ -1208,7 +1243,7 @@ declare module "hdr/hdr-image" {
          */
         getChannel(ch: string): HdrSlice | undefined;
         /**
-         * Add a channel [slice] to the
+         * Add a channel **slice** to the
          */
         addChannel(slice: HdrSlice): void;
         /**
@@ -1334,40 +1369,40 @@ declare module "formats/decoder" {
      * can reduce the color resolution back down to their required formats.
      *
      * Some image formats support multiple frames, often for encoding animation.
-     * In such cases, the [decodeImage] method will decode the first (or otherwise
-     * specified with the [frame] parameter) frame of the file. [decodeAnimation]
-     * will decode all frames from the image. [startDecode] will initiate
-     * decoding of the file, and [decodeFrame] will then decode a specific frame
+     * In such cases, the **decodeImage** method will decode the first (or otherwise
+     * specified with the **frame** parameter) frame of the file. **decodeAnimation**
+     * will decode all frames from the image. **startDecode** will initiate
+     * decoding of the file, and **decodeFrame** will then decode a specific frame
      * from the file, allowing for animations to be decoded one frame at a time.
      * Some formats, such as TIFF, may store multiple frames, but their use of
      * frames is for multiple page documents and not animation. The terms
      * 'animation' and 'frames' simply refer to 'pages' in this case.
      *
-     * If an image file does not have multiple frames, [decodeAnimation] and
-     * [startDecode]/[decodeFrame] will return the single image of the
+     * If an image file does not have multiple frames, **decodeAnimation** and
+     * **startDecode** / **decodeFrame** will return the single image of the
      * file. As such, if you are not sure if a file is animated or not, you can
      * use the animated functions and process it as a single frame image if it
      * has only 1 frame, and as an animation if it has more than 1 frame.
      *
      * Most animated formats do not store full images for frames, but rather
      * some frames will store full images and others will store partial 'change'
-     * images. For these files, [decodeAnimation] will always return all images
+     * images. For these files, **decodeAnimation** will always return all images
      * fully composited, meaning full frame images. Decoding frames individually
-     * using [startDecode] and [decodeFrame] will return the potentially partial
-     * image. In this case, the [DecodeInfo] returned by [startDecode] will include
-     * the width and height resolution of the animation canvas, and each [Image]
-     * returned by [decodeFrame] will have x, y, width and height properties
+     * using **startDecode** and **decodeFrame** will return the potentially partial
+     * image. In this case, the **DecodeInfo** returned by **startDecode** will include
+     * the width and height resolution of the animation canvas, and each **MemoryImage**
+     * returned by **decodeFrame** will have x, y, width and height properties
      * indicating where in the canvas the frame image should be drawn. It will
      * also have a disposeMethod property that specifies what should be done to
-     * the canvas prior to drawing the frame: [Image.DISPOSE_NONE] indicates the
-     * canvas should be left alone; [Image.DISPOSE_CLEAR] indicates the canvas
-     * should be cleared. For partial frame images,[Image.DISPOSE_NONE] is used
+     * the canvas prior to drawing the frame: **DisposeMode.none** indicates the
+     * canvas should be left alone; **DisposeMode.clear** indicates the canvas
+     * should be cleared. For partial frame images,**DisposeMode.none** is used
      * so that the partial-frame is drawn on top of the previous frame, applying
      * it's changes to the image.
      */
     export interface Decoder {
         /**
-         * How many frames are available to be decoded. [startDecode] should have
+         * How many frames are available to be decoded. **startDecode** should have
          * been called first. Non animated image files will have a single frame.
          */
         get numFrames(): number;
@@ -1382,19 +1417,19 @@ declare module "formats/decoder" {
          */
         startDecode(bytes: Uint8Array): DecodeInfo | undefined;
         /**
-         * Decode a single frame from the data that was set with [startDecode].
-         * If [frame] is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have [frame] 0. An [Image]
+         * Decode a single frame from the data that was set with **startDecode**.
+         * If **frame** is out of the range of available frames, undefined is returned.
+         * Non animated image files will only have **frame** 0. A **MemoryImage**
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
          */
         decodeFrame(frame: number): MemoryImage | undefined;
         /**
          * Decode a single high dynamic range (HDR) frame from the data that was set
-         * with [startDecode]. If the format of the file does not support HDR images,
+         * with **startDecode**. If the format of the file does not support HDR images,
          * the regular image will be converted to an HDR image as (color / 255).
-         * If [frame] is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have [frame] 0. An [Image]
+         * If **frame** is out of the range of available frames, undefined is returned.
+         * Non animated image files will only have **frame** 0. A **MemoryImage**
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
          */
@@ -1407,7 +1442,7 @@ declare module "formats/decoder" {
         decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
-         * animated, the specified [frame] will be decoded. If there was a problem
+         * animated, the specified **frame** will be decoded. If there was a problem
          * decoding the file, undefined is returned.
          */
         decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
@@ -1416,7 +1451,7 @@ declare module "formats/decoder" {
          * it. HDR images are stored in floating-poing values. If the format of the
          * file does not support HDR images, the regular image will be converted to
          * an HDR image as (color / 255). If the file is animated, the specified
-         * [frame] will be decoded. If there was a problem decoding the file, undefined is
+         * **frame** will be decoded. If there was a problem decoding the file, undefined is
          * returned.
          */
         decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
@@ -1441,9 +1476,9 @@ declare module "formats/bmp-decoder" {
         isValidFile(bytes: Uint8Array): boolean;
         startDecode(bytes: Uint8Array): BmpInfo | undefined;
         /**
-         * Decode a single frame from the data stat was set with [startDecode].
-         * If [frame] is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have [frame] 0. An [AnimationFrame]
+         * Decode a single frame from the data stat was set with **startDecode**.
+         * If **frame** is out of the range of available frames, undefined is returned.
+         * Non animated image files will only have **frame** 0. An **AnimationFrame**
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
          */
@@ -1457,7 +1492,7 @@ declare module "formats/bmp-decoder" {
         decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
-         * animated, the specified [frame] will be decoded. If there was a problem
+         * animated, the specified **frame** will be decoded. If there was a problem
          * decoding the file, undefined is returned.
          */
         decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
@@ -1515,9 +1550,9 @@ declare module "common/output-buffer" {
          */
         writeUint32(value: number): void;
         /**
-         * Return the subarray of the buffer in the range [start:end].
-         * If [start] or [end] are < 0 then it is relative to the end of the buffer.
-         * If [end] is not specified (or undefined), then it is the end of the buffer.
+         * Return the subarray of the buffer in the range **start**:**end**.
+         * If **start** or **end** are < 0 then it is relative to the end of the buffer.
+         * If **end** is not specified (or undefined), then it is the end of the buffer.
          * This is equivalent to the python list range operator.
          */
         subarray(start: number, end?: number): Uint8Array;
@@ -1652,46 +1687,6 @@ declare module "transform/copy-into-options" {
         center?: boolean;
     }
 }
-declare module "common/color" {
-    /**
-     * Image pixel colors are instantiated as an int object rather than an instance
-     * of the Color class in order to reduce object allocations.
-     */
-    export abstract class Color {
-        /**
-         * Create a color value from RGB values in the range [0, 255].
-         *
-         * The channel order of a uint32 encoded color is BGRA.
-         */
-        static fromRgb(red: number, green: number, blue: number): number;
-        /**
-         * Create a color value from RGBA values in the range [0, 255].
-         *
-         * The channel order of a uint32 encoded color is BGRA.
-         */
-        static fromRgba(red: number, green: number, blue: number, alpha: number): number;
-        /**
-         * Create a color value from HSL values in the range [0, 1].
-         */
-        static fromHsl(hue: number, saturation: number, lightness: number): number;
-        /**
-         * Create a color value from HSV values in the range [0, 1].
-         */
-        static fromHsv(hue: number, saturation: number, value: number): number;
-        /**
-         * Create a color value from XYZ values.
-         */
-        static fromXyz(x: number, y: number, z: number): number;
-        /**
-         * Create a color value from CIE-L*ab values.
-         */
-        static fromLab(L: number, a: number, b: number): number;
-        /**
-         * Compare colors from a 3 or 4 dimensional color space
-         */
-        static distance(c1: number[], c2: number[], compareAlpha: boolean): number;
-    }
-}
 declare module "common/line" {
     export class Line {
         private _startX;
@@ -1782,22 +1777,22 @@ declare module "draw/draw" {
         private static readonly OUTCODE_TOP;
         /**
          * Calculate the pixels that make up the circumference of a circle on the
-         * given [image], centered at [center] and the given [radius].
+         * given **image**, centered at **center** and the given **radius**.
          *
          * The returned list of points is sorted, first by the x coordinate, and
          * second by the y coordinate.
          */
         private static calculateCircumference;
         /**
-         * Compute the bit code for a point [p] using the clip rectangle [rect]
+         * Compute the bit code for a point **p** using the clip rectangle **rect**
          */
         private static computeOutCode;
         /**
          * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
-         * [line] is a [Line] object.
-         * [rect] is a [Rectangle] object.
-         * Results are stored in [line].
-         * If [line] falls completely outside of [rect], false is returned, otherwise
+         * **line** is a **Line** object.
+         * **rect** is a **Rectangle** object.
+         * Results are stored in **line**.
+         * If **line** falls completely outside of **rect**, false is returned, otherwise
          * true is returned.
          */
         private static clipLine;
@@ -1809,15 +1804,15 @@ declare module "draw/draw" {
         private static fill4;
         private static fill4Core;
         /**
-         * Draw a circle into the [image] with a center of [x0],[y0] and
-         * the given [radius] and [color].
+         * Draw a circle into the **image** with a center of **center** and
+         * the given **radius** and **color**.
          */
         static drawCircle(image: MemoryImage, center: Point, radius: number, color: number): MemoryImage;
         /**
-         * Draw and fill a circle into the [image] with a [center]
-         * and the given [radius] and [color].
+         * Draw and fill a circle into the **image** with a **center**
+         * and the given **radius** and **color**.
          *
-         * The algorithm uses the same logic as [drawCircle] to calculate each point
+         * The algorithm uses the same logic as **drawCircle** to calculate each point
          * around the circle's circumference. Then it iterates through every point,
          * finding the smallest and largest y-coordinate values for a given x-
          * coordinate.
@@ -1827,25 +1822,25 @@ declare module "draw/draw" {
          */
         static fillCircle(image: MemoryImage, center: Point, radius: number, color: number): MemoryImage;
         /**
-         * Draw the image [src] onto the image [dst].
+         * Draw the image **src** onto the image **dst**.
          *
-         * In other words, drawImage will take an rectangular area from src of
-         * width [src_w] and height [src_h] at position ([src_x],[src_y]) and place it
-         * in a rectangular area of [dst] of width [dst_w] and height [dst_h] at
-         * position ([dst_x],[dst_y]).
+         * In other words, drawImage will take an rectangular area from **src** of
+         * width **srcW** and height **srcH** at position (**srcX**,**srY**) and place it
+         * in a rectangular area of **dst** of width **dstW** and height **dstH** at
+         * position (**dstX**,**dstY**).
          *
          * If the source and destination coordinates and width and heights differ,
          * appropriate stretching or shrinking of the image fragment will be performed.
          * The coordinates refer to the upper left corner. This function can be used to
-         * copy regions within the same image (if [dst] is the same as [src])
+         * copy regions within the same image (if **dst** is the same as **src**)
          * but if the regions overlap the results will be unpredictable.
          */
         static drawImage(options: DrawImageOptions): MemoryImage;
         /**
-         * Draw a line into [image].
+         * Draw a line into **image**.
          *
-         * If [antialias] is true then the line is drawn with smooth edges.
-         * [thickness] determines how thick the line should be drawn, in pixels.
+         * If **antialias** is true then the line is drawn with smooth edges.
+         * **thickness** determines how thick the line should be drawn, in pixels.
          */
         static drawLine(options: DrawLineOptions): MemoryImage;
         /**
@@ -1853,26 +1848,26 @@ declare module "draw/draw" {
          */
         static drawPixel(image: MemoryImage, pos: Point, color: number, opacity?: number): MemoryImage;
         /**
-         * Draw a rectangle in the image [dst] with the [color].
+         * Draw a rectangle in the image **dst** with the **color**.
          */
         static drawRect(dst: MemoryImage, rect: Rectangle, color: number): MemoryImage;
         /**
-         * Fill the 4-connected shape containing [x],[y] in the image [src] with the
-         * given [color].
+         * Fill the 4-connected shape containing **x**,**y** in the image **src** with the
+         * given **color**.
          */
         static fillFlood(options: FillFloodOptions): MemoryImage;
         /**
-         * Create a mask describing the 4-connected shape containing [x],[y] in the
-         * image [src].
+         * Create a mask describing the 4-connected shape containing **x**,**y** in the
+         * image **src**.
          */
         static maskFlood(options: MaskFloodOptions): Uint8Array;
         /**
-         * Fill a rectangle in the image [src] with the given [color] with the corners
-         * [x1],[y1] and [x2],[y2].
+         * Fill a rectangle in the image **src** with the given **color** with the
+         * coordinates defined by **rect**.
          */
         static fillRect(src: MemoryImage, rect: Rectangle, color: number): MemoryImage;
         /**
-         * Set all of the pixels of an [image] to the given [color].
+         * Set all of the pixels of an **image** to the given **color**.
          */
         static fill(image: MemoryImage, color: number): MemoryImage;
     }
@@ -1887,69 +1882,69 @@ declare module "transform/image-transform" {
     import { Interpolation } from "common/interpolation";
     export abstract class ImageTransform {
         /**
-         * Returns a copy of the [src] image, rotated by [angle] degrees.
+         * Returns a copy of the **src** image, rotated by **angle** degrees.
          */
         static copyRotate(src: MemoryImage, angle: number, interpolation?: Interpolation): MemoryImage;
         /**
-         * If [image] has an orientation value in its exif data, this will rotate the
+         * If **image** has an orientation value in its exif data, this will rotate the
          * image so that it physically matches its orientation. This can be used to
          * bake the orientation of the image for image formats that don't support exif
          * data.
          */
         static bakeOrientation(image: MemoryImage): MemoryImage;
         /**
-         * Returns a resized copy of the [src] image.
-         * If [height] isn't specified, then it will be determined by the aspect
-         * ratio of [src] and [width].
-         * If [width] isn't specified, then it will be determined by the aspect ratio
-         * of [src] and [height].
+         * Returns a resized copy of the **src** image.
+         * If **height** isn't specified, then it will be determined by the aspect
+         * ratio of **src** and **width**.
+         * If **width** isn't specified, then it will be determined by the aspect ratio
+         * of **src** and **height**.
          */
         static copyResize(options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
         /**
-         * Returns a resized and square cropped copy of the [src] image of [size] size.
+         * Returns a resized and square cropped copy of the **src** image of **size** size.
          */
         static copyResizeCropSquare(src: MemoryImage, size: number): MemoryImage;
         /**
-         * Copies a rectangular portion of one image to another image. [dst] is the
-         * destination image, [src] is the source image identifier.
+         * Copies a rectangular portion of one image to another image. **dst** is the
+         * destination image, **src** is the source image identifier.
          *
-         * In other words, copyInto will take an rectangular area from src of
-         * width [srcW] and height [srcH] at position ([srcX],[srcY]) and place it
-         * in a rectangular area of [dst] of width [dstW] and height [dstH] at
-         * position ([dstX],[dstY]).
+         * In other words, copyInto will take an rectangular area from **src** of
+         * width **srcW** and height **srcH** at position (**srcX**,**srcY**) and place it
+         * in a rectangular area of **dst** of width **dstW** and height **dstH** at
+         * position (**dstX**,**dstY**).
          *
          * If the source and destination coordinates and width and heights differ,
          * appropriate stretching or shrinking of the image fragment will be performed.
          * The coordinates refer to the upper left corner. This function can be used to
-         * copy regions within the same image (if [dst] is the same as [src])
+         * copy regions within the same image (if **dst** is the same as **src**)
          * but if the regions overlap the results will be unpredictable.
          *
-         * [dstX] and [dstY] represent the X and Y position where the [src] will start
+         * **dstX** and **dstY** represent the X and Y position where the **src** will start
          * printing.
          *
-         * if [center] is true, the [src] will be centered in [dst].
+         * if **center** is true, the **src** will be centered in **dst**.
          */
         static copyInto(options: CopyIntoOptions): MemoryImage;
         /**
-         * Returns a cropped copy of [src].
+         * Returns a cropped copy of **src**.
          */
         static copyCrop(src: MemoryImage, x: number, y: number, w: number, h: number): MemoryImage;
         /**
-         * Returns a round cropped copy of [src].
+         * Returns a round cropped copy of **src**.
          */
         static copyCropCircle(src: MemoryImage, radius?: number, center?: Point): MemoryImage;
         /**
-         * Returns a copy of the [src] image, where the given rectangle
+         * Returns a copy of the **src** image, where the given rectangle
          * has been mapped to the full image.
          */
         static copyRectify(src: MemoryImage, rect: Rectangle, toImage?: MemoryImage): MemoryImage;
         /**
-         * Flips the [src] image using the given [mode], which can be one of:
-         * [FlipDirection.horizontal], [FlipDirection.vertical], or [FlipDirection.both].
+         * Flips the **src** image using the given **mode**, which can be one of:
+         * **FlipDirection.horizontal**, **FlipDirection.vertical**, or **FlipDirection.both**.
          */
         static flip(src: MemoryImage, direction: FlipDirection): MemoryImage;
         /**
-         * Flip the [src] image vertically.
+         * Flip the **src** image vertically.
          */
         static flipVertical(src: MemoryImage): MemoryImage;
         /**
@@ -2181,7 +2176,7 @@ declare module "common/quantizer" {
     /** @format */
     export interface Quantizer {
         /**
-         * Find the index of the closest color to [c] in the [colorMap].
+         * Find the index of the closest color to **c** in the **colorMap**.
          */
         getQuantizedColor(c: number): number;
     }
@@ -2234,11 +2229,11 @@ declare module "common/neural-quantizer" {
         private bias;
         private freq;
         /**
-         * How many colors are in the [colorMap]?
+         * How many colors are in the **colorMap**?
          */
         get numColors(): number;
         /**
-         * 10 is a reasonable [samplingFactor] according to
+         * 10 is a reasonable **samplingFactor** according to
          * https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/.
          */
         constructor(image: MemoryImage, numberOfColors?: number, samplingFactor?: number);
@@ -2267,23 +2262,23 @@ declare module "common/neural-quantizer" {
          */
         private inxSearch;
         /**
-         * Get a color from the [colorMap].
+         * Get a color from the **colorMap**.
          */
         color(index: number): number;
         /**
-         * Find the index of the closest color to [c] in the [colorMap].
+         * Find the index of the closest color to **c** in the **colorMap**.
          */
         lookup(c: number): number;
         /**
-         * Find the index of the closest color to [r],[g],[b] in the [colorMap].
+         * Find the index of the closest color to **r**,**g**,**b** in the **colorMap**.
          */
         lookupRGB(r: number, g: number, b: number): number;
         /**
-         * Find the color closest to [c] in the [colorMap].
+         * Find the color closest to **c** in the **colorMap**.
          */
         getQuantizedColor(c: number): number;
         /**
-         * Convert the [image] to an index map, mapping to this [colorMap].
+         * Convert the **image** to an index map, mapping to this **colorMap**.
          */
         getIndexMap(image: MemoryImage): Uint8Array;
     }
@@ -2360,19 +2355,19 @@ declare module "formats/gif-encoder" {
         private writeGraphicsCtrlExt;
         private writeHeader;
         /**
-         * Encode the images that were added with [addFrame].
+         * Encode the images that were added with **addFrame**.
          * After this has been called (returning the finishes GIF),
-         * calling [addFrame] for a new animation or image is safe again.
+         * calling **addFrame** for a new animation or image is safe again.
          *
-         * [addFrame] will not encode the first image passed and after that
+         * **addFrame** will not encode the first image passed and after that
          * always encode the previous image. Hence, the last image needs to be
          * encoded here.
          */
         private finish;
         /**
-         * This adds the frame passed to [image].
-         * After the last frame has been added, [finish] is required to be called.
-         * Optional frame [duration] is in 1/100 sec.
+         * This adds the frame passed to **image**.
+         * After the last frame has been added, **finish** is required to be called.
+         * Optional frame **duration** is in 1/100 sec.
          * */
         addFrame(image: MemoryImage, duration?: number): void;
         /**
@@ -2644,7 +2639,7 @@ declare module "formats/png-decoder" {
          */
         startDecode(bytes: Uint8Array): DecodeInfo | undefined;
         /**
-         * Decode the frame (assuming [startDecode] has already been called).
+         * Decode the frame (assuming **startDecode** has already been called).
          */
         decodeFrame(frame: number): MemoryImage | undefined;
         decodeHdrFrame(frame: number): HdrImage | undefined;
@@ -3352,7 +3347,7 @@ declare module "formats/tiff/tiff-fax-decoder" {
         private static readonly TABLE1;
         private static readonly TABLE2;
         /**
-         * Table to be used when fillOrder = 2, for flipping bytes.
+         * Table to be used when **fillOrder** = 2, for flipping bytes.
          */
         private static readonly FLIP_TABLE;
         /**
@@ -3671,7 +3666,7 @@ declare module "formats/tiff-decoder" {
         private _info;
         get info(): TiffInfo | undefined;
         /**
-         * How many frames are available to be decoded. [startDecode] should have been called first.
+         * How many frames are available to be decoded. **startDecode** should have been called first.
          * Non animated image files will have a single frame.
          */
         get numFrames(): number;
@@ -3689,9 +3684,9 @@ declare module "formats/tiff-decoder" {
          */
         startDecode(bytes: Uint8Array): TiffInfo | undefined;
         /**
-         * Decode a single frame from the data stat was set with [startDecode].
-         * If [frame] is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have [frame] 0. An [AnimationFrame]
+         * Decode a single frame from the data stat was set with **startDecode**.
+         * If **frame** is out of the range of available frames, undefined is returned.
+         * Non animated image files will only have **frame** 0. An **AnimationFrame**
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
          */
@@ -3705,7 +3700,7 @@ declare module "formats/tiff-decoder" {
         decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
-         * animated, the specified [frame] will be decoded. If there was a problem
+         * animated, the specified **frame** will be decoded. If there was a problem
          * decoding the file, undefined is returned.
          */
         decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
@@ -3800,7 +3795,7 @@ declare module "common/octree-quantizer" {
         private nodeFold;
         private compareNode;
         /**
-         * Find the index of the closest color to [c] in the [colorMap].
+         * Find the index of the closest color to **c** in the **colorMap**.
          */
         getQuantizedColor(c: number): number;
     }
@@ -3809,7 +3804,7 @@ declare module "common/random-utils" {
     /** @format */
     export abstract class RandomUtils {
         /**
-         * Return a random variable between [-1,1].
+         * Return a random variable between [**-1**,**1**].
          */
         static crand(): number;
         /**
@@ -3818,7 +3813,7 @@ declare module "common/random-utils" {
          */
         static grand(): number;
         /**
-         * Return a random variable following a Poisson distribution of parameter [z].
+         * Return a random variable following a Poisson distribution of parameter **z**.
          */
         static prand(z: number): number;
     }
@@ -3916,7 +3911,7 @@ declare module "filter/remap-colors-options" {
 declare module "filter/separable-kernel" {
     import { MemoryImage } from "common/memory-image";
     /**
-     * A kernel object to use with [separableConvolution] filtering.
+     * A kernel object to use with **separableConvolution** filtering.
      */
     export class SeparableKernel {
         private readonly coefficients;
@@ -3926,7 +3921,7 @@ declare module "filter/separable-kernel" {
          */
         get length(): number;
         /**
-         * Create a separable convolution kernel for the given [radius].
+         * Create a separable convolution kernel for the given **radius**.
          */
         constructor(size: number);
         private reflect;
@@ -3940,14 +3935,14 @@ declare module "filter/separable-kernel" {
          */
         setCoefficient(index: number, c: number): void;
         /**
-         * Apply the kernel to the [src] image, storing the results in [dst],
-         * for a single dimension. If [horizontal is true, the filter will be
+         * Apply the kernel to the **src** image, storing the results in **dst**,
+         * for a single dimension. If **horizontal** is true, the filter will be
          * applied to the horizontal axis, otherwise it will be appied to the
          * vertical axis.
          */
         apply(src: MemoryImage, dst: MemoryImage, horizontal?: boolean): void;
         /**
-         * Scale all of the coefficients by [s].
+         * Scale all of the coefficients by **s**.
          */
         scaleCoefficients(s: number): void;
     }
@@ -3977,74 +3972,74 @@ declare module "filter/image-filter" {
         private static readonly gaussianKernelCache;
         private static smoothVignetteStep;
         /**
-         * Adjust the color of the [src] image using various color transformations.
+         * Adjust the color of the **src** image using various color transformations.
          *
-         * [blacks] defines the black level of the image, as a color.
+         * **blacks** defines the black level of the image, as a color.
          *
-         * [whites] defines the white level of the image, as a color.
+         * **whites** defines the white level of the image, as a color.
          *
-         * [mids] defines the mid level of hte image, as a color.
+         * **mids** defines the mid level of hte image, as a color.
          *
-         * [contrast] increases (> 1) / decreases (< 1) the contrast of the image by
+         * **contrast** increases (> 1) / decreases (< 1) the contrast of the image by
          * pushing colors away/toward neutral gray, where at 0 the image is entirely
          * neutral gray (0 contrast), 1, the image is not adjusted and > 1 the
          * image increases contrast.
          *
-         * [saturation] increases (> 1) / decreases (< 1) the saturation of the image
+         * **saturation** increases (> 1) / decreases (< 1) the saturation of the image
          * by pushing colors away/toward their grayscale value, where 0 is grayscale
          * and 1 is the original image, and > 1 the image becomes more saturated.
          *
-         * [brightness] is a constant scalar of the image colors. At 0 the image
+         * **brightness** is a constant scalar of the image colors. At 0 the image
          * is black, 1 unmodified, and > 1 the image becomes brighter.
          *
-         * [gamma] is an exponential scalar of the image colors. At < 1 the image
-         * becomes brighter, and > 1 the image becomes darker. A [gamma] of 1/2.2
+         * **gamma** is an exponential scalar of the image colors. At < 1 the image
+         * becomes brighter, and > 1 the image becomes darker. A **gamma** of 1/2.2
          * will convert the image colors to linear color space.
          *
-         * [exposure] is an exponential scalar of the image as rgb* pow(2, exposure).
+         * **exposure** is an exponential scalar of the image as rgb* pow(2, exposure).
          * At 0, the image is unmodified; as the exposure increases, the image
          * brightens.
          *
-         * [hue] shifts the hue component of the image colors in degrees. A [hue] of
-         * 0 will have no affect, and a [hue] of 45 will shift the hue of all colors
+         * **hue** shifts the hue component of the image colors in degrees. A **hue** of
+         * 0 will have no affect, and a **hue** of 45 will shift the hue of all colors
          * by 45 degrees.
          *
-         * [amount] controls how much affect this filter has on the [src] image, where
+         * **amount** controls how much affect this filter has on the **src** image, where
          * 0 has no effect and 1 has full effect.
          */
         static adjustColor(options: AdjustColorOptions): MemoryImage;
         /**
-         * Set the [brightness] level for the image [src].
-         * [brightness] is an offset that is added to the red, green, and blue channels
+         * Set the **brightness** level for the image **src**.
+         * **brightness** is an offset that is added to the red, green, and blue channels
          * of every pixel.
          */
         static brightness(src: MemoryImage, brightness: number): MemoryImage;
         /**
-         * Generate a normal map from a heightfield bump image.
+         * Generate a normal map from a height-field bump image.
          *
-         * The red channel of the [src] image is used as an input, 0 represents a low
-         * height and 1 a high value. The optional [strength] parameter allows to set
+         * The red channel of the **src** image is used as an input, 0 represents a low
+         * height and 1 a high value. The optional **strength** parameter allows to set
          * the strength of the normal image.
          */
         static bumpToNormal(src: MemoryImage, strength?: number): MemoryImage;
         /**
-         * Add the [red], [green], [blue] and [alpha] values to the [src] image
+         * Add the **red**, **green**, **blue** and **alpha** values to the **src** image
          * colors, a per-channel brightness.
          */
         static colorOffset(options: ColorOffsetOptions): MemoryImage;
         /**
-         * Set the [contrast] level for the image [src].
+         * Set the **contrast** level for the image **src**.
          *
-         * [contrast] values below 100 will decrees the contrast of the image,
+         * **contrast** values below 100 will decrees the contrast of the image,
          * and values above 100 will increase the contrast. A contrast of 100
          * will have no affect.
          */
         static contrast(src: MemoryImage, contrast: number): MemoryImage;
         /**
-         * Apply a 3x3 convolution filter to the [src] image. [filter] should be a
+         * Apply a 3x3 convolution filter to the **src** image. **filter** should be a
          * list of 9 numbers.
          *
-         * The rgb channels will be divided by [filterDiv] and add [offset], allowing
+         * The rgb channels will divided by **div** and add **offset**, allowing
          * filters to normalize and offset the filtered pixel value.
          */
         static convolution(options: ConvolutionOptions): MemoryImage;
@@ -4053,7 +4048,7 @@ declare module "filter/image-filter" {
          */
         static emboss(src: MemoryImage): MemoryImage;
         /**
-         * Apply gaussian blur to the [src] image. [radius] determines how many pixels
+         * Apply gaussian blur to the **src** image. **radius** determines how many pixels
          * away from the current pixel should contribute to the blur, where 0 is no
          * blur and the larger the radius, the stronger the blur.
          */
@@ -4063,27 +4058,27 @@ declare module "filter/image-filter" {
          */
         static grayscale(src: MemoryImage): MemoryImage;
         /**
-         * Invert the colors of the [src] image.
+         * Invert the colors of the **src** image.
          */
         static invert(src: MemoryImage): MemoryImage;
         /**
-         * Add random noise to pixel values. [sigma] determines how strong the effect
-         * should be. [type] should be one of the following: [NoiseType.gaussian],
-         * [NoiseType.uniform], [NoiseType.saltPepper], [NoiseType.poisson],
-         * or [NoiseType.rice].
+         * Add random noise to pixel values. **sigma** determines how strong the effect
+         * should be. **type** should be one of the following: **NoiseType.gaussian**,
+         * **NoiseType.uniform**, **NoiseType.saltPepper**, **NoiseType.poisson**,
+         * or **NoiseType.rice**.
          */
         static noise(image: MemoryImage, sigma: number, type?: NoiseType): MemoryImage;
         /**
          * Linearly normalize the colors of the image. All color values will be mapped
-         * to the range [minValue], [maxValue] inclusive.
+         * to the range **minValue**, **maxValue** inclusive.
          */
         static normalize(src: MemoryImage, minValue: number, maxValue: number): MemoryImage;
         /**
-         * Pixelate the [src] image.
+         * Pixelate the **src** image.
          *
-         * [blockSize] determines the size of the pixelated blocks.
-         * If [mode] is [PixelateMode.upperLeft] then the upper-left corner of the block
-         * will be used for the block color. Otherwise if [mode] is [PixelateMode.average],
+         * **blockSize** determines the size of the pixelated blocks.
+         * If **mode** is **PixelateMode.upperLeft** then the upper-left corner of the block
+         * will be used for the block color. Otherwise if **mode** is **PixelateMode.average**,
          * the average of all the pixels in the block will be used for the block color.
          */
         static pixelate(src: MemoryImage, blockSize: number, mode?: PixelateMode): MemoryImage;
@@ -4093,38 +4088,38 @@ declare module "filter/image-filter" {
         static quantize(options: QuantizeOptions): MemoryImage;
         /**
          * Remap the color channels of the image.
-         * [red], [green], [blue] and [alpha] should be set to one of the following:
-         * [ColorChannel.red], [ColorChannel.green], [ColorChannel.blue], [ColorChannel.alpha], or
-         * [ColorChannel.luminance]. For example,
-         * remapColors({src: src, red: ColorChannel.green, green: ColorChannel.red});
+         * **red**, **green**, **blue** and **alpha** should be set to one of the following:
+         * **ColorChannel.red**, **ColorChannel.green**, **ColorChannel.blue**, **ColorChannel.alpha**, or
+         * **ColorChannel.luminance**. For example,
+         * **_remapColors({ src: src, red: ColorChannel.green, green: ColorChannel.red })_**
          * will swap the red and green channels of the image.
-         * remapColors({src: src, alpha: ColorChannel.luminance})
+         * **_remapColors({ src: src, alpha: ColorChannel.luminance })_**
          * will set the alpha channel to the luminance (grayscale) of the image.
          */
         static remapColors(options: RemapColorsOptions): MemoryImage;
         static scaleRgba(src: MemoryImage, r: number, g: number, b: number, a: number): MemoryImage;
         /**
-         * Apply a generic separable convolution filter the [src] image, using the
-         * given [kernel].
+         * Apply a generic separable convolution filter the **src** image, using the
+         * given **kernel**.
          *
-         * [gaussianBlur] is an example of such a filter.
+         * **gaussianBlur** is an example of such a filter.
          */
         static separableConvolution(src: MemoryImage, kernel: SeparableKernel): MemoryImage;
         /**
          * Apply sepia tone to the image.
          *
-         * [amount] controls the strength of the effect, in the range 0.0 - 1.0.
+         * **amount** controls the strength of the effect, in the range **0**-**1**.
          */
         static sepia(src: MemoryImage, amount?: number): MemoryImage;
         /**
-         * Apply a smoothing convolution filter to the [src] image.
+         * Apply a smoothing convolution filter to the **src** image.
          *
-         * [w] is the weight of the current pixel being filtered. If it's greater than
+         * **w** is the weight of the current pixel being filtered. If it's greater than
          * 1, it will make the image sharper.
          */
         static smooth(src: MemoryImage, w: number): MemoryImage;
         /**
-         * Apply Sobel edge detection filtering to the [src] Image.
+         * Apply Sobel edge detection filtering to the **src** Image.
          */
         static sobel(src: MemoryImage, amount?: number): MemoryImage;
         static vignette(options: VignetteOptions): MemoryImage;
@@ -4189,6 +4184,7 @@ declare module "transform/trim-side" {
     }
 }
 declare module "transform/trim" {
+    /** @format */
     import { MemoryImage } from "common/memory-image";
     import { TrimMode } from "transform/trim-mode";
     import { TrimSide } from "transform/trim-side";
@@ -4196,19 +4192,19 @@ declare module "transform/trim" {
         /**
          * Find the crop area to be used by the trim function.
          * Returns the Rectangle. You could pass these constraints
-         * to the [copyCrop] function to crop the image.
+         * to the **copyCrop** function to crop the image.
          */
         private static findTrim;
         /**
          * Automatically crops the image by finding the corners of the image that
-         * meet the [mode] criteria (not transparent or a different color).
+         * meet the **mode** criteria (not transparent or a different color).
          *
-         * [mode] can be either [TrimMode.transparent], [TrimMode.topLeftColor] or
-         * [TrimMode.bottomRightColor].
+         * **mode** can be either **TrimMode.transparent**, **TrimMode.topLeftColor** or
+         * **TrimMode.bottomRightColor**.
          *
-         * [sides] can be used to control which sides of the image get trimmed,
-         * and can be any combination of [TrimSide.top], [TrimSide.bottom], [TrimSide.left],
-         * and [TrimSide.right].
+         * **sides** can be used to control which sides of the image get trimmed,
+         * and can be any combination of **TrimSide.top**, **TrimSide.bottom**, **TrimSide.left**,
+         * and **TrimSide.right**.
          */
         static trim(src: MemoryImage, mode?: TrimMode, sides?: TrimSide): MemoryImage;
     }
@@ -4224,7 +4220,6 @@ declare module "index" {
     export { Clamp } from "common/clamp";
     export { ColorChannel } from "common/color-channel";
     export { ColorModel } from "common/color-model";
-    export { ColorUtils } from "common/color-utils";
     export { Color } from "common/color";
     export { Crc32, Crc32Parameters } from "common/crc32";
     export { DisposeMode } from "common/dispose-mode";
@@ -4326,7 +4321,7 @@ declare module "index" {
     export { TrimSide } from "transform/trim-side";
     export { TrimTransform } from "transform/trim";
     /**
-     * Find a [Decoder] that is able to decode the given image [data].
+     * Find a **Decoder** that is able to decode the given image **data**.
      * Use this is you don't know the type of image it is. Since this will
      * validate the image against all known decoders, it is potentially very slow.
      */
@@ -4338,31 +4333,31 @@ declare module "index" {
     export function decodeImage(data: TypedArray): MemoryImage | undefined;
     /**
      * Decode the given image file bytes by first identifying the format of the
-     * file and using that decoder to decode the file into an [Animation]
-     * containing one or more [Image] frames.
+     * file and using that decoder to decode the file into an **FrameAnimation**
+     * containing one or more **MemoryImage** frames.
      */
     export function decodeAnimation(data: TypedArray): FrameAnimation | undefined;
     /**
-     * Return the [Decoder] that can decode image with the given [name],
-     * by looking at the file extension. See also [findDecoderForData] to
+     * Return the **Decoder** that can decode image with the given **name**,
+     * by looking at the file extension. See also **findDecoderForData** to
      * determine the decoder to use given the bytes of the file.
      */
     export function getDecoderForNamedImage(name: string): Decoder | undefined;
     /**
      * Identify the format of the image using the file extension of the given
-     * [name], and decode the given file [bytes] to an [FrameAnimation] with one or more
-     * [MemoryImage] frames. See also [decodeAnimation].
+     * **name**, and decode the given file **bytes** to an **FrameAnimation** with one or more
+     * **MemoryImage** frames. See also **decodeAnimation**.
      */
     export function decodeNamedAnimation(data: TypedArray, name: string): FrameAnimation | undefined;
     /**
      * Identify the format of the image using the file extension of the given
-     * [name], and decode the given file [bytes] to a single frame [Image]. See
-     * also [decodeImage].
+     * **name**, and decode the given file **data** to a single frame **MemoryImage**. See
+     * also **decodeImage**.
      */
     export function decodeNamedImage(data: TypedArray, name: string): MemoryImage | undefined;
     /**
      * Identify the format of the image and encode it with the appropriate
-     * [Encoder].
+     * **Encoder**.
      */
     export function encodeNamedImage(image: MemoryImage, name: string): Uint8Array | undefined;
     /**
@@ -4409,31 +4404,31 @@ declare module "index" {
     /**
      * Encode an image to the GIF format.
      *
-     * The [samplingFactor] specifies the sampling factor for
-     * NeuQuant image quantization. It is responsible for reducing
+     * The **samplingFactor** specifies the sampling factor for
+     * image quantization. It is responsible for reducing
      * the amount of unique colors in your images to 256.
      * According to https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/,
      * a sampling factor of 10 gives you a reasonable trade-off between
      * image quality and quantization speed.
      * If you know that you have less than 256 colors in your frames
-     * anyway, you should supply a very large [samplingFactor] for maximum performance.
+     * anyway, you should supply a very large **samplingFactor** for maximum performance.
      */
     export function encodeGif(image: MemoryImage, samplingFactor?: number): Uint8Array;
     /**
      * Encode an animation to the GIF format.
      *
-     * The [samplingFactor] specifies the sampling factor for
+     * The **samplingFactor** specifies the sampling factor for
      * NeuQuant image quantization. It is responsible for reducing
      * the amount of unique colors in your images to 256.
      * According to https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/,
      * a sampling factor of 10 gives you a reasonable trade-off between
      * image quality and quantization speed.
      * If you know that you have less than 256 colors in your frames
-     * anyway, you should supply a very large [samplingFactor] for maximum performance.
+     * anyway, you should supply a very large **samplingFactor** for maximum performance.
      *
-     * Here, `30` is used a default value for the [samplingFactor] as
+     * Here, `30` is used a default value for the **samplingFactor** as
      * encoding animations is usually a process that takes longer than
-     * encoding a single image (see [encodeGif]).
+     * encoding a single image (see **encodeGif**).
      */
     export function encodeGifAnimation(animation: FrameAnimation, samplingFactor?: number): Uint8Array | undefined;
     /**
