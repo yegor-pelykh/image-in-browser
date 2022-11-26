@@ -1,6 +1,6 @@
 {
   "name": "image-in-browser",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Package for encoding / decoding images, transforming images, applying filters, drawing primitives on images on the client side (no need for server Node.js)",
   "author": "Yegor Pelykh <yegor.dev@gmail.com>",
   "license": "MIT",
