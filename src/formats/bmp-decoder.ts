@@ -75,7 +75,7 @@ export class BmpDecoder implements Decoder {
       const row = this.input.readBytes(rowStride);
       for (let x = 0; x < image.width; ) {
         this.info.decodeRgba(row, (color) => {
-          return image.setPixel(x++, line, color);
+          return image.setPixelSafe(x++, line, color);
         });
       }
     }

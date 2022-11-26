@@ -208,7 +208,13 @@ export class BmpInfo implements DecodeInfo {
 
   public decodeRgba(input: InputBuffer, pixel: (color: number) => void): void {
     if (this._colorPalette !== undefined) {
-      if (this._bpp === 4) {
+      if (this._bpp === 1) {
+        const b = input.readByte().toString(2).padStart(8, '0');
+        for (let i = 0; i < 8; i++) {
+          pixel(this._colorPalette![parseInt(b[i])]);
+        }
+        return;
+      } else if (this._bpp === 4) {
         const b = input.readByte();
         const left = b >> 4;
         const right = b & 0x0f;
