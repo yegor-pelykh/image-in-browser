@@ -11,6 +11,13 @@ declare module "common/frame-type" {
         page = 1
     }
 }
+declare module "common/iccp-compression-mode" {
+    /** @format */
+    export enum ICCPCompressionMode {
+        none = 0,
+        deflate = 1
+    }
+}
 declare module "error/image-error" {
     /** @format */
     /**
@@ -26,9 +33,9 @@ declare module "common/typings" {
     export type BufferEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'base64' | 'latin1' | 'binary' | 'hex';
     export type CompressionLevel = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined;
 }
-declare module "common/list-utils" {
+declare module "common/array-utils" {
     import { TypedArray } from "common/typings";
-    export abstract class ListUtils {
+    export abstract class ArrayUtils {
         static copyInt8(from: Int8Array, begin?: number, end?: number): Int8Array;
         static copyUint8(from: Uint8Array, begin?: number, end?: number): Uint8Array;
         static copyInt16(from: Int16Array, begin?: number, end?: number): Int16Array;
@@ -41,37 +48,7 @@ declare module "common/list-utils" {
         static setRange<T extends TypedArray>(to: T, start: number, end: number, from: T, skipCount?: number): void;
     }
 }
-declare module "common/exif_data" {
-    export type ExifDataType = string | number;
-    export interface ExifDataInitOptions {
-        data?: Map<number, ExifDataType>;
-        rawData?: Uint8Array[];
-    }
-    /**
-     * Exif data stored with an image.
-     */
-    export class ExifData {
-        static readonly ORIENTATION = 274;
-        private _rawData?;
-        get rawData(): Uint8Array[] | undefined;
-        private _data;
-        get data(): Map<number, ExifDataType>;
-        get hasRawData(): boolean;
-        get hasOrientation(): boolean;
-        get orientation(): number | undefined;
-        constructor(options?: ExifDataInitOptions);
-        static from(other?: ExifData): ExifData;
-        addRowData(data: Uint8Array): void;
-    }
-}
-declare module "common/iccp-compression-mode" {
-    /** @format */
-    export enum ICCPCompressionMode {
-        none = 0,
-        deflate = 1
-    }
-}
-declare module "common/icc_profile_data" {
+declare module "common/icc-profile-data" {
     import { ICCPCompressionMode } from "common/iccp-compression-mode";
     /**
      * ICC Profile data stored with an image.
@@ -159,13 +136,17 @@ declare module "common/bit-operators" {
     export abstract class BitOperators {
         private static readonly uint8arr;
         private static readonly uint8ToInt8arr;
+        private static readonly int8arr;
+        private static readonly int8ToUint8arr;
         private static readonly uint16arr;
         private static readonly uint16ToInt16arr;
+        private static readonly int16arr;
+        private static readonly int16ToUint16arr;
         private static readonly uint32arr;
         private static readonly uint32ToInt32arr;
-        private static readonly uint32ToFloat32arr;
         private static readonly int32arr;
         private static readonly int32ToUint32arr;
+        private static readonly uint32ToFloat32arr;
         private static readonly uint64arr;
         private static readonly uint64ToFloat64arr;
         static signed(bits: number, value: number): number;
@@ -177,15 +158,30 @@ declare module "common/bit-operators" {
          */
         static toInt8(d: number): number;
         /**
+         * Binary conversion to an uint8. This is equivalent in C to
+         * typecasting to an unsigned char.
+         */
+        static toUint8(d: number): number;
+        /**
          * Binary conversion to an int16. This is equivalent in C to
          * typecasting to a short.
          */
         static toInt16(d: number): number;
         /**
+         * Binary conversion to an uint16. This is equivalent in C to
+         * typecasting to an unsigned short.
+         */
+        static toUint16(d: number): number;
+        /**
          * Binary conversion to an int32. This is equivalent in C to
          * typecasting to signed int.
          */
         static toInt32(d: number): number;
+        /**
+         * Binary conversion of an int32 to a uint32. This is equivalent in C to
+         * typecasting to unsigned int.
+         */
+        static toUint32(d: number): number;
         /**
          * Binary conversion to a float32. This is equivalent in C to
          * typecasting to float.
@@ -196,26 +192,7 @@ declare module "common/bit-operators" {
          * typecasting to double.
          */
         static toFloat64(d: bigint): number;
-        /**
-         * Binary conversion of an int32 to a uint32. This is equivalent in C to
-         * typecasting to unsigned int.
-         */
-        static toUint32(d: number): number;
         static debugBits32(value?: number): string;
-    }
-}
-declare module "common/clamp" {
-    /** @format */
-    export abstract class Clamp {
-        static clamp(number: number, low: number, high: number): number;
-        /**
-         * Clamp **x** to [**a**, **b**]
-         */
-        static clampInt(x: number, a: number, b: number): number;
-        /**
-         * Clamp **x** to [**0**, **255**]
-         */
-        static clampInt255(x: number): number;
     }
 }
 declare module "common/color-channel" {
@@ -241,6 +218,27 @@ declare module "common/color-channel" {
          * Luminance (brightness) of a color.
          */
         luminance = 4
+    }
+}
+declare module "common/math-operators" {
+    /** @format */
+    export abstract class MathOperators {
+        /**
+         * Returns the greatest common divisor of **x** and **y**.
+         */
+        static gcd(x: number, y: number): number;
+        /**
+         * Clamp **num** to [**low**, **high**]
+         */
+        static clamp(num: number, low: number, high: number): number;
+        /**
+         * Clamp **num** to [**a**, **b**] and truncate
+         */
+        static clampInt(num: number, low: number, high: number): number;
+        /**
+         * Clamp **num** to [**0**, **255**]
+         */
+        static clampInt255(num: number): number;
     }
 }
 declare module "common/color" {
@@ -399,15 +397,673 @@ declare module "common/color" {
         static rgbToLab(r: number, g: number, b: number): number[];
     }
 }
+declare module "common/text-codec" {
+    export abstract class TextCodec {
+        static readonly utf8Decoder: TextDecoder;
+        static readonly latin1Decoder: TextDecoder;
+        static getCodePoints(str: string): Uint8Array;
+    }
+}
+declare module "common/input-buffer" {
+    export interface InputBufferInitOptions {
+        buffer: Uint8Array;
+        offset?: number;
+        length?: number;
+        bigEndian?: boolean;
+    }
+    /**
+     * A buffer that can be read as a stream of bytes.
+     */
+    export class InputBuffer {
+        private readonly _buffer;
+        get buffer(): Uint8Array;
+        private _bigEndian;
+        set bigEndian(v: boolean);
+        get bigEndian(): boolean;
+        private _offset;
+        set offset(v: number);
+        get offset(): number;
+        private _start;
+        get start(): number;
+        private _end;
+        get end(): number;
+        /**
+         *  The current read position relative to the start of the buffer.
+         */
+        get position(): number;
+        /**
+         * How many bytes are left in the stream.
+         */
+        get length(): number;
+        /**
+         * Is the current position at the end of the stream?
+         */
+        get isEOS(): boolean;
+        /**
+         * Create a InputStream for reading from an Array<int>
+         */
+        constructor(options: InputBufferInitOptions);
+        /**
+         * Create a copy of **other**.
+         */
+        static from(other: InputBuffer, offset?: number, length?: number): InputBuffer;
+        /**
+         * Reset to the beginning of the stream.
+         */
+        rewind(): void;
+        /**
+         * Access the buffer relative from the current position.
+         */
+        getByte(index: number): number;
+        /**
+         * Set a buffer element relative to the current position.
+         */
+        setByte(index: number, value: number): number;
+        /**
+         * Set a range of bytes in this buffer to **value**, at **start** offset from the
+         * current read position, and **length** number of bytes.
+         */
+        memset(start: number, length: number, value: number): void;
+        /**
+         * Return a InputStream to read a subset of this stream. It does not
+         * move the read position of this stream. **position** is specified relative
+         * to the start of the buffer. If **position** is not specified, the current
+         * read position is used. If **length** is not specified, the remainder of this
+         * stream is used.
+         */
+        subarray(count: number, position?: number, offset?: number): InputBuffer;
+        /**
+         * Returns the position of the given **value** within the buffer, starting
+         * from the current read position with the given **offset**. The position
+         * returned is relative to the start of the buffer, or -1 if the **value**
+         * was not found.
+         */
+        indexOf(value: number, offset?: number): number;
+        /**
+         * Read **count** bytes from an **offset** of the current read position, without
+         * moving the read position.
+         */
+        peekBytes(count: number, offset?: number): InputBuffer;
+        /**
+         * Move the read position by **count** bytes.
+         */
+        skip(count: number): void;
+        /**
+         * Read a single byte.
+         */
+        readByte(): number;
+        readInt8(): number;
+        /**
+         * Read **count** bytes from the stream.
+         */
+        readBytes(count: number): InputBuffer;
+        /**
+         * Read a null-terminated string, or if **length** is provided, that number of
+         * bytes returned as a string.
+         */
+        readString(length?: number): string;
+        /**
+         * Read a null-terminated UTF-8 string.
+         */
+        readStringUtf8(): string;
+        /**
+         * Read a 16-bit word from the stream.
+         */
+        readUint16(): number;
+        /**
+         * Read a 16-bit word from the stream.
+         */
+        readInt16(): number;
+        /**
+         * Read a 24-bit word from the stream.
+         */
+        readUint24(): number;
+        /**
+         * Read a 32-bit word from the stream.
+         */
+        readUint32(): number;
+        /**
+         * Read a signed 32-bit integer from the stream.
+         */
+        readInt32(): number;
+        /**
+         * Read a 32-bit float.
+         */
+        readFloat32(): number;
+        /**
+         * Read a 64-bit float.
+         */
+        readFloat64(): number;
+        /**
+         * Read a 64-bit word form the stream.
+         */
+        readUint64(): bigint;
+        toUint8Array(offset?: number, length?: number): Uint8Array;
+        toUint32Array(offset?: number): Uint32Array;
+    }
+}
+declare module "common/output-buffer" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    export interface OutputBufferInitOptions {
+        bigEndian?: boolean;
+        size?: number;
+    }
+    export class OutputBuffer {
+        private static readonly BLOCK_SIZE;
+        private _buffer;
+        get buffer(): Uint8Array;
+        private _bigEndian;
+        get bigEndian(): boolean;
+        set bigEndian(v: boolean);
+        private _length;
+        get length(): number;
+        set length(v: number);
+        /**
+         * Create a byte buffer for writing.
+         */
+        constructor(options?: OutputBufferInitOptions);
+        /**
+         * Grow the buffer to accommodate additional data.
+         */
+        private expandBuffer;
+        rewind(): void;
+        /**
+         * Clear the buffer.
+         */
+        clear(): void;
+        /**
+         * Get the resulting bytes from the buffer.
+         */
+        getBytes(): Uint8Array;
+        /**
+         * Write a byte to the end of the buffer.
+         */
+        writeByte(value: number): void;
+        /**
+         * Write a set of bytes to the end of the buffer.
+         */
+        writeBytes(bytes: Uint8Array, length?: number): void;
+        writeBuffer(bytes: InputBuffer): void;
+        /**
+         * Write a 16-bit word to the end of the buffer.
+         */
+        writeUint16(value: number): void;
+        /**
+         * Write a 32-bit word to the end of the buffer.
+         */
+        writeUint32(value: number): void;
+        /**
+         * Write a 32-bit float value to the end of the buffer.
+         */
+        writeFloat32(value: number): void;
+        /**
+         * Write a 64-bit float value to the end of the buffer.
+         */
+        writeFloat64(value: number): void;
+        /**
+         * Return the subarray of the buffer in the range **start**:**end**.
+         * If **start** or **end** are < 0 then it is relative to the end of the buffer.
+         * If **end** is not specified (or undefined), then it is the end of the buffer.
+         * This is equivalent to the python list range operator.
+         */
+        subarray(start: number, end?: number): Uint8Array;
+    }
+}
+declare module "common/rational" {
+    export class Rational {
+        private _numerator;
+        get numerator(): number;
+        private _denominator;
+        get denominator(): number;
+        get asInt(): number;
+        get asDouble(): number;
+        constructor(numerator: number, denominator: number);
+        simplify(): void;
+        equalsTo(other: unknown): boolean;
+        toString(): string;
+    }
+}
+declare module "exif/exif-value-type" {
+    /** @format */
+    export enum ExifValueType {
+        none = 0,
+        byte = 1,
+        ascii = 2,
+        short = 3,
+        long = 4,
+        rational = 5,
+        sbyte = 6,
+        undefined = 7,
+        sshort = 8,
+        slong = 9,
+        srational = 10,
+        single = 11,
+        double = 12
+    }
+    export const ExifValueTypeString: string[];
+    export const ExifValueTypeSize: number[];
+    export function getExifValueTypeString(type: ExifValueType): string;
+    export function getExifValueTypeSize(type: ExifValueType, length?: number): number;
+}
+declare module "exif/exif-value/exif-value" {
+    /** @format */
+    import { OutputBuffer } from "common/output-buffer";
+    import { Rational } from "common/rational";
+    import { ExifValueType } from "exif/exif-value-type";
+    export abstract class ExifValue {
+        get type(): ExifValueType;
+        get length(): number;
+        get dataSize(): number;
+        get typeString(): string;
+        toBool(_index?: number): boolean;
+        toInt(_index?: number): number;
+        toDouble(_index?: number): number;
+        toRational(_index?: number): Rational;
+        toString(): string;
+        write(_out: OutputBuffer): void;
+        setBool(_v: boolean, _index?: number): void;
+        setInt(_v: number, _index?: number): void;
+        setDouble(_v: number, _index?: number): void;
+        setRational(_numerator: number, _denomitator: number, _index?: number): void;
+        setString(_v: string): void;
+        equalsTo(_other: ExifValue): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-entry" {
+    /** @format */
+    import { ExifValue } from "exif/exif-value/exif-value";
+    export class ExifEntry {
+        private readonly _tag;
+        get tag(): number;
+        private _value;
+        get value(): ExifValue | undefined;
+        set value(v: ExifValue | undefined);
+        constructor(tag: number, value?: ExifValue);
+    }
+}
+declare module "exif/exif-ifd-container" {
+    /** @format */
+    import { ExifIFD } from "exif/exif-ifd";
+    export class ExifIFDContainer {
+        protected directories: Map<string, ExifIFD>;
+        get keys(): IterableIterator<string>;
+        get values(): IterableIterator<ExifIFD>;
+        get size(): number;
+        get isEmpty(): boolean;
+        constructor(directories?: Map<string, ExifIFD>);
+        static from(other: ExifIFDContainer): ExifIFDContainer;
+        has(key: string): boolean;
+        get(ifdName: string): ExifIFD;
+        set(ifdName: string, value: ExifIFD): void;
+        clear(): void;
+    }
+}
+declare module "exif/exif-tag" {
+    /** @format */
+    import { ExifValueType } from "exif/exif-value-type";
+    export interface ExifTagInitOptions {
+        name: string;
+        type?: ExifValueType;
+        count?: number;
+    }
+    export class ExifTag {
+        private readonly _name;
+        get name(): string;
+        private readonly _type;
+        get type(): ExifValueType;
+        private _count;
+        get count(): number;
+        constructor(options: ExifTagInitOptions);
+    }
+    export const ExifTagNameToID: Map<string, number>;
+    export const ExifImageTags: Map<number, ExifTag>;
+    export const ExifInteropTags: Map<number, ExifTag>;
+    export const ExifGpsTags: Map<number, ExifTag>;
+}
+declare module "exif/exif-value/exif-ascii-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifAsciiValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: number[] | string);
+        static fromData(data: InputBuffer, length: number): ExifAsciiValue;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setString(v: string): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-byte-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifByteValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Uint8Array | number);
+        static fromData(data: InputBuffer, offset?: number, length?: number): ExifByteValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-double-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifDoubleValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Float64Array | number);
+        static fromData(data: InputBuffer, length: number): ExifDoubleValue;
+        toDouble(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setDouble(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-long-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifLongValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Uint32Array | number);
+        static fromData(data: InputBuffer, length: number): ExifLongValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-rational-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    import { Rational } from "common/rational";
+    export class ExifRationalValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Rational[] | Rational);
+        static fromData(data: InputBuffer, length: number): ExifRationalValue;
+        static from(other: Rational): ExifRationalValue;
+        toInt(index?: number): number;
+        toDouble(index?: number): number;
+        toRational(index?: number): Rational;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setRational(numerator: number, denomitator: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-sbyte-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifSByteValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Int8Array | number);
+        static fromData(data: InputBuffer, offset?: number, length?: number): ExifSByteValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-short-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifShortValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Uint16Array | number);
+        static fromData(data: InputBuffer, length: number): ExifShortValue;
+        toInt(index?: number): number;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-single-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifSingleValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Float32Array | number);
+        static fromData(data: InputBuffer, length: number): ExifSingleValue;
+        toDouble(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setDouble(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-slong-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifSLongValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Int32Array | number);
+        static fromData(data: InputBuffer, length: number): ExifSLongValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-srational-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    import { Rational } from "common/rational";
+    export class ExifSRationalValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Rational[] | Rational);
+        static fromData(data: InputBuffer, length: number): ExifSRationalValue;
+        static from(other: Rational): ExifSRationalValue;
+        toInt(index?: number): number;
+        toDouble(index?: number): number;
+        toRational(index?: number): Rational;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setRational(numerator: number, denomitator: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-sshort-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifSShortValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Int16Array | number);
+        static fromData(data: InputBuffer, length: number): ExifSShortValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-value/exif-undefined-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    import { ExifValueType } from "exif/exif-value-type";
+    export class ExifUndefinedValue extends ExifValue {
+        private value;
+        get type(): ExifValueType;
+        get length(): number;
+        constructor(value: Uint8Array | number);
+        static fromData(data: InputBuffer, offset?: number, length?: number): ExifUndefinedValue;
+        toData(): Uint8Array;
+        toString(): string;
+        write(out: OutputBuffer): void;
+        equalsTo(other: unknown): boolean;
+        clone(): ExifValue;
+    }
+}
+declare module "exif/exif-ifd" {
+    /** @format */
+    import { Rational } from "common/rational";
+    import { ExifIFDContainer } from "exif/exif-ifd-container";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    export class ExifIFD {
+        private readonly data;
+        private readonly _sub;
+        get sub(): ExifIFDContainer;
+        get keys(): IterableIterator<number>;
+        get values(): IterableIterator<ExifValue>;
+        get size(): number;
+        get isEmpty(): boolean;
+        get hasImageDescription(): boolean;
+        get imageDescription(): string | undefined;
+        set imageDescription(v: string | undefined);
+        get hasMake(): boolean;
+        get make(): string | undefined;
+        set make(v: string | undefined);
+        get hasModel(): boolean;
+        get model(): string | undefined;
+        set model(v: string | undefined);
+        get hasOrientation(): boolean;
+        get orientation(): number | undefined;
+        set orientation(v: number | undefined);
+        get hasResolutionX(): boolean;
+        get resolutionX(): Rational | undefined;
+        set resolutionX(v: Rational | undefined);
+        get hasResolutionY(): boolean;
+        get resolutionY(): Rational | undefined;
+        set resolutionY(v: Rational | undefined);
+        get hasResolutionUnit(): boolean;
+        get resolutionUnit(): number | undefined;
+        set resolutionUnit(v: number | undefined);
+        get hasImageWidth(): boolean;
+        get imageWidth(): number | undefined;
+        set imageWidth(v: number | undefined);
+        get hasImageHeight(): boolean;
+        get imageHeight(): number | undefined;
+        set imageHeight(v: number | undefined);
+        get hasSoftware(): boolean;
+        get software(): string | undefined;
+        set software(v: string | undefined);
+        get hasCopyright(): boolean;
+        get copyright(): string | undefined;
+        set copyright(v: string | undefined);
+        private setRational;
+        static isArrayOfRationalNumbers(value: unknown): boolean;
+        has(tag: number): boolean;
+        getValue(tag: number | string): ExifValue | undefined;
+        setValue(tag: number | string, value: number[][] | Rational[] | number[] | Rational | ExifValue | undefined): void;
+    }
+}
+declare module "exif/exif-data" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { ExifIFD } from "exif/exif-ifd";
+    import { ExifIFDContainer } from "exif/exif-ifd-container";
+    import { ExifValue } from "exif/exif-value/exif-value";
+    export class ExifData extends ExifIFDContainer {
+        get imageIfd(): ExifIFD;
+        get thumbnailIfd(): ExifIFD;
+        get exifIfd(): ExifIFD;
+        get gpsIfd(): ExifIFD;
+        get interopIfd(): ExifIFD;
+        private writeDirectory;
+        private writeDirectoryLargeValues;
+        private readEntry;
+        static from(other: ExifData): ExifData;
+        static fromInputBuffer(input: InputBuffer): ExifData;
+        hasTag(tag: number): boolean;
+        getTag(tag: number): ExifValue | undefined;
+        getTagName(tag: number): string;
+        write(out: OutputBuffer): void;
+        read(block: InputBuffer): boolean;
+        toString(): string;
+    }
+}
 declare module "common/memory-image" {
     /** @format */
-    import { ExifData } from "common/exif_data";
-    import { ICCProfileData } from "common/icc_profile_data";
+    import { ICCProfileData } from "common/icc-profile-data";
     import { RgbChannelSet } from "common/rgb-channel-set";
     import { DisposeMode } from "common/dispose-mode";
     import { BlendMode } from "common/blend-mode";
     import { ColorModel } from "common/color-model";
     import { Interpolation } from "common/interpolation";
+    import { ExifData } from "exif/exif-data";
     export interface RgbMemoryImageInitOptions {
         width: number;
         height: number;
@@ -499,6 +1155,7 @@ declare module "common/memory-image" {
          */
         private _exifData;
         get exifData(): ExifData;
+        set exifData(v: ExifData);
         /**
          * ICC color profile read from an image file.
          */
@@ -780,151 +1437,6 @@ declare module "common/frame-animation" {
         [Symbol.iterator](): Iterator<MemoryImage, MemoryImage, undefined>;
     }
 }
-declare module "common/text-codec" {
-    export abstract class TextCodec {
-        static readonly utf8Decoder: TextDecoder;
-        static readonly latin1Decoder: TextDecoder;
-        static getCodePoints(str: string): Uint8Array;
-    }
-}
-declare module "common/input-buffer" {
-    export interface InputBufferInitOptions {
-        buffer: Uint8Array;
-        offset?: number;
-        length?: number;
-        bigEndian?: boolean;
-    }
-    /**
-     * A buffer that can be read as a stream of bytes.
-     */
-    export class InputBuffer {
-        private readonly _buffer;
-        get buffer(): Uint8Array;
-        private _bigEndian;
-        set bigEndian(v: boolean);
-        get bigEndian(): boolean;
-        private _offset;
-        set offset(v: number);
-        get offset(): number;
-        private _start;
-        get start(): number;
-        private _end;
-        get end(): number;
-        /**
-         *  The current read position relative to the start of the buffer.
-         */
-        get position(): number;
-        /**
-         * How many bytes are left in the stream.
-         */
-        get length(): number;
-        /**
-         * Is the current position at the end of the stream?
-         */
-        get isEOS(): boolean;
-        /**
-         * Create a InputStream for reading from an Array<int>
-         */
-        constructor(options: InputBufferInitOptions);
-        /**
-         * Create a copy of **other**.
-         */
-        static from(other: InputBuffer, offset?: number, length?: number): InputBuffer;
-        /**
-         * Reset to the beginning of the stream.
-         */
-        rewind(): void;
-        /**
-         * Access the buffer relative from the current position.
-         */
-        getByte(index: number): number;
-        /**
-         * Set a buffer element relative to the current position.
-         */
-        setByte(index: number, value: number): number;
-        /**
-         * Set a range of bytes in this buffer to **value**, at **start** offset from the
-         * current read position, and **length** number of bytes.
-         */
-        memset(start: number, length: number, value: number): void;
-        /**
-         * Return a InputStream to read a subset of this stream. It does not
-         * move the read position of this stream. **position** is specified relative
-         * to the start of the buffer. If **position** is not specified, the current
-         * read position is used. If **length** is not specified, the remainder of this
-         * stream is used.
-         */
-        subarray(count: number, position?: number, offset?: number): InputBuffer;
-        /**
-         * Returns the position of the given **value** within the buffer, starting
-         * from the current read position with the given **offset**. The position
-         * returned is relative to the start of the buffer, or -1 if the **value**
-         * was not found.
-         */
-        indexOf(value: number, offset?: number): number;
-        /**
-         * Read **count** bytes from an **offset** of the current read position, without
-         * moving the read position.
-         */
-        peekBytes(count: number, offset?: number): InputBuffer;
-        /**
-         * Move the read position by **count** bytes.
-         */
-        skip(count: number): void;
-        /**
-         * Read a single byte.
-         */
-        readByte(): number;
-        readInt8(): number;
-        /**
-         * Read **count** bytes from the stream.
-         */
-        readBytes(count: number): InputBuffer;
-        /**
-         * Read a null-terminated string, or if **length** is provided, that number of
-         * bytes returned as a string.
-         */
-        readString(length?: number): string;
-        /**
-         * Read a null-terminated UTF-8 string.
-         */
-        readStringUtf8(): string;
-        /**
-         * Read a 16-bit word from the stream.
-         */
-        readUint16(): number;
-        /**
-         * Read a 16-bit word from the stream.
-         */
-        readInt16(): number;
-        /**
-         * Read a 24-bit word from the stream.
-         */
-        readUint24(): number;
-        /**
-         * Read a 32-bit word from the stream.
-         */
-        readUint32(): number;
-        /**
-         * Read a signed 32-bit integer from the stream.
-         */
-        readInt32(): number;
-        /**
-         * Read a 32-bit float.
-         */
-        readFloat32(): number;
-        /**
-         * Read a 64-bit float.
-         */
-        readFloat64(): number;
-        /**
-         * Read a 64-bit word form the stream.
-         */
-        readUint64(): bigint;
-        toUint8Array(offset?: number, length?: number): Uint8Array;
-        toUint32Array(offset?: number): Uint32Array;
-    }
-}
 declare module "error/not-implemented-error" {
     /** @format */
     /**
@@ -1109,6 +1621,7 @@ declare module "hdr/hdr-slice" {
 declare module "hdr/hdr-image" {
     /** @format */
     import { MemoryImage } from "common/memory-image";
+    import { ExifData } from "exif/exif-data";
     import { HdrSlice } from "hdr/hdr-slice";
     /**
      * A high dynamic range RGBA image stored in 16-bit or 32-bit floating-point
@@ -1147,6 +1660,9 @@ declare module "hdr/hdr-image" {
         get alpha(): HdrSlice | undefined;
         private _depth;
         get depth(): HdrSlice | undefined;
+        private _exifData;
+        get exifData(): ExifData | undefined;
+        set exifData(v: ExifData | undefined);
         /**
          * Does the image have any color channels?
          */
@@ -1499,65 +2015,6 @@ declare module "formats/bmp-decoder" {
         decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
     }
 }
-declare module "common/output-buffer" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    export interface OutputBufferInitOptions {
-        bigEndian?: boolean;
-        size?: number;
-    }
-    export class OutputBuffer {
-        private static readonly BLOCK_SIZE;
-        private _buffer;
-        get buffer(): Uint8Array;
-        private readonly _bigEndian;
-        get bigEndian(): boolean;
-        private _length;
-        set length(v: number);
-        get length(): number;
-        /**
-         * Create a byte buffer for writing.
-         */
-        constructor(options?: OutputBufferInitOptions);
-        /**
-         * Grow the buffer to accommodate additional data.
-         */
-        private expandBuffer;
-        rewind(): void;
-        /**
-         * Clear the buffer.
-         */
-        clear(): void;
-        /**
-         * Get the resulting bytes from the buffer.
-         */
-        getBytes(): Uint8Array;
-        /**
-         * Write a byte to the end of the buffer.
-         */
-        writeByte(value: number): void;
-        /**
-         * Write a set of bytes to the end of the buffer.
-         */
-        writeBytes(bytes: Uint8Array, length?: number): void;
-        writeBuffer(bytes: InputBuffer): void;
-        /**
-         * Write a 16-bit word to the end of the buffer.
-         */
-        writeUint16(value: number): void;
-        /**
-         * Write a 32-bit word to the end of the buffer.
-         */
-        writeUint32(value: number): void;
-        /**
-         * Return the subarray of the buffer in the range **start**:**end**.
-         * If **start** or **end** are < 0 then it is relative to the end of the buffer.
-         * If **end** is not specified (or undefined), then it is the end of the buffer.
-         * This is equivalent to the python list range operator.
-         */
-        subarray(start: number, end?: number): Uint8Array;
-    }
-}
 declare module "formats/encoder" {
     /** @format */
     import { FrameAnimation } from "common/frame-animation";
@@ -1873,6 +2330,7 @@ declare module "draw/draw" {
     }
 }
 declare module "transform/image-transform" {
+    /** @format */
     import { MemoryImage } from "common/memory-image";
     import { Point } from "common/point";
     import { Rectangle } from "common/rectangle";
@@ -3049,7 +3507,6 @@ declare module "formats/jpeg/jpeg-scan" {
 }
 declare module "formats/jpeg/jpeg-data" {
     /** @format */
-    import { ExifData } from "common/exif_data";
     import { InputBuffer } from "common/input-buffer";
     import { MemoryImage } from "common/memory-image";
     import { ComponentData } from "formats/jpeg/component-data";
@@ -3057,6 +3514,7 @@ declare module "formats/jpeg/jpeg-data" {
     import { JpegFrame } from "formats/jpeg/jpeg-frame";
     import { JpegInfo } from "formats/jpeg/jpeg-info";
     import { JpegJfif } from "formats/jpeg/jpeg-jfif";
+    import { ExifData } from "exif/exif-data";
     export class JpegData {
         static readonly CRR: number[];
         static readonly CRG: number[];
@@ -3094,13 +3552,11 @@ declare module "formats/jpeg/jpeg-data" {
         readInfo(bytes: Uint8Array): JpegInfo | undefined;
         read(bytes: Uint8Array): void;
         getImage(): MemoryImage;
-        private static readExifValue;
         private static buildHuffmanTable;
         private static buildComponentData;
         static toFix(val: number): number;
         private readBlock;
         private nextMarker;
-        private readExifDir;
         private readExifData;
         private readAppData;
         private readDQT;
@@ -3137,6 +3593,7 @@ declare module "formats/jpeg-decoder" {
     }
 }
 declare module "formats/jpeg-encoder" {
+    /** @format */
     import { FrameAnimation } from "common/frame-animation";
     import { MemoryImage } from "common/memory-image";
     import { Encoder } from "formats/encoder";
@@ -3655,6 +4112,7 @@ declare module "formats/tiff-decoder" {
     /** @format */
     import { FrameAnimation } from "common/frame-animation";
     import { MemoryImage } from "common/memory-image";
+    import { ExifData } from "exif/exif-data";
     import { HdrImage } from "hdr/hdr-image";
     import { Decoder } from "formats/decoder";
     import { TiffInfo } from "formats/tiff/tiff-info";
@@ -3665,6 +4123,8 @@ declare module "formats/tiff-decoder" {
         private input;
         private _info;
         get info(): TiffInfo | undefined;
+        private _exifData;
+        get exifData(): ExifData | undefined;
         /**
          * How many frames are available to be decoded. **startDecode** should have been called first.
          * Non animated image files will have a single frame.
@@ -4215,9 +4675,9 @@ declare module "index" {
     import { MemoryImage } from "common/memory-image";
     import { CompressionLevel, TypedArray } from "common/typings";
     import { Decoder } from "formats/decoder";
+    export { ArrayUtils } from "common/array-utils";
     export { BitOperators } from "common/bit-operators";
     export { BlendMode } from "common/blend-mode";
-    export { Clamp } from "common/clamp";
     export { ColorChannel } from "common/color-channel";
     export { ColorModel } from "common/color-model";
     export { Color } from "common/color";
@@ -4225,16 +4685,15 @@ declare module "index" {
     export { DisposeMode } from "common/dispose-mode";
     export { DitherKernel } from "common/dither-kernel";
     export { DitherPixel } from "common/dither-pixel";
-    export { ExifData, ExifDataInitOptions, ExifDataType, } from "common/exif_data";
     export { FrameAnimation, FrameAnimationInitOptions, } from "common/frame-animation";
     export { FrameType } from "common/frame-type";
     export { HeapNode } from "common/heap-node";
-    export { ICCProfileData } from "common/icc_profile_data";
+    export { ICCProfileData } from "common/icc-profile-data";
     export { ICCPCompressionMode } from "common/iccp-compression-mode";
     export { InputBuffer, InputBufferInitOptions } from "common/input-buffer";
     export { Interpolation } from "common/interpolation";
     export { Line } from "common/line";
-    export { ListUtils } from "common/list-utils";
+    export { MathOperators } from "common/math-operators";
     export { MemoryImage, MemoryImageInitOptions, MemoryImageInitOptionsColorModel, RgbMemoryImageInitOptions, } from "common/memory-image";
     export { NeuralQuantizer } from "common/neural-quantizer";
     export { OctreeNode } from "common/octree-node";
@@ -4243,6 +4702,7 @@ declare module "index" {
     export { Point } from "common/point";
     export { Quantizer } from "common/quantizer";
     export { RandomUtils } from "common/random-utils";
+    export { Rational } from "common/rational";
     export { Rectangle } from "common/rectangle";
     export { RgbChannelSet } from "common/rgb-channel-set";
     export { TextCodec } from "common/text-codec";
@@ -4252,6 +4712,25 @@ declare module "index" {
     export { Draw } from "draw/draw";
     export { FillFloodOptions } from "draw/fill-flood-options";
     export { MaskFloodOptions } from "draw/mask-flood-options";
+    export { ExifAsciiValue } from "exif/exif-value/exif-ascii-value";
+    export { ExifByteValue } from "exif/exif-value/exif-byte-value";
+    export { ExifDoubleValue } from "exif/exif-value/exif-double-value";
+    export { ExifLongValue } from "exif/exif-value/exif-long-value";
+    export { ExifRationalValue } from "exif/exif-value/exif-rational-value";
+    export { ExifSByteValue } from "exif/exif-value/exif-sbyte-value";
+    export { ExifShortValue } from "exif/exif-value/exif-short-value";
+    export { ExifSingleValue } from "exif/exif-value/exif-single-value";
+    export { ExifSLongValue } from "exif/exif-value/exif-slong-value";
+    export { ExifSRationalValue } from "exif/exif-value/exif-srational-value";
+    export { ExifSShortValue } from "exif/exif-value/exif-sshort-value";
+    export { ExifUndefinedValue } from "exif/exif-value/exif-undefined-value";
+    export { ExifValue } from "exif/exif-value/exif-value";
+    export { ExifData } from "exif/exif-data";
+    export { ExifEntry } from "exif/exif-entry";
+    export { ExifIFDContainer } from "exif/exif-ifd-container";
+    export { ExifIFD } from "exif/exif-ifd";
+    export { ExifTag, ExifTagInitOptions, ExifGpsTags, ExifImageTags, ExifInteropTags, ExifTagNameToID, } from "exif/exif-tag";
+    export { ExifValueType, ExifValueTypeSize, ExifValueTypeString, getExifValueTypeSize, getExifValueTypeString, } from "exif/exif-value-type";
     export { AdjustColorOptions } from "filter/adjust-color-options";
     export { ColorOffsetOptions } from "filter/color-offset-options";
     export { ConvolutionOptions } from "filter/convolution-options";
