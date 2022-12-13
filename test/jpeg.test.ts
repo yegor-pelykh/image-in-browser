@@ -18,6 +18,33 @@ describe('JPEG', () => {
     }
   });
 
+  test('exif', () => {
+    const input = TestHelpers.readFromFile(
+      TestFolder.res,
+      TestSection.jpeg,
+      'big_buck_bunny.jpg'
+    );
+    const image = decodeJpg(input)!;
+    image.exifData.imageIfd.setValue('XResolution', [300, 1]);
+    image.exifData.imageIfd.setValue('YResolution', [300, 1]);
+    const jpg = encodeJpg(image);
+    const image2 = decodeJpg(jpg)!;
+
+    const imageResolutionX = image.exifData.imageIfd.getValue('XResolution');
+    expect(imageResolutionX).toBeDefined();
+    const image2ResolutionX = image2.exifData.imageIfd.getValue('XResolution');
+    expect(image2ResolutionX).toBeDefined();
+    const isResXEquals = imageResolutionX!.equalsTo(image2ResolutionX!);
+    expect(isResXEquals).toBe(true);
+
+    const imageResolutionY = image.exifData.imageIfd.getValue('YResolution');
+    expect(imageResolutionY).toBeDefined();
+    const image2ResolutionY = image2.exifData.imageIfd.getValue('YResolution');
+    expect(image2ResolutionY).toBeDefined();
+    const isResYEquals = imageResolutionY!.equalsTo(image2ResolutionY!);
+    expect(isResYEquals).toBe(true);
+  });
+
   const resFiles = TestHelpers.listFiles(
     TestFolder.res,
     TestSection.jpeg,
