@@ -1,6 +1,6 @@
 /** @format */
 
-import { ListUtils } from '../common/list-utils';
+import { ArrayUtils } from '../common/array-utils';
 import { TypedArray } from '../common/typings';
 import { NotImplementedError } from '../error/not-implemented-error';
 import { Half } from './half';
@@ -145,7 +145,7 @@ export class HdrSlice {
       height: other._height,
       format: other._format,
       bitsPerSample: other._bitsPerSample,
-      data: ListUtils.copy(other.data),
+      data: ArrayUtils.copy(other.data),
     });
   }
 

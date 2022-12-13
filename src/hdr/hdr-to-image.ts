@@ -1,6 +1,6 @@
 /** @format */
 
-import { Clamp } from '../common/clamp';
+import { MathOperators } from '../common/math-operators';
 import { MemoryImage } from '../common/memory-image';
 import { ImageError } from '../error/image-error';
 import { HdrImage } from './hdr-image';
@@ -32,7 +32,7 @@ export abstract class HdrToImage {
 
     const m =
       exposure !== undefined
-        ? Math.pow(2.0, Clamp.clamp(exposure + 2.47393, -20.0, 20.0))
+        ? Math.pow(2.0, MathOperators.clamp(exposure + 2.47393, -20.0, 20.0))
         : 1.0;
 
     for (let y = 0, di = 0; y < hdr.height; ++y) {
@@ -72,16 +72,16 @@ export abstract class HdrToImage {
           bi = 255.0 * (bi / mi);
         }
 
-        pixels[di++] = Clamp.clampInt255(ri);
-        pixels[di++] = Clamp.clampInt255(gi);
-        pixels[di++] = Clamp.clampInt255(bi);
+        pixels[di++] = MathOperators.clampInt255(ri);
+        pixels[di++] = MathOperators.clampInt255(gi);
+        pixels[di++] = MathOperators.clampInt255(bi);
 
         if (hdr.alpha !== undefined) {
           let a = hdr.alpha!.getFloat(x, y);
           if (!Number.isFinite(a) || Number.isNaN(a)) {
             a = 1.0;
           }
-          pixels[di++] = Clamp.clampInt255(a * 255.0);
+          pixels[di++] = MathOperators.clampInt255(a * 255.0);
         } else {
           pixels[di++] = 255;
         }

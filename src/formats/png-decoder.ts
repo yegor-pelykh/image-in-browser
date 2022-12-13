@@ -5,9 +5,9 @@ import { Color } from '../common/color';
 import { Crc32 } from '../common/crc32';
 import { FrameAnimation } from '../common/frame-animation';
 import { ICCPCompressionMode } from '../common/iccp-compression-mode';
-import { ICCProfileData } from '../common/icc_profile_data';
+import { ICCProfileData } from '../common/icc-profile-data';
 import { InputBuffer } from '../common/input-buffer';
-import { ListUtils } from '../common/list-utils';
+import { ArrayUtils } from '../common/array-utils';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { TextCodec } from '../common/text-codec';
@@ -630,10 +630,10 @@ export class PngDecoder implements Decoder {
           for (let i = 0, l = txtData.length; i < l; ++i) {
             if (txtData[i] === 0) {
               const key = TextCodec.latin1Decoder.decode(
-                ListUtils.copyUint8(txtData, 0, i)
+                ArrayUtils.copyUint8(txtData, 0, i)
               );
               const text = TextCodec.latin1Decoder.decode(
-                ListUtils.copyUint8(txtData, i + 1)
+                ArrayUtils.copyUint8(txtData, i + 1)
               );
               this._info.textData.set(key, text);
               break;

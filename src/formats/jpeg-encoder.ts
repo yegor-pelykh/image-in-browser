@@ -1,10 +1,10 @@
 /** @format */
 
-import { Clamp } from '../common/clamp';
-import { ExifData } from '../common/exif_data';
 import { FrameAnimation } from '../common/frame-animation';
+import { MathOperators } from '../common/math-operators';
 import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
+import { ExifData } from '../exif/exif-data';
 import { Encoder } from './encoder';
 import { Jpeg } from './jpeg/jpeg';
 
@@ -178,15 +178,21 @@ export class JpegEncoder implements Encoder {
   }
 
   private static writeAPP1(out: OutputBuffer, exif: ExifData): void {
-    if (exif.rawData === undefined) {
+    if (exif.isEmpty) {
       return;
     }
 
-    for (const rawData of exif.rawData) {
-      JpegEncoder.writeMarker(out, Jpeg.M_APP1);
-      out.writeUint16(rawData.length + 2);
-      out.writeBytes(rawData);
-    }
+    const exifData = new OutputBuffer();
+    exif.write(exifData);
+    const exifBytes = exifData.getBytes();
+
+    this.writeMarker(out, Jpeg.M_APP1);
+    out.writeUint16(exifBytes.length + 8);
+    // Exif\0\0
+    const exifSignature = 0x45786966;
+    out.writeUint32(exifSignature);
+    out.writeUint16(0);
+    out.writeBytes(exifBytes);
   }
 
   private static writeSOF0(
@@ -343,7 +349,7 @@ export class JpegEncoder implements Encoder {
   }
 
   private setQuality(quality: number): void {
-    const q = Clamp.clampInt(quality, 1, 100);
+    const q = MathOperators.clampInt(quality, 1, 100);
 
     if (this.currentQuality === q) {
       // Don't re-calc if unchanged

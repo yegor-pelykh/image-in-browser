@@ -2,10 +2,10 @@
 
 import { BitOperators } from '../../common/bit-operators';
 import { Color } from '../../common/color';
-import { ExifData } from '../../common/exif_data';
 import { MemoryImage } from '../../common/memory-image';
 import { RgbChannelSet } from '../../common/rgb-channel-set';
 import { ImageError } from '../../error/image-error';
+import { ExifData } from '../../exif/exif-data';
 import { ComponentData } from './component-data';
 import { JpegData } from './jpeg-data';
 
@@ -250,7 +250,9 @@ export abstract class JpegQuantize {
   }
 
   public static getImageFromJpeg(jpeg: JpegData): MemoryImage {
-    const orientation = jpeg.exifData.orientation ?? 0;
+    const orientation = jpeg.exifData.imageIfd.hasOrientation
+      ? jpeg.exifData.imageIfd.orientation!
+      : 0;
     const flipWidthHeight = orientation >= 5 && orientation <= 8;
     const width = flipWidthHeight ? jpeg.height : jpeg.width;
     const height = flipWidthHeight ? jpeg.width : jpeg.height;
@@ -262,11 +264,8 @@ export abstract class JpegQuantize {
     });
 
     // Copy exif data, except for ORIENTATION which we're baking.
-    for (const [key, value] of jpeg.exifData.data) {
-      if (key !== ExifData.ORIENTATION) {
-        image.exifData.data.set(key, value);
-      }
-    }
+    image.exifData = ExifData.from(jpeg.exifData);
+    image.exifData.imageIfd.orientation = undefined;
 
     let component1: ComponentData | undefined = undefined;
     let component2: ComponentData | undefined = undefined;

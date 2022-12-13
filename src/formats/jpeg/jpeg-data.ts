@@ -1,8 +1,7 @@
 /** @format */
 
-import { ExifData } from '../../common/exif_data';
 import { InputBuffer } from '../../common/input-buffer';
-import { ListUtils } from '../../common/list-utils';
+import { ArrayUtils } from '../../common/array-utils';
 import { MemoryImage } from '../../common/memory-image';
 import { ImageError } from '../../error/image-error';
 import { ComponentData } from './component-data';
@@ -15,6 +14,7 @@ import { JpegInfo } from './jpeg-info';
 import { JpegJfif } from './jpeg-jfif';
 import { JpegQuantize } from './jpeg-quantize';
 import { JpegScan } from './jpeg-scan';
+import { ExifData } from '../../exif/exif-data';
 
 export class JpegData {
   static readonly CRR = [
@@ -460,68 +460,6 @@ export class JpegData {
     return JpegQuantize.getImageFromJpeg(this);
   }
 
-  private static readExifValue(
-    block: InputBuffer,
-    format: number,
-    offset: number
-  ): string | number {
-    const FMT_BYTE = 1;
-    const FMT_ASCII = 2;
-    const FMT_USHORT = 3;
-    const FMT_ULONG = 4;
-    const FMT_URATIONAL = 5;
-    const FMT_SBYTE = 6;
-    const FMT_UNDEFINED = 7;
-    const FMT_SSHORT = 8;
-    const FMT_SLONG = 9;
-    const FMT_SRATIONAL = 10;
-    const FMT_SINGLE = 11;
-    const FMT_DOUBLE = 12;
-
-    const initialBlockLength = block.length;
-    try {
-      switch (format) {
-        case FMT_SBYTE:
-          return block.readInt8();
-        case FMT_BYTE:
-        case FMT_UNDEFINED:
-          return block.readByte();
-        case FMT_ASCII:
-          return block.readString(1);
-        case FMT_USHORT:
-          return block.readUint16();
-        case FMT_ULONG:
-          return block.readUint32();
-        case FMT_URATIONAL:
-        case FMT_SRATIONAL: {
-          const buffer = block.peekBytes(8, offset);
-          const num = buffer.readInt32();
-          const den = buffer.readInt32();
-          if (den === 0) {
-            return 0.0;
-          }
-          return num / den;
-        }
-        case FMT_SSHORT:
-          return block.readInt16();
-        case FMT_SLONG:
-          return block.readInt32();
-        // Not sure if this is correct (never seen float used in Exif format)
-        case FMT_SINGLE:
-          return block.readFloat32();
-        case FMT_DOUBLE:
-          return block.peekBytes(8, offset).readFloat64();
-        default:
-          return 0;
-      }
-    } finally {
-      const bytesRead = initialBlockLength - block.length;
-      if (bytesRead < 4) {
-        block.skip(4 - bytesRead);
-      }
-    }
-  }
-
   private static buildHuffmanTable(
     codeLengths: Uint8Array,
     values: Uint8Array
@@ -652,98 +590,19 @@ export class JpegData {
     return c;
   }
 
-  private readExifDir(block: InputBuffer, nesting = 0): void {
-    if (nesting > 4) {
-      // Maximum Exif directory nesting exceeded (corrupt Exif header)
-      return;
-    }
-
-    const numDirEntries = block.readUint16();
-
-    // const TAG_ORIENTATION = 0x0112;
-    // const TAG_INTEROP_OFFSET = 0xA005;
-    // const TAG_EXIF_OFFSET = 0x8769;
-    const maxFormats = 12;
-    const bytesPerFormat = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
-
-    for (let di = 0; di < numDirEntries; ++di) {
-      const tag = block.readUint16();
-      const format = block.readUint16();
-      const components = block.readUint32();
-
-      if (format - 1 >= maxFormats) {
-        continue;
-      }
-
-      // Too many components
-      if (components > 0x10000) {
-        continue;
-      }
-
-      const byteCount = bytesPerFormat[format];
-
-      let offset = 0;
-
-      // If its bigger than 4 bytes, the dir entry contains an offset.
-      if (byteCount > 4) {
-        offset = block.readUint32();
-        if (offset + byteCount > block.length) {
-          // Bogus pointer offset and / or bytecount value
-          continue;
-        }
-      }
-
-      this._exifData.data.set(
-        tag,
-        JpegData.readExifValue(block, format, offset)
-      );
-    }
-  }
-
   private readExifData(block: InputBuffer): void {
-    const rawData = ListUtils.copyUint8(block.toUint8Array());
-    this._exifData.addRowData(rawData);
-
-    const EXIF_TAG = 0x45786966;
-    if (block.readUint32() !== EXIF_TAG) {
+    // Exif Header
+    // Exif\0\0
+    const exifSignature = 0x45786966;
+    const signature = block.readUint32();
+    if (signature !== exifSignature) {
       return;
     }
     if (block.readUint16() !== 0) {
       return;
     }
 
-    const saveEndian = block.bigEndian;
-
-    // Exif Directory
-    const alignment = block.readString(2);
-    if (alignment === 'II') {
-      // Exif is in Intel order
-      block.bigEndian = false;
-    } else if (alignment === 'MM') {
-      // Exif section in Motorola order
-      block.bigEndian = true;
-    } else {
-      return;
-    }
-
-    block.skip(2);
-
-    const offset = block.readUint32();
-    if (offset < 8 || offset > 16) {
-      if (offset > block.length - 16) {
-        // Invalid offset for first Exif IFD value ;
-        block.bigEndian = saveEndian;
-        return;
-      }
-    }
-
-    if (offset > 8) {
-      block.skip(offset - 8);
-    }
-
-    this.readExifDir(block);
-
-    block.bigEndian = saveEndian;
+    this.exifData.read(block);
   }
 
   private readAppData(marker: number, block: InputBuffer): void {

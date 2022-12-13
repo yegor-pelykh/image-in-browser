@@ -2,9 +2,9 @@
 
 import { inflate } from 'uzip';
 import { BitOperators } from '../../common/bit-operators';
-import { Clamp } from '../../common/clamp';
 import { Color } from '../../common/color';
 import { InputBuffer } from '../../common/input-buffer';
+import { MathOperators } from '../../common/math-operators';
 import { MemoryImage } from '../../common/memory-image';
 import { ImageError } from '../../error/image-error';
 import { Half } from '../../hdr/half';
@@ -794,7 +794,7 @@ export class TiffImage {
                 this.hdrImage.setRed(px, py, sample);
               }
               if (this.image !== undefined) {
-                const gray = Clamp.clampInt255(sample * 255);
+                const gray = MathOperators.clampInt255(sample * 255);
                 let c = 0;
                 if (
                   this._photometricType === 3 &&
@@ -938,9 +938,9 @@ export class TiffImage {
                 this.hdrImage.setBlue(px, py, b);
               }
               if (this.image !== undefined) {
-                const ri = Clamp.clampInt255(r * 255);
-                const gi = Clamp.clampInt255(g * 255);
-                const bi = Clamp.clampInt255(b * 255);
+                const ri = MathOperators.clampInt255(r * 255);
+                const gi = MathOperators.clampInt255(g * 255);
+                const bi = MathOperators.clampInt255(b * 255);
                 const c = Color.getColor(ri, gi, bi);
                 this.image.setPixel(px, py, c);
               }
@@ -1047,10 +1047,10 @@ export class TiffImage {
                 this.hdrImage.setAlpha(px, py, a);
               }
               if (this.image !== undefined) {
-                const ri = Clamp.clampInt255(r * 255);
-                const gi = Clamp.clampInt255(g * 255);
-                const bi = Clamp.clampInt255(b * 255);
-                const ai = Clamp.clampInt255(a * 255);
+                const ri = MathOperators.clampInt255(r * 255);
+                const gi = MathOperators.clampInt255(g * 255);
+                const bi = MathOperators.clampInt255(b * 255);
+                const ai = MathOperators.clampInt255(a * 255);
                 const c = Color.getColor(ri, gi, bi, ai);
                 this.image.setPixel(px, py, c);
               }

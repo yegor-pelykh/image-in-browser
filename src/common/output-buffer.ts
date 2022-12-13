@@ -1,7 +1,7 @@
 /** @format */
 
 import { InputBuffer } from './input-buffer';
-import { ListUtils } from './list-utils';
+import { ArrayUtils } from './array-utils';
 
 export interface OutputBufferInitOptions {
   bigEndian?: boolean;
@@ -17,17 +17,20 @@ export class OutputBuffer {
     return this._buffer;
   }
 
-  private readonly _bigEndian: boolean;
+  private _bigEndian: boolean;
   public get bigEndian(): boolean {
     return this._bigEndian;
   }
+  public set bigEndian(v: boolean) {
+    this._bigEndian = v;
+  }
 
   private _length: number;
-  public set length(v: number) {
-    this._length = v;
-  }
   public get length(): number {
     return this._length;
+  }
+  public set length(v: number) {
+    this._length = v;
   }
 
   /**
@@ -50,7 +53,7 @@ export class OutputBuffer {
       blockSize = this._buffer.length * 2;
     }
     const newBuffer = new Uint8Array(this._buffer.length + blockSize);
-    ListUtils.setRange(newBuffer, 0, this._buffer.length, this._buffer);
+    ArrayUtils.setRange(newBuffer, 0, this._buffer.length, this._buffer);
     this._buffer = newBuffer;
   }
 
@@ -91,7 +94,7 @@ export class OutputBuffer {
     while (this._length + correctedLength > this._buffer.length) {
       this.expandBuffer(this._length + correctedLength - this._buffer.length);
     }
-    ListUtils.setRange(
+    ArrayUtils.setRange(
       this._buffer,
       this._length,
       this._length + correctedLength,
@@ -104,7 +107,7 @@ export class OutputBuffer {
     while (length + bytes.length > this._buffer.length) {
       this.expandBuffer(length + bytes.length - this._buffer.length);
     }
-    ListUtils.setRange(
+    ArrayUtils.setRange(
       this._buffer,
       length,
       length + bytes.length,
@@ -142,6 +145,54 @@ export class OutputBuffer {
     this.writeByte((value >> 8) & 0xff);
     this.writeByte((value >> 16) & 0xff);
     this.writeByte((value >> 24) & 0xff);
+  }
+
+  /**
+   * Write a 32-bit float value to the end of the buffer.
+   */
+  public writeFloat32(value: number): void {
+    const fb = new Float32Array(1);
+    fb[0] = value;
+    const b = new Uint8Array(fb.buffer);
+    if (this._bigEndian) {
+      this.writeByte(b[3]);
+      this.writeByte(b[2]);
+      this.writeByte(b[1]);
+      this.writeByte(b[0]);
+      return;
+    }
+    this.writeByte(b[0]);
+    this.writeByte(b[1]);
+    this.writeByte(b[2]);
+    this.writeByte(b[3]);
+  }
+
+  /**
+   * Write a 64-bit float value to the end of the buffer.
+   */
+  public writeFloat64(value: number): void {
+    const fb = new Float64Array(1);
+    fb[0] = value;
+    const b = new Uint8Array(fb.buffer);
+    if (this._bigEndian) {
+      this.writeByte(b[7]);
+      this.writeByte(b[6]);
+      this.writeByte(b[5]);
+      this.writeByte(b[4]);
+      this.writeByte(b[3]);
+      this.writeByte(b[2]);
+      this.writeByte(b[1]);
+      this.writeByte(b[0]);
+      return;
+    }
+    this.writeByte(b[0]);
+    this.writeByte(b[1]);
+    this.writeByte(b[2]);
+    this.writeByte(b[3]);
+    this.writeByte(b[4]);
+    this.writeByte(b[5]);
+    this.writeByte(b[6]);
+    this.writeByte(b[7]);
   }
 
   /**

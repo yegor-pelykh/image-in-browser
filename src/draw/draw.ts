@@ -1,8 +1,8 @@
 /** @format */
 
-import { Clamp } from '../common/clamp';
 import { Color } from '../common/color';
 import { Line } from '../common/line';
+import { MathOperators } from '../common/math-operators';
 import { MemoryImage } from '../common/memory-image';
 import { Point } from '../common/point';
 import { Rectangle } from '../common/rectangle';
@@ -936,10 +936,10 @@ export abstract class Draw {
     rect: Rectangle,
     color: number
   ): MemoryImage {
-    const _x0 = Clamp.clamp(rect.left, 0, src.width - 1);
-    const _y0 = Clamp.clamp(rect.top, 0, src.height - 1);
-    const _x1 = Clamp.clamp(rect.right, 0, src.width - 1);
-    const _y1 = Clamp.clamp(rect.bottom, 0, src.height - 1);
+    const _x0 = MathOperators.clamp(rect.left, 0, src.width - 1);
+    const _y0 = MathOperators.clamp(rect.top, 0, src.height - 1);
+    const _x1 = MathOperators.clamp(rect.right, 0, src.width - 1);
+    const _y1 = MathOperators.clamp(rect.bottom, 0, src.height - 1);
 
     // If no blending is necessary, use a faster fill method.
     if (Color.getAlpha(color) === 255) {

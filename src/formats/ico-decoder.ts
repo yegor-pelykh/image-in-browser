@@ -2,7 +2,7 @@
 
 import { FrameAnimation } from '../common/frame-animation';
 import { InputBuffer } from '../common/input-buffer';
-import { ListUtils } from '../common/list-utils';
+import { ArrayUtils } from '../common/array-utils';
 import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
 import { NotImplementedError } from '../error/not-implemented-error';
@@ -47,7 +47,7 @@ export class IcoDecoder implements Decoder {
       return undefined;
     }
     const imageInfo = this._icoInfo.images![frame];
-    const imageBuffer = ListUtils.copyUint8(
+    const imageBuffer = ArrayUtils.copyUint8(
       this._input.buffer,
       this._input.start + imageInfo.bytesOffset,
       this._input.start + imageInfo.bytesOffset + imageInfo.bytesSize

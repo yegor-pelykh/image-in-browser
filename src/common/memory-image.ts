@@ -1,8 +1,7 @@
 /** @format */
 
-import { ExifData } from './exif_data';
-import { ICCProfileData } from './icc_profile_data';
-import { ListUtils } from './list-utils';
+import { ICCProfileData } from './icc-profile-data';
+import { ArrayUtils } from './array-utils';
 import { RgbChannelSet } from './rgb-channel-set';
 import { DisposeMode } from './dispose-mode';
 import { BlendMode } from './blend-mode';
@@ -10,6 +9,7 @@ import { ColorModel } from './color-model';
 import { ImageError } from '../error/image-error';
 import { Interpolation } from './interpolation';
 import { Color } from './color';
+import { ExifData } from '../exif/exif-data';
 
 export interface RgbMemoryImageInitOptions {
   width: number;
@@ -130,6 +130,9 @@ export class MemoryImage {
   public get exifData(): ExifData {
     return this._exifData;
   }
+  public set exifData(v: ExifData) {
+    this._exifData = v;
+  }
 
   /**
    * ICC color profile read from an image file.
@@ -189,7 +192,10 @@ export class MemoryImage {
     this._width = options.width;
     this._height = options.height;
     this._rgbChannelSet = options.rgbChannelSet ?? RgbChannelSet.rgba;
-    this._exifData = ExifData.from(options.exifData);
+    this._exifData =
+      options.exifData !== undefined
+        ? ExifData.from(options.exifData)
+        : new ExifData();
     this._iccProfile = options.iccProfile;
     this._textData = options.textData;
     this._data =
@@ -204,8 +210,8 @@ export class MemoryImage {
   ): Uint32Array {
     if (colorModel === ColorModel.rgba) {
       return bytes instanceof Uint32Array
-        ? ListUtils.copyUint32(bytes)
-        : ListUtils.copyUint32(new Uint32Array(bytes.buffer));
+        ? ArrayUtils.copyUint32(bytes)
+        : ArrayUtils.copyUint32(new Uint32Array(bytes.buffer));
     }
     const input =
       bytes instanceof Uint32Array ? new Uint8Array(bytes.buffer) : bytes;
@@ -283,7 +289,7 @@ export class MemoryImage {
       iccProfile: other._iccProfile,
       textData:
         other._textData !== undefined ? new Map(other._textData) : undefined,
-      data: ListUtils.copyUint32(other._data),
+      data: ArrayUtils.copyUint32(other._data),
     });
     result._xOffset = other._xOffset;
     result._yOffset = other._yOffset;

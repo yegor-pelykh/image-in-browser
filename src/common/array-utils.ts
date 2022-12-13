@@ -3,7 +3,7 @@
 import { ImageError } from '../error/image-error';
 import { TypedArray } from './typings';
 
-export abstract class ListUtils {
+export abstract class ArrayUtils {
   public static copyInt8(
     from: Int8Array,
     begin?: number,
@@ -74,21 +74,21 @@ export abstract class ListUtils {
     end?: number
   ): TypedArray {
     if (from instanceof Int8Array) {
-      return ListUtils.copyInt8(from, begin, end);
+      return ArrayUtils.copyInt8(from, begin, end);
     } else if (from instanceof Uint8Array) {
-      return ListUtils.copyUint8(from, begin, end);
+      return ArrayUtils.copyUint8(from, begin, end);
     } else if (from instanceof Int16Array) {
-      return ListUtils.copyInt16(from, begin, end);
+      return ArrayUtils.copyInt16(from, begin, end);
     } else if (from instanceof Uint16Array) {
-      return ListUtils.copyUint16(from, begin, end);
+      return ArrayUtils.copyUint16(from, begin, end);
     } else if (from instanceof Int32Array) {
-      return ListUtils.copyInt32(from, begin, end);
+      return ArrayUtils.copyInt32(from, begin, end);
     } else if (from instanceof Uint32Array) {
-      return ListUtils.copyUint32(from, begin, end);
+      return ArrayUtils.copyUint32(from, begin, end);
     } else if (from instanceof Float32Array) {
-      return ListUtils.copyFloat32(from, begin, end);
+      return ArrayUtils.copyFloat32(from, begin, end);
     } else if (from instanceof Float64Array) {
-      return ListUtils.copyFloat64(from, begin, end);
+      return ArrayUtils.copyFloat64(from, begin, end);
     }
     throw new ImageError('Unknown array type');
   }

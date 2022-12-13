@@ -4,6 +4,7 @@ import { FrameAnimation } from '../common/frame-animation';
 import { FrameType } from '../common/frame-type';
 import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../common/memory-image';
+import { ExifData } from '../exif/exif-data';
 import { HdrImage } from '../hdr/hdr-image';
 import { Decoder } from './decoder';
 import { TiffImage } from './tiff/tiff-image';
@@ -19,6 +20,11 @@ export class TiffDecoder implements Decoder {
   private _info: TiffInfo | undefined = undefined;
   public get info(): TiffInfo | undefined {
     return this._info;
+  }
+
+  private _exifData: ExifData | undefined = undefined;
+  public get exifData(): ExifData | undefined {
+    return this._exifData;
   }
 
   /**
@@ -109,6 +115,12 @@ export class TiffDecoder implements Decoder {
       buffer: bytes,
     });
     this._info = this.readHeader(this.input);
+    if (this.info !== undefined) {
+      const buffer = new InputBuffer({
+        buffer: bytes,
+      });
+      this._exifData = ExifData.fromInputBuffer(buffer);
+    }
     return this._info;
   }
 
@@ -124,7 +136,11 @@ export class TiffDecoder implements Decoder {
       return undefined;
     }
 
-    return this._info.images[frame].decode(this.input);
+    const image = this._info.images[frame].decode(this.input);
+    if (this._exifData !== undefined) {
+      image.exifData = this._exifData;
+    }
+    return image;
   }
 
   public decodeHdrFrame(frame: number): HdrImage | undefined {
@@ -173,7 +189,12 @@ export class TiffDecoder implements Decoder {
       return undefined;
     }
 
-    return this._info.images[frame].decode(this.input);
+    const image = this._info.images[frame].decode(this.input);
+    const buffer = new InputBuffer({
+      buffer: bytes,
+    });
+    image.exifData = ExifData.fromInputBuffer(buffer);
+    return image;
   }
 
   public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
@@ -186,6 +207,11 @@ export class TiffDecoder implements Decoder {
       return undefined;
     }
 
-    return this._info.images[frame].decodeHdr(this.input);
+    const image = this._info.images[frame].decodeHdr(this.input);
+    const buffer = new InputBuffer({
+      buffer: bytes,
+    });
+    image.exifData = ExifData.fromInputBuffer(buffer);
+    return image;
   }
 }

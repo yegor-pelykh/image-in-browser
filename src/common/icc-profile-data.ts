@@ -2,7 +2,7 @@
 
 import { deflate, inflate } from 'uzip';
 import { ICCPCompressionMode } from './iccp-compression-mode';
-import { ListUtils } from './list-utils';
+import { ArrayUtils } from './array-utils';
 
 /**
  * ICC Profile data stored with an image.
@@ -37,7 +37,7 @@ export class ICCProfileData {
     return new ICCProfileData(
       other._name,
       other._compression,
-      ListUtils.copyUint8(other._data)
+      ArrayUtils.copyUint8(other._data)
     );
   }
 

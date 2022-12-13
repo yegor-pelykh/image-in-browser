@@ -1,8 +1,8 @@
 /** @format */
 
-import { Clamp } from '../common/clamp';
 import { Color } from '../common/color';
 import { ColorChannel } from '../common/color-channel';
+import { MathOperators } from '../common/math-operators';
 import { MemoryImage } from '../common/memory-image';
 import { NeuralQuantizer } from '../common/neural-quantizer';
 import { OctreeQuantizer } from '../common/octree-quantizer';
@@ -83,27 +83,27 @@ export abstract class ImageFilter {
 
     const contrast =
       options.contrast !== undefined
-        ? Clamp.clamp(options.contrast, 0, 1)
+        ? MathOperators.clamp(options.contrast, 0, 1)
         : undefined;
     const saturation =
       options.saturation !== undefined
-        ? Clamp.clamp(options.saturation, 0, 1)
+        ? MathOperators.clamp(options.saturation, 0, 1)
         : undefined;
     const brightness =
       options.brightness !== undefined
-        ? Clamp.clamp(options.brightness, 0, 1)
+        ? MathOperators.clamp(options.brightness, 0, 1)
         : undefined;
     const gamma =
       options.gamma !== undefined
-        ? Clamp.clamp(options.gamma, 0, 1000)
+        ? MathOperators.clamp(options.gamma, 0, 1000)
         : undefined;
     let exposure =
       options.exposure !== undefined
-        ? Clamp.clamp(options.exposure, 0, 1000)
+        ? MathOperators.clamp(options.exposure, 0, 1000)
         : undefined;
     const amount =
       options.amount !== undefined
-        ? Clamp.clamp(options.amount, 0, 1000)
+        ? MathOperators.clamp(options.amount, 0, 1000)
         : undefined;
 
     const DEG_TO_RAD = 0.0174532925;
@@ -153,9 +153,9 @@ export abstract class ImageFilter {
     }
 
     const invSaturation =
-      saturation !== undefined ? 1 - Clamp.clamp(saturation, 0, 1) : 0;
+      saturation !== undefined ? 1 - MathOperators.clamp(saturation, 0, 1) : 0;
     const invContrast =
-      contrast !== undefined ? 1 - Clamp.clamp(contrast, 0, 1) : 0;
+      contrast !== undefined ? 1 - MathOperators.clamp(contrast, 0, 1) : 0;
 
     if (exposure !== undefined) {
       exposure = Math.pow(2, exposure);
@@ -174,7 +174,8 @@ export abstract class ImageFilter {
       hueB = (Math.sqrt(3) * s - c + 1) / 3;
     }
 
-    const invAmount = amount !== undefined ? 1 - Clamp.clamp(amount, 0, 1) : 0;
+    const invAmount =
+      amount !== undefined ? 1 - MathOperators.clamp(amount, 0, 1) : 0;
 
     const pixels = options.src.getBytes();
     for (let i = 0, len = pixels.length; i < len; i += 4) {
@@ -193,7 +194,7 @@ export abstract class ImageFilter {
       }
 
       if (brightness !== undefined && brightness !== 1) {
-        const br = Clamp.clamp(brightness, 0, 1000);
+        const br = MathOperators.clamp(brightness, 0, 1000);
         r *= br;
         g *= br;
         b *= br;
@@ -239,9 +240,9 @@ export abstract class ImageFilter {
         b = b * amount + ob * invAmount;
       }
 
-      pixels[i] = Clamp.clampInt255(r * 255);
-      pixels[i + 1] = Clamp.clampInt255(g * 255);
-      pixels[i + 2] = Clamp.clampInt255(b * 255);
+      pixels[i] = MathOperators.clampInt255(r * 255);
+      pixels[i + 1] = MathOperators.clampInt255(g * 255);
+      pixels[i + 2] = MathOperators.clampInt255(b * 255);
     }
 
     return options.src;
@@ -259,9 +260,9 @@ export abstract class ImageFilter {
 
     const pixels = src.getBytes();
     for (let i = 0, len = pixels.length; i < len; i += 4) {
-      pixels[i] = Clamp.clampInt255(pixels[i] + brightness);
-      pixels[i + 1] = Clamp.clampInt255(pixels[i + 1] + brightness);
-      pixels[i + 2] = Clamp.clampInt255(pixels[i + 2] + brightness);
+      pixels[i] = MathOperators.clampInt255(pixels[i] + brightness);
+      pixels[i + 1] = MathOperators.clampInt255(pixels[i + 1] + brightness);
+      pixels[i + 2] = MathOperators.clampInt255(pixels[i + 2] + brightness);
     }
 
     return src;
@@ -322,10 +323,16 @@ export abstract class ImageFilter {
   public static colorOffset(options: ColorOffsetOptions): MemoryImage {
     const pixels = options.src.getBytes();
     for (let i = 0, len = pixels.length; i < len; i += 4) {
-      pixels[i] = Clamp.clampInt255(pixels[i] + (options.red ?? 0));
-      pixels[i + 1] = Clamp.clampInt255(pixels[i + 1] + (options.green ?? 0));
-      pixels[i + 2] = Clamp.clampInt255(pixels[i + 2] + (options.blue ?? 0));
-      pixels[i + 3] = Clamp.clampInt255(pixels[i + 3] + (options.alpha ?? 0));
+      pixels[i] = MathOperators.clampInt255(pixels[i] + (options.red ?? 0));
+      pixels[i + 1] = MathOperators.clampInt255(
+        pixels[i + 1] + (options.green ?? 0)
+      );
+      pixels[i + 2] = MathOperators.clampInt255(
+        pixels[i + 2] + (options.blue ?? 0)
+      );
+      pixels[i + 3] = MathOperators.clampInt255(
+        pixels[i + 3] + (options.alpha ?? 0)
+      );
     }
 
     return options.src;
@@ -347,7 +354,9 @@ export abstract class ImageFilter {
     c *= c;
     const clevels = new Uint8Array(256);
     for (let i = 0; i < 256; ++i) {
-      clevels[i] = Clamp.clampInt255(((i / 255.0 - 0.5) * c + 0.5) * 255.0);
+      clevels[i] = MathOperators.clampInt255(
+        ((i / 255.0 - 0.5) * c + 0.5) * 255.0
+      );
     }
 
     const p = src.getBytes();
@@ -830,9 +839,13 @@ export abstract class ImageFilter {
       const g = p[i + 1];
       const b = p[i + 2];
       const y = Color.getLuminanceRgb(r, g, b);
-      p[i] = Clamp.clampInt255(amount * (y + 38) + (1.0 - amount) * r);
-      p[i + 1] = Clamp.clampInt255(amount * (y + 18) + (1.0 - amount) * g);
-      p[i + 2] = Clamp.clampInt255(amount * (y - 31) + (1.0 - amount) * b);
+      p[i] = MathOperators.clampInt255(amount * (y + 38) + (1.0 - amount) * r);
+      p[i + 1] = MathOperators.clampInt255(
+        amount * (y + 18) + (1.0 - amount) * g
+      );
+      p[i + 2] = MathOperators.clampInt255(
+        amount * (y - 31) + (1.0 - amount) * b
+      );
     }
 
     return src;
@@ -887,13 +900,15 @@ export abstract class ImageFilter {
         const h = -tlInt - 2 * tInt - trInt + blInt + 2 * bInt + brInt;
         const v = -blInt - 2 * lInt - tlInt + brInt + 2 * rInt + trInt;
 
-        const mag = Clamp.clampInt255(Math.sqrt(h * h + v * v) * 255);
+        const mag = MathOperators.clampInt255(Math.sqrt(h * h + v * v) * 255);
 
-        rgba[pi] = Clamp.clampInt255(mag * amount + rgba[pi] * invAmount);
-        rgba[pi + 1] = Clamp.clampInt255(
+        rgba[pi] = MathOperators.clampInt255(
+          mag * amount + rgba[pi] * invAmount
+        );
+        rgba[pi + 1] = MathOperators.clampInt255(
           mag * amount + rgba[pi + 1] * invAmount
         );
-        rgba[pi + 2] = Clamp.clampInt255(
+        rgba[pi + 2] = MathOperators.clampInt255(
           mag * amount + rgba[pi + 2] * invAmount
         );
       }
@@ -919,9 +934,13 @@ export abstract class ImageFilter {
         let d = Math.sqrt(dx * dx + dy * dy);
         d = ImageFilter.smoothVignetteStep(end, start, d);
 
-        p[i] = Clamp.clampInt255(amount * p[i] * d + invAmt * p[i]);
-        p[i + 1] = Clamp.clampInt255(amount * p[i + 1] * d + invAmt * p[i + 1]);
-        p[i + 2] = Clamp.clampInt255(amount * p[i + 2] * d + invAmt * p[i + 2]);
+        p[i] = MathOperators.clampInt255(amount * p[i] * d + invAmt * p[i]);
+        p[i + 1] = MathOperators.clampInt255(
+          amount * p[i + 1] * d + invAmt * p[i + 1]
+        );
+        p[i + 2] = MathOperators.clampInt255(
+          amount * p[i + 2] * d + invAmt * p[i + 2]
+        );
       }
     }
 

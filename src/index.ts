@@ -20,9 +20,9 @@ import { TiffDecoder } from './formats/tiff-decoder';
 import { TiffEncoder } from './formats/tiff-encoder';
 
 // Export types from 'common' directory
+export { ArrayUtils } from './common/array-utils';
 export { BitOperators } from './common/bit-operators';
 export { BlendMode } from './common/blend-mode';
-export { Clamp } from './common/clamp';
 export { ColorChannel } from './common/color-channel';
 export { ColorModel } from './common/color-model';
 export { Color } from './common/color';
@@ -31,22 +31,17 @@ export { DisposeMode } from './common/dispose-mode';
 export { DitherKernel } from './common/dither-kernel';
 export { DitherPixel } from './common/dither-pixel';
 export {
-  ExifData,
-  ExifDataInitOptions,
-  ExifDataType,
-} from './common/exif_data';
-export {
   FrameAnimation,
   FrameAnimationInitOptions,
 } from './common/frame-animation';
 export { FrameType } from './common/frame-type';
 export { HeapNode } from './common/heap-node';
-export { ICCProfileData } from './common/icc_profile_data';
+export { ICCProfileData } from './common/icc-profile-data';
 export { ICCPCompressionMode } from './common/iccp-compression-mode';
 export { InputBuffer, InputBufferInitOptions } from './common/input-buffer';
 export { Interpolation } from './common/interpolation';
 export { Line } from './common/line';
-export { ListUtils } from './common/list-utils';
+export { MathOperators } from './common/math-operators';
 export {
   MemoryImage,
   MemoryImageInitOptions,
@@ -60,6 +55,7 @@ export { OutputBuffer, OutputBufferInitOptions } from './common/output-buffer';
 export { Point } from './common/point';
 export { Quantizer } from './common/quantizer';
 export { RandomUtils } from './common/random-utils';
+export { Rational } from './common/rational';
 export { Rectangle } from './common/rectangle';
 export { RgbChannelSet } from './common/rgb-channel-set';
 export { TextCodec } from './common/text-codec';
@@ -71,6 +67,40 @@ export { DrawLineOptions } from './draw/draw-line-options';
 export { Draw } from './draw/draw';
 export { FillFloodOptions } from './draw/fill-flood-options';
 export { MaskFloodOptions } from './draw/mask-flood-options';
+
+// Export types from 'exif' directory
+export { ExifAsciiValue } from './exif/exif-value/exif-ascii-value';
+export { ExifByteValue } from './exif/exif-value/exif-byte-value';
+export { ExifDoubleValue } from './exif/exif-value/exif-double-value';
+export { ExifLongValue } from './exif/exif-value/exif-long-value';
+export { ExifRationalValue } from './exif/exif-value/exif-rational-value';
+export { ExifSByteValue } from './exif/exif-value/exif-sbyte-value';
+export { ExifShortValue } from './exif/exif-value/exif-short-value';
+export { ExifSingleValue } from './exif/exif-value/exif-single-value';
+export { ExifSLongValue } from './exif/exif-value/exif-slong-value';
+export { ExifSRationalValue } from './exif/exif-value/exif-srational-value';
+export { ExifSShortValue } from './exif/exif-value/exif-sshort-value';
+export { ExifUndefinedValue } from './exif/exif-value/exif-undefined-value';
+export { ExifValue } from './exif/exif-value/exif-value';
+export { ExifData } from './exif/exif-data';
+export { ExifEntry } from './exif/exif-entry';
+export { ExifIFDContainer } from './exif/exif-ifd-container';
+export { ExifIFD } from './exif/exif-ifd';
+export {
+  ExifTag,
+  ExifTagInitOptions,
+  ExifGpsTags,
+  ExifImageTags,
+  ExifInteropTags,
+  ExifTagNameToID,
+} from './exif/exif-tag';
+export {
+  ExifValueType,
+  ExifValueTypeSize,
+  ExifValueTypeString,
+  getExifValueTypeSize,
+  getExifValueTypeString,
+} from './exif/exif-value-type';
 
 // Export types from 'filter' directory
 export { AdjustColorOptions } from './filter/adjust-color-options';

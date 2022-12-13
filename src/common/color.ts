@@ -2,8 +2,8 @@
 
 import { ImageError } from '../error/image-error';
 import { BitOperators } from './bit-operators';
-import { Clamp } from './clamp';
 import { ColorChannel } from './color-channel';
+import { MathOperators } from './math-operators';
 
 /**
  * Image pixel colors are instantiated as an int object rather than an instance
@@ -176,10 +176,10 @@ export abstract class Color {
     // 8 bits  so we can safely slide each one by 8 bits
     // for adding the other.
     const color =
-      (Clamp.clampInt255(a) << 24) |
-      (Clamp.clampInt255(b) << 16) |
-      (Clamp.clampInt255(g) << 8) |
-      Clamp.clampInt255(r);
+      (MathOperators.clampInt255(a) << 24) |
+      (MathOperators.clampInt255(b) << 16) |
+      (MathOperators.clampInt255(g) << 8) |
+      MathOperators.clampInt255(r);
     return BitOperators.toUint32(color);
   }
 
@@ -232,14 +232,14 @@ export abstract class Color {
    * Returns a new color where the alpha channel of **color** has been replaced by **value**.
    */
   public static setAlpha(color: number, value: number): number {
-    return (color & 0x00ffffff) | (Clamp.clampInt255(value) << 24);
+    return (color & 0x00ffffff) | (MathOperators.clampInt255(value) << 24);
   }
 
   /**
    * Returns a new color where the blue channel of **color** has been replaced by **value**.
    */
   public static setBlue(color: number, value: number): number {
-    return (color & 0xff00ffff) | (Clamp.clampInt255(value) << 16);
+    return (color & 0xff00ffff) | (MathOperators.clampInt255(value) << 16);
   }
 
   /**
@@ -268,7 +268,7 @@ export abstract class Color {
    * by **value**.
    */
   public static setGreen(color: number, value: number): number {
-    return (color & 0xffff00ff) | (Clamp.clampInt255(value) << 8);
+    return (color & 0xffff00ff) | (MathOperators.clampInt255(value) << 8);
   }
 
   /**
@@ -276,7 +276,7 @@ export abstract class Color {
    * by **value**.
    */
   public static setRed(color: number, value: number): number {
-    return (color & 0xffffff00) | Clamp.clampInt255(value);
+    return (color & 0xffffff00) | MathOperators.clampInt255(value);
   }
 
   /**
@@ -485,9 +485,9 @@ export abstract class Color {
     }
 
     return [
-      Math.trunc(Clamp.clamp(r * 255, 0, 255)),
-      Math.trunc(Clamp.clamp(g * 255, 0, 255)),
-      Math.trunc(Clamp.clamp(b * 255, 0, 255)),
+      Math.trunc(MathOperators.clamp(r * 255, 0, 255)),
+      Math.trunc(MathOperators.clamp(g * 255, 0, 255)),
+      Math.trunc(MathOperators.clamp(b * 255, 0, 255)),
     ];
   }
 
@@ -577,9 +577,9 @@ export abstract class Color {
     }
 
     return [
-      Math.trunc(Clamp.clamp(R * 255.0, 0, 255)),
-      Math.trunc(Clamp.clamp(G * 255.0, 0, 255)),
-      Math.trunc(Clamp.clamp(B * 255.0, 0, 255)),
+      Math.trunc(MathOperators.clamp(R * 255.0, 0, 255)),
+      Math.trunc(MathOperators.clamp(G * 255.0, 0, 255)),
+      Math.trunc(MathOperators.clamp(B * 255.0, 0, 255)),
     ];
   }
 

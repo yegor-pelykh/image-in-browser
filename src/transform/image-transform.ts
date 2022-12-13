@@ -1,7 +1,5 @@
 /** @format */
 
-import { Clamp } from '../common/clamp';
-import { ExifData } from '../common/exif_data';
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
 import { ImageError } from '../error/image-error';
@@ -16,6 +14,8 @@ import { CopyIntoOptions } from './copy-into-options';
 import { Draw } from '../draw/draw';
 import { Interpolation } from '../common/interpolation';
 import { Color } from '../common/color';
+import { MathOperators } from '../common/math-operators';
+import { ExifData } from '../exif/exif-data';
 
 export abstract class ImageTransform {
   /**
@@ -133,14 +133,18 @@ export abstract class ImageTransform {
    */
   public static bakeOrientation(image: MemoryImage): MemoryImage {
     const bakedImage = MemoryImage.from(image);
-    if (!image.exifData.hasOrientation || image.exifData.orientation === 1) {
+    if (
+      !image.exifData.imageIfd.hasOrientation ||
+      image.exifData.imageIfd.orientation === 1
+    ) {
       return bakedImage;
     }
 
-    // Remove exif data for orientation
-    bakedImage.exifData.data.delete(ExifData.ORIENTATION);
+    // Copy all exif data except for orientation
+    bakedImage.exifData = ExifData.from(image.exifData);
+    bakedImage.exifData.imageIfd.orientation = undefined;
 
-    switch (image.exifData.orientation) {
+    switch (image.exifData.imageIfd.orientation) {
       case 2:
         return ImageTransform.flipHorizontal(bakedImage);
       case 3:
@@ -415,8 +419,8 @@ export abstract class ImageTransform {
     h: number
   ): MemoryImage {
     // Make sure crop rectangle is within the range of the src image.
-    const _x = Clamp.clampInt(x, 0, src.width - 1);
-    const _y = Clamp.clampInt(y, 0, src.height - 1);
+    const _x = MathOperators.clampInt(x, 0, src.width - 1);
+    const _y = MathOperators.clampInt(y, 0, src.height - 1);
     let _w = w;
     if (_x + _w > src.width) {
       _w = src.width - _x;
@@ -459,8 +463,8 @@ export abstract class ImageTransform {
 
     // Make sure center point is within the range of the src image
     c.move(
-      Clamp.clampInt(c.x, 0, src.width - 1),
-      Clamp.clampInt(c.y, 0, src.height - 1)
+      MathOperators.clampInt(c.x, 0, src.width - 1),
+      MathOperators.clampInt(c.y, 0, src.height - 1)
     );
     r = r < 1 ? defaultRadius : r;
 

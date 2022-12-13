@@ -2,6 +2,7 @@
 
 import { MemoryImage } from '../common/memory-image';
 import { RgbChannelSet } from '../common/rgb-channel-set';
+import { ExifData } from '../exif/exif-data';
 import { HdrSlice } from './hdr-slice';
 
 /**
@@ -58,6 +59,14 @@ export class HdrImage {
   private _depth: HdrSlice | undefined = undefined;
   public get depth(): HdrSlice | undefined {
     return this._depth;
+  }
+
+  private _exifData: ExifData | undefined = undefined;
+  public get exifData(): ExifData | undefined {
+    return this._exifData;
+  }
+  public set exifData(v: ExifData | undefined) {
+    this._exifData = v;
   }
 
   /**

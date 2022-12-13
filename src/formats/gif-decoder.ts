@@ -2,7 +2,7 @@
 
 import { FrameAnimation } from '../common/frame-animation';
 import { InputBuffer } from '../common/input-buffer';
-import { ListUtils } from '../common/list-utils';
+import { ArrayUtils } from '../common/array-utils';
 import { MemoryImage } from '../common/memory-image';
 import { ImageError } from '../error/image-error';
 import { HdrImage } from '../hdr/hdr-image';
@@ -557,7 +557,7 @@ export class GifDecoder implements Decoder {
       }
 
       const from = this.input!.readBytes(this.buffer![0]).toUint8Array();
-      ListUtils.setRange(this.buffer!, 1, 1 + this.buffer![0], from);
+      ArrayUtils.setRange(this.buffer!, 1, 1 + this.buffer![0], from);
 
       nextByte = this.buffer![1];
       // We use now the second place as last char read!

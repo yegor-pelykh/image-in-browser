@@ -6,7 +6,7 @@ import { Color } from '../common/color';
 import { Crc32 } from '../common/crc32';
 import { DisposeMode } from '../common/dispose-mode';
 import { FrameAnimation } from '../common/frame-animation';
-import { ICCProfileData } from '../common/icc_profile_data';
+import { ICCProfileData } from '../common/icc-profile-data';
 import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
 import { RgbChannelSet } from '../common/rgb-channel-set';
