@@ -1,8 +1,7 @@
 /** @format */
 
-import { Color, decodeBmp, encodeBmp } from '../src';
-import { MemoryImage } from '../src/common/memory-image';
-import { TestFolder, TestSection, TestHelpers } from './test-helpers';
+import { Color, decodeBmp, encodeBmp, MemoryImage } from '../src';
+import { TestFolder, TestHelpers, TestSection } from './test-helpers';
 
 describe('BMP', () => {
   test('encode', () => {

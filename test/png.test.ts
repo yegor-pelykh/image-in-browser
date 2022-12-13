@@ -6,11 +6,11 @@ import {
   decodePng,
   encodePng,
   encodePngAnimation,
+  FrameAnimation,
+  MemoryImage,
   PngDecoder,
+  RgbChannelSet,
 } from '../src';
-import { FrameAnimation } from '../src/common/frame-animation';
-import { MemoryImage } from '../src/common/memory-image';
-import { RgbChannelSet } from '../src/common/rgb-channel-set';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('PNG', () => {

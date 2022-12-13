@@ -1,10 +1,14 @@
 /** @format */
 
-import { Color, Draw, encodePng } from '../src';
-import { Line } from '../src/common/line';
-import { MemoryImage } from '../src/common/memory-image';
-import { Point } from '../src/common/point';
-import { Rectangle } from '../src/common/rectangle';
+import {
+  Color,
+  Draw,
+  encodePng,
+  Line,
+  MemoryImage,
+  Point,
+  Rectangle,
+} from '../src';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('Draw', () => {

@@ -6,12 +6,12 @@ import {
   encodeGif,
   encodeGifAnimation,
   encodePng,
+  FrameAnimation,
+  GifDecoder,
+  GifEncoder,
   ImageTransform,
+  MemoryImage,
 } from '../src';
-import { FrameAnimation } from '../src/common/frame-animation';
-import { MemoryImage } from '../src/common/memory-image';
-import { GifDecoder } from '../src/formats/gif-decoder';
-import { GifEncoder } from '../src/formats/gif-encoder';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('GIF', () => {

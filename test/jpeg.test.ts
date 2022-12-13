@@ -1,7 +1,6 @@
 /** @format */
 
-import { decodeJpg, encodeJpg } from '../src';
-import { JpegDecoder } from '../src/formats/jpeg-decoder';
+import { decodeJpg, encodeJpg, JpegDecoder } from '../src';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('JPEG', () => {

@@ -1,11 +1,15 @@
 /** @format */
 
-import { decodeTiff, encodePng, encodeTiff } from '../src';
-import { HdrToImage } from '../src/hdr/hdr-to-image';
-import { TiffDecoder } from '../src/formats/tiff-decoder';
+import {
+  decodeTiff,
+  encodePng,
+  encodeTiff,
+  HdrToImage,
+  TiffDecoder,
+  TiffEncoder,
+  TiffEntry,
+} from '../src';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
-import { TiffEntry } from '../src/formats/tiff/tiff-entry';
-import { TiffEncoder } from '../src/formats/tiff-encoder';
 
 describe('TIFF', () => {
   const resFiles = TestHelpers.listFiles(

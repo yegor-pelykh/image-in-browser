@@ -1,9 +1,13 @@
 /** @format */
 
-import { Color, encodeIco, encodePng } from '../src';
-import { MemoryImage } from '../src/common/memory-image';
-import { IcoDecoder } from '../src/formats/ico-decoder';
-import { IcoEncoder } from '../src/formats/ico-encoder';
+import {
+  Color,
+  encodeIco,
+  encodePng,
+  IcoDecoder,
+  IcoEncoder,
+  MemoryImage,
+} from '../src';
 import { TestFolder, TestSection, TestHelpers } from './test-helpers';
 
 describe('ICO', () => {
