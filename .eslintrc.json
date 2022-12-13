@@ -172,6 +172,14 @@
             "warn",
             "never"
         ],
+        "@typescript-eslint/no-empty-function": [
+          "error",
+          {
+            "allow": [
+              "methods"
+            ]
+          }
+        ],
         "@typescript-eslint/no-non-null-assertion": "off",
         "@typescript-eslint/no-unused-vars": "off"
     }
