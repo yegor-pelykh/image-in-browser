@@ -1,6 +1,6 @@
 /** @format */
 
-import { ExifValue } from './exif-value/exif-value';
+import { IfdValue } from './ifd-value/ifd-value';
 
 export class ExifEntry {
   private readonly _tag: number;
@@ -8,15 +8,15 @@ export class ExifEntry {
     return this._tag;
   }
 
-  private _value: ExifValue | undefined;
-  public get value(): ExifValue | undefined {
+  private _value: IfdValue | undefined;
+  public get value(): IfdValue | undefined {
     return this._value;
   }
-  public set value(v: ExifValue | undefined) {
+  public set value(v: IfdValue | undefined) {
     this._value = v;
   }
 
-  constructor(tag: number, value?: ExifValue) {
+  constructor(tag: number, value?: IfdValue) {
     this._tag = tag;
     this._value = value;
   }

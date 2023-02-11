@@ -34,9 +34,7 @@ export class Point {
   }
 
   public move(x: number, y: number): Point {
-    this._x = x;
-    this._y = y;
-    return this;
+    return new Point(x, y);
   }
 
   public offset(dx: number, dy: number): Point {
@@ -48,12 +46,14 @@ export class Point {
   }
 
   public add(p: Point): Point {
-    return this.move(this._x + p.x, this._y + p.y);
+    return this.move(this._x + p._x, this._y + p._y);
   }
 
-  public equals(other: unknown) {
-    return (
-      other instanceof Point && this._x === other._x && this._y === other._y
-    );
+  public equals(other: Point) {
+    return this._x === other._x && this._y === other._y;
+  }
+
+  public toString(): string {
+    return `${this.constructor.name} (x: ${this._x}, y: ${this._y})`;
   }
 }

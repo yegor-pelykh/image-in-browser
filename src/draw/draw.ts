@@ -1,37 +1,165 @@
 /** @format */
 
-import { Color } from '../common/color';
+import { Channel } from '../color/channel';
+import { Color } from '../color/color';
+import { ColorUtils } from '../color/color-utils';
+import { ArrayUtils } from '../common/array-utils';
 import { Line } from '../common/line';
-import { MathOperators } from '../common/math-operators';
-import { MemoryImage } from '../common/memory-image';
+import { MathUtils } from '../common/math-utils';
 import { Point } from '../common/point';
 import { Rectangle } from '../common/rectangle';
-import { DrawImageOptions } from './draw-image-options';
-import { DrawLineOptions } from './draw-line-options';
-import { FillFloodOptions } from './fill-flood-options';
-import { MaskFloodOptions } from './mask-flood-options';
+import { MemoryImage } from '../image/image';
+import { ImageUtils } from '../image/image-utils';
+import { Pixel } from '../image/pixel';
+import { BlendMode } from './blend-mode';
+import { CircleQuadrant } from './circle-quadrant';
 
 type FillFloodTestPixel = (y: number, x: number) => boolean;
 type FillFloodMarkPixel = (y: number, x: number) => void;
 
-export abstract class Draw {
-  // 0000
-  private static readonly OUTCODE_INSIDE = 0;
-  // 0001
-  private static readonly OUTCODE_LEFT = 1;
-  // 0010
-  private static readonly OUTCODE_RIGHT = 2;
-  // 0100
-  private static readonly OUTCODE_BOTTOM = 4;
-  // 1000
-  private static readonly OUTCODE_TOP = 8;
+interface DrawLineWuOptions {
+  image: MemoryImage;
+  line: Line;
+  color: Color;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
 
+export interface DrawLineOptions extends DrawLineWuOptions {
+  antialias?: boolean;
+  thickness?: number;
+}
+
+interface DrawAntialiasCircleOptions {
+  image: MemoryImage;
+  x: number;
+  y: number;
+  radius: number;
+  color: Color;
+  quadrants?: CircleQuadrant;
+  mask?: MemoryImage;
+  maskChannel?: Channel;
+}
+
+export interface DrawCircleOptions {
+  image: MemoryImage;
+  center: Point;
+  radius: number;
+  color: Color;
+  antialias?: boolean;
+  mask?: MemoryImage;
+  maskChannel?: Channel;
+}
+
+export interface DrawPixelOptions {
+  image: MemoryImage;
+  pos: Point;
+  color: Color;
+  filter?: Color;
+  alpha?: number;
+  blend?: BlendMode;
+  linearBlend?: boolean;
+  mask?: MemoryImage;
+  maskChannel?: Channel;
+}
+
+export interface DrawPolygonOptions {
+  image: MemoryImage;
+  vertices: Point[];
+  color: Color;
+  antialias?: boolean;
+  thickness?: number;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
+
+export interface DrawRectOptions {
+  image: MemoryImage;
+  rect: Rectangle;
+  color: Color;
+  thickness?: number;
+  radius?: number;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
+
+export interface FillCircleOptions {
+  image: MemoryImage;
+  center: Point;
+  radius: number;
+  color: Color;
+  antialias?: boolean;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
+
+export interface FillFloodOptions {
+  image: MemoryImage;
+  start: Point;
+  color: Color;
+  threshold?: number;
+  compareAlpha?: boolean;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
+
+export interface MaskFloodOptions {
+  image: MemoryImage;
+  start: Point;
+  threshold?: number;
+  compareAlpha?: boolean;
+  fillValue?: number;
+}
+
+export interface FillPolygonOptions {
+  image: MemoryImage;
+  vertices: Point[];
+  color: Color;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
+
+export interface FillRectOptions {
+  image: MemoryImage;
+  rect: Rectangle;
+  color: Color;
+  radius?: number;
+  mask?: MemoryImage;
+  maskChannel?: Channel;
+}
+
+export interface FillOptions {
+  image: MemoryImage;
+  color: Color;
+  maskChannel?: Channel.luminance;
+  mask?: MemoryImage;
+}
+
+export interface CompositeImageOptions {
+  dst: MemoryImage;
+  src: MemoryImage;
+  dstX?: number;
+  dstY?: number;
+  dstW?: number;
+  dstH?: number;
+  srcX?: number;
+  srcY?: number;
+  srcW?: number;
+  srcH?: number;
+  blend?: BlendMode;
+  linearBlend?: boolean;
+  center?: boolean;
+  mask?: MemoryImage;
+  maskChannel?: Channel;
+}
+
+export abstract class Draw {
   /**
    * Calculate the pixels that make up the circumference of a circle on the
    * given **image**, centered at **center** and the given **radius**.
    *
-   * The returned list of points is sorted, first by the x coordinate, and
-   * second by the y coordinate.
+   * The returned array of points is sorted, first by the **center.x** coordinate, and
+   * second by the **center.y** coordinate.
    */
   private static calculateCircumference(
     image: MemoryImage,
@@ -104,115 +232,266 @@ export abstract class Draw {
     return points;
   }
 
-  /**
-   * Compute the bit code for a point **p** using the clip rectangle **rect**
-   */
-  private static computeOutCode(rect: Rectangle, p: Point): number {
-    // initialized as being inside of clip window
-    let code = Draw.OUTCODE_INSIDE;
-    if (p.x < rect.left) {
-      // to the left of clip window
-      code |= Draw.OUTCODE_LEFT;
-    } else if (p.x > rect.right) {
-      // to the right of clip window
-      code |= Draw.OUTCODE_RIGHT;
+  private static drawAntialiasCircle(
+    opt: DrawAntialiasCircleOptions
+  ): MemoryImage {
+    const drawPixel4 = (
+      x: number,
+      y: number,
+      dx: number,
+      dy: number,
+      alpha: number
+    ): void => {
+      // bottom right
+      if ((quadrants & CircleQuadrant.bottomRight) !== 0) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(x + dx, y + dy),
+          color: opt.color,
+          alpha: alpha,
+          maskChannel: maskChannel,
+          mask: opt.mask,
+        });
+      }
+
+      // bottom left
+      if ((quadrants & CircleQuadrant.bottomLeft) !== 0) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(x - dx, y + dy),
+          color: opt.color,
+          alpha: alpha,
+          maskChannel: maskChannel,
+          mask: opt.mask,
+        });
+      }
+
+      // upper right
+      if ((quadrants & CircleQuadrant.topRight) !== 0) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(x + dx, y - dy),
+          color: opt.color,
+          alpha: alpha,
+          maskChannel: maskChannel,
+          mask: opt.mask,
+        });
+      }
+
+      // upper left
+      if ((quadrants & CircleQuadrant.topLeft) !== 0) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(x - dx, y - dy),
+          color: opt.color,
+          alpha: alpha,
+          maskChannel: maskChannel,
+          mask: opt.mask,
+        });
+      }
+    };
+
+    const quadrants = opt.quadrants ?? CircleQuadrant.all;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    const radiusSqr = opt.radius * opt.radius;
+    const quarter = Math.round(opt.radius / Math.SQRT2);
+    for (let i = 0; i <= quarter; ++i) {
+      const j = Math.sqrt(radiusSqr - i * i);
+      const frc = MathUtils.fract(j);
+      const frc2 = frc * (i === quarter ? 0.25 : 1);
+      const flr = Math.floor(j);
+      drawPixel4(opt.x, opt.y, i, flr, 1 - frc);
+      drawPixel4(opt.x, opt.y, i, flr + 1, frc2);
+      drawPixel4(opt.x, opt.y, flr, i, 1 - frc);
+      drawPixel4(opt.x, opt.y, flr + 1, i, frc2);
     }
 
-    if (p.y < rect.top) {
-      // below the clip window
-      code |= Draw.OUTCODE_TOP;
-    } else if (p.y > rect.bottom) {
-      // above the clip window
-      code |= Draw.OUTCODE_BOTTOM;
-    }
-
-    return code;
+    return opt.image;
   }
 
-  /**
-   * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
-   * **line** is a **Line** object.
-   * **rect** is a **Rectangle** object.
-   * Results are stored in **line**.
-   * If **line** falls completely outside of **rect**, false is returned, otherwise
-   * true is returned.
-   */
-  private static clipLine(rect: Rectangle, line: Line): boolean {
-    const xmin = rect.left;
-    const ymin = rect.top;
-    const xmax = rect.right;
-    const ymax = rect.bottom;
+  // Xiaolin Wu's line algorithm,
+  // https://en.wikipedia.org/wiki/Xiaolin_Wu's_line_algorithm
+  private static drawLineWu(opt: DrawLineWuOptions): MemoryImage {
+    const line = opt.line.clone();
+    const steep = Math.abs(line.dy) > Math.abs(line.dx);
 
-    // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
-    let outcode1 = Draw.computeOutCode(
-      rect,
-      new Point(line.startX, line.startY)
-    );
-    let outcode2 = Draw.computeOutCode(rect, new Point(line.endX, line.endY));
-    let accept = false;
+    if (steep) {
+      line.swapXY1();
+      line.swapXY2();
+    }
+    if (line.x1 > line.x2) {
+      line.flipX();
+      line.flipY();
+    }
 
-    while (true) {
-      if ((outcode1 | outcode2) === 0) {
-        // Bitwise OR is 0. Trivially accept and get out of loop
-        accept = true;
-        break;
-      } else if ((outcode1 & outcode2) !== 0) {
-        // Bitwise AND is not 0. Trivially reject and get out of loop
-        break;
-      } else {
-        // failed both tests, so calculate the line segment to clip
-        // from an outside point to an intersection with clip edge
+    const gradient = line.dx === 1 ? 1 : line.dy / line.dx;
 
-        // At least one endpoint is outside the clip rectangle; pick it.
-        const outcodeOut = outcode1 !== 0 ? outcode1 : outcode2;
+    // handle first endpoint
+    let xend = Math.floor(line.x1 + 0.5);
+    let yend = line.y1 + gradient * (xend - line.x1);
+    let xgap = 1 - (line.x1 + 0.5 - Math.floor(line.x1 + 0.5));
+    // this will be used in the main loop
+    const xpxl1 = xend;
+    const ypxl1 = Math.floor(yend);
 
-        let x = 0;
-        let y = 0;
+    if (steep) {
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(ypxl1, xpxl1),
+        color: opt.color,
+        alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(ypxl1 + 1, xpxl1),
+        color: opt.color,
+        alpha: (yend - Math.floor(yend)) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+    } else {
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(xpxl1, ypxl1),
+        color: opt.color,
+        alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(xpxl1, ypxl1 + 1),
+        color: opt.color,
+        alpha: (yend - Math.floor(yend)) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+    }
 
-        // Now find the intersection point;
-        // use formulas y = y0 + slope * (x - x0), x = x0 + (1 / slope) * (y - y0)
-        if ((outcodeOut & Draw.OUTCODE_TOP) !== 0) {
-          // point is above the clip rectangle
-          x =
-            line.startX +
-            Math.trunc((line.dx * (ymin - line.startY)) / line.dy);
-          y = ymin;
-        } else if ((outcodeOut & Draw.OUTCODE_BOTTOM) !== 0) {
-          // point is below the clip rectangle
-          x =
-            line.startX +
-            Math.trunc((line.dx * (ymax - line.startY)) / line.dy);
-          y = ymax;
-        } else if ((outcodeOut & Draw.OUTCODE_RIGHT) !== 0) {
-          // point is to the right of clip rectangle
-          y =
-            line.startY +
-            Math.trunc((line.dy * (xmax - line.startX)) / line.dx);
-          x = xmax;
-        } else if ((outcodeOut & Draw.OUTCODE_LEFT) !== 0) {
-          // point is to the left of clip rectangle
-          y =
-            line.startY +
-            Math.trunc((line.dy * (xmin - line.startX)) / line.dx);
-          x = xmin;
-        }
+    // first y-intersection for the main loop
+    let intery = yend + gradient;
 
-        // Now we move outside point to intersection point to clip
-        // and get ready for next pass.
-        if (outcodeOut === outcode1) {
-          line.moveStart(x, y);
-          outcode1 = Draw.computeOutCode(
-            rect,
-            new Point(line.startX, line.startY)
-          );
-        } else {
-          line.moveEnd(x, y);
-          outcode2 = Draw.computeOutCode(rect, new Point(line.endX, line.endY));
-        }
+    // handle second endpoint
+    xend = Math.floor(line.x2 + 0.5);
+    yend = line.y2 + gradient * (xend - line.x2);
+    xgap = line.x2 + 0.5 - Math.floor(line.x2 + 0.5);
+
+    // this will be used in the main loop
+    const xpxl2 = xend;
+    const ypxl2 = Math.floor(yend);
+
+    if (steep) {
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(ypxl2, xpxl2),
+        color: opt.color,
+        alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        mask: opt.mask,
+        maskChannel: opt.maskChannel,
+      });
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(ypxl2 + 1, xpxl2),
+        color: opt.color,
+        alpha: (yend - Math.floor(yend)) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+
+      // main loop
+      for (let x = xpxl1 + 1; x <= xpxl2 - 1; x++) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(Math.floor(intery), x),
+          color: opt.color,
+          alpha: 1 - (intery - Math.floor(intery)),
+          mask: opt.mask,
+          maskChannel: opt.maskChannel,
+        });
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(Math.floor(intery) + 1, x),
+          color: opt.color,
+          alpha: intery - Math.floor(intery),
+          maskChannel: opt.maskChannel,
+          mask: opt.mask,
+        });
+
+        intery += gradient;
+      }
+    } else {
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(xpxl2, ypxl2),
+        color: opt.color,
+        alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(xpxl2, ypxl2 + 1),
+        color: opt.color,
+        alpha: (yend - Math.floor(yend)) * xgap,
+        maskChannel: opt.maskChannel,
+        mask: opt.mask,
+      });
+
+      // main loop
+      for (let x = xpxl1 + 1; x <= xpxl2 - 1; x++) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(x, Math.floor(intery)),
+          color: opt.color,
+          alpha: 1 - (intery - Math.floor(intery)),
+          maskChannel: opt.maskChannel,
+          mask: opt.mask,
+        });
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(x, Math.floor(intery) + 1),
+          color: opt.color,
+          alpha: intery - Math.floor(intery),
+          maskChannel: opt.maskChannel,
+          mask: opt.mask,
+        });
+
+        intery += gradient;
       }
     }
 
-    return accept;
+    return opt.image;
+  }
+
+  private static setAlpha(c: Color, a: number): Color {
+    c.a = a;
+    return c;
+  }
+
+  /**
+   * Compare colors from a 3 or 4 dimensional color space
+   */
+  private static colorDistance(
+    c1: number[],
+    c2: number[],
+    compareAlpha: boolean
+  ): number {
+    const d1 = c1[0] - c2[0];
+    const d2 = c1[1] - c2[1];
+    const d3 = c1[2] - c2[2];
+    if (compareAlpha) {
+      const dA = c1[3] - c2[3];
+      return Math.sqrt(
+        Math.max(d1 * d1, (d1 - dA) * (d1 - dA)) +
+          Math.max(d2 * d2, (d2 - dA) * (d2 - dA)) +
+          Math.max(d3 * d3, (d3 - dA) * (d3 - dA))
+      );
+    } else {
+      return Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
+    }
   }
 
   private static testPixelLabColorDistance(
@@ -224,55 +503,11 @@ export abstract class Draw {
   ): boolean {
     const pixel = src.getPixel(x, y);
     const compareAlpha = refColor.length > 3;
-    const pixelColor = Color.rgbToLab(
-      Color.getRed(pixel),
-      Color.getGreen(pixel),
-      Color.getBlue(pixel)
-    );
+    const pixelColor = ColorUtils.rgbToLab(pixel.r, pixel.g, pixel.b);
     if (compareAlpha) {
-      pixelColor.push(Color.getAlpha(pixel));
+      pixelColor.push(pixel.a);
     }
-    return Color.distance(pixelColor, refColor, compareAlpha) > threshold;
-  }
-
-  /**
-   * Adam Milazzo (2015). A More Efficient Flood Fill.
-   * http://www.adammil.net/blog/v126_A_More_Efficient_Flood_Fill.html
-   */
-  private static fill4(
-    src: MemoryImage,
-    x: number,
-    y: number,
-    array: FillFloodTestPixel,
-    mark: FillFloodMarkPixel,
-    visited: Uint8Array
-  ): void {
-    let _x = x;
-    let _y = y;
-
-    if (visited[_y * src.width + _x] === 1) {
-      return;
-    }
-
-    // at this point, we know array(y,x) is clear, and we want to move as far as
-    // possible to the upper-left. moving up is much more important than moving
-    // left, so we could try to make this smarter by sometimes moving to the
-    // right if doing so would allow us to move further up, but it doesn't seem
-    // worth the complexity
-    while (true) {
-      const ox = _x;
-      const oy = _y;
-      while (_y !== 0 && !array(_y - 1, _x)) {
-        _y--;
-      }
-      while (_x !== 0 && !array(_y, _x - 1)) {
-        _x--;
-      }
-      if (_x === ox && _y === oy) {
-        break;
-      }
-    }
-    Draw.fill4Core(src, _x, _y, array, mark, visited);
+    return Draw.colorDistance(pixelColor, refColor, compareAlpha) > threshold;
   }
 
   private static fill4Core(
@@ -382,121 +617,199 @@ export abstract class Draw {
     } while (lastRowLength !== 0 && ++_y < src.height);
   }
 
-  /**
-   * Draw a circle into the **image** with a center of **center** and
-   * the given **radius** and **color**.
-   */
-  public static drawCircle(
-    image: MemoryImage,
-    center: Point,
-    radius: number,
-    color: number
-  ): MemoryImage {
-    const points = Draw.calculateCircumference(image, center, radius);
-    for (const p of points) {
-      Draw.drawPixel(image, p, color);
+  // Adam Milazzo (2015). A More Efficient Flood Fill.
+  // http://www.adammil.net/blog/v126_A_More_Efficient_Flood_Fill.html
+  private static fill4(
+    src: MemoryImage,
+    x: number,
+    y: number,
+    array: FillFloodTestPixel,
+    mark: FillFloodMarkPixel,
+    visited: Uint8Array
+  ): void {
+    let _x = x;
+    let _y = y;
+
+    if (visited[_y * src.width + _x] === 1) {
+      return;
     }
-    return image;
-  }
 
-  /**
-   * Draw and fill a circle into the **image** with a **center**
-   * and the given **radius** and **color**.
-   *
-   * The algorithm uses the same logic as **drawCircle** to calculate each point
-   * around the circle's circumference. Then it iterates through every point,
-   * finding the smallest and largest y-coordinate values for a given x-
-   * coordinate.
-   *
-   * Once found, it draws a line connecting those two points. The circle is thus
-   * filled one vertical slice at a time (each slice being 1-pixel wide).
-   */
-  public static fillCircle(
-    image: MemoryImage,
-    center: Point,
-    radius: number,
-    color: number
-  ): MemoryImage {
-    const points = Draw.calculateCircumference(image, center, radius);
-
-    // sort points by x-coordinate and then by y-coordinate
-    points.sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
-
-    if (points.length > 0) {
-      let start = points[0];
-      let end = points[0];
-      for (let i = 1; i < points.length; i++) {
-        const p = points[i];
-        if (p.x === start.x) {
-          end = p;
-        } else {
-          Draw.drawLine({
-            image: image,
-            line: new Line(start.xt, start.yt, end.xt, end.yt),
-            color: color,
-          });
-          start = p;
-          end = p;
-        }
+    // at this point, we know array(y,x) is clear, and we want to move as far as
+    // possible to the upper-left. moving up is much more important than moving
+    // left, so we could try to make this smarter by sometimes moving to the
+    // right if doing so would allow us to move further up, but it doesn't seem
+    // worth the complexity
+    while (true) {
+      const ox = _x;
+      const oy = _y;
+      while (_y !== 0 && !array(_y - 1, _x)) {
+        _y--;
       }
-      Draw.drawLine({
-        image: image,
-        line: new Line(start.xt, start.yt, end.xt, end.yt),
-        color: color,
-      });
+      while (_x !== 0 && !array(_y, _x - 1)) {
+        _x--;
+      }
+      if (_x === ox && _y === oy) {
+        break;
+      }
     }
-
-    return image;
+    Draw.fill4Core(src, _x, _y, array, mark, visited);
   }
 
-  /**
-   * Draw the image **src** onto the image **dst**.
-   *
-   * In other words, drawImage will take an rectangular area from **src** of
-   * width **srcW** and height **srcH** at position (**srcX**,**srY**) and place it
-   * in a rectangular area of **dst** of width **dstW** and height **dstH** at
-   * position (**dstX**,**dstY**).
-   *
-   * If the source and destination coordinates and width and heights differ,
-   * appropriate stretching or shrinking of the image fragment will be performed.
-   * The coordinates refer to the upper left corner. This function can be used to
-   * copy regions within the same image (if **dst** is the same as **src**)
-   * but if the regions overlap the results will be unpredictable.
-   */
-  public static drawImage(options: DrawImageOptions): MemoryImage {
-    const dstX = options.dstX ?? 0;
-    const dstY = options.dstY ?? 0;
-    const srcX = options.srcX ?? 0;
-    const srcY = options.srcY ?? 0;
-    const srcW = options.srcW ?? options.src.width;
-    const srcH = options.srcH ?? options.src.height;
-    const dstW = options.dstW ?? Math.min(options.dst.width, options.src.width);
-    const dstH =
-      options.dstH ?? Math.min(options.dst.height, options.src.height);
-    const blend = options.blend ?? true;
-
-    if (blend) {
+  private static imgDirectComposite(
+    src: MemoryImage,
+    dst: MemoryImage,
+    dstX: number,
+    dstY: number,
+    dstW: number,
+    dstH: number,
+    xCache: number[],
+    yCache: number[],
+    maskChannel: Channel,
+    mask?: MemoryImage
+  ): void {
+    let p: Pixel | undefined = undefined;
+    if (mask !== undefined) {
       for (let y = 0; y < dstH; ++y) {
         for (let x = 0; x < dstW; ++x) {
-          const stepX = Math.trunc(x * (srcW / dstW));
-          const stepY = Math.trunc(y * (srcH / dstH));
-          const srcPixel = options.src.getPixel(srcX + stepX, srcY + stepY);
-          const point = new Point(dstX + x, dstY + y);
-          Draw.drawPixel(options.dst, point, srcPixel);
+          const sx = xCache[x];
+          const sy = yCache[y];
+          p = src.getPixel(sx, sy, p);
+          const m = mask.getPixel(sx, sy).getChannelNormalized(maskChannel);
+          if (m === 1) {
+            dst.setPixel(dstX + x, dstY + y, p);
+          } else {
+            const dp = dst.getPixel(dstX + x, dstY + y);
+            dp.r = MathUtils.mix(dp.r, p.r, m);
+            dp.g = MathUtils.mix(dp.g, p.g, m);
+            dp.b = MathUtils.mix(dp.b, p.b, m);
+            dp.a = MathUtils.mix(dp.a, p.a, m);
+          }
         }
       }
     } else {
       for (let y = 0; y < dstH; ++y) {
         for (let x = 0; x < dstW; ++x) {
-          const stepX = Math.trunc(x * (srcW / dstW));
-          const stepY = Math.trunc(y * (srcH / dstH));
-          const srcPixel = options.src.getPixel(srcX + stepX, srcY + stepY);
-          options.dst.setPixel(dstX + x, dstY + y, srcPixel);
+          p = src.getPixel(xCache[x], yCache[y], p);
+          dst.setPixel(dstX + x, dstY + y, p);
+        }
+      }
+    }
+  }
+
+  private static imgComposite(
+    src: MemoryImage,
+    dst: MemoryImage,
+    dstX: number,
+    dstY: number,
+    dstW: number,
+    dstH: number,
+    xCache: number[],
+    yCache: number[],
+    blend: BlendMode,
+    linearBlend: boolean,
+    maskChannel: Channel,
+    mask?: MemoryImage
+  ): void {
+    let p: Pixel | undefined = undefined;
+    for (let y = 0; y < dstH; ++y) {
+      for (let x = 0; x < dstW; ++x) {
+        p = src.getPixel(xCache[x], yCache[y], p);
+        Draw.drawPixel({
+          image: dst,
+          pos: new Point(dstX + x, dstY + y),
+          color: p,
+          blend: blend,
+          linearBlend: linearBlend,
+          maskChannel: maskChannel,
+          mask: mask,
+        });
+      }
+    }
+  }
+
+  /**
+   * Draw a circle into the **image** with a center of **center** and
+   * the given **radius** and **color**.
+   */
+  public static drawCircle(opt: DrawCircleOptions): MemoryImage {
+    const antialias = opt.antialias ?? false;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+    if (antialias) {
+      return Draw.drawAntialiasCircle({
+        image: opt.image,
+        x: opt.center.x,
+        y: opt.center.y,
+        radius: opt.radius,
+        color: opt.color,
+        mask: opt.mask,
+        maskChannel: maskChannel,
+      });
+    }
+
+    const points = Draw.calculateCircumference(
+      opt.image,
+      opt.center,
+      opt.radius
+    );
+    for (const pt of points) {
+      Draw.drawPixel({
+        image: opt.image,
+        pos: new Point(pt.x, pt.y),
+        color: opt.color,
+        mask: opt.mask,
+        maskChannel: maskChannel,
+      });
+    }
+    return opt.image;
+  }
+
+  /**
+   * Draw and fill a circle into the **image** with a **center**
+   * and the given **radius** and **color**.
+   */
+  public static fillCircle(opt: FillCircleOptions): MemoryImage {
+    const antialias = opt.antialias ?? false;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+    const radiusSqr = opt.radius * opt.radius;
+    const x1 = Math.max(0, opt.center.x - opt.radius);
+    const y1 = Math.max(0, opt.center.y - opt.radius);
+    const x2 = Math.min(opt.image.width - 1, opt.center.x + opt.radius);
+    const y2 = Math.min(opt.image.height - 1, opt.center.y + opt.radius);
+    const range = opt.image.getRange(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+
+    let it: IteratorResult<Pixel> | undefined = undefined;
+    while (((it = range.next()), !it.done)) {
+      const p = it.value;
+      if (antialias) {
+        const a = ImageUtils.circleTest(p, opt.center, radiusSqr, antialias);
+        if (a > 0) {
+          const alpha = opt.color.aNormalized * a;
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(p.x, p.y),
+            color: opt.color,
+            alpha: alpha,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
+        }
+      } else {
+        const dx = p.x - opt.center.x;
+        const dy = p.y - opt.center.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < radiusSqr) {
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(p.x, p.y),
+            color: opt.color,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
         }
       }
     }
 
-    return options.dst;
+    return opt.image;
   }
 
   /**
@@ -505,73 +818,152 @@ export abstract class Draw {
    * If **antialias** is true then the line is drawn with smooth edges.
    * **thickness** determines how thick the line should be drawn, in pixels.
    */
-  public static drawLine(options: DrawLineOptions): MemoryImage {
-    const line = Line.from(options.line);
-    const isClipped = Draw.clipLine(
-      new Rectangle(0, 0, options.image.width - 1, options.image.height - 1),
-      line
-    );
-    if (!isClipped) {
-      return options.image;
-    }
+  public static drawLine(opt: DrawLineOptions): MemoryImage {
+    const line = opt.line.clone();
+    const antialias = opt.antialias ?? false;
+    const thickness = opt.thickness ?? 1;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const thickness = options.thickness ?? 1;
+    if (
+      !ImageUtils.clipLine(
+        new Rectangle(0, 0, opt.image.width - 1, opt.image.height - 1),
+        line
+      )
+    ) {
+      return opt.image;
+    }
 
     const radius = Math.floor(thickness / 2);
 
     // Drawing a single point.
     if (line.dx === 0 && line.dy === 0) {
-      thickness === 1
-        ? Draw.drawPixel(
-            options.image,
-            new Point(line.startX, line.startY),
-            options.color
-          )
-        : Draw.fillCircle(
-            options.image,
-            new Point(line.startX, line.startY),
-            radius,
-            options.color
-          );
-      return options.image;
+      opt.thickness === 1
+        ? Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(line.x1, line.y1),
+            color: opt.color,
+            maskChannel: opt.maskChannel,
+            mask: opt.mask,
+          })
+        : Draw.fillCircle({
+            image: opt.image,
+            center: new Point(line.x1, line.y1),
+            radius: radius,
+            color: opt.color,
+            maskChannel: opt.maskChannel,
+            mask: opt.mask,
+          });
+      return opt.image;
     }
 
     // Axis-aligned lines
     if (line.dx === 0) {
-      for (let y = line.startY; y <= line.endY; ++y) {
-        if (thickness <= 1) {
-          const point = new Point(line.startX, y);
-          Draw.drawPixel(options.image, point, options.color);
-        } else {
-          for (let i = 0; i < thickness; i++) {
-            const point = new Point(line.startX - radius + i, y);
-            Draw.drawPixel(options.image, point, options.color);
+      if (line.dy < 0) {
+        for (let y = line.y2; y <= line.y1; ++y) {
+          if (thickness <= 1) {
+            Draw.drawPixel({
+              image: opt.image,
+              pos: new Point(line.x1, y),
+              color: opt.color,
+              maskChannel: maskChannel,
+              mask: opt.mask,
+            });
+          } else {
+            for (let i = 0; i < thickness; i++) {
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(line.x1 - radius + i, y),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
+            }
+          }
+        }
+      } else {
+        for (let y = line.y1; y <= line.y2; ++y) {
+          if (thickness <= 1) {
+            Draw.drawPixel({
+              image: opt.image,
+              pos: new Point(line.x1, y),
+              color: opt.color,
+              maskChannel: maskChannel,
+              mask: opt.mask,
+            });
+          } else {
+            for (let i = 0; i < thickness; i++) {
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(line.x1 - radius + i, y),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
+            }
           }
         }
       }
-      return options.image;
+      return opt.image;
     } else if (line.dy === 0) {
-      for (let x = line.startX; x <= line.endX; ++x) {
-        if (thickness <= 1) {
-          const point = new Point(x, line.startY);
-          Draw.drawPixel(options.image, point, options.color);
-        } else {
-          for (let i = 0; i < thickness; i++) {
-            const point = new Point(x, line.startY - radius + i);
-            Draw.drawPixel(options.image, point, options.color);
+      if (line.dx < 0) {
+        for (let x = line.x2; x <= line.x1; ++x) {
+          if (thickness <= 1) {
+            Draw.drawPixel({
+              image: opt.image,
+              pos: new Point(x, line.y1),
+              color: opt.color,
+              maskChannel: maskChannel,
+              mask: opt.mask,
+            });
+          } else {
+            for (let i = 0; i < thickness; i++) {
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(x, line.y1 - radius + i),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
+            }
+          }
+        }
+      } else {
+        for (let x = line.x1; x <= line.x2; ++x) {
+          if (thickness <= 1) {
+            Draw.drawPixel({
+              image: opt.image,
+              pos: new Point(x, line.y1),
+              color: opt.color,
+              maskChannel: maskChannel,
+              mask: opt.mask,
+            });
+          } else {
+            for (let i = 0; i < thickness; i++) {
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(x, line.y1 - radius + i),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
+            }
           }
         }
       }
-      return options.image;
+      return opt.image;
     }
 
-    // 16-bit xor
-    const xor = (n: number) => (~n + 0x10000) & 0xffff;
+    // 16-bit unsigned int xor.
+    const xor = (n: number): number => {
+      return (~n + 0x10000) & 0xffff;
+    };
 
-    if (!options.antialias) {
-      if (line.dy <= line.dx) {
+    if (!antialias) {
+      const dx = Math.abs(line.dx);
+      const dy = Math.abs(line.dy);
+      if (dy <= dx) {
         // More-or-less horizontal. use wid for vertical stroke
-        const ac = Math.cos(Math.atan2(line.dy, line.dx));
+        const ac = Math.cos(Math.atan2(dy, dx));
         let wid = 0;
         if (ac !== 0) {
           wid = Math.trunc(thickness / ac);
@@ -583,22 +975,40 @@ export abstract class Draw {
           wid = 1;
         }
 
-        let d = 2 * line.dy - line.dx;
-        const incr1 = 2 * line.dy;
-        const incr2 = 2 * (line.dy - line.dx);
+        let d = 2 * dy - dx;
+        const incr1 = 2 * dy;
+        const incr2 = 2 * (dy - dx);
 
-        let x = line.startX;
-        let y = line.startY;
+        let x = 0;
+        let y = 0;
+        let ydirflag = 0;
+        let xend = 0;
+        if (line.x1 > line.x2) {
+          x = line.x2;
+          y = line.y2;
+          ydirflag = -1;
+          xend = line.x1;
+        } else {
+          x = line.x1;
+          y = line.y1;
+          ydirflag = 1;
+          xend = line.x2;
+        }
 
         // Set up line thickness
         let wstart = Math.trunc(y - wid / 2);
         for (let w = wstart; w < wstart + wid; w++) {
-          const point = new Point(x, w);
-          Draw.drawPixel(options.image, point, options.color);
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(x, w),
+            color: opt.color,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
         }
 
-        if (line.dy > 0) {
-          while (x < line.endX) {
+        if ((line.y2 - line.y1) * ydirflag > 0) {
+          while (x < xend) {
             x++;
             if (d < 0) {
               d += incr1;
@@ -608,12 +1018,17 @@ export abstract class Draw {
             }
             wstart = Math.trunc(y - wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
-              const point = new Point(x, w);
-              Draw.drawPixel(options.image, point, options.color);
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(x, w),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
             }
           }
         } else {
-          while (x < line.endX) {
+          while (x < xend) {
             x++;
             if (d < 0) {
               d += incr1;
@@ -623,14 +1038,19 @@ export abstract class Draw {
             }
             wstart = Math.trunc(y - wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
-              const point = new Point(x, w);
-              Draw.drawPixel(options.image, point, options.color);
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(x, w),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
             }
           }
         }
       } else {
         // More-or-less vertical. use wid for horizontal stroke
-        const as = Math.sin(Math.atan2(line.dy, line.dx));
+        const as = Math.sin(Math.atan2(dy, dx));
         let wid = 0;
         if (as !== 0) {
           wid = Math.trunc(thickness / as);
@@ -641,22 +1061,39 @@ export abstract class Draw {
           wid = 1;
         }
 
-        let d = 2 * line.dx - line.dy;
-        const incr1 = 2 * line.dx;
-        const incr2 = 2 * (line.dx - line.dy);
-
-        let x = line.startX;
-        let y = line.startY;
+        let d = 2 * dx - dy;
+        const incr1 = 2 * dx;
+        const incr2 = 2 * (dx - dy);
+        let x = 0;
+        let y = 0;
+        let yend = 0;
+        let xdirflag = 0;
+        if (line.y1 > line.y2) {
+          y = line.y2;
+          x = line.x2;
+          yend = line.y1;
+          xdirflag = -1;
+        } else {
+          y = line.y1;
+          x = line.x1;
+          yend = line.y2;
+          xdirflag = 1;
+        }
 
         // Set up line thickness
         let wstart = Math.trunc(x - wid / 2);
         for (let w = wstart; w < wstart + wid; w++) {
-          const point = new Point(w, y);
-          Draw.drawPixel(options.image, point, options.color);
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(w, y),
+            color: opt.color,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
         }
 
-        if (line.endX - line.startX > 0) {
-          while (y < line.endY) {
+        if ((line.x2 - line.x1) * xdirflag > 0) {
+          while (y < yend) {
             y++;
             if (d < 0) {
               d += incr1;
@@ -666,12 +1103,17 @@ export abstract class Draw {
             }
             wstart = Math.trunc(x - wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
-              const point = new Point(w, y);
-              Draw.drawPixel(options.image, point, options.color);
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(w, y),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
             }
           }
         } else {
-          while (y < line.endY) {
+          while (y < yend) {
             y++;
             if (d < 0) {
               d += incr1;
@@ -681,25 +1123,37 @@ export abstract class Draw {
             }
             wstart = Math.trunc(x - wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
-              const point = new Point(w, y);
-              Draw.drawPixel(options.image, point, options.color);
+              Draw.drawPixel({
+                image: opt.image,
+                pos: new Point(w, y),
+                color: opt.color,
+                maskChannel: maskChannel,
+                mask: opt.mask,
+              });
             }
           }
         }
       }
 
-      return options.image;
+      return opt.image;
     }
 
     // Antialias Line
+    if (thickness === 1) {
+      return Draw.drawLineWu({
+        image: opt.image,
+        line: new Line(line.x1, line.y1, line.x2, line.y2),
+        color: opt.color,
+      });
+    }
 
     const ag =
-      line.dy < line.dx
+      Math.abs(line.dy) < Math.abs(line.dx)
         ? Math.cos(Math.atan2(line.dy, line.dx))
         : Math.sin(Math.atan2(line.dy, line.dx));
 
     let wid = 0;
-    if (ag !== 0) {
+    if (ag !== 0.0) {
       wid = Math.trunc(Math.abs(thickness / ag));
     } else {
       wid = 1;
@@ -708,28 +1162,36 @@ export abstract class Draw {
       wid = 1;
     }
 
-    if (line.dx > line.dy) {
-      let y = line.startY;
+    if (Math.abs(line.dx) > Math.abs(line.dy)) {
+      if (line.dx < 0) {
+        line.flipX();
+        line.flipY();
+      }
+
+      let y = line.y1;
       const inc = Math.trunc((line.dy * 65536) / line.dx);
       let frac = 0;
 
-      for (let x = line.startX; x <= line.endX; x++) {
+      for (let x = line.x1; x <= line.x2; x++) {
         const wstart = y - Math.trunc(wid / 2);
         for (let w = wstart; w < wstart + wid; w++) {
-          const point = new Point(x, w);
-          Draw.drawPixel(
-            options.image,
-            point,
-            options.color,
-            (frac >> 8) & 0xff
-          );
-          point.offset(0, 1);
-          Draw.drawPixel(
-            options.image,
-            point,
-            options.color,
-            (xor(frac) >> 8) & 0xff
-          );
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(x, w),
+            color: opt.color,
+            alpha: ((frac >> 8) & 0xff) / 255,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
+
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(x, w + 1),
+            color: opt.color,
+            alpha: ((xor(frac) >> 8) & 0xff) / 255,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
         }
 
         frac += inc;
@@ -742,27 +1204,35 @@ export abstract class Draw {
         }
       }
     } else {
-      let x = line.startX;
+      if (line.dy < 0) {
+        line.flipX();
+        line.flipY();
+      }
+
+      let x = line.x1;
       const inc = Math.trunc((line.dx * 65536) / line.dy);
       let frac = 0;
 
-      for (let y = line.startY; y <= line.endY; y++) {
+      for (let y = line.y1; y <= line.y2; y++) {
         const wstart = x - Math.trunc(wid / 2);
         for (let w = wstart; w < wstart + wid; w++) {
-          const point = new Point(w, y);
-          Draw.drawPixel(
-            options.image,
-            point,
-            options.color,
-            (frac >> 8) & 0xff
-          );
-          point.offset(1, 0);
-          Draw.drawPixel(
-            options.image,
-            point,
-            options.color,
-            (xor(frac) >> 8) & 0xff
-          );
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(w, y),
+            color: opt.color,
+            alpha: ((frac >> 8) & 0xff) / 255,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
+
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(w + 1, y),
+            color: opt.color,
+            alpha: ((xor(frac) >> 8) & 0xff) / 255,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
         }
 
         frac += inc;
@@ -776,200 +1246,1023 @@ export abstract class Draw {
       }
     }
 
-    return options.image;
+    return opt.image;
   }
 
   /**
    * Draw a single pixel into the image, applying alpha and opacity blending.
+   * If **filter** is provided, the color c will be scaled by the **filter**
+   * color. If **alpha** is provided, it will be used in place of the
+   * color alpha, as a normalized color value [0, 1].
    */
-  public static drawPixel(
-    image: MemoryImage,
-    pos: Point,
-    color: number,
-    opacity = 0xff
-  ): MemoryImage {
-    if (image.boundsSafe(pos.xt, pos.yt)) {
-      const index = image.getBufferIndex(pos.xt, pos.yt);
-      const dst = image.getPixelByIndex(index);
-      image.setPixelByIndex(index, Color.alphaBlendColors(dst, color, opacity));
+  public static drawPixel(opt: DrawPixelOptions): MemoryImage {
+    const blend = opt.blend ?? BlendMode.alpha;
+    const linearBlend = opt.linearBlend ?? false;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (!opt.image.isBoundsSafe(opt.pos.x, opt.pos.y)) {
+      return opt.image;
     }
-    return image;
+
+    if (blend === BlendMode.direct || opt.image.hasPalette) {
+      if (opt.image.isBoundsSafe(opt.pos.x, opt.pos.y)) {
+        opt.image.getPixel(opt.pos.x, opt.pos.y).set(opt.color);
+        return opt.image;
+      }
+    }
+
+    const msk =
+      opt.mask
+        ?.getPixel(opt.pos.x, opt.pos.y)
+        .getChannelNormalized(maskChannel) ?? 1;
+
+    let overlayR =
+      opt.filter !== undefined
+        ? opt.color.rNormalized * opt.filter.rNormalized
+        : opt.color.rNormalized;
+    let overlayG =
+      opt.filter !== undefined
+        ? opt.color.gNormalized * opt.filter.gNormalized
+        : opt.color.gNormalized;
+    let overlayB =
+      opt.filter !== undefined
+        ? opt.color.bNormalized * opt.filter.bNormalized
+        : opt.color.bNormalized;
+
+    const overlayA =
+      (opt.alpha ?? (opt.color.length < 4 ? 1 : opt.color.aNormalized)) * msk;
+
+    if (overlayA === 0) {
+      return opt.image;
+    }
+
+    const dst = opt.image.getPixel(opt.pos.x, opt.pos.y);
+
+    const baseR = dst.rNormalized;
+    const baseG = dst.gNormalized;
+    const baseB = dst.bNormalized;
+    const baseA = dst.aNormalized;
+
+    switch (blend) {
+      case BlendMode.direct:
+        return opt.image;
+      case BlendMode.alpha:
+        break;
+      case BlendMode.lighten:
+        overlayR = Math.max(baseR, overlayR);
+        overlayG = Math.max(baseG, overlayG);
+        overlayB = Math.max(baseB, overlayB);
+        break;
+      case BlendMode.screen:
+        overlayR = 1 - (1 - overlayR) * (1 - baseR);
+        overlayG = 1 - (1 - overlayG) * (1 - baseG);
+        overlayB = 1 - (1 - overlayB) * (1 - baseB);
+        break;
+      case BlendMode.dodge:
+        {
+          const baseOverlayAlphaProduct = overlayA * baseA;
+
+          const rightHandProductR =
+            overlayR * (1 - baseA) + baseR * (1 - overlayA);
+          const rightHandProductG =
+            overlayG * (1 - baseA) + baseG * (1 - overlayA);
+          const rightHandProductB =
+            overlayB * (1 - baseA) + baseB * (1 - overlayA);
+
+          const firstBlendColorR = baseOverlayAlphaProduct + rightHandProductR;
+          const firstBlendColorG = baseOverlayAlphaProduct + rightHandProductG;
+          const firstBlendColorB = baseOverlayAlphaProduct + rightHandProductB;
+
+          const oR = MathUtils.clamp(
+            (overlayR / MathUtils.clamp(overlayA, 0.01, 1)) *
+              MathUtils.step(0, overlayA),
+            0,
+            0.99
+          );
+          const oG = MathUtils.clamp(
+            (overlayG / MathUtils.clamp(overlayA, 0.01, 1)) *
+              MathUtils.step(0, overlayA),
+            0,
+            0.99
+          );
+          const oB = MathUtils.clamp(
+            (overlayB / MathUtils.clamp(overlayA, 0.01, 1)) *
+              MathUtils.step(0, overlayA),
+            0,
+            0.99
+          );
+
+          const secondBlendColorR =
+            (baseR * overlayA) / (1 - oR) + rightHandProductR;
+          const secondBlendColorG =
+            (baseG * overlayA) / (1 - oG) + rightHandProductG;
+          const secondBlendColorB =
+            (baseB * overlayA) / (1 - oB) + rightHandProductB;
+
+          const colorChoiceR = MathUtils.step(
+            overlayR * baseA + baseR * overlayA,
+            baseOverlayAlphaProduct
+          );
+          const colorChoiceG = MathUtils.step(
+            overlayG * baseA + baseG * overlayA,
+            baseOverlayAlphaProduct
+          );
+          const colorChoiceB = MathUtils.step(
+            overlayB * baseA + baseB * overlayA,
+            baseOverlayAlphaProduct
+          );
+
+          overlayR = MathUtils.mix(
+            firstBlendColorR,
+            secondBlendColorR,
+            colorChoiceR
+          );
+          overlayG = MathUtils.mix(
+            firstBlendColorG,
+            secondBlendColorG,
+            colorChoiceG
+          );
+          overlayB = MathUtils.mix(
+            firstBlendColorB,
+            secondBlendColorB,
+            colorChoiceB
+          );
+        }
+        break;
+      case BlendMode.addition:
+        overlayR = baseR + overlayR;
+        overlayG = baseG + overlayG;
+        overlayB = baseB + overlayB;
+        break;
+      case BlendMode.darken:
+        overlayR = Math.min(baseR, overlayR);
+        overlayG = Math.min(baseG, overlayG);
+        overlayB = Math.min(baseB, overlayB);
+        break;
+      case BlendMode.multiply:
+        overlayR *= baseR;
+        overlayG *= baseG;
+        overlayB *= baseB;
+        break;
+      case BlendMode.burn:
+        overlayR = overlayR !== 0 ? 1 - (1 - baseR) / overlayR : 0;
+        overlayG = overlayG !== 0 ? 1 - (1 - baseG) / overlayG : 0;
+        overlayB = overlayB !== 0 ? 1 - (1 - baseB) / overlayB : 0;
+        break;
+      case BlendMode.overlay:
+        if (2 * baseR < baseA) {
+          overlayR =
+            2 * overlayR * baseR +
+            overlayR * (1 - baseA) +
+            baseR * (1 - overlayA);
+        } else {
+          overlayR =
+            overlayA * baseA -
+            2 * (baseA - baseR) * (overlayA - overlayR) +
+            overlayR * (1 - baseA) +
+            baseR * (1 - overlayA);
+        }
+
+        if (2 * baseG < baseA) {
+          overlayG =
+            2 * overlayG * baseG +
+            overlayG * (1 - baseA) +
+            baseG * (1 - overlayA);
+        } else {
+          overlayG =
+            overlayA * baseA -
+            2 * (baseA - baseG) * (overlayA - overlayG) +
+            overlayG * (1 - baseA) +
+            baseG * (1 - overlayA);
+        }
+
+        if (2 * baseB < baseA) {
+          overlayB =
+            2 * overlayB * baseB +
+            overlayB * (1 - baseA) +
+            baseB * (1 - overlayA);
+        } else {
+          overlayB =
+            overlayA * baseA -
+            2 * (baseA - baseB) * (overlayA - overlayB) +
+            overlayB * (1 - baseA) +
+            baseB * (1 - overlayA);
+        }
+        break;
+      case BlendMode.softLight:
+        overlayR =
+          baseA === 0
+            ? 0
+            : baseR *
+                (overlayA * (baseR / baseA) +
+                  2 * overlayR * (1 - baseR / baseA)) +
+              overlayR * (1 - baseA) +
+              baseR * (1 - overlayA);
+
+        overlayG =
+          baseA === 0
+            ? 0
+            : baseG *
+                (overlayA * (baseG / baseA) +
+                  2 * overlayG * (1 - baseG / baseA)) +
+              overlayG * (1 - baseA) +
+              baseG * (1 - overlayA);
+
+        overlayB =
+          baseA === 0
+            ? 0
+            : baseB *
+                (overlayA * (baseB / baseA) +
+                  2 * overlayB * (1 - baseB / baseA)) +
+              overlayB * (1 - baseA) +
+              baseB * (1 - overlayA);
+        break;
+      case BlendMode.hardLight:
+        if (2 * overlayR < overlayA) {
+          overlayR =
+            2 * overlayR * baseR +
+            overlayR * (1 - baseA) +
+            baseR * (1 - overlayA);
+        } else {
+          overlayR =
+            overlayA * baseA -
+            2 * (baseA - baseR) * (overlayA - overlayR) +
+            overlayR * (1 - baseA) +
+            baseR * (1 - overlayA);
+        }
+
+        if (2 * overlayG < overlayA) {
+          overlayG =
+            2 * overlayG * baseG +
+            overlayG * (1 - baseA) +
+            baseG * (1 - overlayA);
+        } else {
+          overlayG =
+            overlayA * baseA -
+            2 * (baseA - baseG) * (overlayA - overlayG) +
+            overlayG * (1 - baseA) +
+            baseG * (1 - overlayA);
+        }
+
+        if (2 * overlayB < overlayA) {
+          overlayB =
+            2 * overlayB * baseB +
+            overlayB * (1 - baseA) +
+            baseB * (1 - overlayA);
+        } else {
+          overlayB =
+            overlayA * baseA -
+            2 * (baseA - baseB) * (overlayA - overlayB) +
+            overlayB * (1 - baseA) +
+            baseB * (1 - overlayA);
+        }
+        break;
+      case BlendMode.difference:
+        overlayR = Math.abs(overlayR - baseR);
+        overlayG = Math.abs(overlayG - baseG);
+        overlayB = Math.abs(overlayB - baseB);
+        break;
+      case BlendMode.subtract:
+        overlayR = baseR - overlayR;
+        overlayG = baseG - overlayG;
+        overlayB = baseB - overlayB;
+        break;
+      case BlendMode.divide:
+        overlayR = overlayR !== 0 ? baseR / overlayR : 0;
+        overlayG = overlayG !== 0 ? baseG / overlayG : 0;
+        overlayB = overlayB !== 0 ? baseB / overlayB : 0;
+        break;
+    }
+
+    const invA = 1 - overlayA;
+
+    if (linearBlend) {
+      const lbr = Math.pow(baseR, 2.2);
+      const lbg = Math.pow(baseG, 2.2);
+      const lbb = Math.pow(baseB, 2.2);
+      const lor = Math.pow(overlayR, 2.2);
+      const log = Math.pow(overlayG, 2.2);
+      const lob = Math.pow(overlayB, 2.2);
+      const r = Math.pow(lor * overlayA + lbr * baseA * invA, 1 / 2.2);
+      const g = Math.pow(log * overlayA + lbg * baseA * invA, 1 / 2.2);
+      const b = Math.pow(lob * overlayA + lbb * baseA * invA, 1 / 2.2);
+      const a = overlayA + baseA * invA;
+      dst.rNormalized = r;
+      dst.gNormalized = g;
+      dst.bNormalized = b;
+      dst.aNormalized = a;
+    } else {
+      const r = overlayR * overlayA + baseR * baseA * invA;
+      const g = overlayG * overlayA + baseG * baseA * invA;
+      const b = overlayB * overlayA + baseB * baseA * invA;
+      const a = overlayA + baseA * invA;
+      dst.rNormalized = r;
+      dst.gNormalized = g;
+      dst.bNormalized = b;
+      dst.aNormalized = a;
+    }
+
+    return opt.image;
   }
 
   /**
-   * Draw a rectangle in the image **dst** with the **color**.
+   * Fill a polygon defined by the given **vertices**.
    */
-  public static drawRect(
-    dst: MemoryImage,
-    rect: Rectangle,
-    color: number
-  ): MemoryImage {
+  public static drawPolygon(opt: DrawPolygonOptions): MemoryImage {
+    const antialias = opt.antialias ?? false;
+    const thickness = opt.thickness ?? 1;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.color.a === 0) {
+      return opt.image;
+    }
+
+    const vertices = opt.vertices;
+    const numVertices = vertices.length;
+
+    if (numVertices === 0) {
+      return opt.image;
+    }
+
+    if (numVertices === 1) {
+      return Draw.drawPixel({
+        image: opt.image,
+        pos: vertices[0],
+        color: opt.color,
+        maskChannel: maskChannel,
+        mask: opt.mask,
+      });
+    }
+
+    if (numVertices === 2) {
+      return Draw.drawLine({
+        image: opt.image,
+        line: new Line(
+          vertices[0].x,
+          vertices[0].y,
+          vertices[1].x,
+          vertices[1].y
+        ),
+        color: opt.color,
+        antialias: antialias,
+        thickness: thickness,
+        maskChannel: maskChannel,
+        mask: opt.mask,
+      });
+    }
+
+    for (let i = 0; i < numVertices - 1; ++i) {
+      Draw.drawLine({
+        image: opt.image,
+        line: new Line(
+          vertices[i].x,
+          vertices[i].y,
+          vertices[i + 1].x,
+          vertices[i + 1].y
+        ),
+        color: opt.color,
+        antialias: antialias,
+        thickness: thickness,
+        maskChannel: maskChannel,
+        mask: opt.mask,
+      });
+    }
+
     Draw.drawLine({
-      image: dst,
-      line: new Line(rect.left, rect.top, rect.right, rect.top),
-      color: color,
+      image: opt.image,
+      line: new Line(
+        vertices[numVertices - 1].x,
+        vertices[numVertices - 1].y,
+        vertices[0].x,
+        vertices[0].y
+      ),
+      color: opt.color,
+      antialias: antialias,
+      thickness: thickness,
+      maskChannel: maskChannel,
+      mask: opt.mask,
     });
-    Draw.drawLine({
-      image: dst,
-      line: new Line(rect.right, rect.top, rect.right, rect.bottom),
-      color: color,
-    });
-    Draw.drawLine({
-      image: dst,
-      line: new Line(rect.right, rect.bottom, rect.left, rect.bottom),
-      color: color,
-    });
-    Draw.drawLine({
-      image: dst,
-      line: new Line(rect.left, rect.bottom, rect.left, rect.top),
-      color: color,
-    });
-    return dst;
+
+    return opt.image;
   }
 
   /**
-   * Fill the 4-connected shape containing **x**,**y** in the image **src** with the
+   * Draw a rectangle in the **image** with the **color**.
+   */
+  public static drawRect(opt: DrawRectOptions): MemoryImage {
+    const rect = opt.rect;
+    const thickness = opt.thickness ?? 1;
+    const radius = opt.radius ?? 0;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    const x0 = rect.left;
+    const y0 = rect.top;
+    const x1 = rect.right;
+    const y1 = rect.bottom;
+
+    // Draw a rounded rectangle
+    if (radius > 0) {
+      const rad = Math.round(radius);
+      Draw.drawLine({
+        image: opt.image,
+        line: new Line(x0 + rad, y0, x1 - rad, y0),
+        color: opt.color,
+      });
+      Draw.drawLine({
+        image: opt.image,
+        line: new Line(x1, y0 + rad, x1, y1 - rad),
+        color: opt.color,
+      });
+      Draw.drawLine({
+        image: opt.image,
+        line: new Line(x0 + rad, y1, x1 - rad, y1),
+        color: opt.color,
+      });
+      Draw.drawLine({
+        image: opt.image,
+        line: new Line(x0, y0 + rad, x0, y1 - rad),
+        color: opt.color,
+      });
+
+      const c1x = x0 + rad;
+      const c1y = y0 + rad;
+      const c2x = x1 - rad;
+      const c2y = y0 + rad;
+      const c3x = x1 - rad;
+      const c3y = y1 - rad;
+      const c4x = x0 + rad;
+      const c4y = y1 - rad;
+
+      Draw.drawAntialiasCircle({
+        image: opt.image,
+        x: c1x,
+        y: c1y,
+        radius: rad,
+        color: opt.color,
+        maskChannel: maskChannel,
+        quadrants: CircleQuadrant.topLeft,
+        mask: opt.mask,
+      });
+
+      Draw.drawAntialiasCircle({
+        image: opt.image,
+        x: c2x,
+        y: c2y,
+        radius: rad,
+        color: opt.color,
+        maskChannel: maskChannel,
+        quadrants: CircleQuadrant.topRight,
+        mask: opt.mask,
+      });
+
+      Draw.drawAntialiasCircle({
+        image: opt.image,
+        x: c3x,
+        y: c3y,
+        radius: rad,
+        color: opt.color,
+        maskChannel: maskChannel,
+        quadrants: CircleQuadrant.bottomRight,
+        mask: opt.mask,
+      });
+
+      Draw.drawAntialiasCircle({
+        image: opt.image,
+        x: c4x,
+        y: c4y,
+        radius: rad,
+        color: opt.color,
+        maskChannel: maskChannel,
+        quadrants: CircleQuadrant.bottomLeft,
+        mask: opt.mask,
+      });
+
+      return opt.image;
+    }
+
+    const ht = thickness / 2;
+
+    Draw.drawLine({
+      image: opt.image,
+      line: new Line(x0, y0, x1, y0),
+      color: opt.color,
+      thickness: thickness,
+      maskChannel: maskChannel,
+      mask: opt.mask,
+    });
+
+    Draw.drawLine({
+      image: opt.image,
+      line: new Line(x0, y1, x1, y1),
+      color: opt.color,
+      thickness: thickness,
+      maskChannel: maskChannel,
+      mask: opt.mask,
+    });
+
+    const isEvenThickness = ht - Math.trunc(ht) === 0;
+    const dh = isEvenThickness ? 1 : 0;
+
+    const by0 = Math.ceil(y0 + ht);
+    const by1 = Math.floor(y1 - ht - dh);
+    const bx0 = Math.floor(x0 + ht);
+    const bx1 = Math.ceil(x1 - ht + dh);
+
+    Draw.drawLine({
+      image: opt.image,
+      line: new Line(bx0, by0, bx0, by1),
+      color: opt.color,
+      thickness: thickness,
+      maskChannel: maskChannel,
+      mask: opt.mask,
+    });
+
+    Draw.drawLine({
+      image: opt.image,
+      line: new Line(bx1, by0, bx1, by1),
+      color: opt.color,
+      thickness: thickness,
+      maskChannel: maskChannel,
+      mask: opt.mask,
+    });
+
+    return opt.image;
+  }
+
+  /**
+   * Fill the 4-connected shape containing **start** in the **image** with the
    * given **color**.
    */
-  public static fillFlood(options: FillFloodOptions): MemoryImage {
-    const threshold = options.threshold ?? 0;
-    const compareAlpha = options.compareAlpha ?? false;
+  public static fillFlood(opt: FillFloodOptions): MemoryImage {
+    const threshold = opt.threshold ?? 0;
+    const compareAlpha = opt.compareAlpha ?? false;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const visited = new Uint8Array(options.src.width * options.src.height);
+    if (opt.color.a === 0) {
+      return opt.image;
+    }
 
-    let srcColor = options.src.getPixel(options.x, options.y);
+    const visited = new Uint8Array(opt.image.width * opt.image.height);
+
+    const srcColor = opt.image.getPixel(opt.start.x, opt.start.y);
     if (!compareAlpha) {
-      srcColor = Color.setAlpha(srcColor, 0);
+      opt.color.a = 0;
     }
 
     let array: FillFloodTestPixel | undefined = undefined;
     if (threshold > 0) {
-      const lab = Color.rgbToLab(
-        Color.getRed(srcColor),
-        Color.getGreen(srcColor),
-        Color.getBlue(srcColor)
-      );
+      const lab = ColorUtils.rgbToLab(srcColor.r, srcColor.g, srcColor.b);
       if (compareAlpha) {
-        lab.push(Color.getAlpha(srcColor));
+        lab.push(srcColor.a);
       }
-      array = (y: number, x: number) =>
-        visited[y * options.src.width + x] === 0 &&
-        Draw.testPixelLabColorDistance(options.src, x, y, lab, threshold);
+
+      array = (y: number, x: number) => {
+        return (
+          visited[y * opt.image.width + x] === 0 &&
+          Draw.testPixelLabColorDistance(opt.image, x, y, lab, threshold)
+        );
+      };
     } else if (!compareAlpha) {
-      array = (y: number, x: number) =>
-        visited[y * options.src.width + x] === 0 &&
-        Color.setAlpha(options.src.getPixel(x, y), 0) !== srcColor;
+      array = (y: number, x: number) => {
+        return (
+          visited[y * opt.image.width + x] === 0 &&
+          Draw.setAlpha(opt.image.getPixel(x, y), 0) !== srcColor
+        );
+      };
     } else {
-      array = (y: number, x: number) =>
-        visited[y * options.src.width + x] === 0 &&
-        options.src.getPixel(x, y) !== srcColor;
+      array = (y: number, x: number) => {
+        return (
+          visited[y * opt.image.width + x] === 0 &&
+          opt.image.getPixel(x, y) !== srcColor
+        );
+      };
     }
 
-    const mark = (y: number, x: number) => {
-      options.src.setPixel(x, y, options.color);
-      visited[y * options.src.width + x] = 1;
+    let p: Pixel | undefined = undefined;
+
+    const mark = (y: number, x: number): void => {
+      if (opt.mask !== undefined) {
+        const m = opt.mask.getPixel(x, y).getChannelNormalized(maskChannel);
+        if (m > 0) {
+          p = opt.image.getPixel(x, y, p);
+          p.r = MathUtils.mix(p!.r, opt.color.r, m);
+          p.g = MathUtils.mix(p!.g, opt.color.g, m);
+          p.b = MathUtils.mix(p!.b, opt.color.b, m);
+          p.a = MathUtils.mix(p!.a, opt.color.a, m);
+        }
+      } else {
+        opt.image.setPixel(x, y, opt.color);
+      }
+      visited[y * opt.image.width + x] = 1;
     };
 
-    Draw.fill4(options.src, options.x, options.y, array, mark, visited);
-    return options.src;
+    Draw.fill4(opt.image, opt.start.x, opt.start.y, array, mark, visited);
+
+    return opt.image;
   }
 
   /**
-   * Create a mask describing the 4-connected shape containing **x**,**y** in the
-   * image **src**.
+   * Fill a polygon defined by the given **vertices**.
    */
-  public static maskFlood(options: MaskFloodOptions): Uint8Array {
-    const threshold = options.threshold ?? 0;
-    const compareAlpha = options.compareAlpha ?? false;
-    const fillValue = options.fillValue ?? 255;
+  public static fillPolygon(opt: FillPolygonOptions): MemoryImage {
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const visited = new Uint8Array(options.src.width * options.src.height);
-
-    let srcColor = options.src.getPixel(options.x, options.y);
-    if (!compareAlpha) {
-      srcColor = Color.setAlpha(srcColor, 0);
+    if (opt.color.a === 0) {
+      return opt.image;
     }
 
-    const ret = new Uint8Array(options.src.width * options.src.height);
+    const numVertices = opt.vertices.length;
 
-    let array: FillFloodTestPixel | undefined = undefined;
-    if (threshold > 0) {
-      const lab = Color.rgbToLab(
-        Color.getRed(srcColor),
-        Color.getGreen(srcColor),
-        Color.getBlue(srcColor)
-      );
-      if (compareAlpha) {
-        lab.push(Color.getAlpha(srcColor));
-      }
-      array = (y: number, x: number) =>
-        visited[y * options.src.width + x] === 0 &&
-        (ret[y * options.src.width + x] !== 0 ||
-          Draw.testPixelLabColorDistance(options.src, x, y, lab, threshold));
-    } else if (!compareAlpha) {
-      array = (y: number, x: number) =>
-        visited[y * options.src.width + x] === 0 &&
-        (ret[y * options.src.width + x] !== 0 ||
-          Color.setAlpha(options.src.getPixel(x, y), 0) !== srcColor);
-    } else {
-      array = (y: number, x: number) =>
-        visited[y * options.src.width + x] === 0 &&
-        (ret[y * options.src.width + x] !== 0 ||
-          options.src.getPixel(x, y) !== srcColor);
+    if (numVertices === 0) {
+      return opt.image;
     }
 
-    const mark = (y: number, x: number) => {
-      ret[y * options.src.width + x] = fillValue;
-      visited[y * options.src.width + x] = 1;
-    };
+    if (numVertices === 1) {
+      return Draw.drawPixel({
+        image: opt.image,
+        pos: opt.vertices[0],
+        color: opt.color,
+        maskChannel: maskChannel,
+        mask: opt.mask,
+      });
+    }
 
-    Draw.fill4(options.src, options.x, options.y, array, mark, visited);
-    return ret;
-  }
+    if (numVertices === 2) {
+      return Draw.drawLine({
+        image: opt.image,
+        line: new Line(
+          opt.vertices[0].x,
+          opt.vertices[0].y,
+          opt.vertices[1].x,
+          opt.vertices[1].y
+        ),
+        color: opt.color,
+        mask: opt.mask,
+        maskChannel: maskChannel,
+      });
+    }
 
-  /**
-   * Fill a rectangle in the image **src** with the given **color** with the
-   * coordinates defined by **rect**.
-   */
-  public static fillRect(
-    src: MemoryImage,
-    rect: Rectangle,
-    color: number
-  ): MemoryImage {
-    const _x0 = MathOperators.clamp(rect.left, 0, src.width - 1);
-    const _y0 = MathOperators.clamp(rect.top, 0, src.height - 1);
-    const _x1 = MathOperators.clamp(rect.right, 0, src.width - 1);
-    const _y1 = MathOperators.clamp(rect.bottom, 0, src.height - 1);
-
-    // If no blending is necessary, use a faster fill method.
-    if (Color.getAlpha(color) === 255) {
-      const w = src.width;
-      let start = _y0 * w + _x0;
-      let end = start + (_x1 - _x0) + 1;
-      for (let sy = _y0; sy <= _y1; ++sy) {
-        src.data.fill(color, start, end);
-        start += w;
-        end += w;
+    let xMin = 0;
+    let yMin = 0;
+    let xMax = 0;
+    let yMax = 0;
+    let first = true;
+    for (const vertex of opt.vertices) {
+      if (first) {
+        xMin = vertex.x;
+        yMin = vertex.y;
+        xMax = vertex.x;
+        yMax = vertex.y;
+        first = false;
+      } else {
+        xMin = Math.min(xMin, vertex.x);
+        yMin = Math.min(yMin, vertex.y);
+        xMax = Math.max(xMax, vertex.x);
+        yMax = Math.max(yMax, vertex.y);
       }
-    } else {
-      for (let sy = _y0; sy <= _y1; ++sy) {
-        let pi = sy * src.width + _x0;
-        for (let sx = _x0; sx <= _x1; ++sx, ++pi) {
-          src.setPixelByIndex(
-            pi,
-            Color.alphaBlendColors(src.getPixelByIndex(pi), color)
-          );
+    }
+
+    xMin = Math.max(xMin, 0);
+    yMin = Math.max(yMin, 0);
+    xMax = Math.min(xMax, opt.image.width - 1);
+    yMax = Math.min(yMax, opt.image.height - 1);
+
+    const inter = ArrayUtils.fill<number>(40, 0);
+    const vi = ArrayUtils.generate<number>(numVertices + 1, (i) =>
+      i < numVertices ? i : 0
+    );
+
+    for (let yi = yMin, y = yMin + 0.5; yi <= yMax; ++yi, ++y) {
+      let c = 0;
+      for (let i = 0; i < numVertices; ++i) {
+        const v1 = opt.vertices[vi[i]];
+        const v2 = opt.vertices[vi[i + 1]];
+
+        let x1 = v1.x;
+        let y1 = v1.y;
+        let x2 = v2.x;
+        let y2 = v2.y;
+        if (y2 < y1) {
+          let temp = x1;
+          x1 = x2;
+          x2 = temp;
+          temp = y1;
+          y1 = y2;
+          y2 = temp;
+        }
+
+        if (y <= y2 && y >= y1) {
+          let x = 0;
+          if (y1 - y2 === 0) {
+            x = x1;
+          } else {
+            x = ((x2 - x1) * (y - y1)) / (y2 - y1);
+            x += x1;
+          }
+          if (x <= xMax && x >= xMin) {
+            inter[c++] = x;
+          }
+        }
+      }
+
+      for (let i = 0; i < c; i += 2) {
+        let x1f = inter[i];
+        let x2f = inter[i + 1];
+        if (x1f > x2f) {
+          const t = x1f;
+          x1f = x2f;
+          x2f = t;
+        }
+        const x1 = Math.floor(x1f);
+        const x2 = Math.ceil(x2f);
+        for (let x = x1; x <= x2; ++x) {
+          Draw.drawPixel({
+            image: opt.image,
+            pos: new Point(x, yi),
+            color: opt.color,
+            maskChannel: maskChannel,
+            mask: opt.mask,
+          });
         }
       }
     }
 
-    return src;
+    return opt.image;
+  }
+
+  /**
+   * Fill a rectangle **rect** in the **image** with the given **color**.
+   */
+  public static fillRect(opt: FillRectOptions): MemoryImage {
+    const radius = opt.radius ?? 0;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.color.a === 0) {
+      return opt.image;
+    }
+
+    const xx0 = MathUtils.clamp(opt.rect.left, 0, opt.image.width - 1);
+    const yy0 = MathUtils.clamp(opt.rect.top, 0, opt.image.height - 1);
+    const xx1 = MathUtils.clamp(opt.rect.right, 0, opt.image.width - 1);
+    const yy1 = MathUtils.clamp(opt.rect.bottom, 0, opt.image.height - 1);
+    const ww = xx1 - xx0 + 1;
+    const hh = yy1 - yy0 + 1;
+
+    // Fill a rounded rect
+    if (radius > 0) {
+      const rad = Math.round(radius);
+      const rad2 = rad * rad;
+      const c1x = xx0 + rad;
+      const c1y = yy0 + rad;
+      const c2x = xx1 - rad + 1;
+      const c2y = yy0 + rad;
+      const c3x = xx1 - rad + 1;
+      const c3y = yy1 - rad + 1;
+      const c4x = xx0 + rad;
+      const c4y = yy1 - rad + 1;
+
+      const range = opt.image.getRange(xx0, yy0, ww, hh);
+      let it: IteratorResult<Pixel> | undefined = undefined;
+      while (((it = range.next()), !it.done)) {
+        const p = it.value;
+        const px = p.x;
+        const py = p.y;
+
+        let a = 1;
+        if (px < c1x && py < c1y) {
+          a = ImageUtils.circleTest(p, new Point(c1x, c1y), rad2);
+          if (a === 0) {
+            continue;
+          }
+        } else if (px > c2x && py < c2y) {
+          a = ImageUtils.circleTest(p, new Point(c2x, c2y), rad2);
+          if (a === 0) {
+            continue;
+          }
+        } else if (px > c3x && py > c3y) {
+          a = ImageUtils.circleTest(p, new Point(c3x, c3y), rad2);
+          if (a === 0) {
+            continue;
+          }
+        } else if (px < c4x && py > c4y) {
+          a = ImageUtils.circleTest(p, new Point(c4x, c4y), rad2);
+          if (a === 0) {
+            continue;
+          }
+        }
+
+        a *= opt.color.aNormalized;
+
+        const m =
+          opt.mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel) ?? 1;
+        p.r = MathUtils.mix(p.r, opt.color.r, a * m);
+        p.g = MathUtils.mix(p.g, opt.color.g, a * m);
+        p.b = MathUtils.mix(p.b, opt.color.b, a * m);
+        p.a *= 1 - opt.color.a * m;
+      }
+
+      return opt.image;
+    }
+
+    // If no blending is necessary, use a faster fill method.
+    if (opt.color.a === opt.color.maxChannelValue && opt.mask === undefined) {
+      const range = opt.image.getRange(xx0, yy0, ww, hh);
+      let it: IteratorResult<Pixel> | undefined = undefined;
+      while (((it = range.next()), !it.done)) {
+        it.value.set(opt.color);
+      }
+    } else {
+      const a = opt.color.a / opt.color.maxChannelValue;
+      const range = opt.image.getRange(xx0, yy0, ww, hh);
+      let it: IteratorResult<Pixel> | undefined = undefined;
+      while (((it = range.next()), !it.done)) {
+        const p = it.value;
+        const m =
+          opt.mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel) ?? 1;
+        p.r = MathUtils.mix(p.r, opt.color.r, a * m);
+        p.g = MathUtils.mix(p.g, opt.color.g, a * m);
+        p.b = MathUtils.mix(p.b, opt.color.b, a * m);
+        p.a *= 1 - opt.color.a * m;
+      }
+    }
+
+    return opt.image;
   }
 
   /**
    * Set all of the pixels of an **image** to the given **color**.
    */
-  public static fill(image: MemoryImage, color: number): MemoryImage {
-    return image.fill(color);
+  public static fill(opt: FillOptions): MemoryImage {
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.mask === undefined) {
+      opt.image.clear(opt.color);
+      return opt.image;
+    }
+
+    for (const p of opt.image) {
+      const maskValue = opt.mask
+        .getPixel(p.x, p.y)
+        .getChannelNormalized(maskChannel);
+      p.r = MathUtils.mix(p.r, opt.color.r, maskValue);
+      p.g = MathUtils.mix(p.g, opt.color.g, maskValue);
+      p.b = MathUtils.mix(p.b, opt.color.b, maskValue);
+      p.a = MathUtils.mix(p.a, opt.color.a, maskValue);
+    }
+
+    return opt.image;
+  }
+
+  /**
+   * Create a mask describing the 4-connected shape containing **start** in the
+   * **image**.
+   */
+  public static maskFlood(opt: MaskFloodOptions): Uint8Array {
+    const threshold = opt.threshold ?? 0;
+    const compareAlpha = opt.compareAlpha ?? false;
+    const fillValue = opt.fillValue ?? 255;
+
+    const visited = new Uint8Array(opt.image.width * opt.image.height);
+
+    let srcColor: Color = opt.image.getPixel(opt.start.x, opt.start.y);
+    if (!compareAlpha) {
+      srcColor = Draw.setAlpha(srcColor, 0);
+    }
+
+    const ret = new Uint8Array(opt.image.width * opt.image.height);
+
+    let array: FillFloodTestPixel | undefined = undefined;
+    if (threshold > 0) {
+      const lab = ColorUtils.rgbToLab(srcColor.r, srcColor.g, srcColor.b);
+      if (compareAlpha) {
+        lab.push(srcColor.a);
+      }
+      array = (y: number, x: number) => {
+        return (
+          visited[y * opt.image.width + x] === 0 &&
+          (ret[y * opt.image.width + x] !== 0 ||
+            Draw.testPixelLabColorDistance(opt.image, x, y, lab, threshold))
+        );
+      };
+    } else if (!compareAlpha) {
+      array = (y: number, x: number) => {
+        return (
+          visited[y * opt.image.width + x] === 0 &&
+          (ret[y * opt.image.width + x] !== 0 ||
+            Draw.setAlpha(opt.image.getPixel(x, y), 0) !== srcColor)
+        );
+      };
+    } else {
+      array = (y: number, x: number) => {
+        return (
+          visited[y * opt.image.width + x] === 0 &&
+          (ret[y * opt.image.width + x] !== 0 ||
+            opt.image.getPixel(x, y) !== srcColor)
+        );
+      };
+    }
+
+    const mark = (y: number, x: number): void => {
+      ret[y * opt.image.width + x] = fillValue;
+      visited[y * opt.image.width + x] = 1;
+    };
+
+    Draw.fill4(opt.image, opt.start.x, opt.start.y, array, mark, visited);
+    return ret;
+  }
+
+  /**
+   * Composite the image **src** onto the image **dst**.
+   *
+   * In other words, compositeImage will take an rectangular area from src of
+   * width **srcW** and height **srcH** at position (**srcX**,**srcY**) and place it
+   * in a rectangular area of **dst** of width **dstW** and height **dstH** at
+   * position (**dstX**,**dstY**).
+   *
+   * If the source and destination coordinates and width and heights differ,
+   * appropriate stretching or shrinking of the image fragment will be performed.
+   * The coordinates refer to the upper left corner. This function can be used to
+   * copy regions within the same image (if **dst** is the same as **src**)
+   * but if the regions overlap the results will be unpredictable.
+   *
+   * if **center** is true, the **src** will be centered in **dst**.
+   */
+  public static compositeImage(opt: CompositeImageOptions): MemoryImage {
+    let dstX = opt.dstX ?? 0;
+    let dstY = opt.dstY ?? 0;
+    const srcX = opt.srcX ?? 0;
+    const srcY = opt.srcY ?? 0;
+    const srcW = opt.srcW ?? opt.src.width;
+    const srcH = opt.srcH ?? opt.src.height;
+    const dstW =
+      opt.dstW ??
+      (opt.dst.width < opt.src.width ? opt.dst.width : opt.src.width);
+    const dstH =
+      opt.dstH ??
+      (opt.dst.height < opt.src.height ? opt.dst.height : opt.src.height);
+    const blend = opt.blend ?? BlendMode.alpha;
+    const linearBlend = opt.linearBlend ?? false;
+    const center = opt.center ?? false;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (center) {
+      // if [src] is wider than [dst]
+      let wdt = opt.dst.width - opt.src.width;
+      if (wdt < 0) wdt = 0;
+      dstX = Math.trunc(wdt / 2);
+      // if [src] is higher than [dst]
+      let height = opt.dst.height - opt.src.height;
+      if (height < 0) height = 0;
+      dstY = Math.trunc(height / 2);
+    }
+
+    if (opt.dst.hasPalette) {
+      opt.dst.convert({
+        numChannels: opt.dst.numChannels,
+      });
+    }
+
+    const dy = srcH / dstH;
+    const dx = srcW / dstW;
+    const yCache = Array.from(
+      { length: dstH },
+      (_, y) => srcY + Math.trunc(y * dy)
+    );
+    const xCache = Array.from(
+      { length: dstW },
+      (_, x) => srcX + Math.trunc(x * dx)
+    );
+
+    if (blend === BlendMode.direct) {
+      Draw.imgDirectComposite(
+        opt.src,
+        opt.dst,
+        dstX,
+        dstY,
+        dstW,
+        dstH,
+        xCache,
+        yCache,
+        maskChannel,
+        opt.mask
+      );
+    } else {
+      Draw.imgComposite(
+        opt.src,
+        opt.dst,
+        dstX,
+        dstY,
+        dstW,
+        dstH,
+        xCache,
+        yCache,
+        blend,
+        linearBlend,
+        maskChannel,
+        opt.mask
+      );
+    }
+
+    return opt.dst;
   }
 }

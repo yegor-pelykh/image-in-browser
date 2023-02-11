@@ -1,5 +1,6 @@
 /** @format */
 
+import { ArrayUtils } from '../../common/array-utils';
 import { JpegComponent } from './jpeg-component';
 
 export class JpegFrame {
@@ -76,21 +77,6 @@ export class JpegFrame {
     this._samplesPerLine = samplesPerLine;
   }
 
-  private static getEmptyBlocks(
-    blocksPerLineForMcu: number,
-    blocksPerColumnForMcu: number
-  ) {
-    const blocks = new Array<Array<Int32Array>>();
-    for (let ic = 0; ic < blocksPerColumnForMcu; ic++) {
-      const line = new Array<Int32Array>(blocksPerLineForMcu);
-      for (let ir = 0; ir < blocksPerLineForMcu; ir++) {
-        line[ir] = new Int32Array(64);
-      }
-      blocks[ic] = line;
-    }
-    return blocks;
-  }
-
   public prepare(): void {
     for (const [_, component] of this._components) {
       this._maxHSamples = Math.max(this._maxHSamples, component.hSamples);
@@ -110,10 +96,16 @@ export class JpegFrame {
       );
       const blocksPerLineForMcu = this._mcusPerLine * component.hSamples;
       const blocksPerColumnForMcu = this._mcusPerColumn * component.vSamples;
-      const blocks = JpegFrame.getEmptyBlocks(
-        blocksPerLineForMcu,
-        blocksPerColumnForMcu
+
+      const blocks = ArrayUtils.generate<Int32Array[]>(
+        blocksPerColumnForMcu,
+        (_) =>
+          ArrayUtils.generate<Int32Array>(
+            blocksPerLineForMcu,
+            (_) => new Int32Array(64)
+          )
       );
+
       component.setBlocks(blocks, blocksPerLine, blocksPerColumn);
     }
   }

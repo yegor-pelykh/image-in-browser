@@ -8,7 +8,7 @@ export class IcoBmpInfo extends BmpInfo {
   }
 
   public get ignoreAlphaChannel(): boolean {
-    return this.headerSize === 40 && this.bpp === 32
+    return this.headerSize === 40 && this.bitsPerPixel === 32
       ? false
       : super.ignoreAlphaChannel;
   }

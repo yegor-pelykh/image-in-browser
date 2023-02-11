@@ -1,0 +1,28 @@
+/** @format */
+
+export enum TiffCompression {
+  none = 1,
+  ccittRle = 2,
+  ccittFax3 = 3,
+  ccittFax4 = 4,
+  lzw = 5,
+  oldJpeg = 6,
+  jpeg = 7,
+  next = 32766,
+  ccittRlew = 32771,
+  packBits = 32773,
+  thunderScan = 32809,
+  it8ctpad = 32895,
+  tt8lw = 32896,
+  it8mp = 32897,
+  it8bl = 32898,
+  pixarFilm = 32908,
+  pixarLog = 32909,
+  deflate = 32946,
+  zip = 8,
+  dcs = 32947,
+  jbig = 34661,
+  sgiLog = 34676,
+  sgiLog24 = 34677,
+  jp2000 = 34712,
+}

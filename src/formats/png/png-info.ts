@@ -1,6 +1,8 @@
 /** @format */
 
+import { Color } from '../../color/color';
 import { DecodeInfo } from '../decode-info';
+import { PngColorType } from './png-color-type';
 import { PngFrame } from './png-frame';
 
 export interface PngInfoInitOptions {
@@ -15,11 +17,11 @@ export interface PngInfoInitOptions {
 
 export class PngInfo implements DecodeInfo {
   private _width = 0;
-  public set width(v: number) {
-    this._width = v;
-  }
   public get width(): number {
     return this._width;
+  }
+  public set width(v: number) {
+    this._width = v;
   }
 
   private _height = 0;
@@ -30,101 +32,108 @@ export class PngInfo implements DecodeInfo {
     return this._height;
   }
 
-  private _backgroundColor = 0x00ffffff;
-  public set backgroundColor(v: number) {
-    this._backgroundColor = v;
-  }
-  public get backgroundColor(): number {
+  private _backgroundColor: Color | undefined = undefined;
+  public get backgroundColor(): Color | undefined {
     return this._backgroundColor;
+  }
+  public set backgroundColor(v: Color | undefined) {
+    this._backgroundColor = v;
   }
 
   private _numFrames = 1;
-  public set numFrames(v: number) {
-    this._numFrames = v;
-  }
   public get numFrames(): number {
     return this._numFrames;
   }
+  public set numFrames(v: number) {
+    this._numFrames = v;
+  }
 
-  private _bits?: number;
-  public get bits(): number | undefined {
+  private _bits: number;
+  public get bits(): number {
     return this._bits;
   }
+  public set bits(v: number) {
+    this._bits = v;
+  }
 
-  private _colorType?: number;
-  public get colorType(): number | undefined {
+  private _colorType: PngColorType | undefined;
+  public get colorType(): PngColorType | undefined {
     return this._colorType;
   }
+  public set colorType(v: PngColorType | undefined) {
+    this._colorType = v;
+  }
 
-  private _compressionMethod?: number;
-  public get compressionMethod(): number | undefined {
+  private _compressionMethod: number;
+  public get compressionMethod(): number {
     return this._compressionMethod;
   }
-
-  private _filterMethod?: number;
-  public get filterMethod(): number | undefined {
-    return this._filterMethod;
+  public set compressionMethod(v: number) {
+    this._compressionMethod = v;
   }
 
-  private _interlaceMethod?: number;
-  public get interlaceMethod(): number | undefined {
+  private _filterMethod: number;
+  public get filterMethod(): number {
+    return this._filterMethod;
+  }
+  public set filterMethod(v: number) {
+    this._filterMethod = v;
+  }
+
+  private _interlaceMethod: number;
+  public get interlaceMethod(): number {
     return this._interlaceMethod;
+  }
+  public set interlaceMethod(v: number) {
+    this._interlaceMethod = v;
   }
 
   private _palette?: Uint8Array;
-  public set palette(v: Uint8Array | undefined) {
-    this._palette = v;
-  }
   public get palette(): Uint8Array | undefined {
     return this._palette;
   }
+  public set palette(v: Uint8Array | undefined) {
+    this._palette = v;
+  }
 
   private _transparency?: Uint8Array;
-  public set transparency(v: Uint8Array | undefined) {
-    this._transparency = v;
-  }
   public get transparency(): Uint8Array | undefined {
     return this._transparency;
   }
-
-  private _colorLut?: number[];
-  public set colorLut(v: number[] | undefined) {
-    this._colorLut = v;
-  }
-  public get colorLut(): number[] | undefined {
-    return this._colorLut;
+  public set transparency(v: Uint8Array | undefined) {
+    this._transparency = v;
   }
 
   private _gamma?: number;
-  public set gamma(v: number | undefined) {
-    this._gamma = v;
-  }
   public get gamma(): number | undefined {
     return this._gamma;
   }
-
-  private _iCCPName = '';
-  public set iCCPName(v: string) {
-    this._iCCPName = v;
-  }
-  public get iCCPName(): string {
-    return this._iCCPName;
+  public set gamma(v: number | undefined) {
+    this._gamma = v;
   }
 
-  private _iCCPCompression = 0;
-  public set iCCPCompression(v: number) {
-    this._iCCPCompression = v;
+  private _iccpName = '';
+  public get iccpName(): string {
+    return this._iccpName;
   }
-  public get iCCPCompression(): number {
-    return this._iCCPCompression;
+  public set iccpName(v: string) {
+    this._iccpName = v;
   }
 
-  private _iCCPData?: Uint8Array;
-  public set iCCPData(v: Uint8Array | undefined) {
-    this._iCCPData = v;
+  private _iccpCompression = 0;
+  public get iccpCompression(): number {
+    return this._iccpCompression;
   }
-  public get iCCPData(): Uint8Array | undefined {
-    return this._iCCPData;
+  public set iccpCompression(v: number) {
+    this._iccpCompression = v;
+  }
+
+  private _iccpData?: Uint8Array;
+  public get iccpData(): Uint8Array | undefined {
+    return this._iccpData;
+  }
+  public set iccpData(v: Uint8Array | undefined) {
+    this._iccpData = v;
   }
 
   private _textData: Map<string, string> = new Map<string, string>();
@@ -133,11 +142,11 @@ export class PngInfo implements DecodeInfo {
   }
 
   private _repeat = 0;
-  public set repeat(v: number) {
-    this._repeat = v;
-  }
   public get repeat(): number {
     return this._repeat;
+  }
+  public set repeat(v: number) {
+    this._repeat = v;
   }
 
   private readonly _idat: number[] = [];
@@ -154,13 +163,13 @@ export class PngInfo implements DecodeInfo {
     return this._frames.length > 0;
   }
 
-  constructor(options?: PngInfoInitOptions) {
-    this._width = options?.width ?? 0;
-    this._height = options?.height ?? 0;
-    this._bits = options?.bits;
-    this._colorType = options?.colorType;
-    this._compressionMethod = options?.compressionMethod;
-    this._filterMethod = options?.filterMethod;
-    this._interlaceMethod = options?.interlaceMethod;
+  constructor(opt?: PngInfoInitOptions) {
+    this._width = opt?.width ?? 0;
+    this._height = opt?.height ?? 0;
+    this._bits = opt?.bits ?? 0;
+    this._colorType = opt?.colorType;
+    this._compressionMethod = opt?.compressionMethod ?? 0;
+    this._filterMethod = opt?.filterMethod ?? 0;
+    this._interlaceMethod = opt?.interlaceMethod ?? 0;
   }
 }

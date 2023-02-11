@@ -1,21 +1,19 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
-import { FrameType } from '../common/frame-type';
 import { InputBuffer } from '../common/input-buffer';
-import { MemoryImage } from '../common/memory-image';
 import { ExifData } from '../exif/exif-data';
-import { HdrImage } from '../hdr/hdr-image';
+import { FrameType } from '../image/frame-type';
+import { MemoryImage } from '../image/image';
 import { Decoder } from './decoder';
 import { TiffImage } from './tiff/tiff-image';
 import { TiffInfo } from './tiff/tiff-info';
 
 export class TiffDecoder implements Decoder {
-  private static readonly TIFF_SIGNATURE = 42;
-  private static readonly TIFF_LITTLE_ENDIAN = 0x4949;
-  private static readonly TIFF_BIG_ENDIAN = 0x4d4d;
+  private static readonly _tiffSignature = 42;
+  private static readonly _tiffLittleEndian = 0x4949;
+  private static readonly _tiffBigEndian = 0x4d4d;
 
-  private input!: InputBuffer;
+  private _input!: InputBuffer;
 
   private _info: TiffInfo | undefined = undefined;
   public get info(): TiffInfo | undefined {
@@ -41,14 +39,14 @@ export class TiffDecoder implements Decoder {
   private readHeader(p: InputBuffer): TiffInfo | undefined {
     const byteOrder = p.readUint16();
     if (
-      byteOrder !== TiffDecoder.TIFF_LITTLE_ENDIAN &&
-      byteOrder !== TiffDecoder.TIFF_BIG_ENDIAN
+      byteOrder !== TiffDecoder._tiffLittleEndian &&
+      byteOrder !== TiffDecoder._tiffBigEndian
     ) {
       return undefined;
     }
 
     let bigEndian = false;
-    if (byteOrder === TiffDecoder.TIFF_BIG_ENDIAN) {
+    if (byteOrder === TiffDecoder._tiffBigEndian) {
       p.bigEndian = true;
       bigEndian = true;
     } else {
@@ -58,11 +56,12 @@ export class TiffDecoder implements Decoder {
 
     let signature = 0;
     signature = p.readUint16();
-    if (signature !== TiffDecoder.TIFF_SIGNATURE) {
+    if (signature !== TiffDecoder._tiffSignature) {
       return undefined;
     }
 
     let offset = p.readUint32();
+    const ifdOffset = offset;
 
     const p2 = InputBuffer.from(p);
     p2.offset = offset;
@@ -90,7 +89,7 @@ export class TiffDecoder implements Decoder {
       ? new TiffInfo({
           bigEndian: bigEndian,
           signature: signature,
-          ifdOffset: offset,
+          ifdOffset: ifdOffset,
           images: images,
         })
       : undefined;
@@ -111,10 +110,10 @@ export class TiffDecoder implements Decoder {
    * If the file is not a valid TIFF image, undefined is returned.
    */
   public startDecode(bytes: Uint8Array): TiffInfo | undefined {
-    this.input = new InputBuffer({
+    this._input = new InputBuffer({
       buffer: bytes,
     });
-    this._info = this.readHeader(this.input);
+    this._info = this.readHeader(this._input);
     if (this.info !== undefined) {
       const buffer = new InputBuffer({
         buffer: bytes,
@@ -127,51 +126,18 @@ export class TiffDecoder implements Decoder {
   /**
    * Decode a single frame from the data stat was set with **startDecode**.
    * If **frame** is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have **frame** 0. An **AnimationFrame**
-   * is returned, which provides the image, and top-left coordinates of the
-   * image, as animated frames may only occupy a subset of the canvas.
+   * Non animated image files will only have **frame** 0.
    */
   public decodeFrame(frame: number): MemoryImage | undefined {
     if (this._info === undefined) {
       return undefined;
     }
 
-    const image = this._info.images[frame].decode(this.input);
+    const image = this._info.images[frame].decode(this._input);
     if (this._exifData !== undefined) {
       image.exifData = this._exifData;
     }
     return image;
-  }
-
-  public decodeHdrFrame(frame: number): HdrImage | undefined {
-    if (this._info === undefined) {
-      return undefined;
-    }
-    return this._info.images[frame].decodeHdr(this.input);
-  }
-
-  /**
-   * Decode all of the frames from an animation. If the file is not an
-   * animation, a single frame animation is returned. If there was a problem
-   * decoding the file, undefined is returned.
-   */
-  public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
-    if (this.startDecode(bytes) === undefined) {
-      return undefined;
-    }
-
-    const animation = new FrameAnimation({
-      width: this._info!.width,
-      height: this._info!.height,
-      frameType: FrameType.page,
-    });
-
-    for (let i = 0, len = this.numFrames; i < len; ++i) {
-      const image = this.decodeFrame(i);
-      animation.addFrame(image!);
-    }
-
-    return animation;
   }
 
   /**
@@ -179,39 +145,37 @@ export class TiffDecoder implements Decoder {
    * animated, the specified **frame** will be decoded. If there was a problem
    * decoding the file, undefined is returned.
    */
-  public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
-    this.input = new InputBuffer({
+  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+    this._input = new InputBuffer({
       buffer: bytes,
     });
 
-    this._info = this.readHeader(this.input);
+    this._info = this.readHeader(this._input);
     if (this._info === undefined) {
       return undefined;
     }
 
-    const image = this._info.images[frame].decode(this.input);
-    const buffer = new InputBuffer({
-      buffer: bytes,
-    });
-    image.exifData = ExifData.fromInputBuffer(buffer);
-    return image;
-  }
-
-  public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
-    this.input = new InputBuffer({
-      buffer: bytes,
-    });
-
-    this._info = this.readHeader(this.input);
-    if (this._info === undefined) {
-      return undefined;
+    const len = this.numFrames;
+    if (len === 1 || frame !== undefined) {
+      return this.decodeFrame(frame ?? 0);
     }
 
-    const image = this._info.images[frame].decodeHdr(this.input);
-    const buffer = new InputBuffer({
-      buffer: bytes,
-    });
-    image.exifData = ExifData.fromInputBuffer(buffer);
+    const image = this.decodeFrame(0);
+    if (image === undefined) {
+      return undefined;
+    }
+    image.exifData = ExifData.fromInputBuffer(
+      new InputBuffer({
+        buffer: bytes,
+      })
+    );
+    image.frameType = FrameType.page;
+
+    for (let i = 1; i < len; ++i) {
+      const frame = this.decodeFrame(i);
+      image.addFrame(frame);
+    }
+
     return image;
   }
 }

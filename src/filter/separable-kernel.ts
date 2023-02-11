@@ -1,28 +1,38 @@
 /** @format */
 
-import { Color } from '../common/color';
-import { MemoryImage } from '../common/memory-image';
+import { Channel } from '../color/channel';
+import { ArrayUtils } from '../common/array-utils';
+import { MathUtils } from '../common/math-utils';
+import { MemoryImage } from '../image/image';
+
+export interface SeparableKernelApplyOptions {
+  src: MemoryImage;
+  dst: MemoryImage;
+  horizontal?: boolean;
+  maskChannel?: Channel;
+  mask?: MemoryImage;
+}
 
 /**
- * A kernel object to use with **separableConvolution** filtering.
+ * A kernel object to use with **separableConvolution** filter.
  */
 export class SeparableKernel {
-  private readonly coefficients: number[];
-  private readonly size: number;
+  private readonly _coefficients: number[];
+  private readonly _size: number;
 
   /**
    * Get the number of coefficients in the kernel.
    */
   public get length() {
-    return this.coefficients.length;
+    return this._coefficients.length;
   }
 
   /**
-   * Create a separable convolution kernel for the given **radius**.
+   * Create a separable convolution kernel for the given **size**.
    */
   constructor(size: number) {
-    this.size = size;
-    this.coefficients = new Array<number>(2 * size + 1).fill(0);
+    this._size = size;
+    this._coefficients = ArrayUtils.fill(2 * size + 1, 0);
   }
 
   private reflect(max: number, x: number): number {
@@ -35,12 +45,14 @@ export class SeparableKernel {
     return x;
   }
 
-  private applyCoeffsLine(
+  private applyCoefficientsLine(
     src: MemoryImage,
     dst: MemoryImage,
     y: number,
     width: number,
-    horizontal: boolean
+    horizontal: boolean,
+    maskChannel: Channel,
+    mask?: MemoryImage
   ): void {
     for (let x = 0; x < width; x++) {
       let r = 0;
@@ -48,29 +60,28 @@ export class SeparableKernel {
       let b = 0;
       let a = 0;
 
-      for (let j = -this.size, j2 = 0; j <= this.size; ++j, ++j2) {
-        const coeff = this.coefficients[j2];
+      for (let j = -this._size, j2 = 0; j <= this._size; ++j, ++j2) {
+        const c = this._coefficients[j2];
         const gr = this.reflect(width, x + j);
 
         const sc = horizontal ? src.getPixel(gr, y) : src.getPixel(y, gr);
 
-        r += coeff * Color.getRed(sc);
-        g += coeff * Color.getGreen(sc);
-        b += coeff * Color.getBlue(sc);
-        a += coeff * Color.getAlpha(sc);
+        r += c * sc.r;
+        g += c * sc.g;
+        b += c * sc.b;
+        a += c * sc.a;
       }
 
-      const c = Color.getColor(
-        r > 255 ? 255 : r,
-        g > 255 ? 255 : g,
-        b > 255 ? 255 : b,
-        a > 255 ? 255 : a
-      );
+      const p = horizontal ? dst.getPixel(x, y) : dst.getPixel(y, x);
 
-      if (horizontal) {
-        dst.setPixel(x, y, c);
+      const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel);
+      if (msk === undefined) {
+        p.setRgba(r, g, b, a);
       } else {
-        dst.setPixel(y, x, c);
+        p.r = MathUtils.mix(p.r, r, msk);
+        p.g = MathUtils.mix(p.g, g, msk);
+        p.b = MathUtils.mix(p.b, b, msk);
+        p.a = MathUtils.mix(p.a, a, msk);
       }
     }
   }
@@ -79,30 +90,49 @@ export class SeparableKernel {
    * Get a coefficient from the kernel.
    */
   public getCoefficient(index: number) {
-    return this.coefficients[index];
+    return this._coefficients[index];
   }
 
   /**
    * Set a coefficient in the kernel.
    */
   public setCoefficient(index: number, c: number) {
-    this.coefficients[index] = c;
+    this._coefficients[index] = c;
   }
 
   /**
    * Apply the kernel to the **src** image, storing the results in **dst**,
    * for a single dimension. If **horizontal** is true, the filter will be
-   * applied to the horizontal axis, otherwise it will be appied to the
+   * applied to the horizontal axis, otherwise it will be applied to the
    * vertical axis.
    */
-  public apply(src: MemoryImage, dst: MemoryImage, horizontal = true): void {
+  public apply(opt: SeparableKernelApplyOptions): void {
+    const horizontal = opt.horizontal ?? true;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
     if (horizontal) {
-      for (let y = 0; y < src.height; ++y) {
-        this.applyCoeffsLine(src, dst, y, src.width, horizontal);
+      for (let y = 0; y < opt.src.height; ++y) {
+        this.applyCoefficientsLine(
+          opt.src,
+          opt.dst,
+          y,
+          opt.src.width,
+          horizontal,
+          maskChannel,
+          opt.mask
+        );
       }
     } else {
-      for (let x = 0; x < src.width; ++x) {
-        this.applyCoeffsLine(src, dst, x, src.height, horizontal);
+      for (let x = 0; x < opt.src.width; ++x) {
+        this.applyCoefficientsLine(
+          opt.src,
+          opt.dst,
+          x,
+          opt.src.height,
+          horizontal,
+          maskChannel,
+          opt.mask
+        );
       }
     }
   }
@@ -111,8 +141,8 @@ export class SeparableKernel {
    * Scale all of the coefficients by **s**.
    */
   public scaleCoefficients(s: number): void {
-    for (let i = 0; i < this.coefficients.length; ++i) {
-      this.coefficients[i] *= s;
+    for (let i = 0; i < this._coefficients.length; ++i) {
+      this._coefficients[i] *= s;
     }
   }
 }

@@ -1,13 +1,16 @@
 /** @format */
 
-import { DitherKernel } from '../common/dither-kernel';
-import { DitherPixel } from '../common/dither-pixel';
-import { FrameAnimation } from '../common/frame-animation';
-import { MemoryImage } from '../common/memory-image';
-import { NeuralQuantizer } from '../common/neural-quantizer';
+import { NeuralQuantizer } from '../image/neural-quantizer';
 import { OutputBuffer } from '../common/output-buffer';
-import { TextCodec } from '../common/text-codec';
+import { StringUtils } from '../common/string-utils';
 import { Encoder } from './encoder';
+import { QuantizerType } from '../image/quantizer-type';
+import { MemoryImage } from '../image/image';
+import { OctreeQuantizer } from '../image/octree-quantizer';
+import { Quantizer } from '../image/quantizer';
+import { Filter } from '../filter/filter';
+import { LibError } from '../error/lib-error';
+import { DitherKernel } from '../filter/dither-kernel';
 
 export interface GifEncoderInitOptions {
   delay?: number;
@@ -18,188 +21,211 @@ export interface GifEncoderInitOptions {
 }
 
 export class GifEncoder implements Encoder {
-  private static readonly gif89Id = 'GIF89a';
+  private static readonly _gif89Id = 'GIF89a';
 
-  private static readonly imageDescRecordType = 0x2c;
+  private static readonly _imageDescRecordType = 0x2c;
+  private static readonly _extensionRecordType = 0x21;
+  private static readonly _terminateRecordType = 0x3b;
 
-  private static readonly extensionRecordType = 0x21;
+  private static readonly _applicationExt = 0xff;
+  private static readonly _graphicControlExt = 0xf9;
 
-  private static readonly terminateRecordType = 0x3b;
-
-  private static readonly applicationExt = 0xff;
-
-  private static readonly graphicControlExt = 0xf9;
-
-  private static readonly eof = -1;
-
-  private static readonly bits = 12;
-
+  private static readonly _eof = -1;
+  private static readonly _bits = 12;
   // 80% occupancy
-  private static readonly hsize = 5003;
-
-  private static readonly masks = [
+  private static readonly _hSize = 5003;
+  private static readonly _masks = [
     0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
     0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff,
   ];
 
-  private lastImage?: Uint8Array;
+  private _delay: number;
 
-  private lastImageDuration?: number;
+  private _repeat: number;
 
-  private lastColorMap?: NeuralQuantizer;
+  private _numColors: number;
 
-  private width!: number;
+  private _quantizerType: QuantizerType;
 
-  private height!: number;
+  private _samplingFactor: number;
 
-  private encodedFrames: number;
+  private _lastImage?: MemoryImage;
 
-  private curAccum = 0;
+  private _lastImageDuration?: number;
 
-  private curBits = 0;
+  private _lastColorMap?: Quantizer;
 
-  private nBits = 0;
+  private _width!: number;
 
-  private initBits = 0;
+  private _height!: number;
 
-  private EOFCode = 0;
+  private _encodedFrames: number;
 
-  private maxCode = 0;
+  private _curAccum = 0;
 
-  private clearCode = 0;
+  private _curBits = 0;
 
-  private freeEnt = 0;
+  private _nBits = 0;
 
-  private clearFlag = false;
+  private _initBits = 0;
 
-  private block!: Uint8Array;
+  private _eofCode = 0;
 
-  private blockSize = 0;
+  private _maxCode = 0;
 
-  private outputBuffer?: OutputBuffer;
+  private _clearCode = 0;
 
-  private delay: number;
+  private _freeEnt = 0;
 
-  private repeat: number;
+  private _clearFlag = false;
 
-  private samplingFactor: number;
+  private _block!: Uint8Array;
 
-  private dither: DitherKernel;
+  private _blockSize = 0;
 
-  private ditherSerpentine: boolean;
+  private _outputBuffer?: OutputBuffer;
+
+  private _dither: DitherKernel;
+
+  private _ditherSerpentine: boolean;
 
   /**
    * Does this encoder support animation?
    */
   private readonly _supportsAnimation = true;
-  get supportsAnimation(): boolean {
+  public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
-  constructor(options?: GifEncoderInitOptions) {
-    this.delay = options?.delay ?? 80;
-    this.repeat = options?.repeat ?? 0;
-    this.samplingFactor = options?.samplingFactor ?? 10;
-    this.dither = options?.dither ?? DitherKernel.FloydSteinberg;
-    this.ditherSerpentine = options?.ditherSerpentine ?? false;
-    this.encodedFrames = 0;
+  constructor(opt?: GifEncoderInitOptions) {
+    this._delay = opt?.delay ?? 80;
+    this._repeat = opt?.repeat ?? 0;
+    this._numColors = 256;
+    this._quantizerType = QuantizerType.neural;
+    this._samplingFactor = opt?.samplingFactor ?? 10;
+    this._dither = opt?.dither ?? DitherKernel.floydSteinberg;
+    this._ditherSerpentine = opt?.ditherSerpentine ?? false;
+    this._encodedFrames = 0;
   }
 
-  private addImage(
-    image: Uint8Array | undefined,
-    width: number,
-    height: number,
-    colorMap: Uint8Array,
-    numColors: number
-  ): void {
+  private addImage(image: MemoryImage, width: number, height: number): void {
+    if (!image.hasPalette) {
+      throw new LibError('GIF can only encode palette images.');
+    }
+
+    const palette = image.palette!;
+    const numColors = palette.numColors;
+
+    const out = this._outputBuffer!;
+
     // Image desc
-    this.outputBuffer!.writeByte(GifEncoder.imageDescRecordType);
-    // Image position x,y = 0,0
-    this.outputBuffer!.writeUint16(0);
-    this.outputBuffer!.writeUint16(0);
-    // Image size
-    this.outputBuffer!.writeUint16(width);
-    this.outputBuffer!.writeUint16(height);
+    out.writeByte(GifEncoder._imageDescRecordType);
+    // image position x,y = 0,0
+    out.writeUint16(0);
+    out.writeUint16(0);
+    // image size
+    out.writeUint16(width);
+    out.writeUint16(height);
+
+    const paletteBytes = palette.toUint8Array();
 
     // Local Color Map
     // (0x80: Use LCM, 0x07: Palette Size (7 = 8-bit))
-    this.outputBuffer!.writeByte(0x87);
-    this.outputBuffer!.writeBytes(colorMap);
-    for (let i = numColors; i < 256; ++i) {
-      this.outputBuffer!.writeByte(0);
-      this.outputBuffer!.writeByte(0);
-      this.outputBuffer!.writeByte(0);
+    out.writeByte(0x87);
+
+    const numChannels = palette.numChannels;
+    if (numChannels === 3) {
+      out.writeBytes(paletteBytes);
+    } else if (numChannels === 4) {
+      for (let i = 0, pi = 0; i < numColors; ++i, pi += 4) {
+        out.writeByte(paletteBytes[pi]);
+        out.writeByte(paletteBytes[pi + 1]);
+        out.writeByte(paletteBytes[pi + 2]);
+      }
+    } else if (numChannels === 1 || numChannels === 2) {
+      for (let i = 0, pi = 0; i < numColors; ++i, pi += numChannels) {
+        const g = paletteBytes[pi];
+        out.writeByte(g);
+        out.writeByte(g);
+        out.writeByte(g);
+      }
     }
 
-    this.encodeLZW(image, width, height);
+    for (let i = numColors; i < 256; ++i) {
+      out.writeByte(0);
+      out.writeByte(0);
+      out.writeByte(0);
+    }
+
+    this.encodeLZW(image);
   }
 
-  private encodeLZW(
-    image: Uint8Array | undefined,
-    width: number,
-    height: number
-  ): void {
-    this.curAccum = 0;
-    this.curBits = 0;
-    this.blockSize = 0;
-    this.block = new Uint8Array(256);
+  private encodeLZW(image: MemoryImage): void {
+    this._curAccum = 0;
+    this._curBits = 0;
+    this._blockSize = 0;
+    this._block = new Uint8Array(256);
 
     const initCodeSize = 8;
-    this.outputBuffer!.writeByte(initCodeSize);
+    this._outputBuffer!.writeByte(initCodeSize);
 
-    const hTab = new Int32Array(GifEncoder.hsize);
-    const codeTab = new Int32Array(GifEncoder.hsize);
-    let remaining = width * height;
-    let curPixel = 0;
+    const hTab = new Int32Array(GifEncoder._hSize);
+    const codeTab = new Int32Array(GifEncoder._hSize);
+    const pIter = image[Symbol.iterator]();
+    let pIterRes = pIter.next();
 
-    this.initBits = initCodeSize + 1;
-    this.nBits = this.initBits;
-    this.maxCode = (1 << this.nBits) - 1;
-    this.clearCode = 1 << (this.initBits - 1);
-    this.EOFCode = this.clearCode + 1;
-    this.clearFlag = false;
-    this.freeEnt = this.clearCode + 2;
+    this._initBits = initCodeSize + 1;
+    this._nBits = this._initBits;
+    this._maxCode = (1 << this._nBits) - 1;
+    this._clearCode = 1 << (this._initBits - 1);
+    this._eofCode = this._clearCode + 1;
+    this._clearFlag = false;
+    this._freeEnt = this._clearCode + 2;
+    let pFinished = false;
 
-    const _nextPixel = () => {
-      if (remaining === 0) {
-        return GifEncoder.eof;
+    const nextPixel = (): number => {
+      if (pFinished) {
+        return GifEncoder._eof;
       }
-      --remaining;
-      return image![curPixel++] & 0xff;
+      const r = Math.trunc(pIterRes.value.index);
+      if (((pIterRes = pIter.next()), pIterRes.done)) {
+        pFinished = true;
+      }
+      return r;
     };
 
-    let ent = _nextPixel();
+    let ent = nextPixel();
 
-    let hshift = 0;
-    for (let fcode = GifEncoder.hsize; fcode < 65536; fcode *= 2) {
-      hshift++;
+    let hShift = 0;
+    for (let fCode = GifEncoder._hSize; fCode < 65536; fCode *= 2) {
+      hShift++;
     }
-    hshift = 8 - hshift;
+    hShift = 8 - hShift;
 
-    const hSizeReg = GifEncoder.hsize;
+    const hSizeReg = GifEncoder._hSize;
     for (let i = 0; i < hSizeReg; ++i) {
       hTab[i] = -1;
     }
 
-    this.output(this.clearCode);
+    this.output(this._clearCode);
 
     let outerLoop = true;
     while (outerLoop) {
       outerLoop = false;
 
-      let c = _nextPixel();
-      while (c !== GifEncoder.eof) {
-        const fcode = (c << GifEncoder.bits) + ent;
-        // XOR hashing
-        let i = (c << hshift) ^ ent;
+      let c = nextPixel();
+      while (c !== GifEncoder._eof) {
+        const fcode = (c << GifEncoder._bits) + ent;
+        // xor hashing
+        let i = (c << hShift) ^ ent;
 
         if (hTab[i] === fcode) {
           ent = codeTab[i];
-          c = _nextPixel();
+          c = nextPixel();
           continue;
         } else if (hTab[i] >= 0) {
-          // Non-empty slot
-          // Secondary hash (after G. Knott)
+          // non-empty slot
+          // secondary hash (after G. Knott)
           let disp = hSizeReg - i;
           if (i === 0) {
             disp = 1;
@@ -223,137 +249,164 @@ export class GifEncoder implements Encoder {
         this.output(ent);
         ent = c;
 
-        if (this.freeEnt < 1 << GifEncoder.bits) {
-          // Code -> hashtable
-          codeTab[i] = this.freeEnt++;
+        if (this._freeEnt < 1 << GifEncoder._bits) {
+          // code -> hashtable
+          codeTab[i] = this._freeEnt++;
           hTab[i] = fcode;
         } else {
-          for (let i = 0; i < GifEncoder.hsize; ++i) {
+          for (let i = 0; i < GifEncoder._hSize; ++i) {
             hTab[i] = -1;
           }
-          this.freeEnt = this.clearCode + 2;
-          this.clearFlag = true;
-          this.output(this.clearCode);
+          this._freeEnt = this._clearCode + 2;
+          this._clearFlag = true;
+          this.output(this._clearCode);
         }
 
-        c = _nextPixel();
+        c = nextPixel();
       }
     }
 
     this.output(ent);
-    this.output(this.EOFCode);
+    this.output(this._eofCode);
 
-    this.outputBuffer!.writeByte(0);
+    this._outputBuffer!.writeByte(0);
   }
 
   private output(code: number | undefined): void {
-    this.curAccum &= GifEncoder.masks[this.curBits];
+    this._curAccum &= GifEncoder._masks[this._curBits];
 
-    if (this.curBits > 0) {
-      this.curAccum |= code! << this.curBits;
+    if (this._curBits > 0) {
+      this._curAccum |= code! << this._curBits;
     } else {
-      this.curAccum = code!;
+      this._curAccum = code!;
     }
 
-    this.curBits += this.nBits;
+    this._curBits += this._nBits;
 
-    while (this.curBits >= 8) {
-      this.addToBlock(this.curAccum & 0xff);
-      this.curAccum >>= 8;
-      this.curBits -= 8;
+    while (this._curBits >= 8) {
+      this.addToBlock(this._curAccum & 0xff);
+      this._curAccum >>= 8;
+      this._curBits -= 8;
     }
 
     // If the next entry is going to be too big for the code size,
     // then increase it, if possible.
-    if (this.freeEnt > this.maxCode || this.clearFlag) {
-      if (this.clearFlag) {
-        this.nBits = this.initBits;
-        this.maxCode = (1 << this.nBits) - 1;
-        this.clearFlag = false;
+    if (this._freeEnt > this._maxCode || this._clearFlag) {
+      if (this._clearFlag) {
+        this._nBits = this._initBits;
+        this._maxCode = (1 << this._nBits) - 1;
+        this._clearFlag = false;
       } else {
-        ++this.nBits;
-        if (this.nBits === GifEncoder.bits) {
-          this.maxCode = 1 << GifEncoder.bits;
+        ++this._nBits;
+        if (this._nBits === GifEncoder._bits) {
+          this._maxCode = 1 << GifEncoder._bits;
         } else {
-          this.maxCode = (1 << this.nBits) - 1;
+          this._maxCode = (1 << this._nBits) - 1;
         }
       }
     }
 
-    if (code === this.EOFCode) {
+    if (code === this._eofCode) {
       // At EOF, write the rest of the buffer.
-      while (this.curBits > 0) {
-        this.addToBlock(this.curAccum & 0xff);
-        this.curAccum >>= 8;
-        this.curBits -= 8;
+      while (this._curBits > 0) {
+        this.addToBlock(this._curAccum & 0xff);
+        this._curAccum >>= 8;
+        this._curBits -= 8;
       }
       this.writeBlock();
     }
   }
 
   private writeBlock(): void {
-    if (this.blockSize > 0) {
-      this.outputBuffer!.writeByte(this.blockSize);
-      this.outputBuffer!.writeBytes(this.block, this.blockSize);
-      this.blockSize = 0;
+    if (this._blockSize > 0) {
+      this._outputBuffer!.writeByte(this._blockSize);
+      this._outputBuffer!.writeBytes(this._block, this._blockSize);
+      this._blockSize = 0;
     }
   }
 
   private addToBlock(c: number): void {
-    this.block[this.blockSize++] = c;
-    if (this.blockSize >= 254) {
+    this._block[this._blockSize++] = c;
+    if (this._blockSize >= 254) {
       this.writeBlock();
     }
   }
 
   private writeApplicationExt(): void {
-    this.outputBuffer!.writeByte(GifEncoder.extensionRecordType);
-    this.outputBuffer!.writeByte(GifEncoder.applicationExt);
+    this._outputBuffer!.writeByte(GifEncoder._extensionRecordType);
+    this._outputBuffer!.writeByte(GifEncoder._applicationExt);
     // Data block size
-    this.outputBuffer!.writeByte(11);
-    const appCodeUnits = TextCodec.getCodePoints('NETSCAPE2.0');
+    this._outputBuffer!.writeByte(11);
+    const appCodeUnits = StringUtils.getCodePoints('NETSCAPE2.0');
     // App identifier
-    this.outputBuffer!.writeBytes(appCodeUnits);
-    this.outputBuffer!.writeBytes(new Uint8Array([0x03, 0x01]));
+    this._outputBuffer!.writeBytes(appCodeUnits);
+    this._outputBuffer!.writeBytes(new Uint8Array([0x03, 0x01]));
     // Loop count
-    this.outputBuffer!.writeUint16(this.repeat);
+    this._outputBuffer!.writeUint16(this._repeat);
     // Block terminator
-    this.outputBuffer!.writeByte(0);
+    this._outputBuffer!.writeByte(0);
   }
 
-  private writeGraphicsCtrlExt(): void {
-    this.outputBuffer!.writeByte(GifEncoder.extensionRecordType);
-    this.outputBuffer!.writeByte(GifEncoder.graphicControlExt);
-    // Data block size
-    this.outputBuffer!.writeByte(4);
+  private writeGraphicsCtrlExt(image: MemoryImage): void {
+    this._outputBuffer!.writeByte(GifEncoder._extensionRecordType);
+    this._outputBuffer!.writeByte(GifEncoder._graphicControlExt);
+    // data block size
+    this._outputBuffer!.writeByte(4);
 
-    const transparency = 0;
-    // Dispose = no action
-    const dispose = 0;
+    let transparentIndex = 0;
+    let hasTransparency = 0;
+    const palette = image.palette!;
+    const nc = palette.numChannels;
+    const pa = nc - 1;
+    if (nc === 4 || nc === 2) {
+      const p = palette.toUint8Array();
+      const l = palette.numColors;
+      for (let i = 0, pi = pa; i < l; ++i, pi += nc) {
+        const a = p[pi];
+        if (a === 0) {
+          hasTransparency = 1;
+          transparentIndex = i;
+          break;
+        }
+      }
+    }
+
+    // dispose: 0 = no action, 2 = clear
+    const dispose = 2;
+
+    // 1:3 reserved
+    const fields =
+      0 |
+      // 4:6 disposal
+      (dispose << 2) |
+      // 7   user input - 0 = none
+      0 |
+      // 8   transparency flag
+      hasTransparency;
 
     // packed fields
-    this.outputBuffer!.writeByte(0 | dispose | 0 | transparency);
+    this._outputBuffer!.writeByte(fields);
 
-    // Delay x 1/100 sec
-    this.outputBuffer!.writeUint16(this.lastImageDuration ?? this.delay);
-    // Transparent color index
-    this.outputBuffer!.writeByte(0);
-    // Block terminator
-    this.outputBuffer!.writeByte(0);
+    // delay x 1/100 sec
+    this._outputBuffer!.writeUint16(this._lastImageDuration ?? this._delay);
+    // transparent color index
+    this._outputBuffer!.writeByte(transparentIndex);
+    // block terminator
+    this._outputBuffer!.writeByte(0);
   }
 
   // GIF header and Logical Screen Descriptor
   private writeHeader(width: number, height: number): void {
-    const idCodeUnits = TextCodec.getCodePoints(GifEncoder.gif89Id);
-    this.outputBuffer!.writeBytes(idCodeUnits);
-    this.outputBuffer!.writeUint16(width);
-    this.outputBuffer!.writeUint16(height);
+    const idCodeUnits = StringUtils.getCodePoints(GifEncoder._gif89Id);
+    this._outputBuffer!.writeBytes(idCodeUnits);
+    this._outputBuffer!.writeUint16(width);
+    this._outputBuffer!.writeUint16(height);
     // global color map parameters (not being used).
-    this.outputBuffer!.writeByte(0);
+    this._outputBuffer!.writeByte(0);
     // Background color index.
-    this.outputBuffer!.writeByte(0);
+    this._outputBuffer!.writeByte(0);
     // Aspect
-    this.outputBuffer!.writeByte(0);
+    this._outputBuffer!.writeByte(0);
   }
 
   /**
@@ -367,33 +420,27 @@ export class GifEncoder implements Encoder {
    */
   private finish(): Uint8Array | undefined {
     let bytes: Uint8Array | undefined = undefined;
-    if (this.outputBuffer === undefined) {
+    if (this._outputBuffer === undefined) {
       return bytes;
     }
 
-    if (this.encodedFrames === 0) {
-      this.writeHeader(this.width, this.height);
+    if (this._encodedFrames === 0) {
+      this.writeHeader(this._width, this._height);
       this.writeApplicationExt();
     } else {
-      this.writeGraphicsCtrlExt();
+      this.writeGraphicsCtrlExt(this._lastImage!);
     }
 
-    this.addImage(
-      this.lastImage,
-      this.width,
-      this.height,
-      this.lastColorMap!.colorMap8,
-      256
-    );
+    this.addImage(this._lastImage!, this._width, this._height);
 
-    this.outputBuffer.writeByte(GifEncoder.terminateRecordType);
+    this._outputBuffer.writeByte(GifEncoder._terminateRecordType);
 
-    this.lastImage = undefined;
-    this.lastColorMap = undefined;
-    this.encodedFrames = 0;
+    this._lastImage = undefined;
+    this._lastColorMap = undefined;
+    this._encodedFrames = 0;
 
-    bytes = this.outputBuffer.getBytes();
-    this.outputBuffer = undefined;
+    bytes = this._outputBuffer.getBytes();
+    this._outputBuffer = undefined;
     return bytes;
   }
 
@@ -403,69 +450,85 @@ export class GifEncoder implements Encoder {
    * Optional frame **duration** is in 1/100 sec.
    * */
   public addFrame(image: MemoryImage, duration?: number): void {
-    if (this.outputBuffer === undefined) {
-      this.outputBuffer = new OutputBuffer();
+    if (this._outputBuffer === undefined) {
+      this._outputBuffer = new OutputBuffer();
 
-      this.lastColorMap = new NeuralQuantizer(image, 256, this.samplingFactor);
-      this.lastImage = DitherPixel.getDitherPixels(
-        image,
-        this.lastColorMap,
-        this.dither,
-        this.ditherSerpentine
-      );
-      this.lastImageDuration = duration;
+      if (!image.hasPalette) {
+        if (this._quantizerType === QuantizerType.neural) {
+          this._lastColorMap = new NeuralQuantizer(
+            image,
+            this._numColors,
+            this._samplingFactor
+          );
+        } else {
+          this._lastColorMap = new OctreeQuantizer(image, this._numColors);
+        }
 
-      this.width = image.width;
-      this.height = image.height;
+        this._lastImage = Filter.ditherImage({
+          image: image,
+          quantizer: this._lastColorMap,
+          kernel: this._dither,
+          serpentine: this._ditherSerpentine,
+        });
+      } else {
+        this._lastImage = image;
+      }
+
+      this._lastImageDuration = duration;
+
+      this._width = image.width;
+      this._height = image.height;
       return;
     }
 
-    if (this.encodedFrames === 0) {
-      this.writeHeader(this.width, this.height);
+    if (this._encodedFrames === 0) {
+      this.writeHeader(this._width, this._height);
       this.writeApplicationExt();
     }
 
-    this.writeGraphicsCtrlExt();
+    this.writeGraphicsCtrlExt(this._lastImage!);
 
-    this.addImage(
-      this.lastImage,
-      this.width,
-      this.height,
-      this.lastColorMap!.colorMap8,
-      256
-    );
-    this.encodedFrames++;
+    this.addImage(this._lastImage!, this._width, this._height);
+    this._encodedFrames++;
 
-    this.lastColorMap = new NeuralQuantizer(image, 256, this.samplingFactor);
-    this.lastImage = DitherPixel.getDitherPixels(
-      image,
-      this.lastColorMap,
-      this.dither,
-      this.ditherSerpentine
-    );
-    this.lastImageDuration = duration;
+    if (!image.hasPalette) {
+      if (this._quantizerType === QuantizerType.neural) {
+        this._lastColorMap = new NeuralQuantizer(
+          image,
+          this._numColors,
+          this._samplingFactor
+        );
+      } else {
+        this._lastColorMap = new OctreeQuantizer(image, this._numColors);
+      }
+
+      this._lastImage = Filter.ditherImage({
+        image: image,
+        quantizer: this._lastColorMap!,
+        kernel: this._dither,
+        serpentine: this._ditherSerpentine,
+      });
+    } else {
+      this._lastImage = image;
+    }
+
+    this._lastImageDuration = duration;
   }
 
   /**
    * Encode a single frame image.
    */
-  public encodeImage(image: MemoryImage): Uint8Array {
-    this.addFrame(image);
-    return this.finish()!;
-  }
-
-  /**
-   * Encode an animation.
-   */
-  public encodeAnimation(animation: FrameAnimation): Uint8Array | undefined {
-    this.repeat = animation.loopCount;
-    for (const f of animation) {
-      this.addFrame(
-        f,
-        // Convert ms to 1 / 100 sec.
-        Math.floor(f.duration / 10)
-      );
+  public encode(image: MemoryImage, singleFrame = false): Uint8Array {
+    if (!image.hasAnimation || singleFrame) {
+      this.addFrame(image);
+      return this.finish()!;
     }
-    return this.finish();
+
+    this._repeat = image.loopCount;
+    for (const f of image.frames) {
+      // Convert ms to 1/100 sec.
+      this.addFrame(f, Math.trunc(f.frameDuration / 10));
+    }
+    return this.finish()!;
   }
 }

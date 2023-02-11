@@ -1,15 +1,25 @@
 /** @format */
 
-import { BitOperators } from '../../common/bit-operators';
-import { Color } from '../../common/color';
+import { Color } from '../../color/color';
+import { BitUtils } from '../../common/bit-utils';
 import { InputBuffer } from '../../common/input-buffer';
-import { ImageError } from '../../error/image-error';
-import { NotImplementedError } from '../../error/not-implemented-error';
+import { LibError } from '../../error/lib-error';
+import { PaletteUint8 } from '../../image/palette-uint8';
 import { DecodeInfo } from '../decode-info';
-import { BitmapCompressionMode } from './bitmap-compression-mode';
-import { BitmapFileHeader } from './bitmap-file-header';
+import { BmpCompressionMode } from './bmp-compression-mode';
+import { BmpFileHeader } from './bmp-file-header';
 
 export class BmpInfo implements DecodeInfo {
+  private readonly _startPos: number;
+  private _redShift = 0;
+  private _redScale = 0;
+  private _greenShift = 0;
+  private _greenScale = 0;
+  private _blueShift = 0;
+  private _blueScale = 0;
+  private _alphaShift = 0;
+  private _alphaScale = 0;
+
   private readonly _width: number = 0;
   public get width(): number {
     return this._width;
@@ -17,11 +27,11 @@ export class BmpInfo implements DecodeInfo {
 
   protected readonly _height: number = 0;
   public get height(): number {
-    return this._height;
+    return Math.abs(this._height);
   }
 
-  private readonly _backgroundColor: number = 0xffffffff;
-  public get backgroundColor(): number {
+  private readonly _backgroundColor: Color | undefined = undefined;
+  public get backgroundColor(): Color | undefined {
     return this._backgroundColor;
   }
 
@@ -30,9 +40,9 @@ export class BmpInfo implements DecodeInfo {
     return this._numFrames;
   }
 
-  private readonly _fileHeader: BitmapFileHeader;
-  public get fileHeader(): BitmapFileHeader {
-    return this._fileHeader;
+  private readonly _header: BmpFileHeader;
+  public get header(): BmpFileHeader {
+    return this._header;
   }
 
   private readonly _headerSize: number;
@@ -45,13 +55,13 @@ export class BmpInfo implements DecodeInfo {
     return this._planes;
   }
 
-  private readonly _bpp: number;
-  public get bpp(): number {
-    return this._bpp;
+  private readonly _bitsPerPixel: number;
+  public get bitsPerPixel(): number {
+    return this._bitsPerPixel;
   }
 
-  private readonly _compression: BitmapCompressionMode;
-  public get compression(): BitmapCompressionMode {
+  private readonly _compression: BmpCompressionMode;
+  public get compression(): BmpCompressionMode {
     return this._compression;
   }
 
@@ -80,208 +90,257 @@ export class BmpInfo implements DecodeInfo {
     return this._importantColors;
   }
 
-  private readonly _readBottomUp: boolean;
+  private _redMask = 0;
+  public get redMask(): number {
+    return this._redMask;
+  }
+
+  private _greenMask = 0;
+  public get greenMask(): number {
+    return this._greenMask;
+  }
+
+  private _blueMask = 0;
+  public get blueMask(): number {
+    return this._blueMask;
+  }
+
+  private _alphaMask = 0;
+  public get alphaMask(): number {
+    return this._alphaMask;
+  }
+
+  private _palette: PaletteUint8 | undefined;
+  public get palette(): PaletteUint8 | undefined {
+    return this._palette;
+  }
+
   public get readBottomUp(): boolean {
-    return this._readBottomUp;
+    return this._height >= 0;
   }
 
-  private _v5redMask?: number;
-  public get v5redMask(): number | undefined {
-    return this._v5redMask;
-  }
-
-  private _v5greenMask?: number;
-  public get v5greenMask(): number | undefined {
-    return this._v5greenMask;
-  }
-
-  private _v5blueMask?: number;
-  public get v5blueMask(): number | undefined {
-    return this._v5blueMask;
-  }
-
-  private _v5alphaMask?: number;
-  public get v5alphaMask(): number | undefined {
-    return this._v5alphaMask;
-  }
-
-  private _colorPalette?: number[];
-  public get colorPalette(): number[] | undefined {
-    return this._colorPalette;
-  }
-
-  // BITMAPINFOHEADER should (probably) ignore alpha channel altogether.
-  // This is the behavior in gimp (?)
-  // https://gitlab.gnome.org/GNOME/gimp/-/issues/461#note_208715
   public get ignoreAlphaChannel(): boolean {
+    // Gimp and Photoshop ignore the alpha channel for BITMAPINFOHEADER.
     return (
       this._headerSize === 40 ||
-      // BITMAPV5HEADER with undefined alpha mask.
-      (this._headerSize === 124 && this._v5alphaMask === 0)
+      // BITMAPV5HEADER with null alpha mask.
+      (this._headerSize === 124 && this._alphaMask === 0)
     );
   }
 
-  constructor(p: InputBuffer, fileHeader?: BitmapFileHeader) {
-    this._fileHeader = fileHeader ?? new BitmapFileHeader(p);
+  constructor(p: InputBuffer, header?: BmpFileHeader) {
+    this._header = header ?? new BmpFileHeader(p);
+    this._startPos = p.offset;
     this._headerSize = p.readUint32();
     this._width = p.readInt32();
-
-    const height = p.readInt32();
-    this._readBottomUp = height > 0;
-    this._height = Math.abs(height);
-
+    this._height = p.readInt32();
     this._planes = p.readUint16();
-    this._bpp = p.readUint16();
-    this._compression = BmpInfo.intToCompressionMode(p.readUint32());
+    this._bitsPerPixel = p.readUint16();
+    this._compression = p.readUint32();
     this._imageSize = p.readUint32();
     this._xppm = p.readInt32();
     this._yppm = p.readInt32();
     this._totalColors = p.readUint32();
     this._importantColors = p.readUint32();
 
-    if ([1, 4, 8].includes(this._bpp)) {
+    // BMP allows > 4 bit per channel for 16bpp, so we have to scale it
+    // up to 8-bit
+    const maxChannelValue = 255.0;
+
+    if (
+      this._headerSize > 40 ||
+      this._compression === BmpCompressionMode.bitfields ||
+      this._compression === BmpCompressionMode.alphaBitfields
+    ) {
+      this._redMask = p.readUint32();
+      this._redShift = BitUtils.countTrailingZeroBits(this._redMask);
+      const redDepth = this._redMask >> this._redShift;
+      this._redScale = redDepth > 0 ? maxChannelValue / redDepth : 0;
+
+      this._greenMask = p.readUint32();
+      this._greenShift = BitUtils.countTrailingZeroBits(this._greenMask);
+      const greenDepth = this._greenMask >> this._greenShift;
+      this._greenScale = redDepth > 0 ? maxChannelValue / greenDepth : 0;
+
+      this._blueMask = p.readUint32();
+      this._blueShift = BitUtils.countTrailingZeroBits(this._blueMask);
+      const blueDepth = this._blueMask >> this._blueShift;
+      this._blueScale = redDepth > 0 ? maxChannelValue / blueDepth : 0;
+
+      if (
+        this._headerSize > 40 ||
+        this._compression === BmpCompressionMode.alphaBitfields
+      ) {
+        this._alphaMask = p.readUint32();
+        this._alphaShift = BitUtils.countTrailingZeroBits(this._alphaMask);
+        const alphaDepth = this._alphaMask >>> this._alphaShift;
+        this._alphaScale = alphaDepth > 0 ? maxChannelValue / alphaDepth : 0;
+      } else {
+        if (this._bitsPerPixel === 16) {
+          this._alphaMask = 0xff000000;
+          this._alphaShift = 24;
+          this._alphaScale = 1.0;
+        } else {
+          this._alphaMask = 0xff000000;
+          this._alphaShift = 24;
+          this._alphaScale = 1.0;
+        }
+      }
+    } else {
+      if (this._bitsPerPixel === 16) {
+        this._redMask = 0x7c00;
+        this._redShift = 10;
+        const redDepth = this._redMask >> this._redShift;
+        this._redScale = redDepth > 0 ? maxChannelValue / redDepth : 0;
+
+        this._greenMask = 0x03e0;
+        this._greenShift = 5;
+        const greenDepth = this._greenMask >> this._greenShift;
+        this._greenScale = redDepth > 0 ? maxChannelValue / greenDepth : 0;
+
+        this._blueMask = 0x001f;
+        this._blueShift = 0;
+        const blueDepth = this._blueMask >> this._blueShift;
+        this._blueScale = redDepth > 0 ? maxChannelValue / blueDepth : 0;
+
+        this._alphaMask = 0x00000000;
+        this._alphaShift = 0;
+        this._alphaScale = 0.0;
+      } else {
+        this._redMask = 0x00ff0000;
+        this._redShift = 16;
+        this._redScale = 1.0;
+
+        this._greenMask = 0x0000ff00;
+        this._greenShift = 8;
+        this._greenScale = 1.0;
+
+        this._blueMask = 0x000000ff;
+        this._blueShift = 0;
+        this._blueScale = 1.0;
+
+        this._alphaMask = 0xff000000;
+        this._alphaShift = 24;
+        this._alphaScale = 1.0;
+      }
+    }
+
+    const headerRead = p.offset - this._startPos;
+
+    const remainingHeaderBytes = this._headerSize - headerRead;
+    p.skip(remainingHeaderBytes);
+
+    if (this._bitsPerPixel <= 8) {
       this.readPalette(p);
     }
-    if (this._headerSize === 124) {
-      // BITMAPV5HEADER
-      this._v5redMask = p.readUint32();
-      this._v5greenMask = p.readUint32();
-      this._v5blueMask = p.readUint32();
-      this._v5alphaMask = p.readUint32();
-    }
   }
 
-  private static intToCompressionMode(
-    compIndex: number
-  ): BitmapCompressionMode {
-    const map = new Map<number, BitmapCompressionMode>([
-      [0, BitmapCompressionMode.NONE],
-      // [ 1, BitmapCompression.RLE_8 ],
-      // [ 2, BitmapCompression.RLE_4 ],
-      [3, BitmapCompressionMode.BI_BITFIELDS],
-    ]);
-    const compression = map.get(compIndex);
-    if (compression === undefined) {
-      throw new ImageError(
-        `Bitmap compression ${compIndex} is not supported yet.`
-      );
-    }
-    return compression;
-  }
-
-  private compressionModeToString(): string {
-    switch (this._compression) {
-      case BitmapCompressionMode.BI_BITFIELDS:
-        return 'BI_BITFIELDS';
-      case BitmapCompressionMode.NONE:
-        return 'none';
-    }
-    throw new NotImplementedError();
-  }
-
-  private readPalette(p: InputBuffer): void {
-    const colors = this._totalColors === 0 ? 1 << this._bpp : this._totalColors;
-    const colorBytes = this._headerSize === 12 ? 3 : 4;
-    const colorPalette: number[] = [];
-    for (let i = 0; i < colors; i++) {
-      const color = this.readRgba(p, colorBytes === 3 ? 100 : undefined);
-      colorPalette.push(color);
-    }
-    this._colorPalette = colorPalette;
-  }
-
-  private readRgba(input: InputBuffer, aDefault?: number): number {
-    if (this._readBottomUp) {
+  private readPalette(input: InputBuffer): void {
+    const numColors =
+      this._totalColors === 0 ? 1 << this._bitsPerPixel : this._totalColors;
+    const numChannels = 3;
+    this._palette = new PaletteUint8(numColors, numChannels);
+    for (let i = 0; i < numColors; ++i) {
       const b = input.readByte();
       const g = input.readByte();
       const r = input.readByte();
-      const a = aDefault ?? input.readByte();
-      return Color.getColor(r, g, b, this.ignoreAlphaChannel ? 255 : a);
-    } else {
-      const r = input.readByte();
-      const b = input.readByte();
-      const g = input.readByte();
-      const a = aDefault ?? input.readByte();
-      return Color.getColor(r, b, g, this.ignoreAlphaChannel ? 255 : a);
+      // ignored
+      const a = input.readByte();
+      this._palette.setRgba(i, r, g, b, a);
     }
   }
 
-  public decodeRgba(input: InputBuffer, pixel: (color: number) => void): void {
-    if (this._colorPalette !== undefined) {
-      if (this._bpp === 1) {
-        const b = input.readByte().toString(2).padStart(8, '0');
-        for (let i = 0; i < 8; i++) {
-          pixel(this._colorPalette![parseInt(b[i])]);
+  public decodePixel(
+    input: InputBuffer,
+    pixel: (r: number, g: number, b: number, a: number) => void
+  ): void {
+    if (this._palette !== undefined) {
+      if (this._bitsPerPixel === 1) {
+        const bi = input.readByte();
+        for (let i = 7; i >= 0; --i) {
+          const b = (bi >> i) & 0x1;
+          pixel(b, 0, 0, 0);
         }
         return;
-      } else if (this._bpp === 4) {
-        const b = input.readByte();
-        const left = b >> 4;
-        const right = b & 0x0f;
-        pixel(this._colorPalette[left]);
-        pixel(this._colorPalette[right]);
+      } else if (this._bitsPerPixel === 2) {
+        const bi = input.readByte();
+        for (let i = 6; i >= 0; i -= 2) {
+          const b = (bi >> i) & 0x2;
+          pixel(b, 0, 0, 0);
+        }
+      } else if (this._bitsPerPixel === 4) {
+        const bi = input.readByte();
+        const b1 = (bi >> 4) & 0xf;
+        pixel(b1, 0, 0, 0);
+        const b2 = bi & 0xf;
+        pixel(b2, 0, 0, 0);
         return;
-      } else if (this._bpp === 8) {
+      } else if (this._bitsPerPixel === 8) {
         const b = input.readByte();
-        pixel(this._colorPalette[b]);
+        pixel(b, 0, 0, 0);
         return;
       }
     }
+
     if (
-      this._bpp === 32 &&
-      this._compression === BitmapCompressionMode.BI_BITFIELDS
+      this._compression === BmpCompressionMode.bitfields &&
+      this._bitsPerPixel === 32
     ) {
-      pixel(this.readRgba(input));
+      const p = input.readUint32();
+      const r = Math.trunc(
+        ((p & this._redMask) >> this._redShift) * this._redScale
+      );
+      const g = Math.trunc(
+        ((p & this._greenMask) >> this._greenShift) * this._greenScale
+      );
+      const b = Math.trunc(
+        ((p & this._blueMask) >> this._blueShift) * this._blueScale
+      );
+      const a = this.ignoreAlphaChannel
+        ? 255
+        : Math.trunc(
+            ((p & this._alphaMask) >> this._alphaShift) * this._alphaScale
+          );
+      pixel(r, g, b, a);
       return;
-    }
-    if (this._bpp === 32 && this._compression === BitmapCompressionMode.NONE) {
-      pixel(this.readRgba(input));
+    } else if (
+      this._bitsPerPixel === 32 &&
+      this._compression === BmpCompressionMode.none
+    ) {
+      const b = input.readByte();
+      const g = input.readByte();
+      const r = input.readByte();
+      const a = input.readByte();
+      pixel(r, g, b, this.ignoreAlphaChannel ? 255 : a);
       return;
-    }
-    if (this._bpp === 24) {
-      pixel(this.readRgba(input, 255));
+    } else if (this._bitsPerPixel === 24) {
+      const b = input.readByte();
+      const g = input.readByte();
+      const r = input.readByte();
+      pixel(r, g, b, 255);
       return;
+    } else if (this._bitsPerPixel === 16) {
+      const p = input.readUint16();
+      const r = Math.trunc(
+        ((p & this._redMask) >> this._redShift) * this._redScale
+      );
+      const g = Math.trunc(
+        ((p & this._greenMask) >> this._greenShift) * this._greenScale
+      );
+      const b = Math.trunc(
+        ((p & this._blueMask) >> this._blueShift) * this._blueScale
+      );
+      const a = this.ignoreAlphaChannel
+        ? 255
+        : Math.trunc(
+            ((p & this._alphaMask) >> this._alphaShift) * this._alphaScale
+          );
+      pixel(r, g, b, a);
+      return;
+    } else {
+      throw new LibError(
+        `Unsupported bitsPerPixel (${this._bitsPerPixel}) or compression (${this._compression}).`
+      );
     }
-    // If (this.bpp === 16) {
-    //   return this._rgbaFrom16(input);
-    // }
-    throw new ImageError(
-      `Unsupported bpp (${this._bpp}) or compression (${this._compression}).`
-    );
-  }
-
-  // TODO: finish decoding for 16 bit
-  // private rgbaFrom16(input: InputBuffer): number[] {
-  //   const maskRed = 0x7C00;
-  //   const maskGreen = 0x3E0;
-  //   const maskBlue = 0x1F;
-  //   const pixel = input.readUint16();
-  //   return [ (pixel & maskRed), (pixel & maskGreen), (pixel & maskBlue), 0 ];
-  // }
-
-  public toString(): string {
-    return JSON.stringify(
-      {
-        headerSize: this._headerSize,
-        width: this._width,
-        height: this._height,
-        planes: this._planes,
-        bpp: this._bpp,
-        file: this._fileHeader.toJson(),
-        compression: this.compressionModeToString(),
-        imageSize: this._imageSize,
-        xppm: this._xppm,
-        yppm: this._yppm,
-        totalColors: this._totalColors,
-        importantColors: this._importantColors,
-        readBottomUp: this._readBottomUp,
-        v5redMask: BitOperators.debugBits32(this._v5redMask),
-        v5greenMask: BitOperators.debugBits32(this._v5greenMask),
-        v5blueMask: BitOperators.debugBits32(this._v5blueMask),
-        v5alphaMask: BitOperators.debugBits32(this._v5alphaMask),
-      },
-      undefined,
-      2
-    );
   }
 }

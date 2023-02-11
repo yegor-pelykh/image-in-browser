@@ -1,228 +1,19 @@
-declare module "common/frame-type" {
-    /** @format */
-    export enum FrameType {
-        /**
-         * The frames of this document are to be interpreted as animation.
-         */
-        animation = 0,
-        /**
-         * The frames of this document are to be interpreted as pages of a document.
-         */
-        page = 1
-    }
-}
-declare module "common/iccp-compression-mode" {
-    /** @format */
-    export enum ICCPCompressionMode {
-        none = 0,
-        deflate = 1
-    }
-}
-declare module "error/image-error" {
-    /** @format */
-    /**
-     * An Error thrown when there was a problem in the image library.
-     */
-    export class ImageError extends Error {
-        toString(): string;
-    }
-}
+/// <reference types="node" />
 declare module "common/typings" {
     /** @format */
     export type TypedArray = Int8Array | Int16Array | Int32Array | Uint8Array | Uint16Array | Uint32Array | Float32Array | Float64Array;
     export type BufferEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'base64' | 'latin1' | 'binary' | 'hex';
     export type CompressionLevel = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined;
 }
-declare module "common/array-utils" {
-    import { TypedArray } from "common/typings";
-    export abstract class ArrayUtils {
-        static copyInt8(from: Int8Array, begin?: number, end?: number): Int8Array;
-        static copyUint8(from: Uint8Array, begin?: number, end?: number): Uint8Array;
-        static copyInt16(from: Int16Array, begin?: number, end?: number): Int16Array;
-        static copyUint16(from: Uint16Array, begin?: number, end?: number): Uint16Array;
-        static copyInt32(from: Int32Array, begin?: number, end?: number): Int32Array;
-        static copyUint32(from: Uint32Array, begin?: number, end?: number): Uint32Array;
-        static copyFloat32(from: Float32Array, begin?: number, end?: number): Float32Array;
-        static copyFloat64(from: Float64Array, begin?: number, end?: number): Float64Array;
-        static copy(from: TypedArray, begin?: number, end?: number): TypedArray;
-        static setRange<T extends TypedArray>(to: T, start: number, end: number, from: T, skipCount?: number): void;
-    }
-}
-declare module "common/icc-profile-data" {
-    import { ICCPCompressionMode } from "common/iccp-compression-mode";
-    /**
-     * ICC Profile data stored with an image.
-     */
-    export class ICCProfileData {
-        private _name;
-        get name(): string;
-        private _compression;
-        get compression(): ICCPCompressionMode;
-        private _data;
-        get data(): Uint8Array;
-        constructor(name: string, compression: ICCPCompressionMode, data: Uint8Array);
-        static from(other: ICCProfileData): ICCProfileData;
-        /**
-         * Returns the compressed data of the ICC Profile, compressing the stored data as necessary.
-         */
-        compressed(): Uint8Array;
-        /**
-         * Returns the uncompressed data of the ICC Profile, decompressing the stored data as necessary.
-         */
-        decompressed(): Uint8Array;
-    }
-}
-declare module "common/rgb-channel-set" {
+declare module "common/math-utils" {
     /** @format */
-    export enum RgbChannelSet {
-        rgb = 0,
-        rgba = 1
-    }
-}
-declare module "common/dispose-mode" {
-    /** @format */
-    export enum DisposeMode {
-        /**
-         * When drawing a frame, the canvas should be left as it is.
-         */
-        none = 0,
-        /**
-         * When drawing a frame, the canvas should be cleared first.
-         */
-        clear = 1,
-        /**
-         * When drawing this frame, the canvas should be reverted to how it was before drawing it.
-         */
-        previous = 2
-    }
-}
-declare module "common/blend-mode" {
-    /** @format */
-    export enum BlendMode {
-        /**
-         * No alpha blending should be done when drawing this frame (replace pixels in canvas).
-         */
-        source = 0,
-        /**
-         * * Alpha blending should be used when drawing this frame (composited over
-         * the current canvas image).
-         */
-        over = 1
-    }
-}
-declare module "common/color-model" {
-    /** @format */
-    export enum ColorModel {
-        argb = 0,
-        abgr = 1,
-        rgba = 2,
-        bgra = 3,
-        rgb = 4,
-        bgr = 5,
-        luminance = 6
-    }
-}
-declare module "common/interpolation" {
-    /** @format */
-    export enum Interpolation {
-        nearest = 0,
-        linear = 1,
-        cubic = 2,
-        average = 3
-    }
-}
-declare module "common/bit-operators" {
-    /** @format */
-    export abstract class BitOperators {
-        private static readonly uint8arr;
-        private static readonly uint8ToInt8arr;
-        private static readonly int8arr;
-        private static readonly int8ToUint8arr;
-        private static readonly uint16arr;
-        private static readonly uint16ToInt16arr;
-        private static readonly int16arr;
-        private static readonly int16ToUint16arr;
-        private static readonly uint32arr;
-        private static readonly uint32ToInt32arr;
-        private static readonly int32arr;
-        private static readonly int32ToUint32arr;
-        private static readonly uint32ToFloat32arr;
-        private static readonly uint64arr;
-        private static readonly uint64ToFloat64arr;
-        static signed(bits: number, value: number): number;
-        static shiftR(v: number, n: number): number;
-        static shiftL(v: number, n: number): number;
-        /**
-         * Binary conversion to an int8. This is equivalent in C to
-         * typecasting to a char.
-         */
-        static toInt8(d: number): number;
-        /**
-         * Binary conversion to an uint8. This is equivalent in C to
-         * typecasting to an unsigned char.
-         */
-        static toUint8(d: number): number;
-        /**
-         * Binary conversion to an int16. This is equivalent in C to
-         * typecasting to a short.
-         */
-        static toInt16(d: number): number;
-        /**
-         * Binary conversion to an uint16. This is equivalent in C to
-         * typecasting to an unsigned short.
-         */
-        static toUint16(d: number): number;
-        /**
-         * Binary conversion to an int32. This is equivalent in C to
-         * typecasting to signed int.
-         */
-        static toInt32(d: number): number;
-        /**
-         * Binary conversion of an int32 to a uint32. This is equivalent in C to
-         * typecasting to unsigned int.
-         */
-        static toUint32(d: number): number;
-        /**
-         * Binary conversion to a float32. This is equivalent in C to
-         * typecasting to float.
-         */
-        static toFloat32(d: number): number;
-        /**
-         * Binary conversion to a float64. This is equivalent in C to
-         * typecasting to double.
-         */
-        static toFloat64(d: bigint): number;
-        static debugBits32(value?: number): string;
-    }
-}
-declare module "common/color-channel" {
-    /** @format */
-    export enum ColorChannel {
-        /**
-         * Red channel of a color.
-         */
-        red = 0,
-        /**
-         * Green channel of a color.
-         */
-        green = 1,
-        /**
-         * Blue channel of a color.
-         */
-        blue = 2,
-        /**
-         * Alpha channel of a color.
-         */
-        alpha = 3,
-        /**
-         * Luminance (brightness) of a color.
-         */
-        luminance = 4
-    }
-}
-declare module "common/math-operators" {
-    /** @format */
-    export abstract class MathOperators {
+    export abstract class MathUtils {
+        static fract(x: number): number;
+        static smoothStep(edge0: number, edge1: number, x: number): number;
+        static mix(x: number, y: number, a: number): number;
+        static sign(x: number): number;
+        static step(edge: number, x: number): number;
+        static length3(x: number, y: number, z: number): number;
         /**
          * Returns the greatest common divisor of **x** and **y**.
          */
@@ -232,175 +23,139 @@ declare module "common/math-operators" {
          */
         static clamp(num: number, low: number, high: number): number;
         /**
-         * Clamp **num** to [**a**, **b**] and truncate
+         * Clamp **num** to [**low**, **high**] and truncate
          */
         static clampInt(num: number, low: number, high: number): number;
         /**
-         * Clamp **num** to [**0**, **255**]
+         * Clamp **num** to [0, 255] and truncate
          */
         static clampInt255(num: number): number;
     }
 }
-declare module "common/color" {
-    import { ColorChannel } from "common/color-channel";
+declare module "error/lib-error" {
+    /** @format */
     /**
-     * Image pixel colors are instantiated as an int object rather than an instance
-     * of the Color class in order to reduce object allocations.
+     * An Error thrown when there was a problem in the library.
      */
-    export abstract class Color {
-        /**
-         * Create a color value from RGB values in the range [**0**, **255**].
-         *
-         * The channel order of a uint32 encoded color is BGRA.
-         */
-        static fromRgb(red: number, green: number, blue: number): number;
-        /**
-         * Create a color value from RGBA values in the range [**0**, **255**].
-         *
-         * The channel order of a uint32 encoded color is BGRA.
-         */
-        static fromRgba(red: number, green: number, blue: number, alpha: number): number;
-        /**
-         * Create a color value from HSL values in the range [**0**, **1**].
-         */
-        static fromHsl(hue: number, saturation: number, lightness: number): number;
-        /**
-         * Create a color value from HSV values in the range [**0**, **1**].
-         */
-        static fromHsv(hue: number, saturation: number, value: number): number;
-        /**
-         * Create a color value from XYZ values.
-         */
-        static fromXyz(x: number, y: number, z: number): number;
-        /**
-         * Create a color value from CIE-L*a*b values.
-         */
-        static fromLab(L: number, a: number, b: number): number;
-        /**
-         * Compare colors from a 3 or 4 dimensional color space
-         */
-        static distance(c1: number[], c2: number[], compareAlpha: boolean): number;
-        /**
-         * Returns a new color of **src** alpha-blended onto **dst**. The opacity of **src**
-         * is additionally scaled by **fraction** / **255**.
-         */
-        static alphaBlendColors(dst: number, src: number, fraction?: number): number;
-        /**
-         * Get the **channel** from the **color**.
-         */
-        static getChannel(color: number, channel: ColorChannel): number;
-        /**
-         * Get the alpha channel from the **color**.
-         */
-        static getAlpha(color: number): number;
-        /**
-         * Get the blue channel from the **color**.
-         */
-        static getBlue(color: number): number;
-        /**
-         * Get the color with the given **r**, **g**, **b**, and **a** components.
-         * The channel order of a uint32 encoded color is RGBA.
-         */
-        static getColor(r: number, g: number, b: number, a?: number): number;
-        /**
-         * Get the green channel from the **color**.
-         */
-        static getGreen(color: number): number;
-        /**
-         * Returns the luminance (grayscale) value of the **color**.
-         */
-        static getLuminance(color: number): number;
-        /**
-         * Returns the luminance (grayscale) value of the color.
-         */
-        static getLuminanceRgb(r: number, g: number, b: number): number;
-        /**
-         * Get the red channel from the **color**.
-         */
-        static getRed(color: number): number;
-        /**
-         * Check if **color** is white
-         */
-        static isBlack(color: number): boolean;
-        /**
-         * Check if **color** is white
-         */
-        static isWhite(color: number): boolean;
-        /**
-         * Returns a new color where the alpha channel of **color** has been replaced by **value**.
-         */
-        static setAlpha(color: number, value: number): number;
-        /**
-         * Returns a new color where the blue channel of **color** has been replaced by **value**.
-         */
-        static setBlue(color: number, value: number): number;
-        /**
-         * Returns a new color, where the given **color**'s **channel** has been
-         * replaced with the given **value**.
-         */
-        static setChannel(color: number, channel: ColorChannel, value: number): number;
-        /**
-         * Returns a new color where the green channel of **color** has been replaced
-         * by **value**.
-         */
-        static setGreen(color: number, value: number): number;
-        /**
-         * Returns a new color where the red channel of **color** has been replaced
-         * by **value**.
-         */
-        static setRed(color: number, value: number): number;
-        /**
-         * Convert an HSL color to RGB, where h is specified in normalized degrees
-         * [**0**, **1**] (where 1 is 360-degrees); s and l are in the range [**0**, **1**].
-         * Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
-         */
-        static hslToRgb(hue: number, saturation: number, lightness: number): number[];
-        /**
-         * Convert an HSV color to RGB, where h is specified in normalized degrees
-         * [**0**, **1**] (where 1 is 360-degrees); s and l are in the range [**0**, **1**].
-         * Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
-         */
-        static hsvToRgb(hue: number, saturation: number, brightness: number): number[];
-        /**
-         * Convert an RGB color to HSL, where **r**, **g** and **b** are in the range [**0**, **255**].
-         * Returns a list [**h**, **s**, **l**] with values in the range [**0**, **1**].
-         */
-        static rgbToHsl(r: number, g: number, b: number): number[];
-        /**
-         * Convert a CIE-L*a*b color to XYZ.
-         */
-        static labToXyz(l: number, a: number, b: number): number[];
-        /**
-         * Convert an XYZ color to RGB.
-         */
-        static xyzToRgb(x: number, y: number, z: number): number[];
-        /**
-         * Convert a CMYK color to RGB, where **c**, **m**, **y**, **k** values are in the range
-         * [**0**, **255**]. Returns a list [**r**, **g**, **b**] with values in the range [**0**, **255**].
-         */
-        static cmykToRgb(c: number, m: number, y: number, k: number): number[];
-        /**
-         * Convert a CIE-L*a*b color to RGB.
-         */
-        static labToRgb(l: number, a: number, b: number): number[];
-        /**
-         * Convert a RGB color to XYZ.
-         */
-        static rgbToXyz(r: number, g: number, b: number): number[];
-        /**
-         * Convert a XYZ color to CIE-L*a*b.
-         */
-        static xyzToLab(x: number, y: number, z: number): number[];
-        /**
-         * Convert a RGB color to CIE-L*a*b.
-         */
-        static rgbToLab(r: number, g: number, b: number): number[];
+    export class LibError extends Error {
+        toString(): string;
     }
 }
-declare module "common/text-codec" {
-    export abstract class TextCodec {
-        static readonly utf8Decoder: TextDecoder;
-        static readonly latin1Decoder: TextDecoder;
+declare module "color/format" {
+    /**
+     * The format of a color or image.
+     */
+    export enum Format {
+        uint1 = 0,
+        uint2 = 1,
+        uint4 = 2,
+        uint8 = 3,
+        uint16 = 4,
+        uint32 = 5,
+        int8 = 6,
+        int16 = 7,
+        int32 = 8,
+        float16 = 9,
+        float32 = 10,
+        float64 = 11
+    }
+    /**
+     * The format type of a color or image.
+     */
+    export enum FormatType {
+        uint = 0,
+        int = 1,
+        float = 2
+    }
+    export const FormatToFormatType: Map<Format, FormatType>;
+    export const FormatSize: Map<Format, number>;
+    export const FormatMaxValue: Map<Format, number>;
+    /**
+     * Convert a value from the **from** format to the **to** format.
+     */
+    export function convertFormatValue(value: number, from: Format, to: Format): number;
+}
+declare module "common/bit-utils" {
+    /** @format */
+    export abstract class BitUtils {
+        private static readonly _uint8;
+        private static readonly _uint8ToInt8;
+        private static readonly _int8;
+        private static readonly _int8ToUint8;
+        private static readonly _uint16;
+        private static readonly _uint16ToInt16;
+        private static readonly _int16;
+        private static readonly _int16ToUint16;
+        private static readonly _uint32;
+        private static readonly _uint32ToInt32;
+        private static readonly _uint32ToFloat32;
+        private static readonly _int32;
+        private static readonly _int32ToUint32;
+        private static readonly _float32;
+        private static readonly _float32ToUint32;
+        private static readonly _uint64;
+        private static readonly _uint64ToFloat64;
+        private static readonly _reverseByteTable;
+        /**
+         * Count the consecutive zero bits (trailing) on the right in parallel
+         * https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
+         */
+        static countTrailingZeroBits(v: number): number;
+        static reverseByte(x: number): number;
+        static signed(bits: number, value: number): number;
+        static shiftR(v: number, n: number): number;
+        static shiftL(v: number, n: number): number;
+        /**
+         * Binary conversion of a uint8 to an int8. This is equivalent in C to
+         * typecasting an unsigned char to a char.
+         */
+        static uint8ToInt8(d: number): number;
+        /**
+         * Binary conversion of an int8 to a uint8.
+         */
+        static int8ToUint8(d: number): number;
+        /**
+         *  Binary conversion of a uint16 to an int16. This is equivalent in C to
+         * typecasting an unsigned short to a short.
+         */
+        static uint16ToInt16(d: number): number;
+        /**
+         * Binary conversion of an int16 to a uint16. This is equivalent in C to
+         *  typecasting a short to an unsigned short.
+         */
+        static int16ToUint16(d: number): number;
+        /**
+         * Binary conversion of a uint32 to an int32. This is equivalent in C to
+         *  typecasting an unsigned int to signed int.
+         */
+        static uint32ToInt32(d: number): number;
+        /**
+         * Binary conversion of a uint32 to an float32. This is equivalent in C to
+         * typecasting an unsigned int to float.
+         */
+        static uint32ToFloat32(d: number): number;
+        /**
+         * Binary conversion of a uint64 to an float64. This is equivalent in C to
+         * typecasting an unsigned long long to double.
+         */
+        static uint64ToFloat64(d: bigint): number;
+        /**
+         * Binary conversion of an int32 to a uint32. This is equivalent in C to
+         * typecasting an int to an unsigned int.
+         */
+        static int32ToUint32(d: number): number;
+        /**
+         * Binary conversion of a float32 to an uint32. This is equivalent in C to
+         * typecasting a float to unsigned int.
+         */
+        static float32ToUint32(d: number): number;
+        static debugBits32(value?: number): string;
+    }
+}
+declare module "common/string-utils" {
+    export abstract class StringUtils {
+        static readonly utf8Decoder: import("util").TextDecoder;
+        static readonly latin1Decoder: import("util").TextDecoder;
         static getCodePoints(str: string): Uint8Array;
     }
 }
@@ -442,7 +197,7 @@ declare module "common/input-buffer" {
         /**
          * Create a InputStream for reading from an Array<int>
          */
-        constructor(options: InputBufferInitOptions);
+        constructor(opt: InputBufferInitOptions);
         /**
          * Create a copy of **other**.
          */
@@ -465,7 +220,7 @@ declare module "common/input-buffer" {
          */
         memset(start: number, length: number, value: number): void;
         /**
-         * Return a InputStream to read a subset of this stream. It does not
+         * Return an InputBuffer to read a subset of this stream. It does not
          * move the read position of this stream. **position** is specified relative
          * to the start of the buffer. If **position** is not specified, the current
          * read position is used. If **length** is not specified, the remainder of this
@@ -542,6 +297,1189 @@ declare module "common/input-buffer" {
         toUint32Array(offset?: number): Uint32Array;
     }
 }
+declare module "color/channel-order" {
+    /** @format */
+    export enum ChannelOrder {
+        rgba = 0,
+        bgra = 1,
+        abgr = 2,
+        argb = 3,
+        rgb = 4,
+        bgr = 5,
+        grayAlpha = 6,
+        red = 7
+    }
+    /**
+     * The number of channels for each ChannelOrder.
+     */
+    export const ChannelOrderLength: Map<ChannelOrder, number>;
+}
+declare module "image/palette" {
+    /** @format */
+    import { Format } from "color/format";
+    export interface Palette {
+        /**
+         * The size of the palette data in bytes.
+         */
+        get byteLength(): number;
+        /**
+         * The byte buffer storage of the palette data.
+         */
+        get buffer(): ArrayBufferLike;
+        /**
+         * The number of colors stored in the palette.
+         */
+        get numColors(): number;
+        /**
+         * The number of channels per color.
+         */
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        /**
+         * The format of the color data.
+         */
+        get format(): Format;
+        /**
+         * Set the RGB color of a palette entry at **index**. If the palette has fewer
+         * channels than are set, the unsupported channels will be ignored.
+         */
+        setRgb(index: number, r: number, g: number, b: number): void;
+        /**
+         * Set the RGBA color of a palette entry at **index**. If the palette has fewer
+         * channels than are set, the unsupported channels will be ignored.
+         */
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        /**
+         * Set a specific **channel** **value** of the palette entry at **index**. If the
+         * palette has fewer channels than **channel**, the value will be ignored.
+         */
+        set(index: number, channel: number, value: number): void;
+        /**
+         * Get the the value of a specific **channel** of the palette entry at **index**.
+         * If the palette has fewer colors than **index** or fewer channels than
+         * **channel**, 0 will be returned.
+         */
+        get(index: number, channel: number): number;
+        /**
+         * Get the red channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, 0 will be returned.
+         */
+        getRed(index: number): number;
+        /**
+         * Set the red channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, it will be ignored.
+         */
+        setRed(index: number, value: number): void;
+        /**
+         * Get the green channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, 0 will be returned.
+         */
+        getGreen(index: number): number;
+        /**
+         * Set the green channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, it will be ignored.
+         */
+        setGreen(index: number, value: number): void;
+        /**
+         * Get the blue channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, 0 will be returned.
+         */
+        getBlue(index: number): number;
+        /**
+         * Set the blue channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, it will be ignored.
+         */
+        setBlue(index: number, value: number): void;
+        /**
+         * Get the alpha channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, 0 will be returned.
+         */
+        getAlpha(index: number): number;
+        /**
+         * Set the alpha channel of the palette entry at **index**. If the palette has
+         * fewer colors or channels, it will be ignored.
+         */
+        setAlpha(index: number, value: number): void;
+        /**
+         * Create a copy of the Palette.
+         */
+        clone(): Palette;
+        /**
+         * A Uint8Array view of the palette buffer storage.
+         */
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "color/channel" {
+    /** @format */
+    /**
+     * A channel of a color
+     */
+    export enum Channel {
+        /**
+         * Red channel
+         */
+        red = 0,
+        /**
+         * Green channel
+         */
+        green = 1,
+        /**
+         * Blue channel
+         */
+        blue = 2,
+        /**
+         * Alpha channel
+         */
+        alpha = 3,
+        /**
+         * Luminance is not an actual channel, it is the brightness value of the color.
+         */
+        luminance = 4
+    }
+}
+declare module "color/color" {
+    /** @format */
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Format } from "color/format";
+    export interface ColorConvertOptions {
+        format?: Format;
+        numChannels?: number;
+        alpha?: number;
+    }
+    /**
+     * The abstract Color class is the base class for all specific color classes
+     * and Pixel classes.
+     */
+    export interface Color {
+        /**
+         * The number of channels used by the color.
+         */
+        get length(): number;
+        /**
+         * The maximum value for a color channel.
+         */
+        get maxChannelValue(): number;
+        /**
+         * The maximum value for a palette index.
+         */
+        get maxIndexValue(): number;
+        /**
+         * The Format of the color.
+         */
+        get format(): Format;
+        /**
+         *  True if the format is low dynamic range.
+         */
+        get isLdrFormat(): boolean;
+        /**
+         * True if the format is high dynamic range.
+         */
+        get isHdrFormat(): boolean;
+        /**
+         * True if the color uses a palette.
+         */
+        get hasPalette(): boolean;
+        /**
+         * The palette used by the color, or undefined.
+         */
+        get palette(): Palette | undefined;
+        /**
+         * Palette index value (or red channel if there is no palette).
+         */
+        get index(): number;
+        set index(i: number);
+        /**
+         * Red channel.
+         */
+        get r(): number;
+        set r(r: number);
+        /**
+         * Green channel.
+         */
+        get g(): number;
+        set g(g: number);
+        /**
+         * Blue channel.
+         */
+        get b(): number;
+        set b(b: number);
+        /**
+         * Alpha channel.
+         */
+        get a(): number;
+        set a(a: number);
+        /**
+         * Normalized [0, 1] red.
+         */
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        /**
+         * Normalized [0, 1] green.
+         */
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        /**
+         * Normalized [0, 1] blue.
+         */
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        /**
+         * Normalized [0, 1] alpha.
+         */
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        /**
+         * The luminance (grayscale) of the color.
+         */
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        /**
+         * Gets a channel from the color by its index or Channel enum.
+         * If the channel isn't available, 0 will be returned.
+         */
+        getChannel(channel: number | Channel): number;
+        /**
+         * Sets a channel to the color by its index.
+         */
+        setChannel(channel: number | Channel, value: number): void;
+        /**
+         * Get the normalized [0, 1] value of A channel from the color. If the
+         * channel isn't available, 0 will be returned.
+         */
+        getChannelNormalized(channel: number | Channel): number;
+        /**
+         * The the values of this color to the given Color.
+         */
+        set(color: Color): void;
+        /**
+         * Set the individual **r**, **g**, **b** channels of the color.
+         */
+        setRgb(r: number, g: number, b: number): void;
+        /**
+         * Set the individual **r**, **g**, **b**, **a** channels of the color.
+         */
+        setRgba(r: number, g: number, b: number, a: number): void;
+        /**
+         * Converts the color to an array of channels.
+         */
+        toArray(): number[];
+        /**
+         * Returns a copy of the color.
+         */
+        clone(): Color;
+        /**
+         * Convert the **format** and/or the **numChannels** of the color. If
+         * **numChannels** is 4 and the current color does not have an alpha value,
+         * then **alpha** can specify what value to use for the new alpha channel.
+         * If **alpha** is not given, then **maxChannelValue** will be used.
+         */
+        convert(opt: ColorConvertOptions): Color;
+        /**
+         * Tests if this color is equivalent to another **Color**.
+         */
+        equals(other: Color | number[]): boolean;
+    }
+}
+declare module "common/rational" {
+    export class Rational {
+        private _numerator;
+        get numerator(): number;
+        private _denominator;
+        get denominator(): number;
+        get toInt(): number;
+        get toDouble(): number;
+        constructor(numerator: number, denominator: number);
+        simplify(): void;
+        equals(other: Rational): boolean;
+        toString(): string;
+    }
+}
+declare module "common/array-utils" {
+    import { Rational } from "common/rational";
+    import { TypedArray } from "common/typings";
+    export abstract class ArrayUtils {
+        static copyInt8(from: Int8Array, begin?: number, end?: number): Int8Array;
+        static copyUint8(from: Uint8Array, begin?: number, end?: number): Uint8Array;
+        static copyInt16(from: Int16Array, begin?: number, end?: number): Int16Array;
+        static copyUint16(from: Uint16Array, begin?: number, end?: number): Uint16Array;
+        static copyInt32(from: Int32Array, begin?: number, end?: number): Int32Array;
+        static copyUint32(from: Uint32Array, begin?: number, end?: number): Uint32Array;
+        static copyFloat32(from: Float32Array, begin?: number, end?: number): Float32Array;
+        static copyFloat64(from: Float64Array, begin?: number, end?: number): Float64Array;
+        static copy(from: TypedArray, begin?: number, end?: number): TypedArray;
+        static copyRange<T extends TypedArray>(from: T, fromStart: number, fromEnd: number, to: T, toStart: number): void;
+        static fill<T>(length: number, value: T): T[];
+        static generate<T>(length: number, func: (index: number) => T): T[];
+        static equals(a1: TypedArray | unknown[], a2: TypedArray | unknown[]): boolean;
+        static equalsRationalArray(a1: Rational[], a2: Rational[]): boolean;
+        static getNumEnumValues<T extends object>(t: T): number[];
+        static isNumArrayOrTypedArray(obj: unknown): boolean;
+        static isArrayOfRational(obj: unknown): boolean;
+    }
+}
+declare module "common/float16" {
+    /**
+     * A 16-bit floating-point number, used by high-dynamic-range image formats
+     * as a more efficient storage for floating-point values that don't require
+     * full 32-bit precision. A list of Half floats can be stored in a
+     * Uint16Array, and converted to a double using the **float16ToDouble** static
+     * method.
+     *
+     * This class is derived from the OpenEXR library.
+     */
+    export class Float16 {
+        private static _toFloatFloat32Data?;
+        private static _eLut;
+        private static get _toFloatFloat32();
+        bits: number;
+        constructor(f?: number);
+        private static convert;
+        private static initialize;
+        private static halfToFloat;
+        static from(other: Float16): Float16;
+        static fromBits(bits: number): Float16;
+        static float16ToDouble(bits: number): number;
+        static doubleToFloat16(n: number): number;
+        /**
+         * Returns +Infinity.
+         */
+        static posInf(): Float16;
+        /**
+         * Returns -Infinity.
+         */
+        static negInf(): Float16;
+        /**
+         * Returns a NaN with the bit pattern 0111111111111111.
+         */
+        static qNan(): Float16;
+        /**
+         * Returns a NaN with the bit pattern 0111110111111111.
+         */
+        static sNan(): Float16;
+        toDouble(): number;
+        /**
+         * Unary minus
+         */
+        minus(): Float16;
+        /**
+         * Addition operator for Half or num left operands.
+         */
+        add(f: Float16 | number): Float16;
+        /**
+         * Subtraction operator for Half or num left operands.
+         */
+        sub(f: Float16 | number): Float16;
+        /**
+         * Multiplication operator for Half or num left operands.
+         */
+        mul(f: Float16 | number): Float16;
+        /**
+         * Division operator for Half or num left operands.
+         */
+        div(f: Float16 | number): Float16;
+        /**
+         * Round to n-bit precision (n should be between 0 and 10).
+         * After rounding, the significand's 10-n least significant
+         * bits will be zero.
+         */
+        round(n: number): Float16;
+        /**
+         * Returns true if h is a normalized number, a denormalized number or zero.
+         */
+        isFinite(): boolean;
+        /**
+         * Returns true if h is a normalized number.
+         */
+        isNormalized(): boolean;
+        /**
+         * Returns true if h is a denormalized number.
+         */
+        isDenormalized(): boolean;
+        /**
+         * Returns true if h is zero.
+         */
+        isZero(): boolean;
+        /**
+         * Returns true if h is a NaN.
+         */
+        isNaN(): boolean;
+        /**
+         * Returns true if h is a positive or a negative infinity.
+         */
+        isInfinity(): boolean;
+        /**
+         * Returns true if the sign bit of h is set (negative).
+         */
+        isNegative(): boolean;
+    }
+}
+declare module "color/color-float16" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 16-bit floating point color.
+     */
+    export class ColorFloat16 implements Color {
+        protected data: Uint16Array;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Uint16Array | number);
+        static from(other: ColorFloat16): ColorFloat16;
+        static fromArray(color: Uint16Array): ColorFloat16;
+        static rgb(r: number, g: number, b: number): ColorFloat16;
+        static rgba(r: number, g: number, b: number, a: number): ColorFloat16;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorFloat16;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-float32" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 32-bit floating point color.
+     */
+    export class ColorFloat32 implements Color {
+        protected data: Float32Array;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Float32Array | number);
+        static from(other: ColorFloat32): ColorFloat32;
+        static fromArray(color: Float32Array): ColorFloat32;
+        static rgb(r: number, g: number, b: number): ColorFloat32;
+        static rgba(r: number, g: number, b: number, a: number): ColorFloat32;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorFloat32;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-float64" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 64-bit floating point color.
+     */
+    export class ColorFloat64 implements Color {
+        protected data: Float64Array;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Float64Array | number);
+        static from(other: ColorFloat64): ColorFloat64;
+        static fromArray(color: Float64Array): ColorFloat64;
+        static rgb(r: number, g: number, b: number): ColorFloat64;
+        static rgba(r: number, g: number, b: number, a: number): ColorFloat64;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorFloat64;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-int16" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 16-bit integer color.
+     */
+    export class ColorInt16 implements Color {
+        private _data;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Int16Array | number);
+        static from(other: ColorInt16): ColorInt16;
+        static fromArray(color: number[]): ColorInt16;
+        static rgb(r: number, g: number, b: number): ColorInt16;
+        static rgba(r: number, g: number, b: number, a: number): ColorInt16;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorInt16;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-int32" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 32-bit integer color.
+     */
+    export class ColorInt32 implements Color {
+        private _data;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Int32Array | number);
+        static from(other: ColorInt32): ColorInt32;
+        static fromArray(color: number[]): ColorInt32;
+        static rgb(r: number, g: number, b: number): ColorInt32;
+        static rgba(r: number, g: number, b: number, a: number): ColorInt32;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorInt32;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-int8" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 8-bit integer color.
+     */
+    export class ColorInt8 implements Color {
+        private _data;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Int8Array | number);
+        static from(other: ColorInt8): ColorInt8;
+        static fromArray(color: number[]): ColorInt8;
+        static rgb(r: number, g: number, b: number): ColorInt8;
+        static rgba(r: number, g: number, b: number, a: number): ColorInt8;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorInt8;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-uint1" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 1-bit unsigned int color with channel values in the range [0, 1].
+     */
+    export class ColorUint1 implements Color {
+        private _data;
+        get format(): Format;
+        private readonly _length;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: number[] | number);
+        static from(other: ColorUint1): ColorUint1;
+        static fromArray(color: number[]): ColorUint1;
+        static rgb(r: number, g: number, b: number): ColorUint1;
+        static rgba(r: number, g: number, b: number, a: number): ColorUint1;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorUint1;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-uint16" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 16-bit unsigned int color with channel values in the range [0, 65535].
+     */
+    export class ColorUint16 implements Color {
+        protected data: Uint16Array;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Uint16Array | number);
+        static from(other: ColorUint16): ColorUint16;
+        static fromArray(color: Uint16Array): ColorUint16;
+        static rgb(r: number, g: number, b: number): ColorUint16;
+        static rgba(r: number, g: number, b: number, a: number): ColorUint16;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorUint16;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-uint2" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 2-bit unsigned int color with channel values in the range [0, 3].
+     */
+    export class ColorUint2 implements Color {
+        private _data;
+        get format(): Format;
+        private readonly _length;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: number[] | number);
+        static from(other: ColorUint2): ColorUint2;
+        static fromArray(color: number[]): ColorUint2;
+        static rgb(r: number, g: number, b: number): ColorUint2;
+        static rgba(r: number, g: number, b: number, a: number): ColorUint2;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorUint2;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-uint32" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 32-bit unsigned int color.
+     */
+    export class ColorUint32 implements Color {
+        protected data: Uint32Array;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Uint32Array | number);
+        static from(other: ColorUint32): ColorUint32;
+        static fromArray(color: Uint32Array): ColorUint32;
+        static rgb(r: number, g: number, b: number): ColorUint32;
+        static rgba(r: number, g: number, b: number, a: number): ColorUint32;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorUint32;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-uint4" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * A 4-bit unsigned int color with channel values in the range [0, 15].
+     */
+    export class ColorUint4 implements Color {
+        private _data;
+        get format(): Format;
+        private readonly _length;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Uint8Array | number);
+        static from(other: ColorUint4): ColorUint4;
+        static fromArray(color: Uint8Array): ColorUint4;
+        static rgb(r: number, g: number, b: number): ColorUint4;
+        static rgba(r: number, g: number, b: number, a: number): ColorUint4;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorUint4;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "color/color-utils" {
+    import { Color } from "color/color";
+    import { Format } from "color/format";
+    export interface ConvertColorOptions {
+        from: Color;
+        to?: Color;
+        format?: Format;
+        numChannels?: number;
+        alpha?: number;
+    }
+    export abstract class ColorUtils {
+        private static convertColorInternal;
+        static uint32ToRed(c: number): number;
+        static uint32ToGreen(c: number): number;
+        static uint32ToBlue(c: number): number;
+        static uint32ToAlpha(c: number): number;
+        static rgbaToUint32(r: number, g: number, b: number, a: number): number;
+        static convertColor(opt: ConvertColorOptions): Color;
+        /**
+         * Returns the luminance (grayscale) value of the color.
+         */
+        static getLuminance(c: Color): number;
+        /**
+         * Returns the normalized [0, 1] luminance (grayscale) value of the color.
+         */
+        static getLuminanceNormalized(c: Color): number;
+        /**
+         * Returns the luminance (grayscale) value of the color.
+         */
+        static getLuminanceRgb(r: number, g: number, b: number): number;
+        /**
+         *  Convert an HSL color to RGB, where **hue** is specified in normalized degrees
+         * [0, 1] (where 1 is 360-degrees); **saturation** and **lightness** are in the range [0, 1].
+         * Returns a list [r, g, b] with values in the range [0, 255].
+         */
+        static hslToRgb(hue: number, saturation: number, lightness: number): number[];
+        /**
+         * Convert an HSV color to RGB, where **hue** is specified in normalized degrees
+         * [0, 1] (where 1 is 360-degrees); **saturation** and **brightness** are in the range [0, 1].
+         * Returns a list [r, g, b] with values in the range [0, 255].
+         */
+        static hsvToRgb(hue: number, saturation: number, brightness: number): number[];
+        /**
+         * Convert an RGB color to HSL, where **r**, **g** and **b** are in the range [0, 255].
+         * Returns a list [h, s, l] with values in the range [0, 1].
+         */
+        static rgbToHsl(r: number, g: number, b: number): number[];
+        /**
+         * Convert a CIE L\*a\*b color to XYZ.
+         */
+        static labToXyz(l: number, a: number, b: number): number[];
+        /**
+         * Convert an XYZ color to RGB.
+         */
+        static xyzToRgb(x: number, y: number, z: number): number[];
+        /**
+         * Convert a CMYK color to RGB, where **c**, **m**, **y**, **k** values are in the range
+         * [0, 255]. Returns a list [r, g, b] with values in the range [0, 255].
+         */
+        static cmykToRgb(c: number, m: number, y: number, k: number): number[];
+        /**
+         * Convert a CIE L\*a\*b color to RGB.
+         */
+        static labToRgb(l: number, a: number, b: number): number[];
+        /**
+         * Convert a RGB color to XYZ.
+         */
+        static rgbToXyz(r: number, g: number, b: number): number[];
+        /**
+         * Convert a XYZ color to CIE L\*a\*b.
+         */
+        static xyzToLab(x: number, y: number, z: number): number[];
+        /**
+         * Convert a RGB color to CIE L\*a\*b.
+         */
+        static rgbToLab(r: number, g: number, b: number): number[];
+    }
+}
+declare module "color/color-uint8" {
+    import { Palette } from "image/palette";
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    /**
+     * An 8-bit unsigned int color with channel values in the range [0, 255].
+     */
+    export class ColorUint8 implements Color {
+        protected data: Uint8Array;
+        get format(): Format;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(i: number);
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(data: Uint8Array | number);
+        static from(other: ColorUint8): ColorUint8;
+        static fromArray(color: Uint8Array): ColorUint8;
+        static rgb(r: number, g: number, b: number): ColorUint8;
+        static rgba(r: number, g: number, b: number, a: number): ColorUint8;
+        getChannel(channel: number | Channel, defValue?: number): number;
+        getChannelNormalized(channel: number | Channel): number;
+        setChannel(index: number | Channel, value: number): void;
+        set(c: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        clone(): ColorUint8;
+        equals(other: Color): boolean;
+        convert(opt?: ColorConvertOptions): Color;
+    }
+}
+declare module "common/interpolation" {
+    /** @format */
+    /**
+     * Interpolation method to use when resizing images.
+     */
+    export enum Interpolation {
+        /**
+         * Select the closest pixel.Fastest, lowest quality.
+         */
+        nearest = 0,
+        /**
+         * Linearly blend between the neighboring pixels.
+         */
+        linear = 1,
+        /**
+         * Cubic blend between the neighboring pixels. Slowest, highest Quality.
+         */
+        cubic = 2,
+        /**
+         * Average the colors of the neighboring pixels.
+         */
+        average = 3
+    }
+}
 declare module "common/output-buffer" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
@@ -550,7 +1488,7 @@ declare module "common/output-buffer" {
         size?: number;
     }
     export class OutputBuffer {
-        private static readonly BLOCK_SIZE;
+        private static readonly _blockSize;
         private _buffer;
         get buffer(): Uint8Array;
         private _bigEndian;
@@ -562,7 +1500,7 @@ declare module "common/output-buffer" {
         /**
          * Create a byte buffer for writing.
          */
-        constructor(options?: OutputBufferInitOptions);
+        constructor(opt?: OutputBufferInitOptions);
         /**
          * Grow the buffer to accommodate additional data.
          */
@@ -602,7 +1540,7 @@ declare module "common/output-buffer" {
          */
         writeFloat64(value: number): void;
         /**
-         * Return the subarray of the buffer in the range **start**:**end**.
+         * Return the subarray of the buffer in the range [**start**,**end**].
          * If **start** or **end** are < 0 then it is relative to the end of the buffer.
          * If **end** is not specified (or undefined), then it is the end of the buffer.
          * This is equivalent to the python list range operator.
@@ -610,385 +1548,358 @@ declare module "common/output-buffer" {
         subarray(start: number, end?: number): Uint8Array;
     }
 }
-declare module "common/rational" {
-    export class Rational {
-        private _numerator;
-        get numerator(): number;
-        private _denominator;
-        get denominator(): number;
-        get asInt(): number;
-        get asDouble(): number;
-        constructor(numerator: number, denominator: number);
-        simplify(): void;
-        equalsTo(other: unknown): boolean;
-        toString(): string;
-    }
-}
-declare module "exif/exif-value-type" {
+declare module "exif/ifd-value-type" {
     /** @format */
-    export enum ExifValueType {
+    export enum IfdValueType {
         none = 0,
         byte = 1,
         ascii = 2,
         short = 3,
         long = 4,
         rational = 5,
-        sbyte = 6,
+        sByte = 6,
         undefined = 7,
-        sshort = 8,
-        slong = 9,
-        srational = 10,
+        sShort = 8,
+        sLong = 9,
+        sRational = 10,
         single = 11,
         double = 12
     }
-    export const ExifValueTypeString: string[];
-    export const ExifValueTypeSize: number[];
-    export function getExifValueTypeString(type: ExifValueType): string;
-    export function getExifValueTypeSize(type: ExifValueType, length?: number): number;
+    export const IfdValueTypeSize: number[];
+    export function getIfdValueTypeString(type: IfdValueType): string;
+    export function getIfdValueTypeSize(type: IfdValueType, length?: number): number;
 }
-declare module "exif/exif-value/exif-value" {
+declare module "exif/ifd-value/ifd-value" {
     /** @format */
     import { OutputBuffer } from "common/output-buffer";
     import { Rational } from "common/rational";
-    import { ExifValueType } from "exif/exif-value-type";
-    export abstract class ExifValue {
-        get type(): ExifValueType;
+    import { IfdValueType } from "exif/ifd-value-type";
+    export abstract class IfdValue {
+        get type(): IfdValueType;
         get length(): number;
         get dataSize(): number;
         get typeString(): string;
         toBool(_index?: number): boolean;
         toInt(_index?: number): number;
         toDouble(_index?: number): number;
+        toData(): Uint8Array;
         toRational(_index?: number): Rational;
-        toString(): string;
         write(_out: OutputBuffer): void;
         setBool(_v: boolean, _index?: number): void;
         setInt(_v: number, _index?: number): void;
         setDouble(_v: number, _index?: number): void;
         setRational(_numerator: number, _denomitator: number, _index?: number): void;
         setString(_v: string): void;
-        equalsTo(_other: ExifValue): boolean;
-        clone(): ExifValue;
+        equals(_other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
     }
 }
 declare module "exif/exif-entry" {
     /** @format */
-    import { ExifValue } from "exif/exif-value/exif-value";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
     export class ExifEntry {
         private readonly _tag;
         get tag(): number;
         private _value;
-        get value(): ExifValue | undefined;
-        set value(v: ExifValue | undefined);
-        constructor(tag: number, value?: ExifValue);
-    }
-}
-declare module "exif/exif-ifd-container" {
-    /** @format */
-    import { ExifIFD } from "exif/exif-ifd";
-    export class ExifIFDContainer {
-        protected directories: Map<string, ExifIFD>;
-        get keys(): IterableIterator<string>;
-        get values(): IterableIterator<ExifIFD>;
-        get size(): number;
-        get isEmpty(): boolean;
-        constructor(directories?: Map<string, ExifIFD>);
-        static from(other: ExifIFDContainer): ExifIFDContainer;
-        has(key: string): boolean;
-        get(ifdName: string): ExifIFD;
-        set(ifdName: string, value: ExifIFD): void;
-        clear(): void;
+        get value(): IfdValue | undefined;
+        set value(v: IfdValue | undefined);
+        constructor(tag: number, value?: IfdValue);
     }
 }
 declare module "exif/exif-tag" {
     /** @format */
-    import { ExifValueType } from "exif/exif-value-type";
+    import { IfdValueType } from "exif/ifd-value-type";
     export interface ExifTagInitOptions {
         name: string;
-        type?: ExifValueType;
+        type?: IfdValueType;
         count?: number;
     }
     export class ExifTag {
         private readonly _name;
         get name(): string;
         private readonly _type;
-        get type(): ExifValueType;
-        private _count;
-        get count(): number;
-        constructor(options: ExifTagInitOptions);
+        get type(): IfdValueType;
+        private _count?;
+        get count(): number | undefined;
+        constructor(opt: ExifTagInitOptions);
     }
     export const ExifTagNameToID: Map<string, number>;
     export const ExifImageTags: Map<number, ExifTag>;
     export const ExifInteropTags: Map<number, ExifTag>;
     export const ExifGpsTags: Map<number, ExifTag>;
 }
-declare module "exif/exif-value/exif-ascii-value" {
+declare module "exif/ifd-value/ifd-ascii-value" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifAsciiValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdAsciiValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
         get length(): number;
         constructor(value: number[] | string);
-        static fromData(data: InputBuffer, length: number): ExifAsciiValue;
+        static data(data: InputBuffer, length: number): IfdAsciiValue;
         toData(): Uint8Array;
-        toString(): string;
         write(out: OutputBuffer): void;
         setString(v: string): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-byte-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifByteValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Uint8Array | number);
-        static fromData(data: InputBuffer, offset?: number, length?: number): ExifByteValue;
-        toInt(index?: number): number;
-        toData(): Uint8Array;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
         toString(): string;
-        write(out: OutputBuffer): void;
-        setInt(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
     }
 }
-declare module "exif/exif-value/exif-double-value" {
+declare module "exif/ifd-value/ifd-short-value" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifDoubleValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Float64Array | number);
-        static fromData(data: InputBuffer, length: number): ExifDoubleValue;
-        toDouble(index?: number): number;
-        toData(): Uint8Array;
-        toString(): string;
-        write(out: OutputBuffer): void;
-        setDouble(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-long-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifLongValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Uint32Array | number);
-        static fromData(data: InputBuffer, length: number): ExifLongValue;
-        toInt(index?: number): number;
-        toData(): Uint8Array;
-        toString(): string;
-        write(out: OutputBuffer): void;
-        setInt(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-rational-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    import { Rational } from "common/rational";
-    export class ExifRationalValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Rational[] | Rational);
-        static fromData(data: InputBuffer, length: number): ExifRationalValue;
-        static from(other: Rational): ExifRationalValue;
-        toInt(index?: number): number;
-        toDouble(index?: number): number;
-        toRational(index?: number): Rational;
-        toString(): string;
-        write(out: OutputBuffer): void;
-        setRational(numerator: number, denomitator: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-sbyte-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifSByteValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Int8Array | number);
-        static fromData(data: InputBuffer, offset?: number, length?: number): ExifSByteValue;
-        toInt(index?: number): number;
-        toData(): Uint8Array;
-        toString(): string;
-        write(out: OutputBuffer): void;
-        setInt(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-short-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifShortValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdShortValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
         get length(): number;
         constructor(value: Uint16Array | number);
-        static fromData(data: InputBuffer, length: number): ExifShortValue;
+        static data(data: InputBuffer, length: number): IfdShortValue;
         toInt(index?: number): number;
-        toString(): string;
         write(out: OutputBuffer): void;
         setInt(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-single-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifSingleValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Float32Array | number);
-        static fromData(data: InputBuffer, length: number): ExifSingleValue;
-        toDouble(index?: number): number;
-        toData(): Uint8Array;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
         toString(): string;
-        write(out: OutputBuffer): void;
-        setDouble(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
     }
 }
-declare module "exif/exif-value/exif-slong-value" {
+declare module "exif/ifd-value/ifd-rational-value" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifSLongValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Int32Array | number);
-        static fromData(data: InputBuffer, length: number): ExifSLongValue;
-        toInt(index?: number): number;
-        toData(): Uint8Array;
-        toString(): string;
-        write(out: OutputBuffer): void;
-        setInt(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-srational-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
     import { Rational } from "common/rational";
-    export class ExifSRationalValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
+    export class IfdRationalValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
         get length(): number;
         constructor(value: Rational[] | Rational);
-        static fromData(data: InputBuffer, length: number): ExifSRationalValue;
-        static from(other: Rational): ExifSRationalValue;
+        static data(data: InputBuffer, length: number): IfdRationalValue;
+        static from(other: Rational): IfdRationalValue;
         toInt(index?: number): number;
         toDouble(index?: number): number;
         toRational(index?: number): Rational;
-        toString(): string;
         write(out: OutputBuffer): void;
         setRational(numerator: number, denomitator: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
-    }
-}
-declare module "exif/exif-value/exif-sshort-value" {
-    /** @format */
-    import { InputBuffer } from "common/input-buffer";
-    import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifSShortValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
-        get length(): number;
-        constructor(value: Int16Array | number);
-        static fromData(data: InputBuffer, length: number): ExifSShortValue;
-        toInt(index?: number): number;
-        toData(): Uint8Array;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
         toString(): string;
-        write(out: OutputBuffer): void;
-        setInt(v: number, index?: number): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
     }
 }
-declare module "exif/exif-value/exif-undefined-value" {
+declare module "exif/ifd-value/ifd-byte-value" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     import { OutputBuffer } from "common/output-buffer";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    import { ExifValueType } from "exif/exif-value-type";
-    export class ExifUndefinedValue extends ExifValue {
-        private value;
-        get type(): ExifValueType;
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdByteValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
         get length(): number;
         constructor(value: Uint8Array | number);
-        static fromData(data: InputBuffer, offset?: number, length?: number): ExifUndefinedValue;
+        static data(data: InputBuffer, offset?: number, length?: number): IfdByteValue;
+        toInt(index?: number): number;
         toData(): Uint8Array;
-        toString(): string;
         write(out: OutputBuffer): void;
-        equalsTo(other: unknown): boolean;
-        clone(): ExifValue;
+        setInt(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
     }
 }
-declare module "exif/exif-ifd" {
+declare module "exif/ifd-value/ifd-long-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdLongValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Uint32Array | number);
+        static data(data: InputBuffer, length: number): IfdLongValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-sbyte-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdSByteValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Int8Array | number);
+        static data(data: InputBuffer, offset?: number, length?: number): IfdSByteValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-undefined-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdUndefinedValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Uint8Array | number);
+        static data(data: InputBuffer, offset?: number, length?: number): IfdUndefinedValue;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-sshort-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdSShortValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Int16Array | number);
+        static data(data: InputBuffer, length: number): IfdSShortValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-slong-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdSLongValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Int32Array | number);
+        static data(data: InputBuffer, length: number): IfdSLongValue;
+        toInt(index?: number): number;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        setInt(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-srational-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    import { Rational } from "common/rational";
+    export class IfdSRationalValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Rational[] | Rational);
+        static data(data: InputBuffer, length: number): IfdSRationalValue;
+        static from(other: Rational): IfdSRationalValue;
+        toInt(index?: number): number;
+        toDouble(index?: number): number;
+        toRational(index?: number): Rational;
+        write(out: OutputBuffer): void;
+        setRational(numerator: number, denomitator: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-single-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdSingleValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Float32Array | number);
+        static data(data: InputBuffer, length: number): IfdSingleValue;
+        toDouble(index?: number): number;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        setDouble(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-value/ifd-double-value" {
+    /** @format */
+    import { InputBuffer } from "common/input-buffer";
+    import { OutputBuffer } from "common/output-buffer";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { IfdValueType } from "exif/ifd-value-type";
+    export class IfdDoubleValue extends IfdValue {
+        private _value;
+        get type(): IfdValueType;
+        get length(): number;
+        constructor(value: Float64Array | number);
+        static data(data: InputBuffer, length: number): IfdDoubleValue;
+        toDouble(index?: number): number;
+        toData(): Uint8Array;
+        write(out: OutputBuffer): void;
+        setDouble(v: number, index?: number): void;
+        equals(other: IfdValue): boolean;
+        clone(): IfdValue;
+        toString(): string;
+    }
+}
+declare module "exif/ifd-directory" {
     /** @format */
     import { Rational } from "common/rational";
-    import { ExifIFDContainer } from "exif/exif-ifd-container";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    export class ExifIFD {
-        private readonly data;
+    import { IfdContainer } from "exif/ifd-container";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    import { TypedArray } from "common/typings";
+    export class IfdDirectory {
+        private readonly _data;
         private readonly _sub;
-        get sub(): ExifIFDContainer;
+        get sub(): IfdContainer;
         get keys(): IterableIterator<number>;
-        get values(): IterableIterator<ExifValue>;
+        get values(): IterableIterator<IfdValue>;
         get size(): number;
         get isEmpty(): boolean;
+        get hasUserComment(): boolean;
+        get userComment(): string | undefined;
+        set userComment(v: string | undefined);
         get hasImageDescription(): boolean;
         get imageDescription(): string | undefined;
         set imageDescription(v: string | undefined);
@@ -1022,770 +1933,2598 @@ declare module "exif/exif-ifd" {
         get hasCopyright(): boolean;
         get copyright(): string | undefined;
         set copyright(v: string | undefined);
+        /**
+         * The size in bytes of the data written by this directory. Can be used to
+         * calculate end-of-block offsets.
+         */
+        get dataSize(): number;
+        constructor(data?: Map<number, IfdValue>);
         private setRational;
+        static from(other: IfdDirectory): IfdDirectory;
         static isArrayOfRationalNumbers(value: unknown): boolean;
         has(tag: number): boolean;
-        getValue(tag: number | string): ExifValue | undefined;
-        setValue(tag: number | string, value: number[][] | Rational[] | number[] | Rational | ExifValue | undefined): void;
+        getValue(tag: number | string): IfdValue | undefined;
+        setValue(tag: number | string, value: Rational[] | number[] | TypedArray | Rational | IfdValue | number | undefined): void;
+        copyFrom(other: IfdDirectory): void;
+        clone(): IfdDirectory;
+    }
+}
+declare module "exif/ifd-container" {
+    /** @format */
+    import { IfdDirectory } from "exif/ifd-directory";
+    export class IfdContainer {
+        protected directories: Map<string, IfdDirectory>;
+        get keys(): IterableIterator<string>;
+        get values(): IterableIterator<IfdDirectory>;
+        get size(): number;
+        get isEmpty(): boolean;
+        constructor(directories?: Map<string, IfdDirectory>);
+        static from(other: IfdContainer): IfdContainer;
+        has(key: string): boolean;
+        get(ifdName: string): IfdDirectory;
+        set(ifdName: string, value: IfdDirectory): void;
+        clear(): void;
     }
 }
 declare module "exif/exif-data" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     import { OutputBuffer } from "common/output-buffer";
-    import { ExifIFD } from "exif/exif-ifd";
-    import { ExifIFDContainer } from "exif/exif-ifd-container";
-    import { ExifValue } from "exif/exif-value/exif-value";
-    export class ExifData extends ExifIFDContainer {
-        get imageIfd(): ExifIFD;
-        get thumbnailIfd(): ExifIFD;
-        get exifIfd(): ExifIFD;
-        get gpsIfd(): ExifIFD;
-        get interopIfd(): ExifIFD;
+    import { IfdContainer } from "exif/ifd-container";
+    import { IfdDirectory } from "exif/ifd-directory";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
+    export class ExifData extends IfdContainer {
+        get imageIfd(): IfdDirectory;
+        get thumbnailIfd(): IfdDirectory;
+        get exifIfd(): IfdDirectory;
+        get gpsIfd(): IfdDirectory;
+        get interopIfd(): IfdDirectory;
+        get dataSize(): number;
         private writeDirectory;
         private writeDirectoryLargeValues;
         private readEntry;
         static from(other: ExifData): ExifData;
         static fromInputBuffer(input: InputBuffer): ExifData;
         hasTag(tag: number): boolean;
-        getTag(tag: number): ExifValue | undefined;
+        getTag(tag: number): IfdValue | undefined;
         getTagName(tag: number): string;
         write(out: OutputBuffer): void;
         read(block: InputBuffer): boolean;
+        clone(): ExifData;
         toString(): string;
     }
 }
-declare module "common/memory-image" {
+declare module "image/frame-type" {
     /** @format */
-    import { ICCProfileData } from "common/icc-profile-data";
-    import { RgbChannelSet } from "common/rgb-channel-set";
-    import { DisposeMode } from "common/dispose-mode";
-    import { BlendMode } from "common/blend-mode";
-    import { ColorModel } from "common/color-model";
-    import { Interpolation } from "common/interpolation";
-    import { ExifData } from "exif/exif-data";
-    export interface RgbMemoryImageInitOptions {
-        width: number;
-        height: number;
-        exifData?: ExifData;
-        iccProfile?: ICCProfileData;
-        textData?: Map<string, string>;
+    /**
+     * The type of image this frame represents. Multi-page formats, such as
+     * TIFF, can represent the frames of an animation as pages in a document.
+     */
+    export enum FrameType {
+        /**
+         * The frames of this document are to be interpreted as animation.
+         */
+        animation = 0,
+        /**
+         * The frames of this document are to be interpreted as pages of a document.
+         */
+        page = 1,
+        /**
+         * The frames of this document are to be interpreted as a sequence of images.
+         */
+        sequence = 2
     }
-    export interface MemoryImageInitOptions extends RgbMemoryImageInitOptions {
-        rgbChannelSet?: RgbChannelSet;
-        data?: Uint32Array;
+}
+declare module "image/icc-profile-compression" {
+    /** @format */
+    export enum IccProfileCompression {
+        none = 0,
+        deflate = 1
     }
-    export interface MemoryImageInitOptionsColorModel {
-        width: number;
-        height: number;
-        data: Uint8Array;
-        rgbChannelSet?: RgbChannelSet;
-        exifData?: ExifData;
-        iccProfile?: ICCProfileData;
-        textData?: Map<string, string>;
-        colorModel?: ColorModel;
+}
+declare module "image/icc-profile" {
+    import { IccProfileCompression } from "image/icc-profile-compression";
+    /**
+     * ICC Profile data stored with an image.
+     */
+    export class IccProfile {
+        private _name;
+        get name(): string;
+        private _compression;
+        get compression(): IccProfileCompression;
+        private _data;
+        get data(): Uint8Array;
+        constructor(name: string, compression: IccProfileCompression, data: Uint8Array);
+        static from(other: IccProfile): IccProfile;
+        /**
+         * Returns the compressed data of the ICC Profile, compressing the stored data as necessary.
+         */
+        compressed(): Uint8Array;
+        /**
+         * Returns the uncompressed data of the ICC Profile, decompressing the stored data as necessary.
+         */
+        decompressed(): Uint8Array;
+        clone(): IccProfile;
+    }
+}
+declare module "image/pixel-uint8" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataUint8 } from "image/image-data-uint8";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataUint8;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint8Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataUint8);
+        static imageData(image: MemoryImageDataUint8): PixelUint8;
+        static image(image: MemoryImage): PixelUint8;
+        static from(other: PixelUint8): PixelUint8;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        equals(other: Pixel | number[]): boolean;
+        toArray(): number[];
+        clone(): PixelUint8;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/pixel-range-iterator" {
+    /** @format */
+    import { Pixel } from "image/pixel";
+    export class PixelRangeIterator implements Iterator<Pixel> {
+        private _pixel;
+        private _x1;
+        private _y1;
+        private _x2;
+        private _y2;
+        constructor(pixel: Pixel, x: number, y: number, width: number, height: number);
+        next(): IteratorResult<Pixel>;
+        [Symbol.iterator](): IterableIterator<Pixel>;
+    }
+}
+declare module "color/color-rgb8" {
+    /** @format */
+    import { ColorUint8 } from "color/color-uint8";
+    export class ColorRgb8 extends ColorUint8 {
+        constructor(r: number, g: number, b: number);
+        static from(other: ColorUint8): ColorUint8;
+    }
+}
+declare module "color/color-rgba8" {
+    /** @format */
+    import { ColorUint8 } from "color/color-uint8";
+    export class ColorRgba8 extends ColorUint8 {
+        constructor(r: number, g: number, b: number, a: number);
+        static from(other: ColorUint8): ColorUint8;
+    }
+}
+declare module "image/image-data-uint8" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelUint8 } from "image/pixel-uint8";
+    export class MemoryImageDataUint8 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Uint8Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelUint8;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        private _palette?;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint8Array);
+        static palette(width: number, height: number, palette?: Palette): MemoryImageDataUint8;
+        static from(other: MemoryImageDataUint8, skipPixels?: boolean): MemoryImageDataUint8;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataUint8;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-undefined" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    /**
+     * Represents an invalid pixel.
+     */
+    export class PixelUndefined implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private static readonly _nullImageData;
+        get image(): MemoryImageData;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get x(): number;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get index(): number;
+        set index(_i: number);
+        get r(): number;
+        set r(_r: number);
+        get g(): number;
+        set g(_g: number);
+        get b(): number;
+        set b(_b: number);
+        get a(): number;
+        set a(_a: number);
+        get rNormalized(): number;
+        set rNormalized(_v: number);
+        get gNormalized(): number;
+        set gNormalized(_v: number);
+        get bNormalized(): number;
+        set bNormalized(_v: number);
+        get aNormalized(): number;
+        set aNormalized(_v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        getChannel(_channel: number): number;
+        getChannelNormalized(_channel: Channel): number;
+        setChannel(_channel: number, _value: number): void;
+        set(_color: Color): void;
+        setRgb(_r: number, _g: number, _b: number): void;
+        setRgba(_r: number, _g: number, _b: number, _a: number): void;
+        clone(): Color;
+        convert(_options: ColorConvertOptions): Color;
+        setPosition(_x: number, _y: number): void;
+        setPositionNormalized(_x: number, _y: number): void;
+        equals(other: Pixel): boolean;
+        next(): IteratorResult<Pixel>;
+        toArray(): number[];
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/pixel" {
+    /** @format */
+    import { Color } from "color/color";
+    import { MemoryImageData } from "image/image-data";
+    import { PixelUndefined } from "image/pixel-undefined";
+    export interface Pixel extends Color, Iterator<Pixel> {
+        /**
+         * The [MemoryImageData] this pixel refers to.
+         */
+        get image(): MemoryImageData;
+        /**
+         * True if this points to a valid pixel, otherwise false.
+         */
+        get isValid(): boolean;
+        /**
+         * The width in pixels of the image data this pixel refers to.
+         */
+        get width(): number;
+        /**
+         * The height in pixels of the image data this pixel refers to.
+         */
+        get height(): number;
+        /**
+         * The x coordinate of the pixel.
+         */
+        get x(): number;
+        /**
+         * The y coordinate of the pixel.
+         */
+        get y(): number;
+        /**
+         * The normalized x coordinate of the pixel, in the range [0, 1].
+         */
+        get xNormalized(): number;
+        /**
+         * The normalized y coordinate of the pixel, in the range [0, 1].
+         */
+        get yNormalized(): number;
+        /**
+         * Set the coordinates of the pixel.
+         */
+        setPosition(x: number, y: number): void;
+        /**
+         * Set the normalized coordinates of the pixel, in the range [0, 1].
+         */
+        setPositionNormalized(x: number, y: number): void;
+        /**
+         * Tests if this pixel has the same values as the given pixel or color.
+         */
+        equals(other: Pixel | number[]): boolean;
     }
     /**
-     * An image buffer where pixels are encoded into 32-bit unsigned ints (Uint32).
-     *
-     * Pixels are stored in 32-bit unsigned integers in #AARRGGBB format.
-     * You can use **getBytes** to access the pixel data at the byte (channel) level,
-     * optionally providing the format to get the image data as. You can use the
-     * letious color functions, such as **getRed**, **getGreen**, **getBlue**, and **getAlpha**
-     * to access the individual channels of a given pixel color.
-     *
-     * If this image is a frame of an animation as decoded by the **decodeFrame**
-     * method of **Decoder**, then the **xOffset**, **yOffset**, **width** and **height**
-     * determine the area of the canvas this image should be drawn into,
-     * as some frames of an animation only modify part of the canvas (recording
-     * the part of the frame that actually changes). The **decodeAnimation** method
-     * will always return the fully composed animation, so these coordinate
-     * properties are not used.
+     * UndefinedPixel is used to represent an invalid pixel.
      */
-    export class MemoryImage {
+    export const UndefinedPixel: PixelUndefined;
+}
+declare module "image/image-data" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export interface MemoryImageData extends Iterable<Pixel> {
+        get width(): number;
+        get height(): number;
+        get numChannels(): number;
         /**
-         * Pixels are encoded into 4-byte Uint32 integers in #AABBGGRR channel order.
+         * The channel **Format** of the image.
          */
+        get format(): Format;
+        /**
+         * Whether the image has uint, int, or float data.
+         */
+        get formatType(): FormatType;
+        /**
+         * True if the image format is "high dynamic range." HDR formats include:
+         * float16, float32, float64, int8, int16, and int32.
+         */
+        get isHdrFormat(): boolean;
+        /**
+         * True if the image format is "low dynamic range." LDR formats include:
+         * uint1, uint2, uint4, and uint8.
+         */
+        get isLdrFormat(): boolean;
+        /**
+         * The number of bits per color channel. Can be 1, 2, 4, 8, 16, 32, or 64.
+         */
+        get bitsPerChannel(): number;
+        /**
+         * The maximum value of a pixel channel, based on the **format** of the image.
+         * If the image has a **palette**, this will be the maximum value of a palette
+         * color channel. Float format images will have a **maxChannelValue** of 1,
+         * though they can have values above that.
+         */
+        get maxChannelValue(): number;
+        /**
+         * The maximum value of a palette index, based on the **format** of the image.
+         * This differs from **maxChannelValue** in that it will not be affected by
+         * the format of the **palette**.
+         */
+        get maxIndexValue(): number;
+        /**
+         * True if the image has a palette. If the image has a palette, then the
+         * image data has 1 channel for the palette index of the pixel.
+         */
+        get hasPalette(): boolean;
+        /**
+         * The **Palette** of the image, or undefined if the image does not have one.
+         */
+        get palette(): Palette | undefined;
+        /**
+         * The size of the image data in bytes.
+         */
+        get byteLength(): number;
+        /**
+         * The size of the image data in bytes.
+         */
+        get length(): number;
+        /**
+         * The **ArrayBufferLike** storage of the image.
+         */
+        get buffer(): ArrayBufferLike;
+        /**
+         * The size, in bytes, of a row if pixels in the data.
+         */
+        get rowStride(): number;
+        /**
+         * Returns a pixel iterator for iterating over a rectangular range of pixels
+         * in the image.
+         */
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        /**
+         * Create a **Color** object with the format and number of channels of the
+         * image.
+         */
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        /**
+         * Return the **Pixel** at the given coordinates. If **pixel** is provided,
+         * it will be updated and returned rather than allocating a new **Pixel**.
+         */
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        /**
+         * Set the color of the pixel at the given coordinates to the color of the
+         * given Color **c**.
+         */
+        setPixel(x: number, y: number, c: Color): void;
+        /**
+         * Set the red channel of the pixel, or the index value for palette images.
+         */
+        setPixelR(x: number, y: number, r: number): void;
+        /**
+         * Set the color of the **Pixel** at the given coordinates to the given
+         * color values **r**, **g**, **b**.
+         */
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        /**
+         * Set the color of the **Pixel** at the given coordinates to the given
+         * color values **r**, **g**, **b**, and **a**.
+         */
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        /**
+         * Calls **setPixelRgb**, but ensures **x** and **y** are within the extents
+         * of the image, otherwise it returns without setting the pixel.
+         */
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        /**
+         * Calls **setPixelRgba**, but ensures **x** and **y** are within the extents
+         * of the image, otherwise it returns without setting the pixel.
+         */
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        /**
+         * Set all of the pixels to the Color **c**, or all values to 0 if **c** is not
+         * given.
+         */
+        clear(c?: Color): void;
+        /**
+         * Get the copy of this image data.
+         */
+        clone(noPixels?: boolean): MemoryImageData;
+        /**
+         * The storage data of the image.
+         */
+        toUint8Array(): Uint8Array;
+        /**
+         * Similar to toUint8Array, but will convert the channels of the image pixels
+         * to the given **order**. If that happens, the returned bytes will be a copy
+         * and not a direct view of the image data.
+         */
+        getBytes(order?: ChannelOrder): Uint8Array;
+    }
+}
+declare module "image/pixel-float16" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataFloat16 } from "image/image-data-float16";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataFloat16;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint16Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataFloat16);
+        static imageData(image: MemoryImageDataFloat16): PixelFloat16;
+        static image(image: MemoryImage): PixelFloat16;
+        static from(other: PixelFloat16): PixelFloat16;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelFloat16;
+        convert(opt: ColorConvertOptions): Color;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-float16" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelFloat16 } from "image/pixel-float16";
+    export class MemoryImageDataFloat16 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Uint16Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelFloat16;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint16Array);
+        static from(other: MemoryImageDataFloat16, skipPixels?: boolean): MemoryImageDataFloat16;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataFloat16;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-float32" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataFloat32 } from "image/image-data-float32";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelFloat32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataFloat32;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Float32Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataFloat32);
+        static imageData(image: MemoryImageDataFloat32): PixelFloat32;
+        static image(image: MemoryImage): PixelFloat32;
+        static from(other: PixelFloat32): PixelFloat32;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelFloat32;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-float32" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelFloat32 } from "image/pixel-float32";
+    export class MemoryImageDataFloat32 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Float32Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelFloat32;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Float32Array);
+        static from(other: MemoryImageDataFloat32, skipPixels?: boolean): MemoryImageDataFloat32;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataFloat32;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-float64" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataFloat64 } from "image/image-data-float64";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelFloat64 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataFloat64;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Float64Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataFloat64);
+        static imageData(image: MemoryImageDataFloat64): PixelFloat64;
+        static image(image: MemoryImage): PixelFloat64;
+        static from(other: PixelFloat64): PixelFloat64;
+        [Symbol.iterator](): Iterator<Pixel>;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelFloat64;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+    }
+}
+declare module "image/image-data-float64" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelFloat64 } from "image/pixel-float64";
+    export class MemoryImageDataFloat64 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Float64Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelFloat64;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Float64Array);
+        static from(other: MemoryImageDataFloat64, skipPixels?: boolean): MemoryImageDataFloat64;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataFloat64;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-int16" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataInt16 } from "image/image-data-int16";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelInt16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataInt16;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Int16Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataInt16);
+        static imageData(image: MemoryImageDataInt16): PixelInt16;
+        static image(image: MemoryImage): PixelInt16;
+        static from(other: PixelInt16): PixelInt16;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelInt16;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-int16" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelInt16 } from "image/pixel-int16";
+    export class MemoryImageDataInt16 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Int16Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelInt16;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Int16Array);
+        static from(other: MemoryImageDataInt16, skipPixels?: boolean): MemoryImageDataInt16;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataInt16;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-int32" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataInt32 } from "image/image-data-int32";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelInt32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataInt32;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Int32Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataInt32);
+        static imageData(image: MemoryImageDataInt32): PixelInt32;
+        static image(image: MemoryImage): PixelInt32;
+        static from(other: PixelInt32): PixelInt32;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelInt32;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-int32" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelInt32 } from "image/pixel-int32";
+    export class MemoryImageDataInt32 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Int32Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelInt32;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Int32Array);
+        static from(other: MemoryImageDataInt32, skipPixels?: boolean): MemoryImageDataInt32;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataInt32;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-int8" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataInt8 } from "image/image-data-int8";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelInt8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataInt8;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Int8Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataInt8);
+        static imageData(image: MemoryImageDataInt8): PixelInt8;
+        static image(image: MemoryImage): PixelInt8;
+        static from(other: PixelInt8): PixelInt8;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelInt8;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-int8" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelInt8 } from "image/pixel-int8";
+    export class MemoryImageDataInt8 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Int8Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelInt8;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Int8Array);
+        static from(other: MemoryImageDataInt8, skipPixels?: boolean): MemoryImageDataInt8;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataInt8;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-uint1" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataUint1 } from "image/image-data-uint1";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private _bitIndex;
+        private _rowOffset;
+        private readonly _image;
+        get image(): MemoryImageDataUint1;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint8Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        get imageLength(): number;
+        constructor(x: number, y: number, index: number, bitIndex: number, rowOffset: number, image: MemoryImageDataUint1);
+        static imageData(image: MemoryImageDataUint1): PixelUint1;
+        static image(image: MemoryImage): PixelUint1;
+        static from(other: PixelUint1): PixelUint1;
+        private getChannelInternal;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        toArray(): number[];
+        equals(other: Pixel | number[]): boolean;
+        clone(): PixelUint1;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-uint1" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelUint1 } from "image/pixel-uint1";
+    export class MemoryImageDataUint1 implements MemoryImageData, Iterable<Pixel> {
+        private pixel?;
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Uint8Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        private _rowStride;
+        get rowStride(): number;
+        get iterator(): PixelUint1;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        private _palette?;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint8Array);
+        static palette(width: number, height: number, palette?: Palette): MemoryImageDataUint1;
+        static from(other: MemoryImageDataUint1, skipPixels?: boolean): MemoryImageDataUint1;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataUint1;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-uint16" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataUint16 } from "image/image-data-uint16";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataUint16;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint16Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataUint16);
+        static imageData(image: MemoryImageDataUint16): PixelUint16;
+        static image(image: MemoryImage): PixelUint16;
+        static from(other: PixelUint16): PixelUint16;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        equals(other: Pixel | number[]): boolean;
+        toArray(): number[];
+        clone(): PixelUint16;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-uint16" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelUint16 } from "image/pixel-uint16";
+    export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Uint16Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelUint16;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint16Array);
+        static from(other: MemoryImageDataUint16, skipPixels?: boolean): MemoryImageDataUint16;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataUint16;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-uint2" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataUint2 } from "image/image-data-uint2";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private _bitIndex;
+        private _rowOffset;
+        private readonly _image;
+        get image(): MemoryImageDataUint2;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint8Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        get bitsPerPixel(): number;
+        constructor(x: number, y: number, index: number, bitIndex: number, rowOffset: number, image: MemoryImageDataUint2);
+        static imageData(image: MemoryImageDataUint2): PixelUint2;
+        static image(image: MemoryImage): PixelUint2;
+        static from(other: PixelUint2): PixelUint2;
+        private getChannelInternal;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        equals(other: Pixel | number[]): boolean;
+        toArray(): number[];
+        clone(): PixelUint2;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-uint2" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelUint2 } from "image/pixel-uint2";
+    export class MemoryImageDataUint2 implements MemoryImageData, Iterable<Pixel> {
+        private _pixel?;
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Uint8Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        private _rowStride;
+        get rowStride(): number;
+        get iterator(): PixelUint2;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        private _palette?;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint8Array);
+        static palette(width: number, height: number, palette?: Palette): MemoryImageDataUint2;
+        static from(other: MemoryImageDataUint2, skipPixels?: boolean): MemoryImageDataUint2;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataUint2;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-uint32" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataUint32 } from "image/image-data-uint32";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private readonly _image;
+        get image(): MemoryImageDataUint32;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint32Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, image: MemoryImageDataUint32);
+        static imageData(image: MemoryImageDataUint32): PixelUint32;
+        static image(image: MemoryImage): PixelUint32;
+        static from(other: PixelUint32): PixelUint32;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        equals(other: Pixel | number[]): boolean;
+        toArray(): number[];
+        clone(): PixelUint32;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-uint32" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelUint32 } from "image/pixel-uint32";
+    export class MemoryImageDataUint32 implements MemoryImageData, Iterable<Pixel> {
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
         private readonly _data;
         get data(): Uint32Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        get rowStride(): number;
+        get iterator(): PixelUint32;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint32Array);
+        static from(other: MemoryImageDataUint32, skipPixels?: boolean): MemoryImageDataUint32;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataUint32;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/pixel-uint4" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color, ColorConvertOptions } from "color/color";
+    import { Format } from "color/format";
+    import { MemoryImage } from "image/image";
+    import { MemoryImageDataUint4 } from "image/image-data-uint4";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    export class PixelUint4 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
+        private _index;
+        private _bitIndex;
+        private readonly _image;
+        get image(): MemoryImageDataUint4;
+        private _x;
+        get x(): number;
+        private _y;
+        get y(): number;
+        get xNormalized(): number;
+        get yNormalized(): number;
+        get index(): number;
+        set index(i: number);
+        get data(): Uint8Array;
+        get isValid(): boolean;
+        get width(): number;
+        get height(): number;
+        get length(): number;
+        get numChannels(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get format(): Format;
+        get isLdrFormat(): boolean;
+        get isHdrFormat(): boolean;
+        get hasPalette(): boolean;
+        get palette(): Palette | undefined;
+        get r(): number;
+        set r(r: number);
+        get g(): number;
+        set g(g: number);
+        get b(): number;
+        set b(b: number);
+        get a(): number;
+        set a(a: number);
+        get rNormalized(): number;
+        set rNormalized(v: number);
+        get gNormalized(): number;
+        set gNormalized(v: number);
+        get bNormalized(): number;
+        set bNormalized(v: number);
+        get aNormalized(): number;
+        set aNormalized(v: number);
+        get luminance(): number;
+        get luminanceNormalized(): number;
+        constructor(x: number, y: number, index: number, bitIndex: number, image: MemoryImageDataUint4);
+        static imageData(image: MemoryImageDataUint4): PixelUint4;
+        static image(image: MemoryImage): PixelUint4;
+        static from(other: PixelUint4): PixelUint4;
+        private getChannelInternal;
+        next(): IteratorResult<Pixel>;
+        setPosition(x: number, y: number): void;
+        setPositionNormalized(x: number, y: number): void;
+        getChannel(channel: number | Channel): number;
+        getChannelNormalized(channel: Channel): number;
+        setChannel(channel: number, value: number): void;
+        set(color: Color): void;
+        setRgb(r: number, g: number, b: number): void;
+        setRgba(r: number, g: number, b: number, a: number): void;
+        equals(other: Pixel | number[]): boolean;
+        toArray(): number[];
+        clone(): PixelUint4;
+        convert(opt: ColorConvertOptions): Color;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel>;
+    }
+}
+declare module "image/image-data-uint4" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    import { PixelUint4 } from "image/pixel-uint4";
+    export class MemoryImageDataUint4 implements MemoryImageData, Iterable<Pixel> {
+        private _pixel?;
+        private readonly _width;
+        get width(): number;
+        private readonly _height;
+        get height(): number;
+        private readonly _data;
+        get data(): Uint8Array;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get format(): Format;
+        get formatType(): FormatType;
+        get buffer(): ArrayBufferLike;
+        private _rowStride;
+        get rowStride(): number;
+        get iterator(): PixelUint4;
+        get byteLength(): number;
+        get length(): number;
+        get maxChannelValue(): number;
+        get maxIndexValue(): number;
+        get hasPalette(): boolean;
+        private _palette?;
+        get palette(): Palette | undefined;
+        get isHdrFormat(): boolean;
+        get isLdrFormat(): boolean;
+        get bitsPerChannel(): number;
+        constructor(width: number, height: number, numChannels: number, data?: Uint8Array);
+        static palette(width: number, height: number, palette?: Palette): MemoryImageDataUint4;
+        static from(other: MemoryImageDataUint4, skipPixels?: boolean): MemoryImageDataUint4;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
+        getColor(r: number, g: number, b: number, a?: number): Color;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
+        setPixel(x: number, y: number, p: Color): void;
+        setPixelR(x: number, y: number, r: number): void;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        setPixelRgbSafe(x: number, y: number, r: number, g: number, b: number): void;
+        setPixelRgbaSafe(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        clear(_c?: Color): void;
+        clone(skipPixels?: boolean): MemoryImageDataUint4;
+        toUint8Array(): Uint8Array;
+        getBytes(order?: ChannelOrder | undefined): Uint8Array;
+        toString(): string;
+        [Symbol.iterator](): Iterator<Pixel, Pixel, undefined>;
+    }
+}
+declare module "image/palette-float16" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteFloat16 implements Palette {
+        private readonly _data;
+        get data(): Uint16Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Uint16Array);
+        static from(other: PaletteFloat16): PaletteFloat16;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteFloat16;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-float32" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteFloat32 implements Palette {
+        private readonly _data;
+        get data(): Float32Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Float32Array);
+        static from(other: PaletteFloat32): PaletteFloat32;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteFloat32;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-float64" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteFloat64 implements Palette {
+        private readonly _data;
+        get data(): Float64Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Float64Array);
+        static from(other: PaletteFloat64): PaletteFloat64;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteFloat64;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-int16" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteInt16 implements Palette {
+        private readonly _data;
+        get data(): Int16Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Int16Array);
+        static from(other: PaletteInt16): PaletteInt16;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteInt16;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-int32" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteInt32 implements Palette {
+        private readonly _data;
+        get data(): Int32Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Int32Array);
+        static from(other: PaletteInt32): PaletteInt32;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteInt32;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-int8" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteInt8 implements Palette {
+        private readonly _data;
+        get data(): Int8Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Int8Array);
+        static from(other: PaletteInt8): PaletteInt8;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteInt8;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-uint16" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteUint16 implements Palette {
+        private readonly _data;
+        get data(): Uint16Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Uint16Array);
+        static from(other: PaletteUint16): PaletteUint16;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteUint16;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-uint32" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteUint32 implements Palette {
+        private readonly _data;
+        get data(): Uint32Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Uint32Array);
+        static from(other: PaletteUint32): PaletteUint32;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteUint32;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/palette-uint8" {
+    /** @format */
+    import { Format } from "color/format";
+    import { Palette } from "image/palette";
+    export class PaletteUint8 implements Palette {
+        private readonly _data;
+        get data(): Uint8Array;
+        private readonly _numColors;
+        get numColors(): number;
+        private readonly _numChannels;
+        get numChannels(): number;
+        get byteLength(): number;
+        get buffer(): ArrayBufferLike;
+        get format(): Format;
+        get maxChannelValue(): number;
+        constructor(numColors: number, numChannels: number, data?: Uint8Array);
+        static from(other: PaletteUint8): PaletteUint8;
+        setRgb(index: number, r: number, g: number, b: number): void;
+        setRgba(index: number, r: number, g: number, b: number, a: number): void;
+        set(index: number, channel: number, value: number): void;
+        get(index: number, channel: number): number;
+        getRed(index: number): number;
+        getGreen(index: number): number;
+        getBlue(index: number): number;
+        getAlpha(index: number): number;
+        setRed(index: number, value: number): void;
+        setGreen(index: number, value: number): void;
+        setBlue(index: number, value: number): void;
+        setAlpha(index: number, value: number): void;
+        clone(): PaletteUint8;
+        toUint8Array(): Uint8Array;
+    }
+}
+declare module "image/image" {
+    /** @format */
+    import { ChannelOrder } from "color/channel-order";
+    import { Color } from "color/color";
+    import { Format, FormatType } from "color/format";
+    import { Interpolation } from "common/interpolation";
+    import { ExifData } from "exif/exif-data";
+    import { FrameType } from "image/frame-type";
+    import { IccProfile } from "image/icc-profile";
+    import { MemoryImageData } from "image/image-data";
+    import { Palette } from "image/palette";
+    import { Pixel } from "image/pixel";
+    interface MemoryImageInitializeOptions {
+        width: number;
+        height: number;
+        format?: Format;
+        numChannels?: number;
+        withPalette?: boolean;
+        paletteFormat?: Format;
+        palette?: Palette;
+        exifData?: ExifData;
+        iccProfile?: IccProfile;
+    }
+    export interface MemoryImageCreateOptions extends MemoryImageInitializeOptions {
+        loopCount?: number;
+        frameType?: FrameType;
+        frameDuration?: number;
+        frameIndex?: number;
+        backgroundColor?: Color;
+        textData?: Map<string, string>;
+    }
+    export interface MemoryImageFromBytesOptions extends MemoryImageCreateOptions {
+        bytes: ArrayBufferLike;
+        rowStride?: number;
+        channelOrder?: ChannelOrder;
+    }
+    export interface MemoryImageCloneOptions {
+        skipAnimation?: boolean;
+        skipPixels?: boolean;
+    }
+    export interface MemoryImageConvertOptions {
+        format?: Format;
+        numChannels?: number;
+        alpha?: number;
+        withPalette?: boolean;
+        skipAnimation?: boolean;
+    }
+    export interface MemoryImageColorExtremes {
+        min: number;
+        max: number;
+    }
+    /**
+     * A MemoryImage is a container for MemoryImageData and other various metadata
+     * representing an image in memory.
+     */
+    export class MemoryImage implements Iterable<Pixel> {
+        private _data?;
+        get data(): MemoryImageData | undefined;
+        private get numPixelColors();
         /**
-         * x position at which to render the frame. This is used for frames
-         * in an animation, such as from an animated GIF.
+         * The format of the image pixels.
          */
-        private _xOffset;
-        get xOffset(): number;
+        get format(): Format;
         /**
-         * y position at which to render the frame. This is used for frames
-         * in an animation, such as from an animated GIF.
+         * Indicates whether this image has a palette.
          */
-        private _yOffset;
-        get yOffset(): number;
+        get hasPalette(): boolean;
+        /**
+         * The palette if the image has one, undefined otherwise.
+         */
+        get palette(): Palette | undefined;
+        /**
+         * The number of color channels for the image.
+         */
+        get numChannels(): number;
+        /**
+         * Indicates whether this image is animated.
+         * An image is considered animated if it has more than one frame, as the
+         * first image in the frames list is the image itself.
+         */
+        get hasAnimation(): boolean;
+        /**
+         * The number of frames in this MemoryImage. A MemoryImage will have at least one
+         * frame, itself, so it's considered animated if it has more than one
+         * frame.
+         */
+        get numFrames(): number;
+        private _exifData?;
+        /**
+         * The EXIF metadata for the image. If an ExifData hasn't been created
+         * for the image yet, one will be added.
+         */
+        get exifData(): ExifData;
+        set exifData(exif: ExifData);
+        /**
+         * The maximum value of a pixel channel, based on the format of the image.
+         * If the image has a **palette**, this will be the maximum value of a palette
+         * color channel. Float format images will have a **maxChannelValue** of 1,
+         * though they can have values above that.
+         */
+        get maxChannelValue(): number;
+        /**
+         * The maximum value of a palette index, based on the format of the image.
+         * This differs from **maxChannelValue** in that it will not be affected by
+         * the format of the **palette**.
+         */
+        get maxIndexValue(): number;
+        /**
+         * Indicates whether this image supports using a palette.
+         */
+        get supportsPalette(): boolean;
+        /**
+         * The width of the image in pixels.
+         */
+        get width(): number;
+        /**
+         * The height of the image in pixels.
+         */
+        get height(): number;
+        /**
+         * The general type of the format, whether it's uint data, int data, or
+         * float data (regardless of precision).
+         */
+        get formatType(): FormatType;
+        /**
+         * Indicates whether this image is valid and has data.
+         */
+        get isValid(): boolean;
+        /**
+         * The ArrayBufferLike of the image storage data or undefined if not initialized.
+         */
+        get buffer(): ArrayBufferLike | undefined;
+        /**
+         * The length in bytes of the image data buffer.
+         */
+        get byteLength(): number;
+        /**
+         * The length in bytes of a row of pixels in the image buffer.
+         */
+        get rowStride(): number;
+        /**
+         * Indicates whether this image is a Low Dynamic Range (regular) image.
+         */
+        get isLdrFormat(): boolean;
+        /**
+         * Indicates whether this image is a High Dynamic Range image.
+         */
+        get isHdrFormat(): boolean;
+        /**
+         * The number of bits per color channel.
+         */
+        get bitsPerChannel(): number;
+        /**
+         * Indicates whether this MemoryImage has an alpha channel.
+         */
+        get hasAlpha(): boolean;
+        /**
+         * Named non-color channels used by this image.
+         */
+        private _extraChannels?;
+        private _iccProfile;
+        get iccProfile(): IccProfile | undefined;
+        set iccProfile(v: IccProfile | undefined);
+        private _textData;
+        get textData(): Map<string, string> | undefined;
+        private _backgroundColor?;
+        /**
+         * The suggested background color to clear the canvas with.
+         */
+        get backgroundColor(): Color | undefined;
+        set backgroundColor(v: Color | undefined);
+        private _loopCount;
+        /**
+         * How many times should the animation loop (0 means forever)
+         */
+        get loopCount(): number;
+        set loopCount(v: number);
+        private _frameType;
+        /**
+         * Gets or sets how should the frames be interpreted.
+         * If the **frameType** is _FrameType.animation_, the frames are part
+         * of an animated sequence. If the **frameType** is _FrameType.page_,
+         * the frames are the pages of a document.
+         */
+        get frameType(): FrameType;
+        set frameType(v: FrameType);
+        /**
+         * The list of sub-frames for the image, if it's an animation. An image
+         * is considered animated if it has more than one frame, as the first
+         * frame will be the image itself.
+         */
+        private _frames;
+        get frames(): MemoryImage[];
+        private _frameDuration;
         /**
          * How long this frame should be displayed, in milliseconds.
          * A duration of 0 indicates no delay and the next frame will be drawn
          * as quickly as it can.
          */
-        private _duration;
-        set duration(v: number);
-        get duration(): number;
+        get frameDuration(): number;
+        set frameDuration(v: number);
         /**
-         * Defines what should be done to the canvas when drawing this frame
-         *  in an animation.
+         * Index of this image in the parent animations frame list.
          */
-        private _disposeMethod;
-        get disposeMethod(): DisposeMode;
+        private _frameIndex;
+        get frameIndex(): number;
+        constructor(opt?: MemoryImageCreateOptions);
+        static fromResized(other: MemoryImage, width: number, height: number, skipAnimation?: boolean): MemoryImage;
         /**
-         * Defines the blending method (alpha compositing) to use when drawing this
-         * frame in an animation.
+         * Creates a copy of the given **other** MemoryImage.
          */
-        private _blendMethod;
-        get blendMethod(): BlendMode;
+        static from(other: MemoryImage, skipAnimation?: boolean, skipPixels?: boolean): MemoryImage;
         /**
-         * The channels used by this image, indicating whether the alpha channel
-         * is used or not. All images have an implicit alpha channel due to the
-         * image data being stored in a Uint32, but some images, such as those
-         * decoded from a Jpeg, don't use the alpha channel. This allows
-         * image encoders that support both rgb and rgba formats, to know which
-         * one it should use.
-         */
-        private _rgbChannelSet;
-        get rgbChannelSet(): RgbChannelSet;
-        /**
-         * EXIF data decoded from an image file.
-         */
-        private _exifData;
-        get exifData(): ExifData;
-        set exifData(v: ExifData);
-        /**
-         * ICC color profile read from an image file.
-         */
-        private _iccProfile?;
-        set iccProfile(v: ICCProfileData | undefined);
-        get iccProfile(): ICCProfileData | undefined;
-        /**
-         * Some formats, like PNG, can encode and decode text data with the image.
-         */
-        private _textData?;
-        get textData(): Map<string, string> | undefined;
-        /**
-         * Width of the image.
-         */
-        private readonly _width;
-        get width(): number;
-        /**
-         * Height of the image.
-         */
-        private readonly _height;
-        get height(): number;
-        /**
-         * The number of channels used by this Image. While all images
-         * are stored internally with 4 bytes, some images, such as those
-         * loaded from a Jpeg, don't use the 4th (alpha) channel.
-         */
-        get numberOfChannels(): number;
-        /**
-         * The size of the image buffer.
-         */
-        get length(): number;
-        /**
-         * Create an image with the given dimensions and format.
-         */
-        constructor(options: MemoryImageInitOptions);
-        private static convertData;
-        static rgb(options: RgbMemoryImageInitOptions): MemoryImage;
-        static from(other: MemoryImage): MemoryImage;
-        /**
+         * Create an image from raw data in **bytes**.
          *
-         * **format** defines the order of color channels in **data**.
-         * The length of **data** should be (width * height) * format-byte-count,
-         * where format-byte-count is 1, 3, or 4 depending on the number of
-         * channels in the format (luminance, rgb, rgba, etc).
+         * **format** defines the order of color channels in **bytes**.
+         * An HTML canvas element stores colors in _Format.rgba_ format;
+         * a MemoryImage object stores colors in _Format.rgba_ format.
          *
-         * The native format of an image is Format.rgba. If another format
-         * is specified, the input data will be converted to rgba to store
-         * in the Image.
-         */
-        static fromBytes(options: MemoryImageInitOptionsColorModel): MemoryImage;
-        /**
-         * Clone this image.
-         * */
-        clone(): MemoryImage;
-        /**
-         * Get the bytes from the image. You can use this to access the
-         * color channels directly, or to pass it to something like an
-         * Html canvas context.
+         * **rowStride** is the row stride, in bytes, of the source data **bytes**.
+         * This may be different than the rowStride of the MemoryImage, as some data
+         * sources align rows to different byte alignments and include padding.
          *
-         * Specifying the **format** will convert the image data to the specified
-         * format. Images are stored internally in Format.rgba format; any
-         * other format will require a conversion.
+         * **order** can be used if the source **bytes** has a different channel order
+         * than RGBA. _ChannelOrder.bgra_ will rearrange the color channels from
+         * BGRA to what MemoryImage wants, RGBA.
          *
-         * For example, given an Html Canvas, you could draw this image into the
-         * canvas:
-         * Html.ImageData d = context2D.createImageData(image.width, image.height);
-         * d.data.setRange(0, image.length, image.getBytes(format: Format.rgba));
-         * context2D.putImageData(data, 0, 0);
+         * If **numChannels** and **order** are not provided, a default of 3 for
+         * **numChannels** and _ChannelOrder.rgba_ for **order** will be assumed.
          */
-        getBytes(colorModel?: ColorModel): Uint8Array;
+        static fromBytes(opt: MemoryImageFromBytesOptions): MemoryImage;
+        private initialize;
+        private createImageData;
+        private createPalette;
         /**
-         * Set all of the pixels of the image to the given **color**.
+         * Add a frame to the animation of this MemoryImage.
          */
-        fill(color: number): MemoryImage;
+        addFrame(image?: MemoryImage): MemoryImage;
         /**
-         * Set all of the empty pixels (for png's) of the image to the given **color**.
+         * Get a frame from this image. If the MemoryImage is not animated, this
+         * MemoryImage will be returned; otherwise the particular frame MemoryImage will
+         * be returned.
          */
-        fillBackground(color: number): void;
+        getFrame(index: number): MemoryImage;
         /**
-         * Add the colors of **other** to the pixels of this image.
+         * Create a copy of this image.
          */
-        addImage(other: MemoryImage): MemoryImage;
+        clone(opt?: MemoryImageCloneOptions): MemoryImage;
+        hasExtraChannel(name: string): boolean;
+        getExtraChannel(name: string): MemoryImageData | undefined;
+        setExtraChannel(name: string, data?: MemoryImageData): void;
         /**
-         * Subtract the colors of **other** from the pixels of this image.
+         * Returns a pixel iterator for iterating over a rectangular range of pixels
+         * in the image.
          */
-        subtractImage(other: MemoryImage): MemoryImage;
+        getRange(x: number, y: number, width: number, height: number): Iterator<Pixel>;
         /**
-         * Multiply the colors of **other** with the pixels of this image.
+         * Get a Uint8Array view of the image storage data.
          */
-        multiplyImage(other: MemoryImage): MemoryImage;
+        toUint8Array(): Uint8Array;
         /**
-         * OR the colors of **other** to the pixels of this image.
+         * Similar to **toUint8Array**, but will convert the channels of the image pixels
+         * to the given **order**. If that happens, the returned bytes will be a copy
+         * and not a direct view of the image data.
          */
-        orImage(other: MemoryImage): MemoryImage;
+        getBytes(order?: ChannelOrder): Uint8Array;
         /**
-         * AND the colors of **other** with the pixels of this image.
+         * Remap the color channels to the given **order**. Normally MemoryImage color
+         * channels are stored in rgba order for 4 channel images, and
+         * rgb order for 3 channel images. This method lets you re-arrange the
+         * color channels in-place without needing to clone the image for preparing
+         * image data for external usage that requires alternative channel ordering.
          */
-        andImage(other: MemoryImage): MemoryImage;
+        remapChannels(order: ChannelOrder): void;
         /**
-         * Modula the colors of **other** with the pixels of this image.
+         * Returns true if the given pixel coordinates is within the dimensions
+         * of the image.
          */
-        modImage(other: MemoryImage): MemoryImage;
+        isBoundsSafe(x: number, y: number): boolean;
         /**
-         * Get a pixel from the buffer. No range checking is done.
+         * Create a Color object with the format and number of channels of the
+         * image.
          */
-        getPixelByIndex(index: number): number;
+        getColor(r: number, g: number, b: number, a?: number): Color;
         /**
-         * Set a pixel in the buffer. No range checking is done.
+         * Return the Pixel at the given coordinates **x**,**y**. If **pixel** is provided,
+         * it will be updated and returned rather than allocating a new Pixel.
          */
-        setPixelByIndex(index: number, color: number): void;
+        getPixel(x: number, y: number, pixel?: Pixel): Pixel;
         /**
-         * Get the buffer index for the **x**, **y** pixel coordinates.
-         * No range checking is done.
+         * Get the pixel from the given **x**, **y** coordinate. If the pixel coordinates
+         * are out of bounds, PixelUndefined is returned.
          */
-        getBufferIndex(x: number, y: number): number;
+        getPixelSafe(x: number, y: number, pixel?: Pixel): Pixel;
         /**
-         * Is the given **x**, **y** pixel coordinates within the resolution of the image.
+         * Get the pixel from the given **x**, **y** coordinate. If the pixel coordinates
+         * are out of range of the image, they will be clamped to the resolution.
          */
-        boundsSafe(x: number, y: number): boolean;
-        /**
-         * Get the pixel from the given **x**, **y** coordinate. Color is encoded in a
-         * Uint32 as #AABBGGRR. No range checking is done.
-         */
-        getPixel(x: number, y: number): number;
-        /**
-         * Get the pixel from the given **x**, **y** coordinate. Color is encoded in a
-         * Uint32 as #AABBGGRR. If the pixel coordinates are out of bounds, 0 is
-         * returned.
-         */
-        getPixelSafe(x: number, y: number): number;
+        getPixelClamped(x: number, y: number, pixel?: Pixel): Pixel;
         /**
          * Get the pixel using the given **interpolation** type for non-integer pixel
          * coordinates.
          */
-        getPixelInterpolate(fx: number, fy: number, interpolation?: Interpolation): number;
+        getPixelInterpolate(fx: number, fy: number, interpolation?: Interpolation): Color;
         /**
          * Get the pixel using linear interpolation for non-integer pixel
          * coordinates.
          */
-        getPixelLinear(fx: number, fy: number): number;
+        getPixelLinear(fx: number, fy: number): Color;
         /**
          * Get the pixel using cubic interpolation for non-integer pixel
          * coordinates.
          */
-        getPixelCubic(fx: number, fy: number): number;
+        getPixelCubic(fx: number, fy: number): Color;
         /**
-         * Set the pixel at the given **x**, **y** coordinate to the **color**.
-         * No range checking is done.
+         * Set the color of the pixel at the given coordinates to the color of the
+         * given Color **c**.
          */
-        setPixel(x: number, y: number, color: number): void;
+        setPixel(x: number, y: number, c: Color | Pixel): void;
         /**
-         * Set the pixel at the given **x**, **y** coordinate to the **color**.
-         * If the pixel coordinates are out of bounds, nothing is done.
+         * Set the index value for palette images, or the red channel otherwise.
          */
-        setPixelSafe(x: number, y: number, color: number): void;
+        setPixelIndex(x: number, y: number, i: number): void;
         /**
-         * Set the pixel at the given **x**, **y** coordinate to the color
-         * **r**, **g**, **b**, **a**.
-         *
-         * This simply replaces the existing color, it does not do any alpha
-         * blending. Use **drawPixel** for that. No range checking is done.
+         * Set the red (or index) color channel of a pixel.
          */
-        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a?: number): void;
+        setPixelR(x: number, y: number, i: number): void;
         /**
-         * Return the average gray value of the image.
+         * Set the color of the Pixel at the given coordinates to the given
+         * color values **r**, **g**, **b**.
          */
-        getWhiteBalance(asDouble?: boolean): number;
+        setPixelRgb(x: number, y: number, r: number, g: number, b: number): void;
         /**
-         * Find the minimum and maximum color value in the image.
-         * Returns an object with **min** and **max** properties.
+         * Set the color of the Pixel at the given coordinates to the given
+         * color values **r**, **g**, **b**, and **a**.
          */
-        getColorExtremes(): {
-            min: number;
-            max: number;
-        };
+        setPixelRgba(x: number, y: number, r: number, g: number, b: number, a: number): void;
+        /**
+         * Set all pixels in the image to the given **color**. If no color is provided
+         * the image will be initialized to 0.
+         */
+        clear(color?: Color): void;
+        /**
+         * Convert this image to a new **format** or number of channels, **numChannels**.
+         * If the new number of channels is 4 and the current image does
+         * not have an alpha channel, then the given **alpha** value will be used
+         * to set the new alpha channel. If **alpha** is not provided, then the
+         * **maxChannelValue** will be used to set the alpha. If **withPalette** is
+         * true, and to target format and **numChannels** has fewer than 256 colors,
+         * then the new image will be converted to use a palette.
+         */
+        convert(opt: MemoryImageConvertOptions): MemoryImage;
+        /**
+         * Add text metadata to the image.
+         */
         addTextData(data: Map<string, string>): void;
-    }
-}
-declare module "common/frame-animation" {
-    /** @format */
-    import { FrameType } from "common/frame-type";
-    import { MemoryImage } from "common/memory-image";
-    export interface FrameAnimationInitOptions {
-        width?: number;
-        height?: number;
-        loopCount?: number;
-        frameType?: FrameType;
-    }
-    /**
-     * Stores multiple images, most often as the frames of an animation.
-     *
-     * Some formats support multiple images that are not
-     * to be interpreted as animation, but rather multiple pages of a document.
-     * The **FrameAnimation** container is still used to store the images for these files.
-     * The **frameType** property is used to differentiate multi-page documents from
-     * multi-frame animations, where it is set to **FrameType.page** for documents
-     * and **FrameType.animation** for animated frames.
-     *
-     * All **Decoder** classes support decoding to an **FrameAnimation**, where the
-     * **FrameAnimation** will only contain a single frame for single image formats
-     * such as JPEG, or if the file doesn't contain any animation such as a single
-     * image GIF. If you want to generically support both animated and non-animated
-     * files, you can always decode to an animation and if the animation has only
-     * a single frame, then it's a non-animated image.
-     *
-     * In some cases, the frames of the animation may only provide a portion of the
-     * canvas, such as the case of animations encoding only the changing pixels
-     * from one frame to the next. The **width** and **height** and **backgroundColor**
-     * properties of the **FrameAnimation** provide information about the canvas that
-     * contains the animation, and the **MemoryImage** frames provide information about
-     * how to draw the particular frame, such as the area of the canvas to draw
-     * into, and if the canvas should be cleared prior to drawing the frame.
-     */
-    export class FrameAnimation implements Iterable<MemoryImage> {
-        /**
-         * The canvas width for containing the animation.
-         */
-        private _width;
-        get width(): number;
-        /**
-         * The canvas height for containing the animation.
-         */
-        private _height;
-        get height(): number;
-        /**
-         * The suggested background color to clear the canvas with.
-         */
-        private _backgroundColor;
-        get backgroundColor(): number;
-        /**
-         * How many times should the animation loop(0 means forever)?
-         */
-        private _loopCount;
-        get loopCount(): number;
-        /**
-         * How should the frames be interpreted?  If **FrameType.animation**, the
-         * frames are part of an animated sequence. If **FrameType.page**, the frames
-         * are the pages of a document.
-         */
-        private _frameType;
-        get frameType(): FrameType;
-        /**
-         * The frames of the animation.
-         */
-        private _frames;
-        get frames(): MemoryImage[];
-        /**
-         * How many frames are in the animation?
-         */
-        get numFrames(): number;
-        /**
-         * The first frame of the animation.
-         */
-        get first(): MemoryImage;
-        /**
-         * The last frame of the animation.
-         */
-        get last(): MemoryImage;
-        /**
-         * Is the animation empty(no frames)?
-         */
-        get isEmpty(): boolean;
-        /**
-         * Returns true if there is at least one frame in the animation.
-         */
-        get isNotEmpty(): boolean;
-        constructor(options?: FrameAnimationInitOptions);
-        /**
-         * Get the frame at the given **index**.
-         */
-        getFrame(index: number): MemoryImage;
-        /**
-         * Add a frame to the animation.
-         */
-        addFrame(image: MemoryImage): void;
-        /**
-         * Get the iterator for looping over the animation.
-         */
-        [Symbol.iterator](): Iterator<MemoryImage, MemoryImage, undefined>;
-    }
-}
-declare module "error/not-implemented-error" {
-    /** @format */
-    /**
-     * An error thrown when some functionality has not yet been implemented.
-     */
-    export class NotImplementedError extends Error {
+        getColorExtremes(): MemoryImageColorExtremes;
         toString(): string;
+        /**
+         * Returns a pixel iterator for iterating over all of the pixels in the
+         * image.
+         */
+        [Symbol.iterator](): Iterator<Pixel>;
     }
 }
-declare module "hdr/half" {
-    /**
-     * A 16-bit floating-point number, used by high-dynamic-range image formats
-     * as a more efficient storage for floating-point values that don't require
-     * full 32-bit precision. A list of Half floats can be stored in a **Uint16Array**,
-     * and converted to a double using the **halfToDouble()** static method.
-     *
-     * This class is derived from the OpenEXR library.
-     */
-    export class Half {
-        private static toFloatUint32;
-        private static toFloatFloat32;
-        private static eLut;
-        private bits;
-        constructor(bits: number);
-        private static convert;
-        private static halfToFloat;
-        private static fromBits;
-        static halfToDouble(bits: number): number;
-        static doubleToHalf(n: number): number;
-        /**
-         * Returns +infinity.
-         */
-        static positiveInfinity(): Half;
-        /**
-         * Returns -infinity.
-         */
-        static negativeInfinity(): Half;
-        /**
-         * Returns a NAN with the bit pattern 0111111111111111.
-         */
-        static qNan(): Half;
-        /**
-         * Returns a NAN with the bit pattern 0111110111111111.
-         */
-        static sNan(): Half;
-        toDouble(): number;
-        /**
-         * Unary minus
-         */
-        unaryMinus(): Half;
-        /**
-         * Addition operator for Half or num left operands.
-         */
-        add(other: Half | number): Half;
-        /**
-         * Subtraction operator for Half or num left operands.
-         */
-        subtract(other: Half | number): Half;
-        /**
-         * Multiplication operator for Half or num left operands.
-         */
-        multiply(other: Half | number): Half;
-        /**
-         * Division operator for Half or num left operands.
-         */
-        divide(other: Half | number): Half;
-        /**
-         * Round to n-bit precision (n should be between 0 and 10).
-         * After rounding, the significand's 10-n least significant
-         * bits will be zero.
-         */
-        round(n: number): Half;
-        /**
-         * Returns true if h is a normalized number, a denormalized number or zero.
-         */
-        isFinite(): boolean;
-        /**
-         * Returns true if h is a normalized number.
-         */
-        isNormalized(): boolean;
-        /**
-         * Returns true if h is a denormalized number.
-         */
-        isDenormalized(): boolean;
-        /**
-         * Returns true if h is zero.
-         */
-        isZero(): boolean;
-        /**
-         * Returns true if h is a NAN.
-         */
-        isNan(): boolean;
-        /**
-         * Returns true if h is a positive or a negative infinity.
-         */
-        isInfinity(): boolean;
-        /**
-         * Returns true if the sign bit of h is set (negative).
-         */
-        isNegative(): boolean;
-        getBits(): number;
-        setBits(bits: number): void;
-    }
-}
-declare module "hdr/hdr-slice" {
-    import { TypedArray } from "common/typings";
-    export interface HdrSliceInitOptions {
-        name: string;
-        width: number;
-        height: number;
-        format: number;
-        bitsPerSample: number;
-        data?: TypedArray;
-    }
-    /**
-     * A slice is the data for an image framebuffer for a single channel.
-     */
-    export class HdrSlice {
-        static UINT: number;
-        static INT: number;
-        static FLOAT: number;
-        private readonly _data;
-        /**
-         * **data** will be one of the type data lists, depending on the **type** and
-         * **bitsPerSample**. 16-bit FLOAT slices will be stored in a **Uint16Array**.
-         */
-        get data(): TypedArray;
-        private readonly _name;
-        get name(): string;
-        private readonly _width;
-        get width(): number;
-        private readonly _height;
-        get height(): number;
-        /**
-         * Indicates the type of data stored by the slice, either **HdrSlice.INT**,
-         * **HdrSlice.FLOAT**, or **HdrSlice.UINT**.
-         */
-        private readonly _format;
-        get format(): number;
-        /**
-         * How many bits per sample, either 8, 16, 32, or 64.
-         */
-        private readonly _bitsPerSample;
-        get bitsPerSample(): number;
-        private get maxIntSize();
-        /**
-         * Does this channel store floating-point data?
-         */
-        get isFloat(): boolean;
-        constructor(options: HdrSliceInitOptions);
-        private static allocateDataForType;
-        /**
-         * Create a copy of the **other** HdrSlice.
-         */
-        static from(other: HdrSlice): HdrSlice;
-        /**
-         * Get the raw bytes of the data buffer.
-         */
-        getBytes(): Uint8Array;
-        /**
-         * Get the float value of the sample at the coordinates **x**,**y**.
-         * **Half** samples are converted to double.
-         */
-        getFloat(x: number, y: number): number;
-        /**
-         * Set the float value of the sample at the coordinates **x**,**y** for
-         * **FLOAT** slices.
-         */
-        setFloat(x: number, y: number, v: number): void;
-        /**
-         * Get the int value of the sample at the coordinates **x**,**y**.
-         * An exception will occur if the slice stores FLOAT data.
-         */
-        getInt(x: number, y: number): number;
-        /**
-         * Set the int value of the sample at the coordinates **x**,**y** for **INT** and
-         * **UINT** slices.
-         */
-        setInt(x: number, y: number, v: number): void;
-    }
-}
-declare module "hdr/hdr-image" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { ExifData } from "exif/exif-data";
-    import { HdrSlice } from "hdr/hdr-slice";
-    /**
-     * A high dynamic range RGBA image stored in 16-bit or 32-bit floating-point
-     * channels.
-     */
-    export class HdrImage {
-        /**
-         * Red value of a sample
-         */
-        private static R;
-        /**
-         * Green value of a sample
-         */
-        private static G;
-        /**
-         * Blue value of a sample
-         */
-        private static B;
-        /**
-         * Alpha/opacity
-         */
-        private static A;
-        /**
-         * Distance of the front of a sample from the viewer
-         */
-        private static Z;
-        private readonly _slices;
-        get slices(): Map<string, HdrSlice>;
-        private _red;
-        get red(): HdrSlice | undefined;
-        private _green;
-        get green(): HdrSlice | undefined;
-        private _blue;
-        get blue(): HdrSlice | undefined;
-        private _alpha;
-        get alpha(): HdrSlice | undefined;
-        private _depth;
-        get depth(): HdrSlice | undefined;
-        private _exifData;
-        get exifData(): ExifData | undefined;
-        set exifData(v: ExifData | undefined);
-        /**
-         * Does the image have any color channels?
-         */
-        get hasColor(): boolean;
-        /**
-         * Does the image have an alpha channel?
-         */
-        get hasAlpha(): boolean;
-        /**
-         * Does the image have a depth channel?
-         */
-        get hasDepth(): boolean;
-        /**
-         * The width of the framebuffer.
-         */
-        get width(): number;
-        /**
-         * The height of the framebuffer.
-         */
-        get height(): number;
-        /**
-         * The number of bits per sample.
-         */
-        get bitsPerSample(): number;
-        get sampleFormat(): number;
-        /**
-         * The number of channels used by the image
-         */
-        get numberOfChannels(): number;
-        /**
-         * Create an RGB[A] image.
-         */
-        static create(width: number, height: number, channels: number, type: number, bitsPerSample: number): HdrImage;
-        /**
-         * Create a copy of the **other** HdrImage.
-         */
-        static from(other: HdrImage): HdrImage;
-        /**
-         * Create an HDR image from a LDR **MemoryImage** by transforming the channel values
-         * to the range [**0**, **1**].
-         */
-        static fromImage(other: MemoryImage, type?: number, bitsPerSample?: number): HdrImage;
-        /**
-         * Get the value of the red channel at the given pixel coordinates **x**, **y**.
-         */
-        getRed(x: number, y: number): number;
-        /**
-         * Set the value of the red channel at the given pixel coordinates **x**, **y**.
-         */
-        setRed(x: number, y: number, c: number): void;
-        setRedInt(x: number, y: number, c: number): void;
-        /**
-         * Get the value of the green channel at the given pixel coordinates **x**, **y**.
-         */
-        getGreen(x: number, y: number): number;
-        /**
-         * Set the value of the green channel at the given pixel coordinates **x**, **y**.
-         */
-        setGreen(x: number, y: number, c: number): void;
-        setGreenInt(x: number, y: number, c: number): void;
-        /**
-         * Get the value of the blue channel at the given pixel coordinates **x**, **y**.
-         */
-        getBlue(x: number, y: number): number;
-        /**
-         * Set the value of the blue channel at the given pixel coordinates **x**, **y**.
-         */
-        setBlue(x: number, y: number, c: number): void;
-        setBlueInt(x: number, y: number, c: number): void;
-        /**
-         * Get the value of the alpha channel at the given pixel coordinates **x**, **y**.
-         */
-        getAlpha(x: number, y: number): number;
-        /**
-         * Set the value of the alpha channel at the given pixel coordinates **x**, **y**.
-         */
-        setAlpha(x: number, y: number, c: number): void;
-        setAlphaInt(x: number, y: number, c: number): void;
-        /**
-         * Get the value of the depth channel at the given pixel coordinates **x**, **y**.
-         */
-        getDepth(x: number, y: number): number;
-        /**
-         * Set the value of the depth channel at the given pixel coordinates **x**, **y**.
-         */
-        setDepth(x: number, y: number, c: number): void;
-        setDepthInt(x: number, y: number, c: number): void;
-        /**
-         * Does this image contain the given channel?
-         */
-        hasChannel(ch: string): boolean;
-        /**
-         * Access a framebuffer slice by name.
-         */
-        getChannel(ch: string): HdrSlice | undefined;
-        /**
-         * Add a channel **slice** to the
-         */
-        addChannel(slice: HdrSlice): void;
-        /**
-         * Convert the framebuffer to an floating-point image, as a sequence of
-         * floats in RGBA order.
-         */
-        toFloatRgba(): Float32Array;
-    }
-}
-declare module "formats/bmp/bitmap-file-header" {
+declare module "formats/bmp/bmp-file-header" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
-    export class BitmapFileHeader {
-        static readonly BMP_HEADER_FILETYPE: number;
+    export class BmpFileHeader {
+        static readonly signature = 19778;
         private readonly _fileLength;
         get fileLength(): number;
-        private _offset;
-        set offset(v: number);
-        get offset(): number;
+        private _imageOffset;
+        set imageOffset(v: number);
+        get imageOffset(): number;
         constructor(b: InputBuffer);
         static isValidFile(b: InputBuffer): boolean;
-        toJson(): Map<string, number>;
     }
 }
 declare module "formats/decode-info" {
     /** @format */
+    import { Color } from "color/color";
     /**
      * Provides information about the image being decoded.
      */
@@ -1801,44 +4540,68 @@ declare module "formats/decode-info" {
         /**
          * The suggested background color of the canvas.
          */
-        get backgroundColor(): number;
+        get backgroundColor(): Color | undefined;
         /**
          * The number of frames that can be decoded.
          */
         get numFrames(): number;
     }
 }
-declare module "formats/bmp/bitmap-compression-mode" {
+declare module "formats/bmp/bmp-compression-mode" {
     /** @format */
-    export enum BitmapCompressionMode {
-        BI_BITFIELDS = 0,
-        NONE = 1
+    export enum BmpCompressionMode {
+        none = 0,
+        rle8 = 1,
+        rle4 = 2,
+        bitfields = 3,
+        jpeg = 4,
+        png = 5,
+        alphaBitfields = 6,
+        reserved7 = 7,
+        reserved8 = 8,
+        reserved9 = 9,
+        reserved10 = 10,
+        cmyk = 11,
+        cmykRle8 = 12,
+        cmykRle4 = 13
     }
 }
 declare module "formats/bmp/bmp-info" {
+    /** @format */
+    import { Color } from "color/color";
     import { InputBuffer } from "common/input-buffer";
+    import { PaletteUint8 } from "image/palette-uint8";
     import { DecodeInfo } from "formats/decode-info";
-    import { BitmapCompressionMode } from "formats/bmp/bitmap-compression-mode";
-    import { BitmapFileHeader } from "formats/bmp/bitmap-file-header";
+    import { BmpCompressionMode } from "formats/bmp/bmp-compression-mode";
+    import { BmpFileHeader } from "formats/bmp/bmp-file-header";
     export class BmpInfo implements DecodeInfo {
+        private readonly _startPos;
+        private _redShift;
+        private _redScale;
+        private _greenShift;
+        private _greenScale;
+        private _blueShift;
+        private _blueScale;
+        private _alphaShift;
+        private _alphaScale;
         private readonly _width;
         get width(): number;
         protected readonly _height: number;
         get height(): number;
         private readonly _backgroundColor;
-        get backgroundColor(): number;
+        get backgroundColor(): Color | undefined;
         private readonly _numFrames;
         get numFrames(): number;
-        private readonly _fileHeader;
-        get fileHeader(): BitmapFileHeader;
+        private readonly _header;
+        get header(): BmpFileHeader;
         private readonly _headerSize;
         get headerSize(): number;
         private readonly _planes;
         get planes(): number;
-        private readonly _bpp;
-        get bpp(): number;
+        private readonly _bitsPerPixel;
+        get bitsPerPixel(): number;
         private readonly _compression;
-        get compression(): BitmapCompressionMode;
+        get compression(): BmpCompressionMode;
         private readonly _imageSize;
         get imageSize(): number;
         private readonly _xppm;
@@ -1849,33 +4612,26 @@ declare module "formats/bmp/bmp-info" {
         get totalColors(): number;
         private readonly _importantColors;
         get importantColors(): number;
-        private readonly _readBottomUp;
+        private _redMask;
+        get redMask(): number;
+        private _greenMask;
+        get greenMask(): number;
+        private _blueMask;
+        get blueMask(): number;
+        private _alphaMask;
+        get alphaMask(): number;
+        private _palette;
+        get palette(): PaletteUint8 | undefined;
         get readBottomUp(): boolean;
-        private _v5redMask?;
-        get v5redMask(): number | undefined;
-        private _v5greenMask?;
-        get v5greenMask(): number | undefined;
-        private _v5blueMask?;
-        get v5blueMask(): number | undefined;
-        private _v5alphaMask?;
-        get v5alphaMask(): number | undefined;
-        private _colorPalette?;
-        get colorPalette(): number[] | undefined;
         get ignoreAlphaChannel(): boolean;
-        constructor(p: InputBuffer, fileHeader?: BitmapFileHeader);
-        private static intToCompressionMode;
-        private compressionModeToString;
+        constructor(p: InputBuffer, header?: BmpFileHeader);
         private readPalette;
-        private readRgba;
-        decodeRgba(input: InputBuffer, pixel: (color: number) => void): void;
-        toString(): string;
+        decodePixel(input: InputBuffer, pixel: (r: number, g: number, b: number, a: number) => void): void;
     }
 }
 declare module "formats/decoder" {
     /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { DecodeInfo } from "formats/decode-info";
     /**
      * Base class for image format decoders.
@@ -1885,36 +4641,14 @@ declare module "formats/decoder" {
      * can reduce the color resolution back down to their required formats.
      *
      * Some image formats support multiple frames, often for encoding animation.
-     * In such cases, the **decodeImage** method will decode the first (or otherwise
-     * specified with the **frame** parameter) frame of the file. **decodeAnimation**
-     * will decode all frames from the image. **startDecode** will initiate
-     * decoding of the file, and **decodeFrame** will then decode a specific frame
-     * from the file, allowing for animations to be decoded one frame at a time.
-     * Some formats, such as TIFF, may store multiple frames, but their use of
-     * frames is for multiple page documents and not animation. The terms
-     * 'animation' and 'frames' simply refer to 'pages' in this case.
-     *
-     * If an image file does not have multiple frames, **decodeAnimation** and
-     * **startDecode** / **decodeFrame** will return the single image of the
-     * file. As such, if you are not sure if a file is animated or not, you can
-     * use the animated functions and process it as a single frame image if it
-     * has only 1 frame, and as an animation if it has more than 1 frame.
-     *
-     * Most animated formats do not store full images for frames, but rather
-     * some frames will store full images and others will store partial 'change'
-     * images. For these files, **decodeAnimation** will always return all images
-     * fully composited, meaning full frame images. Decoding frames individually
-     * using **startDecode** and **decodeFrame** will return the potentially partial
-     * image. In this case, the **DecodeInfo** returned by **startDecode** will include
-     * the width and height resolution of the animation canvas, and each **MemoryImage**
-     * returned by **decodeFrame** will have x, y, width and height properties
-     * indicating where in the canvas the frame image should be drawn. It will
-     * also have a disposeMethod property that specifies what should be done to
-     * the canvas prior to drawing the frame: **DisposeMode.none** indicates the
-     * canvas should be left alone; **DisposeMode.clear** indicates the canvas
-     * should be cleared. For partial frame images,**DisposeMode.none** is used
-     * so that the partial-frame is drawn on top of the previous frame, applying
-     * it's changes to the image.
+     * In such cases, the **decode** method will decode all of the frames,
+     * unless the frame argument is specified for a particular frame to decode.
+     * **startDecode** will initiate decoding of the file, and **decodeFrame** will
+     * then decode a specific frame from the file, allowing for animations to be
+     * decoded one frame at a time. Some formats, such as TIFF, may store multiple
+     * frames, but their use of frames is for multiple page documents and not
+     * animation. The terms 'animation' and 'frames' simply refer to 'pages' in
+     * this case.
      */
     export interface Decoder {
         /**
@@ -1929,63 +4663,38 @@ declare module "formats/decoder" {
         isValidFile(bytes: Uint8Array): boolean;
         /**
          * Start decoding the data as an animation sequence, but don't actually
-         * process the frames until they are requested with decodeFrame.
+         * process the frames until they are requested with **decodeFrame**.
          */
         startDecode(bytes: Uint8Array): DecodeInfo | undefined;
         /**
+         * Decode the file and extract a single image from it. If the file is
+         * animated, and **frame** is specified, that particular frame will be decoded.
+         * Otherwise if the image is animated and **frame** is undefined, the returned
+         * MemoryImage will include all frames. If there was a problem decoding the
+         * MemoryImage, undefined will be returned.
+         */
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
+        /**
          * Decode a single frame from the data that was set with **startDecode**.
          * If **frame** is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have **frame** 0. A **MemoryImage**
+         * Non animated image files will only have **frame** 0. A MemoryImage
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
          */
         decodeFrame(frame: number): MemoryImage | undefined;
-        /**
-         * Decode a single high dynamic range (HDR) frame from the data that was set
-         * with **startDecode**. If the format of the file does not support HDR images,
-         * the regular image will be converted to an HDR image as (color / 255).
-         * If **frame** is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have **frame** 0. A **MemoryImage**
-         * is returned, which provides the image, and top-left coordinates of the
-         * image, as animated frames may only occupy a subset of the canvas.
-         */
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        /**
-         * Decode all of the frames from an animation. If the file is not an
-         * animation, a single frame animation is returned. If there was a problem
-         * decoding the file, undefined is returned.
-         */
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
-        /**
-         * Decode the file and extract a single image from it. If the file is
-         * animated, the specified **frame** will be decoded. If there was a problem
-         * decoding the file, undefined is returned.
-         */
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        /**
-         * Decode the file and extract a single High Dynamic Range (HDR) image from
-         * it. HDR images are stored in floating-poing values. If the format of the
-         * file does not support HDR images, the regular image will be converted to
-         * an HDR image as (color / 255). If the file is animated, the specified
-         * **frame** will be decoded. If there was a problem decoding the file, undefined is
-         * returned.
-         */
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
     }
 }
 declare module "formats/bmp-decoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
     import { InputBuffer } from "common/input-buffer";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { BmpInfo } from "formats/bmp/bmp-info";
     import { Decoder } from "formats/decoder";
     export class BmpDecoder implements Decoder {
-        protected input?: InputBuffer;
-        protected info?: BmpInfo;
+        protected _input?: InputBuffer;
+        protected _info?: BmpInfo;
+        protected _forceRgba: boolean;
         get numFrames(): number;
-        private pixelDataOffset;
+        constructor(forceRgba?: boolean);
         /**
          * Is the given file a valid BMP image?
          */
@@ -1994,53 +4703,41 @@ declare module "formats/bmp-decoder" {
         /**
          * Decode a single frame from the data stat was set with **startDecode**.
          * If **frame** is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have **frame** 0. An **AnimationFrame**
+         * Non animated image files will only have **frame** 0. An animation frame
          * is returned, which provides the image, and top-left coordinates of the
          * image, as animated frames may only occupy a subset of the canvas.
          */
-        decodeFrame(_: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        /**
-         * Decode all of the frames from an animation. If the file is not an
-         * animation, a single frame animation is returned. If there was a problem
-         * decoding the file, undefined is returned.
-         */
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
+        decodeFrame(_frame: number): MemoryImage | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
          * animated, the specified **frame** will be decoded. If there was a problem
          * decoding the file, undefined is returned.
          */
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
     }
 }
 declare module "formats/encoder" {
     /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
+    import { MemoryImage } from "image/image";
     /**
      * Base class for image format encoders.
      */
     export interface Encoder {
         /**
-         * Does this encoder support animation?
+         * True if the encoder supports animated images; otherwise false.
          */
         get supportsAnimation(): boolean;
         /**
-         * Encode a single image.
+         * Encode an **image** to an image format.
+         * If **singleFrame** is true, only the one MemoryImage will be encoded;
+         * otherwise if image has animation, all frames of the **image** will be
+         * encoded if the encoder supports animation.
          */
-        encodeImage(image: MemoryImage): Uint8Array;
-        /**
-         * Encode an animation. Not all formats support animation, and undefined
-         * will be returned if not.
-         */
-        encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
+        encode(image: MemoryImage, singleFrame?: boolean): Uint8Array;
     }
 }
 declare module "formats/bmp-encoder" {
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
+    import { MemoryImage } from "image/image";
     import { Encoder } from "formats/encoder";
     /**
      * Encode a BMP image.
@@ -2048,397 +4745,33 @@ declare module "formats/bmp-encoder" {
     export class BmpEncoder implements Encoder {
         private _supportsAnimation;
         get supportsAnimation(): boolean;
-        encodeImage(image: MemoryImage): Uint8Array;
-        encodeAnimation(_: FrameAnimation): Uint8Array | undefined;
-    }
-}
-declare module "common/point" {
-    /**
-     * 2-dimensional point
-     *
-     * @format
-     */
-    export class Point {
-        private _x;
-        private _y;
-        get x(): number;
-        get y(): number;
-        get xt(): number;
-        get yt(): number;
-        constructor(x: number, y: number);
-        static from(other: Point): Point;
-        move(x: number, y: number): Point;
-        offset(dx: number, dy: number): Point;
-        mul(n: number): Point;
-        add(p: Point): Point;
-        equals(other: unknown): boolean;
-    }
-}
-declare module "common/rectangle" {
-    export class Rectangle {
-        private _left;
-        private _top;
-        private _right;
-        private _bottom;
-        private _width;
-        private _height;
-        get left(): number;
-        get top(): number;
-        get right(): number;
-        get bottom(): number;
-        get width(): number;
-        get height(): number;
-        constructor(x1: number, y1: number, x2: number, y2: number);
-        static fromXYWH(x: number, y: number, width: number, height: number): Rectangle;
-        static from(other: Rectangle): Rectangle;
-        private initialize;
-    }
-}
-declare module "transform/flip-direction" {
-    /** @format */
-    export enum FlipDirection {
-        /**
-         * Flip the image horizontally.
-         */
-        horizontal = 0,
-        /**
-         * Flip the image vertically.
-         */
-        vertical = 1,
-        /**
-         * Flip the image both horizontally and vertically.
-         */
-        both = 2
-    }
-}
-declare module "transform/copy-resize-options" {
-    /** @format */
-    import { Interpolation } from "common/interpolation";
-    import { MemoryImage } from "common/memory-image";
-    export interface CopyResizeOptionsUsingWidth {
-        image: MemoryImage;
-        width: number;
-        height?: number;
-        interpolation?: Interpolation;
-    }
-    export interface CopyResizeOptionsUsingHeight {
-        image: MemoryImage;
-        height: number;
-        width?: number;
-        interpolation?: Interpolation;
-    }
-}
-declare module "transform/copy-into-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface CopyIntoOptions {
-        dst: MemoryImage;
-        src: MemoryImage;
-        dstX?: number;
-        dstY?: number;
-        srcX?: number;
-        srcY?: number;
-        srcW?: number;
-        srcH?: number;
-        blend?: boolean;
-        center?: boolean;
-    }
-}
-declare module "common/line" {
-    export class Line {
-        private _startX;
-        private _startY;
-        private _endX;
-        private _endY;
-        private _dx;
-        private _dy;
-        get startX(): number;
-        get startY(): number;
-        get endX(): number;
-        get endY(): number;
-        get dx(): number;
-        get dy(): number;
-        constructor(x1: number, y1: number, x2: number, y2: number);
-        static from(other: Line): Line;
-        private initialize;
-        moveStart(x: number, y: number): void;
-        moveEnd(x: number, y: number): void;
-    }
-}
-declare module "draw/draw-image-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface DrawImageOptions {
-        dst: MemoryImage;
-        src: MemoryImage;
-        dstX?: number;
-        dstY?: number;
-        dstW?: number;
-        dstH?: number;
-        srcX?: number;
-        srcY?: number;
-        srcW?: number;
-        srcH?: number;
-        blend?: boolean;
-    }
-}
-declare module "draw/draw-line-options" {
-    /** @format */
-    import { Line } from "common/line";
-    import { MemoryImage } from "common/memory-image";
-    export interface DrawLineOptions {
-        image: MemoryImage;
-        line: Line;
-        color: number;
-        antialias?: boolean;
-        thickness?: number;
-    }
-}
-declare module "draw/fill-flood-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface FillFloodOptions {
-        src: MemoryImage;
-        x: number;
-        y: number;
-        color: number;
-        threshold?: number;
-        compareAlpha?: boolean;
-    }
-}
-declare module "draw/mask-flood-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface MaskFloodOptions {
-        src: MemoryImage;
-        x: number;
-        y: number;
-        threshold?: number;
-        compareAlpha?: boolean;
-        fillValue?: number;
-    }
-}
-declare module "draw/draw" {
-    import { MemoryImage } from "common/memory-image";
-    import { Point } from "common/point";
-    import { Rectangle } from "common/rectangle";
-    import { DrawImageOptions } from "draw/draw-image-options";
-    import { DrawLineOptions } from "draw/draw-line-options";
-    import { FillFloodOptions } from "draw/fill-flood-options";
-    import { MaskFloodOptions } from "draw/mask-flood-options";
-    export abstract class Draw {
-        private static readonly OUTCODE_INSIDE;
-        private static readonly OUTCODE_LEFT;
-        private static readonly OUTCODE_RIGHT;
-        private static readonly OUTCODE_BOTTOM;
-        private static readonly OUTCODE_TOP;
-        /**
-         * Calculate the pixels that make up the circumference of a circle on the
-         * given **image**, centered at **center** and the given **radius**.
-         *
-         * The returned list of points is sorted, first by the x coordinate, and
-         * second by the y coordinate.
-         */
-        private static calculateCircumference;
-        /**
-         * Compute the bit code for a point **p** using the clip rectangle **rect**
-         */
-        private static computeOutCode;
-        /**
-         * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
-         * **line** is a **Line** object.
-         * **rect** is a **Rectangle** object.
-         * Results are stored in **line**.
-         * If **line** falls completely outside of **rect**, false is returned, otherwise
-         * true is returned.
-         */
-        private static clipLine;
-        private static testPixelLabColorDistance;
-        /**
-         * Adam Milazzo (2015). A More Efficient Flood Fill.
-         * http://www.adammil.net/blog/v126_A_More_Efficient_Flood_Fill.html
-         */
-        private static fill4;
-        private static fill4Core;
-        /**
-         * Draw a circle into the **image** with a center of **center** and
-         * the given **radius** and **color**.
-         */
-        static drawCircle(image: MemoryImage, center: Point, radius: number, color: number): MemoryImage;
-        /**
-         * Draw and fill a circle into the **image** with a **center**
-         * and the given **radius** and **color**.
-         *
-         * The algorithm uses the same logic as **drawCircle** to calculate each point
-         * around the circle's circumference. Then it iterates through every point,
-         * finding the smallest and largest y-coordinate values for a given x-
-         * coordinate.
-         *
-         * Once found, it draws a line connecting those two points. The circle is thus
-         * filled one vertical slice at a time (each slice being 1-pixel wide).
-         */
-        static fillCircle(image: MemoryImage, center: Point, radius: number, color: number): MemoryImage;
-        /**
-         * Draw the image **src** onto the image **dst**.
-         *
-         * In other words, drawImage will take an rectangular area from **src** of
-         * width **srcW** and height **srcH** at position (**srcX**,**srY**) and place it
-         * in a rectangular area of **dst** of width **dstW** and height **dstH** at
-         * position (**dstX**,**dstY**).
-         *
-         * If the source and destination coordinates and width and heights differ,
-         * appropriate stretching or shrinking of the image fragment will be performed.
-         * The coordinates refer to the upper left corner. This function can be used to
-         * copy regions within the same image (if **dst** is the same as **src**)
-         * but if the regions overlap the results will be unpredictable.
-         */
-        static drawImage(options: DrawImageOptions): MemoryImage;
-        /**
-         * Draw a line into **image**.
-         *
-         * If **antialias** is true then the line is drawn with smooth edges.
-         * **thickness** determines how thick the line should be drawn, in pixels.
-         */
-        static drawLine(options: DrawLineOptions): MemoryImage;
-        /**
-         * Draw a single pixel into the image, applying alpha and opacity blending.
-         */
-        static drawPixel(image: MemoryImage, pos: Point, color: number, opacity?: number): MemoryImage;
-        /**
-         * Draw a rectangle in the image **dst** with the **color**.
-         */
-        static drawRect(dst: MemoryImage, rect: Rectangle, color: number): MemoryImage;
-        /**
-         * Fill the 4-connected shape containing **x**,**y** in the image **src** with the
-         * given **color**.
-         */
-        static fillFlood(options: FillFloodOptions): MemoryImage;
-        /**
-         * Create a mask describing the 4-connected shape containing **x**,**y** in the
-         * image **src**.
-         */
-        static maskFlood(options: MaskFloodOptions): Uint8Array;
-        /**
-         * Fill a rectangle in the image **src** with the given **color** with the
-         * coordinates defined by **rect**.
-         */
-        static fillRect(src: MemoryImage, rect: Rectangle, color: number): MemoryImage;
-        /**
-         * Set all of the pixels of an **image** to the given **color**.
-         */
-        static fill(image: MemoryImage, color: number): MemoryImage;
-    }
-}
-declare module "transform/image-transform" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { Point } from "common/point";
-    import { Rectangle } from "common/rectangle";
-    import { FlipDirection } from "transform/flip-direction";
-    import { CopyResizeOptionsUsingHeight, CopyResizeOptionsUsingWidth } from "transform/copy-resize-options";
-    import { CopyIntoOptions } from "transform/copy-into-options";
-    import { Interpolation } from "common/interpolation";
-    export abstract class ImageTransform {
-        /**
-         * Returns a copy of the **src** image, rotated by **angle** degrees.
-         */
-        static copyRotate(src: MemoryImage, angle: number, interpolation?: Interpolation): MemoryImage;
-        /**
-         * If **image** has an orientation value in its exif data, this will rotate the
-         * image so that it physically matches its orientation. This can be used to
-         * bake the orientation of the image for image formats that don't support exif
-         * data.
-         */
-        static bakeOrientation(image: MemoryImage): MemoryImage;
-        /**
-         * Returns a resized copy of the **src** image.
-         * If **height** isn't specified, then it will be determined by the aspect
-         * ratio of **src** and **width**.
-         * If **width** isn't specified, then it will be determined by the aspect ratio
-         * of **src** and **height**.
-         */
-        static copyResize(options: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
-        /**
-         * Returns a resized and square cropped copy of the **src** image of **size** size.
-         */
-        static copyResizeCropSquare(src: MemoryImage, size: number): MemoryImage;
-        /**
-         * Copies a rectangular portion of one image to another image. **dst** is the
-         * destination image, **src** is the source image identifier.
-         *
-         * In other words, copyInto will take an rectangular area from **src** of
-         * width **srcW** and height **srcH** at position (**srcX**,**srcY**) and place it
-         * in a rectangular area of **dst** of width **dstW** and height **dstH** at
-         * position (**dstX**,**dstY**).
-         *
-         * If the source and destination coordinates and width and heights differ,
-         * appropriate stretching or shrinking of the image fragment will be performed.
-         * The coordinates refer to the upper left corner. This function can be used to
-         * copy regions within the same image (if **dst** is the same as **src**)
-         * but if the regions overlap the results will be unpredictable.
-         *
-         * **dstX** and **dstY** represent the X and Y position where the **src** will start
-         * printing.
-         *
-         * if **center** is true, the **src** will be centered in **dst**.
-         */
-        static copyInto(options: CopyIntoOptions): MemoryImage;
-        /**
-         * Returns a cropped copy of **src**.
-         */
-        static copyCrop(src: MemoryImage, x: number, y: number, w: number, h: number): MemoryImage;
-        /**
-         * Returns a round cropped copy of **src**.
-         */
-        static copyCropCircle(src: MemoryImage, radius?: number, center?: Point): MemoryImage;
-        /**
-         * Returns a copy of the **src** image, where the given rectangle
-         * has been mapped to the full image.
-         */
-        static copyRectify(src: MemoryImage, rect: Rectangle, toImage?: MemoryImage): MemoryImage;
-        /**
-         * Flips the **src** image using the given **mode**, which can be one of:
-         * **FlipDirection.horizontal**, **FlipDirection.vertical**, or **FlipDirection.both**.
-         */
-        static flip(src: MemoryImage, direction: FlipDirection): MemoryImage;
-        /**
-         * Flip the **src** image vertically.
-         */
-        static flipVertical(src: MemoryImage): MemoryImage;
-        /**
-         * Flip the src image horizontally.
-         */
-        static flipHorizontal(src: MemoryImage): MemoryImage;
+        encode(image: MemoryImage, _singleFrame?: boolean): Uint8Array;
     }
 }
 declare module "formats/gif/gif-color-map" {
-    export interface GifColorMapInitOptions {
-        numColors: number;
-        bitsPerPixel?: number;
-        colors?: Uint8Array;
-        transparent?: number;
-    }
+    /** @format */
+    import { ColorUint8 } from "color/color-uint8";
+    import { PaletteUint8 } from "image/palette-uint8";
     export class GifColorMap {
-        private readonly _colors;
-        get colors(): Uint8Array;
         private readonly _numColors;
         get numColors(): number;
-        private readonly _bitsPerPixel;
+        private readonly _palette;
+        get palette(): PaletteUint8;
+        private _bitsPerPixel;
         get bitsPerPixel(): number;
         private _transparent?;
         set transparent(v: number | undefined);
         get transparent(): number | undefined;
-        constructor(options: GifColorMapInitOptions);
+        constructor(numColors: number, palette?: PaletteUint8);
         private static bitSize;
         static from(other: GifColorMap): GifColorMap;
-        getByte(index: number): number;
-        setByte(index: number, value: number): number;
-        getColor(index: number): number;
+        getColor(index: number): ColorUint8;
         setColor(index: number, r: number, g: number, b: number): void;
         getRed(color: number): number;
         getGreen(color: number): number;
         getBlue(color: number): number;
         getAlpha(color: number): number;
+        getPalette(): PaletteUint8;
     }
 }
 declare module "formats/gif/gif-image-desc" {
@@ -2475,13 +4808,14 @@ declare module "formats/gif/gif-image-desc" {
 }
 declare module "formats/gif/gif-info" {
     /** @format */
+    import { Color } from "color/color";
     import { DecodeInfo } from "formats/decode-info";
     import { GifColorMap } from "formats/gif/gif-color-map";
     import { GifImageDesc } from "formats/gif/gif-image-desc";
     export interface GifInfoInitOptions {
         width?: number;
         height?: number;
-        backgroundColor?: number;
+        backgroundColor?: Color;
         frames?: Array<GifImageDesc>;
         colorResolution?: number;
         globalColorMap?: GifColorMap;
@@ -2493,7 +4827,7 @@ declare module "formats/gif/gif-info" {
         private _height;
         get height(): number;
         private _backgroundColor;
-        get backgroundColor(): number;
+        get backgroundColor(): Color | undefined;
         private _frames;
         get frames(): Array<GifImageDesc>;
         private _colorResolution;
@@ -2503,54 +4837,51 @@ declare module "formats/gif/gif-info" {
         private _isGif89;
         get isGif89(): boolean;
         get numFrames(): number;
-        constructor(options?: GifInfoInitOptions);
+        constructor(opt?: GifInfoInitOptions);
     }
 }
 declare module "formats/gif-decoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
     import { Decoder } from "formats/decoder";
     import { GifInfo } from "formats/gif/gif-info";
+    import { MemoryImage } from "image/image";
     /**
      * A decoder for the GIF image format. This supports both single frame and
      * animated GIF files, and transparency.
      */
     export class GifDecoder implements Decoder {
-        private static readonly STAMP_SIZE;
-        private static readonly GIF87_STAMP;
-        private static readonly GIF89_STAMP;
-        private static readonly IMAGE_DESC_RECORD_TYPE;
-        private static readonly EXTENSION_RECORD_TYPE;
-        private static readonly TERMINATE_RECORD_TYPE;
-        private static readonly GRAPHIC_CONTROL_EXT;
-        private static readonly APPLICATION_EXT;
-        private static readonly LZ_MAX_CODE;
-        private static readonly LZ_BITS;
-        private static readonly NO_SUCH_CODE;
-        private static readonly CODE_MASKS;
-        private static readonly INTERLACED_OFFSET;
-        private static readonly INTERLACED_JUMP;
-        private info?;
-        private input?;
-        private repeat;
-        private buffer?;
-        private stack;
-        private suffix;
-        private prefix?;
-        private bitsPerPixel;
-        private pixelCount?;
-        private currentShiftDWord;
-        private currentShiftState;
-        private stackPtr;
-        private currentCode?;
-        private lastCode;
-        private maxCode1;
-        private runningBits;
-        private runningCode;
-        private eofCode;
-        private clearCode;
+        private static readonly _stampSize;
+        private static readonly _gif87Stamp;
+        private static readonly _gif89Stamp;
+        private static readonly _imageDescRecordType;
+        private static readonly _extensionRecordType;
+        private static readonly _terminateRecordType;
+        private static readonly _graphicControlExt;
+        private static readonly _applicationExt;
+        private static readonly _lzMaxCode;
+        private static readonly _lzBits;
+        private static readonly _noSuchCode;
+        private static readonly _codeMasks;
+        private static readonly _interlacedOffset;
+        private static readonly _interlacedJump;
+        private _input?;
+        private _info?;
+        private _repeat;
+        private _buffer?;
+        private _stack;
+        private _suffix;
+        private _prefix?;
+        private _bitsPerPixel;
+        private _pixelCount?;
+        private _currentShiftDWord;
+        private _currentShiftState;
+        private _stackPtr;
+        private _currentCode?;
+        private _lastCode;
+        private _maxCode1;
+        private _runningBits;
+        private _runningCode;
+        private _eofCode;
+        private _clearCode;
         /**
          * How many frames are available to decode?
          *
@@ -2563,7 +4894,7 @@ declare module "formats/gif-decoder" {
          * Routine to trace the Prefixes linked list until we get a prefix which is
          * not code, but a pixel value (less than ClearCode). Returns that pixel value.
          * If image is defective, we might loop here forever, so we limit the loops to
-         * the maximum possible if image O.k. - LZ_MAX_CODE times.
+         * the maximum possible if image O.k. - lzMaxCode times.
          */
         private static getPrefixChar;
         private static updateImage;
@@ -2577,7 +4908,6 @@ declare module "formats/gif-decoder" {
         private skipRemainder;
         private readApplicationExt;
         private readGraphicsControlExt;
-        private decodeFrameImage;
         private getLine;
         /**
          * The LZ decompression routine:
@@ -2600,6 +4930,7 @@ declare module "formats/gif-decoder" {
          */
         private bufferedInput;
         private initDecode;
+        private decodeImage;
         /**
          * Is the given file a valid Gif image?
          */
@@ -2609,85 +4940,85 @@ declare module "formats/gif-decoder" {
          * If the file is not a valid Gif image, undefined is returned.
          */
         startDecode(bytes: Uint8Array): GifInfo | undefined;
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
         decodeFrame(frame: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        /**
-         * Decode all of the frames of an animated gif. For single image gifs,
-         * this will return an animation with a single frame.
-         */
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
     }
 }
-declare module "common/dither-kernel" {
+declare module "image/quantizer" {
     /** @format */
-    export enum DitherKernel {
-        None = 0,
-        FalseFloydSteinberg = 1,
-        FloydSteinberg = 2,
-        Stucki = 3,
-        Atkinson = 4
-    }
-}
-declare module "common/quantizer" {
-    /** @format */
+    import { Color } from "color/color";
+    import { MemoryImage } from "image/image";
+    import { Palette } from "image/palette";
+    /**
+     * Interface for color quantizers, which reduce the total number of colors
+     * used by an image to a given maximum, used to convert images to palette
+     * images.
+     */
     export interface Quantizer {
+        get palette(): Palette;
+        getColorIndex(c: Color): number;
+        getColorIndexRgb(r: number, g: number, b: number): number;
         /**
-         * Find the index of the closest color to **c** in the **colorMap**.
+         * Find the index of the closest color to **c** in the **palette**.
          */
-        getQuantizedColor(c: number): number;
+        getQuantizedColor(c: Color): Color;
+        /**
+         * Convert the **image** to a palette image.
+         */
+        getIndexImage(image: MemoryImage): MemoryImage;
     }
 }
-declare module "common/neural-quantizer" {
-    import { MemoryImage } from "common/memory-image";
-    import { Quantizer } from "common/quantizer";
+declare module "image/neural-quantizer" {
+    /** @format */
+    import { Color } from "color/color";
+    import { MemoryImage } from "image/image";
+    import { PaletteUint8 } from "image/palette-uint8";
+    import { Quantizer } from "image/quantizer";
     /**
      * Compute a color map with a given number of colors that best represents
      * the given image.
      */
     export class NeuralQuantizer implements Quantizer {
-        private static readonly numCycles;
-        private static readonly alphaBiasShift;
-        private static readonly initAlpha;
-        private static readonly radiusBiasShift;
-        private static readonly radiusBias;
-        private static readonly alphaRadiusBiasShift;
+        private static readonly _numCycles;
+        private static readonly _alphaBiasShift;
+        private static readonly _initAlpha;
+        private static readonly _radiusBiasShift;
+        private static readonly _radiusBias;
+        private static readonly _alphaRadiusBiasShift;
         private static readonly alphaRadiusBias;
-        private static readonly radiusDec;
-        private static readonly gamma;
-        private static readonly beta;
-        private static readonly betaGamma;
-        private static readonly prime1;
-        private static readonly prime2;
-        private static readonly prime3;
-        private static readonly prime4;
-        private static readonly smallImageBytes;
-        private readonly netIndex;
-        private samplingFactor;
-        private netSize;
-        private specials;
-        private bgColor;
-        private cutNetSize;
-        private maxNetPos;
-        private initRadius;
-        private initBiasRadius;
-        private radiusPower;
+        private static readonly _radiusDec;
+        private static readonly _gamma;
+        private static readonly _beta;
+        private static readonly _betaGamma;
+        private static readonly _prime1;
+        private static readonly _prime2;
+        private static readonly _prime3;
+        private static readonly _prime4;
+        private static readonly _smallImageBytes;
+        private readonly _netIndex;
+        private _samplingFactor;
+        private _netSize;
+        private _specials;
+        private _bgColor;
+        private _cutNetSize;
+        private _maxNetPos;
+        private _initRadius;
+        private _initBiasRadius;
+        private _radiusPower;
         /**
          * The network itself
          */
-        private network;
-        private _colorMap8;
-        get colorMap8(): Uint8Array;
-        private _colorMap32;
-        get colorMap32(): Int32Array;
+        private _network;
+        private _paletteInternal;
+        private _palette;
+        get palette(): PaletteUint8;
         /**
          * Bias array for learning
          */
-        private bias;
-        private freq;
+        private _bias;
+        private _freq;
         /**
-         * How many colors are in the **colorMap**?
+         * How many colors are in the **palette**?
          */
         get numColors(): number;
         /**
@@ -2710,53 +5041,1090 @@ declare module "common/neural-quantizer" {
          * Insertion sort of network and building of netindex[0..255]
          */
         private inxBuild;
-        private copyColorMap;
-        /**
-         * Add an image to the quantized color table.
-         */
-        private addImage;
+        private copyPalette;
         /**
          * Search for BGR values 0..255 and return color index
          */
         private inxSearch;
         /**
-         * Get a color from the **colorMap**.
+         * Find the index of the closest color to **c** in the **palette**.
          */
-        color(index: number): number;
+        getColorIndex(c: Color): number;
         /**
-         * Find the index of the closest color to **c** in the **colorMap**.
+         * Find the index of the closest color to **r**,**g**,**b** in the **palette**.
          */
-        lookup(c: number): number;
+        getColorIndexRgb(r: number, g: number, b: number): number;
         /**
-         * Find the index of the closest color to **r**,**g**,**b** in the **colorMap**.
+         * Find the color closest to **c** in the **palette**.
          */
-        lookupRGB(r: number, g: number, b: number): number;
+        getQuantizedColor(c: Color): Color;
         /**
-         * Find the color closest to **c** in the **colorMap**.
+         * Convert the **image** to a palette image.
          */
-        getQuantizedColor(c: number): number;
+        getIndexImage(image: MemoryImage): MemoryImage;
         /**
-         * Convert the **image** to an index map, mapping to this **colorMap**.
+         * Add an image to the quantized color table.
          */
-        getIndexMap(image: MemoryImage): Uint8Array;
+        addImage(image: MemoryImage): void;
     }
 }
-declare module "common/dither-pixel" {
+declare module "image/quantizer-type" {
     /** @format */
-    import { DitherKernel } from "common/dither-kernel";
-    import { MemoryImage } from "common/memory-image";
-    import { NeuralQuantizer } from "common/neural-quantizer";
-    export abstract class DitherPixel {
-        private static ditherKernels;
-        static getDitherPixels(image: MemoryImage, quantizer: NeuralQuantizer, kernel: DitherKernel, serpentine: boolean): Uint8Array;
+    export enum QuantizerType {
+        octree = 0,
+        neural = 1
+    }
+}
+declare module "image/octree-node" {
+    export class OctreeNode {
+        private _r;
+        get r(): number;
+        set r(v: number);
+        private _g;
+        get g(): number;
+        set g(v: number);
+        private _b;
+        get b(): number;
+        set b(v: number);
+        private _count;
+        get count(): number;
+        set count(v: number);
+        private _heapIndex;
+        get heapIndex(): number;
+        set heapIndex(v: number);
+        private _paletteIndex;
+        get paletteIndex(): number;
+        set paletteIndex(v: number);
+        private _parent;
+        get parent(): OctreeNode | undefined;
+        private _children;
+        get children(): Array<OctreeNode | undefined>;
+        private _childCount;
+        get childCount(): number;
+        set childCount(v: number);
+        private _childIndex;
+        get childIndex(): number;
+        private _flags;
+        get flags(): number;
+        set flags(v: number);
+        private _depth;
+        get depth(): number;
+        constructor(childIndex: number, depth: number, parent?: OctreeNode);
+    }
+}
+declare module "image/heap-node" {
+    /** @format */
+    import { OctreeNode } from "image/octree-node";
+    export class HeapNode {
+        private _buf;
+        get buf(): Array<OctreeNode | undefined>;
+        get n(): number;
+    }
+}
+declare module "image/octree-quantizer" {
+    /** @format */
+    import { Color } from "color/color";
+    import { MemoryImage } from "image/image";
+    import { PaletteUint8 } from "image/palette-uint8";
+    import { Quantizer } from "image/quantizer";
+    /**
+     * Color quantization using octree,
+     * from https://rosettacode.org/wiki/Color_quantization/C
+     */
+    export class OctreeQuantizer implements Quantizer {
+        private static readonly _inHeap;
+        private readonly _root;
+        private _palette;
+        get palette(): PaletteUint8;
+        constructor(image: MemoryImage, numberOfColors?: number);
+        private nodeInsert;
+        private popHeap;
+        private heapAdd;
+        private downHeap;
+        private upHeap;
+        private nodeFold;
+        private compareNode;
+        private getNodes;
+        getColorIndex(c: Color): number;
+        getColorIndexRgb(r: number, g: number, b: number): number;
+        /**
+         * Find the index of the closest color to **c** in the **palette**.
+         */
+        getQuantizedColor(c: Color): Color;
+        /**
+         * Convert the **image** to a palette image.
+         */
+        getIndexImage(image: MemoryImage): MemoryImage;
+    }
+}
+declare module "common/random-utils" {
+    /** @format */
+    export abstract class RandomUtils {
+        /**
+         * Return a random number between [-1, 1].
+         */
+        static crand(): number;
+        /**
+         * Return a random number following a gaussian distribution and a standard
+         * deviation of 1.
+         */
+        static grand(): number;
+        /**
+         * Return a random variable following a Poisson distribution of parameter **z**.
+         */
+        static prand(z: number): number;
+        /**
+         * Generates a non-negative random integer in the range from 0, inclusive, to **max**, exclusive.
+         */
+        static intrand(max: number): number;
+    }
+}
+declare module "common/point" {
+    /**
+     * 2-dimensional point
+     *
+     * @format
+     */
+    export class Point {
+        private _x;
+        private _y;
+        get x(): number;
+        get y(): number;
+        get xt(): number;
+        get yt(): number;
+        constructor(x: number, y: number);
+        static from(other: Point): Point;
+        move(x: number, y: number): Point;
+        offset(dx: number, dy: number): Point;
+        mul(n: number): Point;
+        add(p: Point): Point;
+        equals(other: Point): boolean;
+        toString(): string;
+    }
+}
+declare module "common/line" {
+    export class Line {
+        private _x1;
+        private _y1;
+        private _x2;
+        private _y2;
+        get x1(): number;
+        get y1(): number;
+        get x2(): number;
+        get y2(): number;
+        get dx(): number;
+        get dy(): number;
+        constructor(x1: number, y1: number, x2: number, y2: number);
+        static from(other: Line): Line;
+        movePoint1(x: number, y: number): void;
+        movePoint2(x: number, y: number): void;
+        swapXY1(): void;
+        swapXY2(): void;
+        flipX(): void;
+        flipY(): void;
+        clone(): Line;
+        toString(): string;
+    }
+}
+declare module "common/rectangle" {
+    /** @format */
+    import { Point } from "common/point";
+    export class Rectangle {
+        private readonly _left;
+        private readonly _top;
+        private readonly _right;
+        private readonly _bottom;
+        get left(): number;
+        get top(): number;
+        get right(): number;
+        get bottom(): number;
+        get width(): number;
+        get height(): number;
+        get topLeft(): Point;
+        get topRight(): Point;
+        get bottomLeft(): Point;
+        get bottomRight(): Point;
+        constructor(x1: number, y1: number, x2: number, y2: number);
+        static fromXYWH(x: number, y: number, width: number, height: number): Rectangle;
+        static from(other: Rectangle): Rectangle;
+        toString(): string;
+    }
+}
+declare module "image/image-utils" {
+    /** @format */
+    import { Line } from "common/line";
+    import { Point } from "common/point";
+    import { Rectangle } from "common/rectangle";
+    import { Pixel } from "image/pixel";
+    export abstract class ImageUtils {
+        /**
+         * Test if the pixel **p** is within the circle centered at **center** with a
+         * squared radius of **rad2**. This will test the corners, edges, and center
+         * of the pixel and return the ratio of samples within the circle.
+         */
+        static circleTest(p: Pixel, center: Point, rad2: number, antialias?: boolean): number;
+        /**
+         * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
+         * **line** is a Line object.
+         * **rect** is a Rectangle object.
+         * Results are stored in **line**.
+         * If **line** falls completely outside of **rect**, false is returned, otherwise
+         * true is returned.
+         */
+        static clipLine(rect: Rectangle, line: Line): boolean;
+    }
+}
+declare module "draw/blend-mode" {
+    /** @format */
+    export enum BlendMode {
+        direct = 0,
+        alpha = 1,
+        lighten = 2,
+        screen = 3,
+        dodge = 4,
+        addition = 5,
+        darken = 6,
+        multiply = 7,
+        burn = 8,
+        overlay = 9,
+        softLight = 10,
+        hardLight = 11,
+        difference = 12,
+        subtract = 13,
+        divide = 14
+    }
+}
+declare module "draw/circle-quadrant" {
+    /** @format */
+    export enum CircleQuadrant {
+        topLeft = 1,
+        topRight = 2,
+        bottomLeft = 4,
+        bottomRight = 8,
+        all = 15
+    }
+}
+declare module "draw/draw" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color } from "color/color";
+    import { Line } from "common/line";
+    import { Point } from "common/point";
+    import { Rectangle } from "common/rectangle";
+    import { MemoryImage } from "image/image";
+    import { BlendMode } from "draw/blend-mode";
+    interface DrawLineWuOptions {
+        image: MemoryImage;
+        line: Line;
+        color: Color;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface DrawLineOptions extends DrawLineWuOptions {
+        antialias?: boolean;
+        thickness?: number;
+    }
+    export interface DrawCircleOptions {
+        image: MemoryImage;
+        center: Point;
+        radius: number;
+        color: Color;
+        antialias?: boolean;
+        mask?: MemoryImage;
+        maskChannel?: Channel;
+    }
+    export interface DrawPixelOptions {
+        image: MemoryImage;
+        pos: Point;
+        color: Color;
+        filter?: Color;
+        alpha?: number;
+        blend?: BlendMode;
+        linearBlend?: boolean;
+        mask?: MemoryImage;
+        maskChannel?: Channel;
+    }
+    export interface DrawPolygonOptions {
+        image: MemoryImage;
+        vertices: Point[];
+        color: Color;
+        antialias?: boolean;
+        thickness?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface DrawRectOptions {
+        image: MemoryImage;
+        rect: Rectangle;
+        color: Color;
+        thickness?: number;
+        radius?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface FillCircleOptions {
+        image: MemoryImage;
+        center: Point;
+        radius: number;
+        color: Color;
+        antialias?: boolean;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface FillFloodOptions {
+        image: MemoryImage;
+        start: Point;
+        color: Color;
+        threshold?: number;
+        compareAlpha?: boolean;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface MaskFloodOptions {
+        image: MemoryImage;
+        start: Point;
+        threshold?: number;
+        compareAlpha?: boolean;
+        fillValue?: number;
+    }
+    export interface FillPolygonOptions {
+        image: MemoryImage;
+        vertices: Point[];
+        color: Color;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface FillRectOptions {
+        image: MemoryImage;
+        rect: Rectangle;
+        color: Color;
+        radius?: number;
+        mask?: MemoryImage;
+        maskChannel?: Channel;
+    }
+    export interface FillOptions {
+        image: MemoryImage;
+        color: Color;
+        maskChannel?: Channel.luminance;
+        mask?: MemoryImage;
+    }
+    export interface CompositeImageOptions {
+        dst: MemoryImage;
+        src: MemoryImage;
+        dstX?: number;
+        dstY?: number;
+        dstW?: number;
+        dstH?: number;
+        srcX?: number;
+        srcY?: number;
+        srcW?: number;
+        srcH?: number;
+        blend?: BlendMode;
+        linearBlend?: boolean;
+        center?: boolean;
+        mask?: MemoryImage;
+        maskChannel?: Channel;
+    }
+    export abstract class Draw {
+        /**
+         * Calculate the pixels that make up the circumference of a circle on the
+         * given **image**, centered at **center** and the given **radius**.
+         *
+         * The returned array of points is sorted, first by the **center.x** coordinate, and
+         * second by the **center.y** coordinate.
+         */
+        private static calculateCircumference;
+        private static drawAntialiasCircle;
+        private static drawLineWu;
+        private static setAlpha;
+        /**
+         * Compare colors from a 3 or 4 dimensional color space
+         */
+        private static colorDistance;
+        private static testPixelLabColorDistance;
+        private static fill4Core;
+        private static fill4;
+        private static imgDirectComposite;
+        private static imgComposite;
+        /**
+         * Draw a circle into the **image** with a center of **center** and
+         * the given **radius** and **color**.
+         */
+        static drawCircle(opt: DrawCircleOptions): MemoryImage;
+        /**
+         * Draw and fill a circle into the **image** with a **center**
+         * and the given **radius** and **color**.
+         */
+        static fillCircle(opt: FillCircleOptions): MemoryImage;
+        /**
+         * Draw a line into **image**.
+         *
+         * If **antialias** is true then the line is drawn with smooth edges.
+         * **thickness** determines how thick the line should be drawn, in pixels.
+         */
+        static drawLine(opt: DrawLineOptions): MemoryImage;
+        /**
+         * Draw a single pixel into the image, applying alpha and opacity blending.
+         * If **filter** is provided, the color c will be scaled by the **filter**
+         * color. If **alpha** is provided, it will be used in place of the
+         * color alpha, as a normalized color value [0, 1].
+         */
+        static drawPixel(opt: DrawPixelOptions): MemoryImage;
+        /**
+         * Fill a polygon defined by the given **vertices**.
+         */
+        static drawPolygon(opt: DrawPolygonOptions): MemoryImage;
+        /**
+         * Draw a rectangle in the **image** with the **color**.
+         */
+        static drawRect(opt: DrawRectOptions): MemoryImage;
+        /**
+         * Fill the 4-connected shape containing **start** in the **image** with the
+         * given **color**.
+         */
+        static fillFlood(opt: FillFloodOptions): MemoryImage;
+        /**
+         * Fill a polygon defined by the given **vertices**.
+         */
+        static fillPolygon(opt: FillPolygonOptions): MemoryImage;
+        /**
+         * Fill a rectangle **rect** in the **image** with the given **color**.
+         */
+        static fillRect(opt: FillRectOptions): MemoryImage;
+        /**
+         * Set all of the pixels of an **image** to the given **color**.
+         */
+        static fill(opt: FillOptions): MemoryImage;
+        /**
+         * Create a mask describing the 4-connected shape containing **start** in the
+         * **image**.
+         */
+        static maskFlood(opt: MaskFloodOptions): Uint8Array;
+        /**
+         * Composite the image **src** onto the image **dst**.
+         *
+         * In other words, compositeImage will take an rectangular area from src of
+         * width **srcW** and height **srcH** at position (**srcX**,**srcY**) and place it
+         * in a rectangular area of **dst** of width **dstW** and height **dstH** at
+         * position (**dstX**,**dstY**).
+         *
+         * If the source and destination coordinates and width and heights differ,
+         * appropriate stretching or shrinking of the image fragment will be performed.
+         * The coordinates refer to the upper left corner. This function can be used to
+         * copy regions within the same image (if **dst** is the same as **src**)
+         * but if the regions overlap the results will be unpredictable.
+         *
+         * if **center** is true, the **src** will be centered in **dst**.
+         */
+        static compositeImage(opt: CompositeImageOptions): MemoryImage;
+    }
+}
+declare module "filter/dither-kernel" {
+    /** @format */
+    /**
+     * The pattern to use for dithering
+     */
+    export enum DitherKernel {
+        none = 0,
+        falseFloydSteinberg = 1,
+        floydSteinberg = 2,
+        stucki = 3,
+        atkinson = 4
+    }
+    export const DitherKernels: number[][][];
+}
+declare module "filter/noise-type" {
+    /** @format */
+    export enum NoiseType {
+        gaussian = 0,
+        uniform = 1,
+        saltAndPepper = 2,
+        poisson = 3,
+        rice = 4
+    }
+}
+declare module "filter/pixelate-mode" {
+    /** @format */
+    export enum PixelateMode {
+        /**
+         * Use the top-left pixel of a block for the block color.
+         */
+        upperLeft = 0,
+        /**
+         * Use the average of the pixels within a block for the block color.
+         */
+        average = 1
+    }
+}
+declare module "filter/quantize-method" {
+    /** @format */
+    export enum QuantizeMethod {
+        neuralNet = 0,
+        octree = 1
+    }
+}
+declare module "filter/separable-kernel" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { MemoryImage } from "image/image";
+    export interface SeparableKernelApplyOptions {
+        src: MemoryImage;
+        dst: MemoryImage;
+        horizontal?: boolean;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    /**
+     * A kernel object to use with **separableConvolution** filter.
+     */
+    export class SeparableKernel {
+        private readonly _coefficients;
+        private readonly _size;
+        /**
+         * Get the number of coefficients in the kernel.
+         */
+        get length(): number;
+        /**
+         * Create a separable convolution kernel for the given **size**.
+         */
+        constructor(size: number);
+        private reflect;
+        private applyCoefficientsLine;
+        /**
+         * Get a coefficient from the kernel.
+         */
+        getCoefficient(index: number): number;
+        /**
+         * Set a coefficient in the kernel.
+         */
+        setCoefficient(index: number, c: number): void;
+        /**
+         * Apply the kernel to the **src** image, storing the results in **dst**,
+         * for a single dimension. If **horizontal** is true, the filter will be
+         * applied to the horizontal axis, otherwise it will be applied to the
+         * vertical axis.
+         */
+        apply(opt: SeparableKernelApplyOptions): void;
+        /**
+         * Scale all of the coefficients by **s**.
+         */
+        scaleCoefficients(s: number): void;
+    }
+}
+declare module "filter/filter" {
+    /** @format */
+    import { Channel } from "color/channel";
+    import { Color } from "color/color";
+    import { Interpolation } from "common/interpolation";
+    import { Quantizer } from "image/quantizer";
+    import { MemoryImage } from "image/image";
+    import { DitherKernel } from "filter/dither-kernel";
+    import { NoiseType } from "filter/noise-type";
+    import { PixelateMode } from "filter/pixelate-mode";
+    import { QuantizeMethod } from "filter/quantize-method";
+    import { SeparableKernel } from "filter/separable-kernel";
+    export interface AdjustColorOptions {
+        image: MemoryImage;
+        blacks?: Color;
+        whites?: Color;
+        mids?: Color;
+        contrast?: number;
+        saturation?: number;
+        brightness?: number;
+        gamma?: number;
+        exposure?: number;
+        hue?: number;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface BillboardOptions {
+        image: MemoryImage;
+        grid?: number;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface BleachBypassOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface BulgeDistortionOptions {
+        image: MemoryImage;
+        centerX?: number;
+        centerY?: number;
+        radius?: number;
+        scale?: number;
+        interpolation?: Interpolation;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface BumpToNormalOptions {
+        image: MemoryImage;
+        strength?: number;
+    }
+    export interface ChromaticAberrationOptions {
+        image: MemoryImage;
+        shift?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface ColorHalftone {
+        image: MemoryImage;
+        amount?: number;
+        centerX?: number;
+        centerY?: number;
+        angle?: number;
+        size?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface ColorOffsetOptions {
+        image: MemoryImage;
+        red?: number;
+        green?: number;
+        blue?: number;
+        alpha?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface ContrastOptions {
+        image: MemoryImage;
+        contrast: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface ConvolutionOptions {
+        image: MemoryImage;
+        filter: number[];
+        div?: number;
+        offset?: number;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface CopyImageChannelsOptions {
+        image: MemoryImage;
+        from: MemoryImage;
+        scaled?: boolean;
+        red?: Channel;
+        green?: Channel;
+        blue?: Channel;
+        alpha?: Channel;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface DitherImageOptions {
+        image: MemoryImage;
+        quantizer?: Quantizer;
+        kernel?: DitherKernel;
+        serpentine?: boolean;
+    }
+    export interface DotScreenOptions {
+        image: MemoryImage;
+        angle?: number;
+        size?: number;
+        centerX?: number;
+        centerY?: number;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface DropShadowOptions {
+        image: MemoryImage;
+        hShadow: number;
+        vShadow: number;
+        blur: number;
+        shadowColor?: Color;
+    }
+    export interface EdgeGlowOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface EmbossOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface GammaOptions {
+        image: MemoryImage;
+        gamma: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface GaussianBlurOptions {
+        image: MemoryImage;
+        radius: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface GrayscaleOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface HdrToLdrOptions {
+        image: MemoryImage;
+        exposure?: number;
+    }
+    export interface HexagonPixelateOptions {
+        image: MemoryImage;
+        centerX?: number;
+        centerY?: number;
+        size?: number;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface InvertOptions {
+        image: MemoryImage;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface LuminanceThresholdOptions {
+        image: MemoryImage;
+        threshold?: number;
+        outputColor?: boolean;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface MonochromeOptions {
+        image: MemoryImage;
+        color?: Color;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface NoiseOptions {
+        image: MemoryImage;
+        sigma: number;
+        type?: NoiseType;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface NormalizeOptions {
+        image: MemoryImage;
+        min: number;
+        max: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface PixelateOptions {
+        image: MemoryImage;
+        size: number;
+        mode?: PixelateMode;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface QuantizeOptions {
+        image: MemoryImage;
+        numberOfColors?: number;
+        method?: QuantizeMethod;
+        dither?: DitherKernel;
+        ditherSerpentine?: boolean;
+    }
+    export interface ReinhardToneMapOptions {
+        image: MemoryImage;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface RemapColorsOptions {
+        image: MemoryImage;
+        red?: Channel;
+        green?: Channel;
+        blue?: Channel;
+        alpha?: Channel;
+    }
+    export interface ScaleRgbaOptions {
+        image: MemoryImage;
+        scale: Color;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface SeparableConvolutionOptions {
+        image: MemoryImage;
+        kernel: SeparableKernel;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface SepiaOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface SketchOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface SmoothOptions {
+        image: MemoryImage;
+        weight: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface SobelOptions {
+        image: MemoryImage;
+        amount?: number;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface StretchDistortionOptions {
+        image: MemoryImage;
+        centerX?: number;
+        centerY?: number;
+        interpolation?: Interpolation;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export interface VignetteOptions {
+        image: MemoryImage;
+        start?: number;
+        end?: number;
+        amount?: number;
+        color?: Color;
+        maskChannel?: Channel;
+        mask?: MemoryImage;
+    }
+    export abstract class Filter {
+        private static _contrastCache?;
+        private static readonly _gaussianKernelCache;
+        /**
+         * Adjust the color of the **image** using various color transformations.
+         *
+         * **blacks** defines the black level of the image, as a color.
+         *
+         * **whites** defines the white level of the image, as a color.
+         *
+         * **mids** defines the mid level of hte image, as a color.
+         *
+         * **contrast** increases (> 1) / decreases (< 1) the contrast of the image by
+         * pushing colors away/toward neutral gray, where at 0 the image is entirely
+         * neutral gray (0 contrast), 1, the image is not adjusted and > 1 the
+         * image increases contrast.
+         *
+         * **saturation** increases (> 1) / decreases (< 1) the saturation of the image
+         * by pushing colors away/toward their grayscale value, where 0 is grayscale
+         * and 1 is the original image, and > 1 the image becomes more saturated.
+         *
+         * **brightness** is a constant scalar of the image colors. At 0 the image
+         * is black, 1 unmodified, and > 1 the image becomes brighter.
+         *
+         * **gamma** is an exponential scalar of the image colors. At < 1 the image
+         * becomes brighter, and > 1 the image becomes darker. A **gamma** of 1/2.2
+         * will convert the image colors to linear color space.
+         *
+         * **exposure** is an exponential scalar of the image as rgb* pow(2, exposure).
+         * At 0, the image is unmodified; as the exposure increases, the image
+         * brightens.
+         *
+         * **hue** shifts the hue component of the image colors in degrees. A **hue** of
+         * 0 will have no affect, and a **hue** of 45 will shift the hue of all colors
+         * by 45 degrees.
+         *
+         * **amount** controls how much affect this filter has on the **image**, where
+         * 0 has no effect and 1 has full effect.
+         *
+         */
+        static adjustColor(opt: AdjustColorOptions): MemoryImage;
+        /**
+         * Apply the billboard filter to the image.
+         */
+        static billboard(opt: BillboardOptions): MemoryImage;
+        static bleachBypass(opt: BleachBypassOptions): MemoryImage;
+        static bulgeDistortion(opt: BulgeDistortionOptions): MemoryImage;
+        /**
+         * Generate a normal map from a heightfield bump image.
+         *
+         * The red channel of the **image** is used as an input, 0 represents a low
+         * height and 1 a high value. The optional **strength** parameter allows to set
+         * the strength of the normal image.
+         */
+        static bumpToNormal(opt: BumpToNormalOptions): MemoryImage;
+        /**
+         * Apply chromatic aberration filter to the image.
+         */
+        static chromaticAberration(opt: ChromaticAberrationOptions): MemoryImage;
+        /**
+         * Apply color halftone filter to the image.
+         */
+        static colorHalftone(opt: ColorHalftone): MemoryImage;
+        /**
+         * Add the **red**, **green**, **blue** and **alpha** values to the **image** image
+         * colors, a per-channel brightness.
+         */
+        static colorOffset(opt: ColorOffsetOptions): MemoryImage;
+        /**
+         * Set the contrast level for the **image**.
+         *
+         * **contrast** values below 100 will decrees the contrast of the image,
+         * and values above 100 will increase the contrast. A contrast of of 100
+         * will have no affect.
+         */
+        static contrast(opt: ContrastOptions): MemoryImage;
+        /**
+         * Apply a 3x3 convolution filter to the **image**. **filter** should be a
+         * list of 9 numbers.
+         *
+         * The rgb channels will be divided by **div** and add **offset**, allowing
+         * filters to normalize and offset the filtered pixel value.
+         */
+        static convolution(opt: ConvolutionOptions): MemoryImage;
+        /**
+         * Copy channels from the **from** image to the **image**. If **scaled** is
+         * true, then the **from** image will be scaled to the **image** resolution.
+         */
+        static copyImageChannels(opt: CopyImageChannelsOptions): MemoryImage;
+        /**
+         * Dither an image to reduce banding patterns when reducing the number of
+         * colors.
+         */
+        static ditherImage(opt: DitherImageOptions): MemoryImage;
+        /**
+         * Apply the dot screen filter to the image.
+         */
+        static dotScreen(opt: DotScreenOptions): MemoryImage;
+        /**
+         * Create a drop-shadow effect for the image.
+         */
+        static dropShadow(opt: DropShadowOptions): MemoryImage;
+        /**
+         * Apply the edge glow filter to the image.
+         */
+        static edgeGlow(opt: EdgeGlowOptions): MemoryImage;
+        /**
+         * Apply an emboss convolution filter.
+         */
+        static emboss(opt: EmbossOptions): MemoryImage;
+        /**
+         * Apply gamma scaling
+         */
+        static gamma(opt: GammaOptions): MemoryImage;
+        /**
+         * Apply gaussian blur to the **image**. **radius** determines how many pixels
+         * away from the current pixel should contribute to the blur, where 0 is no
+         * blur and the larger the **radius**, the stronger the blur.
+         */
+        static gaussianBlur(opt: GaussianBlurOptions): MemoryImage;
+        /**
+         * Convert the image to grayscale.
+         */
+        static grayscale(opt: GrayscaleOptions): MemoryImage;
+        /**
+         * Convert a high dynamic range image to a low dynamic range image,
+         * with optional exposure control.
+         */
+        static hdrToLdr(opt: HdrToLdrOptions): MemoryImage;
+        /**
+         * Apply the hexagon pixelate filter to the image.
+         */
+        static hexagonPixelate(opt: HexagonPixelateOptions): MemoryImage;
+        /**
+         * Invert the colors of the **image**.
+         */
+        static invert(opt: InvertOptions): MemoryImage;
+        static luminanceThreshold(opt: LuminanceThresholdOptions): MemoryImage;
+        /**
+         * Apply the monochrome filter to the **image**.
+         *
+         * **amount** controls the strength of the effect, in the range [0, 1].
+         */
+        static monochrome(opt: MonochromeOptions): MemoryImage;
+        /**
+         * Add random noise to pixel values. **sigma** determines how strong the effect
+         * should be. **type** should be one of the following: _NoiseType.gaussian_,
+         * _NoiseType.uniform_, _NoiseType.saltAndPepper_, _NoiseType.poisson_,
+         * or _NoiseType.rice_.
+         */
+        static noise(opt: NoiseOptions): MemoryImage;
+        /**
+         * Linearly normalize the colors of the image. All color values will be mapped
+         * to the range **min**, **max** inclusive.
+         */
+        static normalize(opt: NormalizeOptions): MemoryImage;
+        /**
+         * Pixelate the **image**.
+         *
+         * **size** determines the size of the pixelated blocks.
+         * If **mode** is **upperLeft** then the upper-left corner of the
+         * block will be used for the block color. Otherwise if **mode** is
+         * **average**, the average of all the pixels in the block will be
+         * used for the block color.
+         */
+        static pixelate(opt: PixelateOptions): MemoryImage;
+        /**
+         * Quantize the number of colors in image to 256.
+         */
+        static quantize(opt: QuantizeOptions): MemoryImage;
+        /**
+         * Applies Reinhard tone mapping to the hdr image, in-place.
+         */
+        static reinhardToneMap(opt: ReinhardToneMapOptions): MemoryImage;
+        /**
+         * Remap the color channels of the image.
+         * **red**, **green**, **blue** and **alpha** should be set to one of the following:
+         * _Channel.red_, _Channel.green_, _Channel.blue_, _Channel.alpha_, or
+         * _Channel.luminance_.
+         */
+        static remapColors(opt: RemapColorsOptions): MemoryImage;
+        static scaleRgba(opt: ScaleRgbaOptions): MemoryImage;
+        /**
+         * Apply a generic separable convolution filter to the **image**, using the
+         * given **kernel**.
+         *
+         * **gaussianBlur** is an example of such a filter.
+         */
+        static separableConvolution(opt: SeparableConvolutionOptions): MemoryImage;
+        /**
+         * Apply sepia tone to the **image**.
+         *
+         * **amount** controls the strength of the effect, in the range [0, 1].
+         */
+        static sepia(opt: SepiaOptions): MemoryImage;
+        /**
+         * Apply sketch filter to the **image**.
+         *
+         * **amount** controls the strength of the effect, in the range [0, 1].
+         */
+        static sketch(opt: SketchOptions): MemoryImage;
+        /**
+         * Apply a smoothing convolution filter to the **image**.
+         *
+         * **weight** is the weight of the current pixel being filtered. If it's greater
+         * than 1, it will make the image sharper.
+         */
+        static smooth(opt: SmoothOptions): MemoryImage;
+        /**
+         * Apply Sobel edge detection filtering to the **image**.
+         */
+        static sobel(opt: SobelOptions): MemoryImage;
+        static stretchDistortion(opt: StretchDistortionOptions): MemoryImage;
+        /**
+         * Apply a vignette filter to the **image**.
+         *
+         * **start** is the inner radius from the center of the image, where the fade to
+         * **color** starts to be applied; **end** is the outer radius of the
+         * vignette effect where the **color** is fully applied. The radius values are in
+         * normalized percentage of the image size [0, 1].
+         * **amount** controls the blend of the effect with the original image.
+         */
+        static vignette(opt: VignetteOptions): MemoryImage;
     }
 }
 declare module "formats/gif-encoder" {
-    /** @format */
-    import { DitherKernel } from "common/dither-kernel";
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
     import { Encoder } from "formats/encoder";
+    import { MemoryImage } from "image/image";
+    import { DitherKernel } from "filter/dither-kernel";
     export interface GifEncoderInitOptions {
         delay?: number;
         repeat?: number;
@@ -2765,45 +6133,47 @@ declare module "formats/gif-encoder" {
         ditherSerpentine?: boolean;
     }
     export class GifEncoder implements Encoder {
-        private static readonly gif89Id;
-        private static readonly imageDescRecordType;
-        private static readonly extensionRecordType;
-        private static readonly terminateRecordType;
-        private static readonly applicationExt;
-        private static readonly graphicControlExt;
-        private static readonly eof;
-        private static readonly bits;
-        private static readonly hsize;
-        private static readonly masks;
-        private lastImage?;
-        private lastImageDuration?;
-        private lastColorMap?;
-        private width;
-        private height;
-        private encodedFrames;
-        private curAccum;
-        private curBits;
-        private nBits;
-        private initBits;
-        private EOFCode;
-        private maxCode;
-        private clearCode;
-        private freeEnt;
-        private clearFlag;
-        private block;
-        private blockSize;
-        private outputBuffer?;
-        private delay;
-        private repeat;
-        private samplingFactor;
-        private dither;
-        private ditherSerpentine;
+        private static readonly _gif89Id;
+        private static readonly _imageDescRecordType;
+        private static readonly _extensionRecordType;
+        private static readonly _terminateRecordType;
+        private static readonly _applicationExt;
+        private static readonly _graphicControlExt;
+        private static readonly _eof;
+        private static readonly _bits;
+        private static readonly _hSize;
+        private static readonly _masks;
+        private _delay;
+        private _repeat;
+        private _numColors;
+        private _quantizerType;
+        private _samplingFactor;
+        private _lastImage?;
+        private _lastImageDuration?;
+        private _lastColorMap?;
+        private _width;
+        private _height;
+        private _encodedFrames;
+        private _curAccum;
+        private _curBits;
+        private _nBits;
+        private _initBits;
+        private _eofCode;
+        private _maxCode;
+        private _clearCode;
+        private _freeEnt;
+        private _clearFlag;
+        private _block;
+        private _blockSize;
+        private _outputBuffer?;
+        private _dither;
+        private _ditherSerpentine;
         /**
          * Does this encoder support animation?
          */
         private readonly _supportsAnimation;
         get supportsAnimation(): boolean;
-        constructor(options?: GifEncoderInitOptions);
+        constructor(opt?: GifEncoderInitOptions);
         private addImage;
         private encodeLZW;
         private output;
@@ -2831,11 +6201,7 @@ declare module "formats/gif-encoder" {
         /**
          * Encode a single frame image.
          */
-        encodeImage(image: MemoryImage): Uint8Array;
-        /**
-         * Encode an animation.
-         */
-        encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
+        encode(image: MemoryImage, singleFrame?: boolean): Uint8Array;
     }
 }
 declare module "formats/dib-decoder" {
@@ -2844,7 +6210,7 @@ declare module "formats/dib-decoder" {
     import { BmpDecoder } from "formats/bmp-decoder";
     import { BmpInfo } from "formats/bmp/bmp-info";
     export class DibDecoder extends BmpDecoder {
-        constructor(input: InputBuffer, info: BmpInfo);
+        constructor(input: InputBuffer, info: BmpInfo, forceRgba?: boolean);
     }
 }
 declare module "formats/ico/ico-bmp-info" {
@@ -2857,6 +6223,15 @@ declare module "formats/ico/ico-bmp-info" {
 }
 declare module "formats/ico/ico-info-image" {
     /** @format */
+    export interface IcoInfoImageInitOptions {
+        width: number;
+        height: number;
+        colorPalette: number;
+        bytesSize: number;
+        bytesOffset: number;
+        colorPlanes: number;
+        bitsPerPixel: number;
+    }
     export class IcoInfoImage {
         private readonly _width;
         get width(): number;
@@ -2872,47 +6247,82 @@ declare module "formats/ico/ico-info-image" {
         get colorPlanes(): number;
         private readonly _bitsPerPixel;
         get bitsPerPixel(): number;
-        constructor(width: number, height: number, colorPalette: number, bytesSize: number, bytesOffset: number, colorPlanes: number, bitsPerPixel: number);
+        constructor(opt: IcoInfoImageInitOptions);
     }
+}
+declare module "formats/ico/ico-type" {
+    /** @format */
+    export enum IcoType {
+        invalid = 0,
+        ico = 1,
+        cur = 2
+    }
+    export const IcoTypeLength = 3;
 }
 declare module "formats/ico/ico-info" {
     /** @format */
+    import { Color } from "color/color";
     import { InputBuffer } from "common/input-buffer";
     import { DecodeInfo } from "formats/decode-info";
     import { IcoInfoImage } from "formats/ico/ico-info-image";
+    import { IcoType } from "formats/ico/ico-type";
     export class IcoInfo implements DecodeInfo {
-        private readonly _type?;
-        get type(): number | undefined;
-        private readonly _images?;
-        get images(): IcoInfoImage[] | undefined;
-        private readonly _numFrames;
-        get numFrames(): number;
         private _width;
         get width(): number;
         private _height;
         get height(): number;
+        private readonly _type;
+        get type(): IcoType;
+        private readonly _numFrames;
+        get numFrames(): number;
         private _backgroundColor;
-        get backgroundColor(): number;
-        constructor(numFrames: number, type?: number, images?: IcoInfoImage[]);
+        get backgroundColor(): Color | undefined;
+        private readonly _images;
+        get images(): IcoInfoImage[];
+        constructor(type: number, numFrames: number, images: IcoInfoImage[]);
         static read(input: InputBuffer): IcoInfo | undefined;
     }
 }
 declare module "common/crc32" {
     /** @format */
-    export interface Crc32Parameters {
+    export interface Crc32Options {
         buffer: Uint8Array;
         baseCrc?: number;
         position?: number;
         length?: number;
     }
     export abstract class Crc32 {
-        private static readonly crcTable;
+        private static readonly _crcTable;
         private static makeTable;
-        static getChecksum(options: Crc32Parameters): number;
+        static getChecksum(opt: Crc32Options): number;
+    }
+}
+declare module "formats/png/png-blend-mode" {
+    /** @format */
+    export enum PngBlendMode {
+        /**
+         * No alpha blending should be done when drawing this frame (replace pixels in canvas).
+         */
+        source = 0,
+        /**
+         * * Alpha blending should be used when drawing this frame (composited over
+         * the current canvas image).
+         */
+        over = 1
+    }
+}
+declare module "formats/png/png-dispose-mode" {
+    /** @format */
+    export enum PngDisposeMode {
+        none = 0,
+        background = 1,
+        previous = 2
     }
 }
 declare module "formats/png/png-frame" {
     /** @format */
+    import { PngBlendMode } from "formats/png/png-blend-mode";
+    import { PngDisposeMode } from "formats/png/png-dispose-mode";
     export interface PngFrameInitOptions {
         sequenceNumber?: number;
         width?: number;
@@ -2925,38 +6335,45 @@ declare module "formats/png/png-frame" {
         blend?: number;
     }
     export class PngFrame {
-        static readonly APNG_DISPOSE_OP_NONE = 0;
-        static readonly APNG_DISPOSE_OP_BACKGROUND = 1;
-        static readonly APNG_DISPOSE_OP_PREVIOUS = 2;
-        static readonly APNG_BLEND_OP_SOURCE = 0;
-        static readonly APNG_BLEND_OP_OVER = 1;
         private readonly _fdat;
         get fdat(): number[];
-        private _sequenceNumber?;
-        get sequenceNumber(): number | undefined;
-        private _width?;
-        get width(): number | undefined;
-        private _height?;
-        get height(): number | undefined;
-        private _xOffset?;
-        get xOffset(): number | undefined;
-        private _yOffset?;
-        get yOffset(): number | undefined;
-        private _delayNum?;
-        get delayNum(): number | undefined;
-        private _delayDen?;
-        get delayDen(): number | undefined;
-        private _dispose?;
-        get dispose(): number | undefined;
-        private _blend?;
-        get blend(): number | undefined;
+        private _sequenceNumber;
+        get sequenceNumber(): number;
+        private _width;
+        get width(): number;
+        private _height;
+        get height(): number;
+        private _xOffset;
+        get xOffset(): number;
+        private _yOffset;
+        get yOffset(): number;
+        private _delayNum;
+        get delayNum(): number;
+        private _delayDen;
+        get delayDen(): number;
+        private _dispose;
+        get dispose(): PngDisposeMode;
+        private _blend;
+        get blend(): PngBlendMode;
         get delay(): number;
-        constructor(options: PngFrameInitOptions);
+        constructor(opt: PngFrameInitOptions);
+    }
+}
+declare module "formats/png/png-color-type" {
+    /** @format */
+    export enum PngColorType {
+        grayscale = 0,
+        rgb = 2,
+        indexed = 3,
+        grayscaleAlpha = 4,
+        rgba = 6
     }
 }
 declare module "formats/png/png-info" {
     /** @format */
+    import { Color } from "color/color";
     import { DecodeInfo } from "formats/decode-info";
+    import { PngColorType } from "formats/png/png-color-type";
     import { PngFrame } from "formats/png/png-frame";
     export interface PngInfoInitOptions {
         width?: number;
@@ -2969,87 +6386,87 @@ declare module "formats/png/png-info" {
     }
     export class PngInfo implements DecodeInfo {
         private _width;
-        set width(v: number);
         get width(): number;
+        set width(v: number);
         private _height;
         set height(v: number);
         get height(): number;
         private _backgroundColor;
-        set backgroundColor(v: number);
-        get backgroundColor(): number;
+        get backgroundColor(): Color | undefined;
+        set backgroundColor(v: Color | undefined);
         private _numFrames;
-        set numFrames(v: number);
         get numFrames(): number;
-        private _bits?;
-        get bits(): number | undefined;
-        private _colorType?;
-        get colorType(): number | undefined;
-        private _compressionMethod?;
-        get compressionMethod(): number | undefined;
-        private _filterMethod?;
-        get filterMethod(): number | undefined;
-        private _interlaceMethod?;
-        get interlaceMethod(): number | undefined;
+        set numFrames(v: number);
+        private _bits;
+        get bits(): number;
+        set bits(v: number);
+        private _colorType;
+        get colorType(): PngColorType | undefined;
+        set colorType(v: PngColorType | undefined);
+        private _compressionMethod;
+        get compressionMethod(): number;
+        set compressionMethod(v: number);
+        private _filterMethod;
+        get filterMethod(): number;
+        set filterMethod(v: number);
+        private _interlaceMethod;
+        get interlaceMethod(): number;
+        set interlaceMethod(v: number);
         private _palette?;
-        set palette(v: Uint8Array | undefined);
         get palette(): Uint8Array | undefined;
+        set palette(v: Uint8Array | undefined);
         private _transparency?;
-        set transparency(v: Uint8Array | undefined);
         get transparency(): Uint8Array | undefined;
-        private _colorLut?;
-        set colorLut(v: number[] | undefined);
-        get colorLut(): number[] | undefined;
+        set transparency(v: Uint8Array | undefined);
         private _gamma?;
-        set gamma(v: number | undefined);
         get gamma(): number | undefined;
-        private _iCCPName;
-        set iCCPName(v: string);
-        get iCCPName(): string;
-        private _iCCPCompression;
-        set iCCPCompression(v: number);
-        get iCCPCompression(): number;
-        private _iCCPData?;
-        set iCCPData(v: Uint8Array | undefined);
-        get iCCPData(): Uint8Array | undefined;
+        set gamma(v: number | undefined);
+        private _iccpName;
+        get iccpName(): string;
+        set iccpName(v: string);
+        private _iccpCompression;
+        get iccpCompression(): number;
+        set iccpCompression(v: number);
+        private _iccpData?;
+        get iccpData(): Uint8Array | undefined;
+        set iccpData(v: Uint8Array | undefined);
         private _textData;
         get textData(): Map<string, string>;
         private _repeat;
-        set repeat(v: number);
         get repeat(): number;
+        set repeat(v: number);
         private readonly _idat;
         get idat(): number[];
         private readonly _frames;
         get frames(): PngFrame[];
         get isAnimated(): boolean;
-        constructor(options?: PngInfoInitOptions);
+        constructor(opt?: PngInfoInitOptions);
+    }
+}
+declare module "formats/png/png-filter-type" {
+    /** @format */
+    export enum PngFilterType {
+        none = 0,
+        sub = 1,
+        up = 2,
+        average = 3,
+        paeth = 4
     }
 }
 declare module "formats/png-decoder" {
-    import { FrameAnimation } from "common/frame-animation";
     import { InputBuffer } from "common/input-buffer";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
     import { DecodeInfo } from "formats/decode-info";
     import { Decoder } from "formats/decoder";
     import { PngInfo } from "formats/png/png-info";
+    import { MemoryImage } from "image/image";
     /**
      * Decode a PNG encoded image.
      */
     export class PngDecoder implements Decoder {
-        private static readonly GRAYSCALE;
-        private static readonly RGB;
-        private static readonly INDEXED;
-        private static readonly GRAYSCALE_ALPHA;
-        private static readonly RGBA;
-        private static readonly FILTER_NONE;
-        private static readonly FILTER_SUB;
-        private static readonly FILTER_UP;
-        private static readonly FILTER_AVERAGE;
-        private static readonly FILTER_PAETH;
-        private _info?;
-        get info(): PngInfo | undefined;
         private _input?;
         get input(): InputBuffer | undefined;
+        private _info;
+        get info(): PngInfo;
         private _progressY;
         get progressY(): number;
         private _bitBuffer;
@@ -3061,10 +6478,6 @@ declare module "formats/png-decoder" {
          */
         get numFrames(): number;
         private static unfilter;
-        private static convert16to8;
-        private static convert1to8;
-        private static convert2to8;
-        private static convert4to8;
         /**
          * Return the CRC of the bytes
          */
@@ -3083,10 +6496,7 @@ declare module "formats/png-decoder" {
          * Read the next pixel from the input stream.
          */
         private readPixel;
-        /**
-         * Get the color with the list of components.
-         */
-        private getColor;
+        private setPixel;
         /**
          * Is the given file a valid PNG image?
          */
@@ -3100,31 +6510,21 @@ declare module "formats/png-decoder" {
          * Decode the frame (assuming **startDecode** has already been called).
          */
         decodeFrame(frame: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
     }
 }
 declare module "formats/ico-decoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { InputBuffer } from "common/input-buffer";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
     import { Decoder } from "formats/decoder";
     import { IcoInfo } from "formats/ico/ico-info";
+    import { MemoryImage } from "image/image";
     export class IcoDecoder implements Decoder {
-        _input?: InputBuffer;
-        _icoInfo?: IcoInfo;
+        private _input?;
+        private _info?;
         get numFrames(): number;
         isValidFile(bytes: Uint8Array): boolean;
         startDecode(bytes: Uint8Array): IcoInfo | undefined;
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
         decodeFrame(frame: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        decodeAnimation(_: Uint8Array): FrameAnimation | undefined;
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
         /**
          * Decodes the largest frame.
          */
@@ -3132,78 +6532,62 @@ declare module "formats/ico-decoder" {
     }
 }
 declare module "formats/png-encoder" {
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
     import { CompressionLevel } from "common/typings";
     import { Encoder } from "formats/encoder";
+    import { PngFilterType } from "formats/png/png-filter-type";
+    import { MemoryImage } from "image/image";
     export interface PngEncoderInitOptions {
-        filter?: number;
+        filter?: PngFilterType;
         level?: CompressionLevel;
     }
     /**
      * Encode an image to the PNG format.
      */
     export class PngEncoder implements Encoder {
-        private static readonly FILTER_NONE;
-        private static readonly FILTER_SUB;
-        private static readonly FILTER_UP;
-        private static readonly FILTER_AVERAGE;
-        private static readonly FILTER_PAETH;
-        private static readonly FILTER_AGRESSIVE;
-        private rgbChannelSet?;
-        private filter;
-        private level;
-        private repeat;
-        private xOffset;
-        private yOffset;
-        private delay?;
-        private disposeMethod;
-        private blendMethod;
-        private width;
-        private height;
-        private frames;
-        private sequenceNumber;
-        private isAnimated;
-        private output?;
+        private _globalQuantizer;
+        private _filter;
+        private _level;
+        private _repeat;
+        private _frames;
+        private _sequenceNumber;
+        private _isAnimated;
+        private _output;
         /**
          * Does this encoder support animation?
          */
         private _supportsAnimation;
         get supportsAnimation(): boolean;
-        constructor(options?: PngEncoderInitOptions);
+        constructor(opt?: PngEncoderInitOptions);
         /**
          * Return the CRC of the bytes
          */
         private static crc;
         private static writeChunk;
+        private static write;
         private static filterSub;
         private static filterUp;
         private static filterAverage;
         private static paethPredictor;
         private static filterPaeth;
         private static filterNone;
+        private static numChannels;
         private writeHeader;
         private writeICCPChunk;
         private writeAnimationControlChunk;
-        private applyFilter;
         private writeFrameControlChunk;
+        private writePalette;
         private writeTextChunk;
+        private filter;
         addFrame(image: MemoryImage): void;
         finish(): Uint8Array | undefined;
         /**
-         * Encode a single frame image.
+         * Encode **image** to the PNG format.
          */
-        encodeImage(image: MemoryImage): Uint8Array;
-        /**
-         * Encode an animation.
-         */
-        encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
+        encode(image: MemoryImage, singleFrame?: boolean): Uint8Array;
     }
 }
 declare module "formats/win-encoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
+    import { MemoryImage } from "image/image";
     import { Encoder } from "formats/encoder";
     export abstract class WinEncoder implements Encoder {
         protected _type: number;
@@ -3212,9 +6596,8 @@ declare module "formats/win-encoder" {
         get supportsAnimation(): boolean;
         protected colorPlanesOrXHotSpot(_index: number): number;
         protected bitsPerPixelOrYHotSpot(_index: number): number;
+        encode(image: MemoryImage, singleFrame?: boolean): Uint8Array;
         encodeImages(images: MemoryImage[]): Uint8Array;
-        encodeImage(image: MemoryImage): Uint8Array;
-        encodeAnimation(_: FrameAnimation): Uint8Array | undefined;
     }
 }
 declare module "formats/ico-encoder" {
@@ -3226,9 +6609,9 @@ declare module "formats/ico-encoder" {
         protected bitsPerPixelOrYHotSpot(_index: number): number;
     }
 }
-declare module "formats/jpeg/component-data" {
+declare module "formats/jpeg/jpeg-component-data" {
     /** @format */
-    export class ComponentData {
+    export class JpegComponentData {
         private _hSamples;
         get hSamples(): number;
         private _maxHSamples;
@@ -3238,78 +6621,12 @@ declare module "formats/jpeg/component-data" {
         private _maxVSamples;
         get maxVSamples(): number;
         private _lines;
-        get lines(): Array<Uint8Array>;
+        get lines(): Array<Uint8Array | undefined>;
         private _hScaleShift;
         get hScaleShift(): number;
         private _vScaleShift;
         get vScaleShift(): number;
-        constructor(hSamples: number, maxHSamples: number, vSamples: number, maxVSamples: number, lines: Array<Uint8Array>);
-    }
-}
-declare module "formats/jpeg/jpeg" {
-    /** @format */
-    export abstract class Jpeg {
-        static readonly dctZigZag: number[];
-        static readonly DCTSIZE = 8;
-        static readonly DCTSIZE2 = 64;
-        static readonly NUM_QUANT_TBLS = 4;
-        static readonly NUM_HUFF_TBLS = 4;
-        static readonly NUM_ARITH_TBLS = 16;
-        static readonly MAX_COMPS_IN_SCAN = 4;
-        static readonly MAX_SAMP_FACTOR = 4;
-        static readonly M_SOF0 = 192;
-        static readonly M_SOF1 = 193;
-        static readonly M_SOF2 = 194;
-        static readonly M_SOF3 = 195;
-        static readonly M_SOF5 = 197;
-        static readonly M_SOF6 = 198;
-        static readonly M_SOF7 = 199;
-        static readonly M_JPG = 200;
-        static readonly M_SOF9 = 201;
-        static readonly M_SOF10 = 202;
-        static readonly M_SOF11 = 203;
-        static readonly M_SOF13 = 205;
-        static readonly M_SOF14 = 206;
-        static readonly M_SOF15 = 207;
-        static readonly M_DHT = 196;
-        static readonly M_DAC = 204;
-        static readonly M_RST0 = 208;
-        static readonly M_RST1 = 209;
-        static readonly M_RST2 = 210;
-        static readonly M_RST3 = 211;
-        static readonly M_RST4 = 212;
-        static readonly M_RST5 = 213;
-        static readonly M_RST6 = 214;
-        static readonly M_RST7 = 215;
-        static readonly M_SOI = 216;
-        static readonly M_EOI = 217;
-        static readonly M_SOS = 218;
-        static readonly M_DQT = 219;
-        static readonly M_DNL = 220;
-        static readonly M_DRI = 221;
-        static readonly M_DHP = 222;
-        static readonly M_EXP = 223;
-        static readonly M_APP0 = 224;
-        static readonly M_APP1 = 225;
-        static readonly M_APP2 = 226;
-        static readonly M_APP3 = 227;
-        static readonly M_APP4 = 228;
-        static readonly M_APP5 = 229;
-        static readonly M_APP6 = 230;
-        static readonly M_APP7 = 231;
-        static readonly M_APP8 = 232;
-        static readonly M_APP9 = 233;
-        static readonly M_APP10 = 234;
-        static readonly M_APP11 = 235;
-        static readonly M_APP12 = 236;
-        static readonly M_APP13 = 237;
-        static readonly M_APP14 = 238;
-        static readonly M_APP15 = 239;
-        static readonly M_JPG0 = 240;
-        static readonly M_JPG13 = 253;
-        static readonly M_COM = 254;
-        static readonly M_TEM = 1;
-        static readonly M_ERROR = 256;
+        constructor(hSamples: number, maxHSamples: number, vSamples: number, maxVSamples: number, lines: Array<Uint8Array | undefined>);
     }
 }
 declare module "formats/jpeg/jpeg-adobe" {
@@ -3326,8 +6643,14 @@ declare module "formats/jpeg/jpeg-adobe" {
         constructor(version: number, flags0: number, flags1: number, transformCode: number);
     }
 }
+declare module "formats/jpeg/huffman-node" {
+    /** @format */
+    export abstract class HuffmanNode {
+    }
+}
 declare module "formats/jpeg/jpeg-component" {
     /** @format */
+    import { HuffmanNode } from "formats/jpeg/huffman-node";
     export class JpegComponent {
         private readonly _quantizationTableList;
         private readonly _quantizationIndex;
@@ -3342,11 +6665,11 @@ declare module "formats/jpeg/jpeg-component" {
         private _blocksPerColumn;
         get blocksPerColumn(): number;
         private _huffmanTableDC;
-        set huffmanTableDC(v: []);
-        get huffmanTableDC(): [];
+        set huffmanTableDC(v: Array<HuffmanNode | undefined>);
+        get huffmanTableDC(): Array<HuffmanNode | undefined>;
         private _huffmanTableAC;
-        set huffmanTableAC(v: []);
-        get huffmanTableAC(): [];
+        set huffmanTableAC(v: Array<HuffmanNode | undefined>);
+        get huffmanTableAC(): Array<HuffmanNode | undefined>;
         private _pred;
         set pred(v: number);
         get pred(): number;
@@ -3356,7 +6679,6 @@ declare module "formats/jpeg/jpeg-component" {
     }
 }
 declare module "formats/jpeg/jpeg-frame" {
-    /** @format */
     import { JpegComponent } from "formats/jpeg/jpeg-component";
     export class JpegFrame {
         private readonly _components;
@@ -3382,15 +6704,15 @@ declare module "formats/jpeg/jpeg-frame" {
         private _mcusPerColumn;
         get mcusPerColumn(): number;
         constructor(components: Map<number, JpegComponent>, componentsOrder: Array<number>, extended: boolean, progressive: boolean, precision: number, scanLines: number, samplesPerLine: number);
-        private static getEmptyBlocks;
         prepare(): void;
     }
 }
 declare module "formats/jpeg/jpeg-huffman" {
     /** @format */
+    import { HuffmanNode } from "formats/jpeg/huffman-node";
     export class JpegHuffman {
         private readonly _children;
-        get children(): Array<unknown>;
+        get children(): Array<HuffmanNode | undefined>;
         private _index;
         get index(): number;
         incrementIndex(): void;
@@ -3398,16 +6720,17 @@ declare module "formats/jpeg/jpeg-huffman" {
 }
 declare module "formats/jpeg/jpeg-info" {
     /** @format */
+    import { Color } from "color/color";
     import { DecodeInfo } from "formats/decode-info";
     export class JpegInfo implements DecodeInfo {
         private _width;
         get width(): number;
         private _height;
         get height(): number;
-        private _backgroundColor;
-        get backgroundColor(): number;
         private _numFrames;
         get numFrames(): number;
+        private _backgroundColor;
+        get backgroundColor(): Color | undefined;
         setSize(width: number, height: number): void;
     }
 }
@@ -3435,13 +6758,91 @@ declare module "formats/jpeg/jpeg-jfif" {
     }
 }
 declare module "formats/jpeg/jpeg-quantize" {
-    import { MemoryImage } from "common/memory-image";
+    import { MemoryImage } from "image/image";
     import { JpegData } from "formats/jpeg/jpeg-data";
     export abstract class JpegQuantize {
-        private static dctClip;
-        private static clamp8;
+        private static readonly _dctClipOffset;
+        private static readonly _dctClipLength;
+        private static readonly _dctClip;
+        private static createDctClip;
         static quantizeAndInverse(quantizationTable: Int16Array, coefBlock: Int32Array, dataOut: Uint8Array, dataIn: Int32Array): void;
         static getImageFromJpeg(jpeg: JpegData): MemoryImage;
+    }
+}
+declare module "formats/jpeg/huffman-parent" {
+    /** @format */
+    import { HuffmanNode } from "formats/jpeg/huffman-node";
+    export class HuffmanParent extends HuffmanNode {
+        private readonly _children;
+        get children(): Array<HuffmanNode | undefined>;
+        constructor(children: Array<HuffmanNode | undefined>);
+    }
+}
+declare module "formats/jpeg/huffman-value" {
+    /** @format */
+    import { HuffmanNode } from "formats/jpeg/huffman-node";
+    export class HuffmanValue extends HuffmanNode {
+        private readonly _value;
+        get value(): number;
+        constructor(value: number);
+    }
+}
+declare module "formats/jpeg/jpeg-marker" {
+    /** @format */
+    export enum JpegMarker {
+        sof0 = 192,
+        sof1 = 193,
+        sof2 = 194,
+        sof3 = 195,
+        sof5 = 197,
+        sof6 = 198,
+        sof7 = 199,
+        jpg = 200,
+        sof9 = 201,
+        sof10 = 202,
+        sof11 = 203,
+        sof13 = 205,
+        sof14 = 206,
+        sof15 = 207,
+        dht = 196,
+        dac = 204,
+        rst0 = 208,
+        rst1 = 209,
+        rst2 = 210,
+        rst3 = 211,
+        rst4 = 212,
+        rst5 = 213,
+        rst6 = 214,
+        rst7 = 215,
+        soi = 216,
+        eoi = 217,
+        sos = 218,
+        dqt = 219,
+        dnl = 220,
+        dri = 221,
+        dhp = 222,
+        exp = 223,
+        app0 = 224,
+        app1 = 225,
+        app2 = 226,
+        app3 = 227,
+        app4 = 228,
+        app5 = 229,
+        app6 = 230,
+        app7 = 231,
+        app8 = 232,
+        app9 = 233,
+        app10 = 234,
+        app11 = 235,
+        app12 = 236,
+        app13 = 237,
+        app14 = 238,
+        app15 = 239,
+        jpg0 = 240,
+        jpg13 = 253,
+        com = 254,
+        tem = 1,
+        error = 256
     }
 }
 declare module "formats/jpeg/jpeg-scan" {
@@ -3449,6 +6850,7 @@ declare module "formats/jpeg/jpeg-scan" {
     import { InputBuffer } from "common/input-buffer";
     import { JpegComponent } from "formats/jpeg/jpeg-component";
     import { JpegFrame } from "formats/jpeg/jpeg-frame";
+    export type DecodeFunction = (component: JpegComponent, block: Int32Array) => void;
     export class JpegScan {
         private _input;
         get input(): InputBuffer;
@@ -3508,18 +6910,23 @@ declare module "formats/jpeg/jpeg-scan" {
 declare module "formats/jpeg/jpeg-data" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
-    import { MemoryImage } from "common/memory-image";
-    import { ComponentData } from "formats/jpeg/component-data";
+    import { JpegComponentData } from "formats/jpeg/jpeg-component-data";
     import { JpegAdobe } from "formats/jpeg/jpeg-adobe";
     import { JpegFrame } from "formats/jpeg/jpeg-frame";
     import { JpegInfo } from "formats/jpeg/jpeg-info";
     import { JpegJfif } from "formats/jpeg/jpeg-jfif";
     import { ExifData } from "exif/exif-data";
+    import { MemoryImage } from "image/image";
+    import { HuffmanNode } from "formats/jpeg/huffman-node";
     export class JpegData {
-        static readonly CRR: number[];
-        static readonly CRG: number[];
-        static readonly CBG: number[];
-        static readonly CBB: number[];
+        static readonly dctZigZag: number[];
+        static readonly dctSize = 8;
+        static readonly dctSize2 = 64;
+        static readonly numQuantizationTables = 4;
+        static readonly numHuffmanTables = 4;
+        static readonly numArithTables = 16;
+        static readonly maxCompsInScan = 4;
+        static readonly maxSamplingFactor = 4;
         private _input;
         get input(): InputBuffer;
         private _jfif;
@@ -3539,11 +6946,11 @@ declare module "formats/jpeg/jpeg-data" {
         private readonly _frames;
         get frames(): Array<JpegFrame | undefined>;
         private readonly _huffmanTablesAC;
-        get huffmanTablesAC(): Array<[] | undefined>;
+        get huffmanTablesAC(): Array<Array<HuffmanNode | undefined> | undefined>;
         private readonly _huffmanTablesDC;
-        get huffmanTablesDC(): Array<[] | undefined>;
+        get huffmanTablesDC(): Array<Array<HuffmanNode | undefined> | undefined>;
         private readonly _components;
-        get components(): Array<ComponentData>;
+        get components(): Array<JpegComponentData>;
         get width(): number;
         get height(): number;
         private readMarkers;
@@ -3567,18 +6974,15 @@ declare module "formats/jpeg/jpeg-data" {
     }
 }
 declare module "formats/jpeg-decoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { Decoder } from "formats/decoder";
     import { JpegInfo } from "formats/jpeg/jpeg-info";
     /**
      * Decode a jpeg encoded image.
      */
     export class JpegDecoder implements Decoder {
-        private info?;
-        private input?;
+        private _input?;
+        private _info?;
         get numFrames(): number;
         /**
          * Is the given file a valid JPEG image?
@@ -3586,49 +6990,44 @@ declare module "formats/jpeg-decoder" {
         isValidFile(bytes: Uint8Array): boolean;
         startDecode(bytes: Uint8Array): JpegInfo | undefined;
         decodeFrame(_: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
-        decodeImage(bytes: Uint8Array, _?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
+        decode(bytes: Uint8Array, _frame?: number): MemoryImage | undefined;
     }
 }
 declare module "formats/jpeg-encoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
+    import { MemoryImage } from "image/image";
     import { Encoder } from "formats/encoder";
     /**
      * Encode an image to the JPEG format.
      */
     export class JpegEncoder implements Encoder {
-        private static readonly ZIGZAG;
-        private static readonly STD_DC_LUMINANCE_NR_CODES;
-        private static readonly STD_DC_LUMINANCE_VALUES;
-        private static readonly STD_AC_LUMINANCE_NR_CODES;
-        private static readonly STD_AC_LUMINANCE_VALUES;
-        private static readonly STD_DC_CHROMINANCE_NR_CODES;
-        private static readonly STD_DC_CHROMINANCE_VALUES;
-        private static readonly STD_AC_CHROMINANCE_NR_CODES;
-        private static readonly STD_AC_CHROMINANCE_VALUES;
-        private readonly tableY;
-        private readonly tableUV;
-        private readonly ftableY;
-        private readonly ftableUV;
-        private readonly bitcode;
-        private readonly category;
-        private readonly outputfDCTQuant;
-        private readonly DU;
-        private readonly YDU;
-        private readonly UDU;
-        private readonly VDU;
-        private readonly tableRGBYUV;
-        private htYDC;
-        private htUVDC;
-        private htYAC;
-        private htUVAC;
-        private currentQuality?;
-        private byteNew;
-        private bytePos;
+        private static readonly _zigzag;
+        private static readonly _stdDcLuminanceNrCodes;
+        private static readonly _stdDcLuminanceValues;
+        private static readonly _stdAcLuminanceNrCodes;
+        private static readonly _stdAcLuminanceValues;
+        private static readonly _stdDcChrominanceNrCodes;
+        private static readonly _stdDcChrominanceValues;
+        private static readonly _stdAcChrominanceNrCodes;
+        private static readonly _stdAcChrominanceValues;
+        private readonly _tableY;
+        private readonly _tableUv;
+        private readonly _fdTableY;
+        private readonly _fdTableUv;
+        private readonly _bitCode;
+        private readonly _category;
+        private readonly _outputfDCTQuant;
+        private readonly _du;
+        private readonly _ydu;
+        private readonly _udu;
+        private readonly _vdu;
+        private readonly _tableRgbYuv;
+        private _ydcHuffman;
+        private _uvdcHuffman;
+        private _yacHuffman;
+        private _uvacHuffman;
+        private _currentQuality?;
+        private _byteNew;
+        private _bytePos;
         private _supportsAnimation;
         get supportsAnimation(): boolean;
         constructor(quality?: number);
@@ -3641,7 +7040,7 @@ declare module "formats/jpeg-encoder" {
         private static writeDHT;
         private initHuffmanTable;
         private initCategoryNumber;
-        private initRGBYUVTable;
+        private initRgbYuvTable;
         private setQuality;
         private initQuantTables;
         private fDCTQuant;
@@ -3649,13 +7048,33 @@ declare module "formats/jpeg-encoder" {
         private writeBits;
         private resetBits;
         private processDU;
-        encodeImage(image: MemoryImage): Uint8Array;
-        encodeAnimation(_: FrameAnimation): Uint8Array | undefined;
+        encode(image: MemoryImage, _singleFrame?: boolean): Uint8Array;
     }
+}
+declare module "formats/tga/tga-image-type" {
+    /** @format */
+    export enum TgaImageType {
+        none = 0,
+        palette = 1,
+        rgb = 2,
+        gray = 3,
+        reserved4 = 4,
+        reserved5 = 5,
+        reserved6 = 6,
+        reserved7 = 7,
+        reserved8 = 8,
+        paletteRle = 9,
+        rgbRle = 10,
+        grayRle = 11
+    }
+    export const TgaImageTypeLength = 12;
 }
 declare module "formats/tga/tga-info" {
     /** @format */
+    import { Color } from "color/color";
+    import { InputBuffer } from "common/input-buffer";
     import { DecodeInfo } from "formats/decode-info";
+    import { TgaImageType } from "formats/tga/tga-image-type";
     export interface TgaInfoInitOptions {
         width?: number;
         height?: number;
@@ -3663,58 +7082,78 @@ declare module "formats/tga/tga-info" {
         bitsPerPixel?: number;
     }
     export class TgaInfo implements DecodeInfo {
-        private readonly _width;
-        get width(): number;
-        protected readonly _height: number;
-        get height(): number;
-        private readonly _backgroundColor;
-        get backgroundColor(): number;
         /**
          * The number of frames that can be decoded.
          */
         private readonly _numFrames;
         get numFrames(): number;
+        private readonly _backgroundColor;
+        get backgroundColor(): Color | undefined;
+        private _idLength;
+        get idLength(): number;
+        private _colorMapType;
+        get colorMapType(): number;
+        private _imageType;
+        get imageType(): TgaImageType;
+        private _colorMapOrigin;
+        get colorMapOrigin(): number;
+        private _colorMapLength;
+        get colorMapLength(): number;
+        private _colorMapDepth;
+        get colorMapDepth(): number;
+        private _offsetX;
+        get offsetX(): number;
+        private _offsetY;
+        get offsetY(): number;
+        private _width;
+        get width(): number;
+        protected _height: number;
+        get height(): number;
+        protected _pixelDepth: number;
+        get pixelDepth(): number;
+        protected _flags: number;
+        get flags(): number;
+        protected _colorMap: Uint8Array | undefined;
+        get colorMap(): Uint8Array | undefined;
+        set colorMap(v: Uint8Array | undefined);
+        protected _screenOrigin: number;
+        get screenOrigin(): number;
         /**
          *  Offset in the input file the image data starts at.
          */
-        private readonly _imageOffset;
-        get imageOffset(): number | undefined;
-        /**
-         *  Bits per pixel.
-         */
-        private readonly _bitsPerPixel;
-        get bitsPerPixel(): number | undefined;
-        constructor(options?: TgaInfoInitOptions);
+        private _imageOffset;
+        get imageOffset(): number;
+        set imageOffset(v: number);
+        get hasColorMap(): boolean;
+        read(header: InputBuffer): void;
+        isValid(): boolean;
     }
 }
 declare module "formats/tga-decoder" {
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { Decoder } from "formats/decoder";
     import { TgaInfo } from "formats/tga/tga-info";
     /**
-     * Decode a TGA image. This only supports the 24-bit uncompressed format.
+     * Decode a TGA image. This only supports the 24-bit and 32-bit uncompressed format.
      */
     export class TgaDecoder implements Decoder {
-        private info;
-        private input;
+        private _input;
+        private _info;
         get numFrames(): number;
+        private decodeColorMap;
+        private decodeRle;
+        private decodeRgb;
         /**
          * Is the given file a valid TGA image?
          */
         isValidFile(bytes: Uint8Array): boolean;
         startDecode(bytes: Uint8Array): TgaInfo | undefined;
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
         decodeFrame(_frame: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number | undefined): HdrImage | undefined;
     }
 }
 declare module "formats/tga-encoder" {
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
+    import { MemoryImage } from "image/image";
     import { Encoder } from "formats/encoder";
     /**
      * Encode a TGA image. This only supports the 24-bit uncompressed format.
@@ -3722,18 +7161,17 @@ declare module "formats/tga-encoder" {
     export class TgaEncoder implements Encoder {
         private _supportsAnimation;
         get supportsAnimation(): boolean;
-        encodeImage(image: MemoryImage): Uint8Array;
-        encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined;
+        encode(image: MemoryImage, _singleFrame?: boolean): Uint8Array;
     }
 }
 declare module "formats/tiff/tiff-bit-reader" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     export class TiffBitReader {
-        private static readonly BITMASK;
-        private bitBuffer;
-        private bitPosition;
-        private input;
+        private static readonly _bitMask;
+        private _bitBuffer;
+        private _bitPosition;
+        private _input;
         constructor(input: InputBuffer);
         /**
          * Read a number of bits from the input stream.
@@ -3746,50 +7184,66 @@ declare module "formats/tiff/tiff-bit-reader" {
         flushByte(): number;
     }
 }
+declare module "formats/tiff/tiff-compression" {
+    /** @format */
+    export enum TiffCompression {
+        none = 1,
+        ccittRle = 2,
+        ccittFax3 = 3,
+        ccittFax4 = 4,
+        lzw = 5,
+        oldJpeg = 6,
+        jpeg = 7,
+        next = 32766,
+        ccittRlew = 32771,
+        packBits = 32773,
+        thunderScan = 32809,
+        it8ctpad = 32895,
+        tt8lw = 32896,
+        it8mp = 32897,
+        it8bl = 32898,
+        pixarFilm = 32908,
+        pixarLog = 32909,
+        deflate = 32946,
+        zip = 8,
+        dcs = 32947,
+        jbig = 34661,
+        sgiLog = 34676,
+        sgiLog24 = 34677,
+        jp2000 = 34712
+    }
+}
 declare module "formats/tiff/tiff-entry" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
+    import { IfdValueType } from "exif/ifd-value-type";
+    import { IfdValue } from "exif/ifd-value/ifd-value";
     export interface TiffEntryInitOptions {
         tag: number;
         type: number;
-        numValues: number;
+        count: number;
         p: InputBuffer;
+        valueOffset: number;
     }
     export class TiffEntry {
-        private static readonly SIZE_OF_TYPE;
-        static readonly TYPE_BYTE = 1;
-        static readonly TYPE_ASCII = 2;
-        static readonly TYPE_SHORT = 3;
-        static readonly TYPE_LONG = 4;
-        static readonly TYPE_RATIONAL = 5;
-        static readonly TYPE_SBYTE = 6;
-        static readonly TYPE_UNDEFINED = 7;
-        static readonly TYPE_SSHORT = 8;
-        static readonly TYPE_SLONG = 9;
-        static readonly TYPE_SRATIONAL = 10;
-        static readonly TYPE_FLOAT = 11;
-        static readonly TYPE_DOUBLE = 12;
         private _tag;
         get tag(): number;
         private _type;
-        get type(): number;
-        private _numValues;
-        get numValues(): number;
+        get type(): IfdValueType;
+        private _count;
+        get count(): number;
         private _valueOffset;
-        get valueOffset(): number | undefined;
-        set valueOffset(v: number | undefined);
+        get valueOffset(): number;
+        private _value;
+        get value(): IfdValue | undefined;
         private _p;
         get p(): InputBuffer;
         get isValid(): boolean;
         get typeSize(): number;
         get isString(): boolean;
-        constructor(options: TiffEntryInitOptions);
-        private readValueInternal;
+        constructor(opt: TiffEntryInitOptions);
+        read(): IfdValue | undefined;
         toString(): string;
-        readValue(): number;
-        readValues(): number[];
-        readString(): string;
-        read(): number[];
     }
 }
 declare module "formats/tiff/tiff-fax-decoder" {
@@ -3801,48 +7255,48 @@ declare module "formats/tiff/tiff-fax-decoder" {
         height: number;
     }
     export class TiffFaxDecoder {
-        private static readonly TABLE1;
-        private static readonly TABLE2;
+        private static readonly _table1;
+        private static readonly _table2;
         /**
          * Table to be used when **fillOrder** = 2, for flipping bytes.
          */
-        private static readonly FLIP_TABLE;
+        private static readonly _flipTable;
         /**
          * The main 10 bit white runs lookup table
          */
-        private static readonly WHITE;
+        private static readonly _white;
         /**
          * Additional make up codes for both White and Black runs
          */
-        private static readonly ADDITIONAL_MAKEUP;
+        private static readonly _additionalMakeup;
         /**
          * Initial black run look up table, uses the first 4 bits of a code
          */
-        private static readonly INIT_BLACK;
-        private static readonly TWO_BIT_BLACK;
+        private static readonly _initBlack;
+        private static readonly _twoBitBlack;
         /**
          * Main black run table, using the last 9 bits of possible 13 bit code
          */
-        private static readonly BLACK;
-        private static readonly TWO_D_CODES;
+        private static readonly _black;
+        private static readonly _twoDCodes;
         private _width;
         get width(): number;
         private _height;
         get height(): number;
         private _fillOrder;
         get fillOrder(): number;
-        private changingElemSize;
-        private prevChangingElems?;
-        private currChangingElems?;
-        private data;
-        private bitPointer;
-        private bytePointer;
-        private lastChangingElement;
-        private compression;
-        private uncompressedMode;
-        private fillBits;
-        private oneD;
-        constructor(options: TiffFaxDecoderInitOptions);
+        private _changingElemSize;
+        private _prevChangingElements?;
+        private _currChangingElements?;
+        private _data;
+        private _bitPointer;
+        private _bytePointer;
+        private _lastChangingElement;
+        private _compression;
+        private _uncompressedMode;
+        private _fillBits;
+        private _oneD;
+        constructor(opt: TiffFaxDecoderInitOptions);
         private nextNBits;
         private nextLesserThan8Bits;
         /**
@@ -3876,26 +7330,50 @@ declare module "formats/tiff/tiff-fax-decoder" {
         decodeT6(out: InputBuffer, compData: InputBuffer, startX: number, height: number, tiffT6Options: number): void;
     }
 }
+declare module "formats/tiff/tiff-format" {
+    /** @format */
+    export enum TiffFormat {
+        invalid = 0,
+        uint = 1,
+        int = 2,
+        float = 3
+    }
+}
+declare module "formats/tiff/tiff-image-type" {
+    /** @format */
+    export enum TiffImageType {
+        bilevel = 0,
+        gray4bit = 1,
+        gray = 2,
+        grayAlpha = 3,
+        palette = 4,
+        rgb = 5,
+        rgba = 6,
+        yCbCrSub = 7,
+        generic = 8,
+        invalid = 9
+    }
+}
 declare module "formats/tiff/tiff-lzw-decoder" {
     /** @format */
     import { InputBuffer } from "common/input-buffer";
     export class LzwDecoder {
-        private static readonly LZ_MAX_CODE;
-        private static readonly NO_SUCH_CODE;
-        private static readonly AND_TABLE;
-        private readonly buffer;
-        private bitsToGet;
-        private bytePointer;
-        private nextData;
-        private nextBits;
-        private data;
-        private dataLength;
-        private out;
-        private outPointer;
-        private table;
-        private prefix;
-        private tableIndex?;
-        private bufferLength;
+        private static readonly _lzMaxCode;
+        private static readonly _noSuchCode;
+        private static readonly _andTable;
+        private readonly _buffer;
+        private _bitsToGet;
+        private _bytePointer;
+        private _nextData;
+        private _nextBits;
+        private _data;
+        private _dataLength;
+        private _out;
+        private _outPointer;
+        private _table;
+        private _prefix;
+        private _tableIndex?;
+        private _bufferLength;
         private addString;
         private getString;
         /**
@@ -3909,103 +7387,37 @@ declare module "formats/tiff/tiff-lzw-decoder" {
         decode(p: InputBuffer, out: Uint8Array): void;
     }
 }
+declare module "formats/tiff/tiff-photometric-type" {
+    /** @format */
+    export enum TiffPhotometricType {
+        whiteIsZero = 0,
+        blackIsZero = 1,
+        rgb = 2,
+        palette = 3,
+        transparencyMask = 4,
+        cmyk = 5,
+        yCbCr = 6,
+        reserved7 = 7,
+        cieLab = 8,
+        iccLab = 9,
+        ituLab = 10,
+        logL = 11,
+        logLuv = 12,
+        colorFilterArray = 13,
+        linearRaw = 14,
+        depth = 15,
+        unknown = 16
+    }
+    export const TiffPhotometricTypeLength = 17;
+}
 declare module "formats/tiff/tiff-image" {
     import { InputBuffer } from "common/input-buffer";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { TiffEntry } from "formats/tiff/tiff-entry";
+    import { TiffFormat } from "formats/tiff/tiff-format";
+    import { TiffImageType } from "formats/tiff/tiff-image-type";
+    import { TiffPhotometricType } from "formats/tiff/tiff-photometric-type";
     export class TiffImage {
-        static readonly COMPRESSION_NONE = 1;
-        static readonly COMPRESSION_CCITT_RLE = 2;
-        static readonly COMPRESSION_CCITT_FAX3 = 3;
-        static readonly COMPRESSION_CCITT_FAX4 = 4;
-        static readonly COMPRESSION_LZW = 5;
-        static readonly COMPRESSION_OLD_JPEG = 6;
-        static readonly COMPRESSION_JPEG = 7;
-        static readonly COMPRESSION_NEXT = 32766;
-        static readonly COMPRESSION_CCITT_RLEW = 32771;
-        static readonly COMPRESSION_PACKBITS = 32773;
-        static readonly COMPRESSION_THUNDERSCAN = 32809;
-        static readonly COMPRESSION_IT8CTPAD = 32895;
-        static readonly COMPRESSION_IT8LW = 32896;
-        static readonly COMPRESSION_IT8MP = 32897;
-        static readonly COMPRESSION_IT8BL = 32898;
-        static readonly COMPRESSION_PIXARFILM = 32908;
-        static readonly COMPRESSION_PIXARLOG = 32909;
-        static readonly COMPRESSION_DEFLATE = 32946;
-        static readonly COMPRESSION_ZIP = 8;
-        static readonly COMPRESSION_DCS = 32947;
-        static readonly COMPRESSION_JBIG = 34661;
-        static readonly COMPRESSION_SGILOG = 34676;
-        static readonly COMPRESSION_SGILOG24 = 34677;
-        static readonly COMPRESSION_JP2000 = 34712;
-        static readonly PHOTOMETRIC_BLACKISZERO = 1;
-        static readonly PHOTOMETRIC_RGB = 2;
-        static readonly TYPE_UNSUPPORTED = -1;
-        static readonly TYPE_BILEVEL = 0;
-        static readonly TYPE_GRAY_4BIT = 1;
-        static readonly TYPE_GRAY = 2;
-        static readonly TYPE_GRAY_ALPHA = 3;
-        static readonly TYPE_PALETTE = 4;
-        static readonly TYPE_RGB = 5;
-        static readonly TYPE_RGB_ALPHA = 6;
-        static readonly TYPE_YCBCR_SUB = 7;
-        static readonly TYPE_GENERIC = 8;
-        static readonly FORMAT_UINT = 1;
-        static readonly FORMAT_INT = 2;
-        static readonly FORMAT_FLOAT = 3;
-        static readonly TAG_ARTIST = 315;
-        static readonly TAG_BITS_PER_SAMPLE = 258;
-        static readonly TAG_CELL_LENGTH = 265;
-        static readonly TAG_CELL_WIDTH = 264;
-        static readonly TAG_COLOR_MAP = 320;
-        static readonly TAG_COMPRESSION = 259;
-        static readonly TAG_DATE_TIME = 306;
-        static readonly TAG_EXIF_IFD = 34665;
-        static readonly TAG_EXTRA_SAMPLES = 338;
-        static readonly TAG_FILL_ORDER = 266;
-        static readonly TAG_FREE_BYTE_COUNTS = 289;
-        static readonly TAG_FREE_OFFSETS = 288;
-        static readonly TAG_GRAY_RESPONSE_CURVE = 291;
-        static readonly TAG_GRAY_RESPONSE_UNIT = 290;
-        static readonly TAG_HOST_COMPUTER = 316;
-        static readonly TAG_ICC_PROFILE = 34675;
-        static readonly TAG_IMAGE_DESCRIPTION = 270;
-        static readonly TAG_IMAGE_LENGTH = 257;
-        static readonly TAG_IMAGE_WIDTH = 256;
-        static readonly TAG_IPTC = 33723;
-        static readonly TAG_MAKE = 271;
-        static readonly TAG_MAX_SAMPLE_VALUE = 281;
-        static readonly TAG_MIN_SAMPLE_VALUE = 280;
-        static readonly TAG_MODEL = 272;
-        static readonly TAG_NEW_SUBFILE_TYPE = 254;
-        static readonly TAG_ORIENTATION = 274;
-        static readonly TAG_PHOTOMETRIC_INTERPRETATION = 262;
-        static readonly TAG_PHOTOSHOP = 34377;
-        static readonly TAG_PLANAR_CONFIGURATION = 284;
-        static readonly TAG_PREDICTOR = 317;
-        static readonly TAG_RESOLUTION_UNIT = 296;
-        static readonly TAG_ROWS_PER_STRIP = 278;
-        static readonly TAG_SAMPLES_PER_PIXEL = 277;
-        static readonly TAG_SOFTWARE = 305;
-        static readonly TAG_STRIP_BYTE_COUNTS = 279;
-        static readonly TAG_STRIP_OFFSETS = 273;
-        static readonly TAG_SUBFILE_TYPE = 255;
-        static readonly TAG_T4_OPTIONS = 292;
-        static readonly TAG_T6_OPTIONS = 293;
-        static readonly TAG_THRESHOLDING = 263;
-        static readonly TAG_TILE_WIDTH = 322;
-        static readonly TAG_TILE_LENGTH = 323;
-        static readonly TAG_TILE_OFFSETS = 324;
-        static readonly TAG_TILE_BYTE_COUNTS = 325;
-        static readonly TAG_SAMPLE_FORMAT = 339;
-        static readonly TAG_XMP = 700;
-        static readonly TAG_X_RESOLUTION = 282;
-        static readonly TAG_Y_RESOLUTION = 283;
-        static readonly TAG_YCBCR_COEFFICIENTS = 529;
-        static readonly TAG_YCBCR_SUBSAMPLING = 530;
-        static readonly TAG_YCBCR_POSITIONING = 531;
-        static readonly TAG_NAME: Map<number, string>;
         private readonly _tags;
         get tags(): Map<number, TiffEntry>;
         private readonly _width;
@@ -4013,7 +7425,7 @@ declare module "formats/tiff/tiff-image" {
         private readonly _height;
         get height(): number;
         private _photometricType;
-        get photometricType(): number | undefined;
+        get photometricType(): TiffPhotometricType;
         private _compression;
         get compression(): number;
         private _bitsPerSample;
@@ -4021,9 +7433,9 @@ declare module "formats/tiff/tiff-image" {
         private _samplesPerPixel;
         get samplesPerPixel(): number;
         private _sampleFormat;
-        get sampleFormat(): number;
+        get sampleFormat(): TiffFormat;
         private _imageType;
-        get imageType(): number;
+        get imageType(): TiffImageType;
         private _isWhiteZero;
         get isWhiteZero(): boolean;
         private _predictor;
@@ -4056,13 +7468,13 @@ declare module "formats/tiff/tiff-image" {
         get t6Options(): number;
         private _extraSamples;
         get extraSamples(): number | undefined;
+        private _colorMapSamples;
+        get colorMapSamples(): number;
         private _colorMap;
-        get colorMap(): number[] | undefined;
-        private colorMapRed;
-        private colorMapGreen;
-        private colorMapBlue;
-        private image?;
-        private hdrImage?;
+        get colorMap(): Uint16Array | undefined;
+        private _colorMapRed;
+        private _colorMapGreen;
+        private _colorMapBlue;
         get isValid(): boolean;
         constructor(p: InputBuffer);
         private readTag;
@@ -4073,14 +7485,14 @@ declare module "formats/tiff/tiff-image" {
         /**
          * Uncompress packbits compressed image data.
          */
-        private decodePackbits;
+        private decodePackBits;
         decode(p: InputBuffer): MemoryImage;
-        decodeHdr(p: InputBuffer): HdrImage;
         hasTag(tag: number): boolean;
     }
 }
 declare module "formats/tiff/tiff-info" {
     /** @format */
+    import { Color } from "color/color";
     import { DecodeInfo } from "formats/decode-info";
     import { TiffImage } from "formats/tiff/tiff-image";
     export interface TiffInfoInitOptions {
@@ -4103,24 +7515,21 @@ declare module "formats/tiff/tiff-info" {
         private _height;
         get height(): number;
         private _backgroundColor;
-        get backgroundColor(): number;
+        get backgroundColor(): Color | undefined;
         get numFrames(): number;
-        constructor(options: TiffInfoInitOptions);
+        constructor(opt: TiffInfoInitOptions);
     }
 }
 declare module "formats/tiff-decoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
     import { ExifData } from "exif/exif-data";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { Decoder } from "formats/decoder";
     import { TiffInfo } from "formats/tiff/tiff-info";
     export class TiffDecoder implements Decoder {
-        private static readonly TIFF_SIGNATURE;
-        private static readonly TIFF_LITTLE_ENDIAN;
-        private static readonly TIFF_BIG_ENDIAN;
-        private input;
+        private static readonly _tiffSignature;
+        private static readonly _tiffLittleEndian;
+        private static readonly _tiffBigEndian;
+        private _input;
         private _info;
         get info(): TiffInfo | undefined;
         private _exifData;
@@ -4146,454 +7555,68 @@ declare module "formats/tiff-decoder" {
         /**
          * Decode a single frame from the data stat was set with **startDecode**.
          * If **frame** is out of the range of available frames, undefined is returned.
-         * Non animated image files will only have **frame** 0. An **AnimationFrame**
-         * is returned, which provides the image, and top-left coordinates of the
-         * image, as animated frames may only occupy a subset of the canvas.
+         * Non animated image files will only have **frame** 0.
          */
         decodeFrame(frame: number): MemoryImage | undefined;
-        decodeHdrFrame(frame: number): HdrImage | undefined;
-        /**
-         * Decode all of the frames from an animation. If the file is not an
-         * animation, a single frame animation is returned. If there was a problem
-         * decoding the file, undefined is returned.
-         */
-        decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined;
         /**
          * Decode the file and extract a single image from it. If the file is
          * animated, the specified **frame** will be decoded. If there was a problem
          * decoding the file, undefined is returned.
          */
-        decodeImage(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
-        decodeHdrImage(bytes: Uint8Array, frame?: number): HdrImage | undefined;
+        decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
     }
 }
 declare module "formats/tiff-encoder" {
-    /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
+    import { MemoryImage } from "image/image";
     import { Encoder } from "formats/encoder";
     /**
-     * Encode a TIFF image.
+     * Encode a MemoryImage to the TIFF format.
      */
     export class TiffEncoder implements Encoder {
-        private static readonly LITTLE_ENDIAN;
-        private static readonly SIGNATURE;
         private _supportsAnimation;
         get supportsAnimation(): boolean;
-        private writeHeader;
-        private writeImage;
-        private writeHdrImage;
         private getSampleFormat;
-        private writeEntryUint16;
-        private writeEntryUint32;
-        encodeImage(image: MemoryImage): Uint8Array;
-        encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined;
-        encodeHdrImage(image: HdrImage): Uint8Array;
+        encode(image: MemoryImage, _singleFrame?: boolean): Uint8Array;
     }
 }
-declare module "common/octree-node" {
+declare module "formats/jpeg/jpeg-utils" {
+    import { ExifData } from "exif/exif-data";
+    export class JpegUtils {
+        private static readonly _exifSignature;
+        private readExifData;
+        private writeAPP1;
+        private readBlock;
+        private skipBlock;
+        private nextMarker;
+        decodeExif(data: Uint8Array): ExifData | undefined;
+        injectExif(exif: ExifData, data: Uint8Array): Uint8Array | undefined;
+    }
+}
+declare module "transform/flip-direction" {
     /** @format */
-    export class OctreeNode {
-        private _r;
-        get r(): number;
-        set r(v: number);
-        private _g;
-        get g(): number;
-        set g(v: number);
-        private _b;
-        get b(): number;
-        set b(v: number);
-        private _count;
-        get count(): number;
-        set count(v: number);
-        private _heapIndex;
-        get heapIndex(): number;
-        set heapIndex(v: number);
-        private _parent;
-        get parent(): OctreeNode | undefined;
-        private _children;
-        get children(): Array<OctreeNode | undefined>;
-        private _childCount;
-        get childCount(): number;
-        set childCount(v: number);
-        private _childIndex;
-        get childIndex(): number;
-        private _flags;
-        get flags(): number;
-        set flags(v: number);
-        private _depth;
-        get depth(): number;
-        constructor(childIndex: number, depth: number, parent?: OctreeNode);
+    export enum FlipDirection {
+        /**
+         * Flip the image horizontally.
+         */
+        horizontal = 0,
+        /**
+         * Flip the image vertically.
+         */
+        vertical = 1,
+        /**
+         * Flip the image both horizontally and vertically.
+         */
+        both = 2
     }
 }
-declare module "common/heap-node" {
+declare module "transform/trim-side" {
     /** @format */
-    import { OctreeNode } from "common/octree-node";
-    export class HeapNode {
-        private _buf;
-        get buf(): Array<OctreeNode | undefined>;
-        get n(): number;
-    }
-}
-declare module "common/octree-quantizer" {
-    import { MemoryImage } from "common/memory-image";
-    import { Quantizer } from "common/quantizer";
-    /**
-     * Color quantization using octree,
-     * from https://rosettacode.org/wiki/Color_quantization/C
-     */
-    export class OctreeQuantizer implements Quantizer {
-        private static readonly ON_INHEAP;
-        private readonly root;
-        constructor(image: MemoryImage, numberOfColors?: number);
-        private nodeInsert;
-        private popHeap;
-        private heapAdd;
-        private downHeap;
-        private upHeap;
-        private nodeFold;
-        private compareNode;
-        /**
-         * Find the index of the closest color to **c** in the **colorMap**.
-         */
-        getQuantizedColor(c: number): number;
-    }
-}
-declare module "common/random-utils" {
-    /** @format */
-    export abstract class RandomUtils {
-        /**
-         * Return a random variable between [**-1**,**1**].
-         */
-        static crand(): number;
-        /**
-         * Return a random variable following a gaussian distribution and a standard
-         * deviation of 1.
-         */
-        static grand(): number;
-        /**
-         * Return a random variable following a Poisson distribution of parameter **z**.
-         */
-        static prand(z: number): number;
-    }
-}
-declare module "filter/adjust-color-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface AdjustColorOptions {
-        src: MemoryImage;
-        blacks?: number;
-        whites?: number;
-        mids?: number;
-        contrast?: number;
-        saturation?: number;
-        brightness?: number;
-        gamma?: number;
-        exposure?: number;
-        hue?: number;
-        amount?: number;
-    }
-}
-declare module "filter/color-offset-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface ColorOffsetOptions {
-        src: MemoryImage;
-        red?: number;
-        green?: number;
-        blue?: number;
-        alpha?: number;
-    }
-}
-declare module "filter/convolution-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface ConvolutionOptions {
-        src: MemoryImage;
-        filter: number[];
-        div?: number;
-        offset?: number;
-    }
-}
-declare module "filter/noise-type" {
-    /** @format */
-    export enum NoiseType {
-        gaussian = 0,
-        uniform = 1,
-        saltPepper = 2,
-        poisson = 3,
-        rice = 4
-    }
-}
-declare module "filter/pixelate-mode" {
-    /** @format */
-    export enum PixelateMode {
-        /**
-         * Use the top-left pixel of a block for the block color.
-         */
-        upperLeft = 0,
-        /**
-         * Use the average of the pixels within a block for the block color.
-         */
-        average = 1
-    }
-}
-declare module "filter/quantize-method" {
-    /** @format */
-    export enum QuantizeMethod {
-        neuralNet = 0,
-        octree = 1
-    }
-}
-declare module "filter/quantize-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { QuantizeMethod } from "filter/quantize-method";
-    export interface QuantizeOptions {
-        src: MemoryImage;
-        numberOfColors?: number;
-        method?: QuantizeMethod;
-    }
-}
-declare module "filter/remap-colors-options" {
-    /** @format */
-    import { ColorChannel } from "common/color-channel";
-    import { MemoryImage } from "common/memory-image";
-    export interface RemapColorsOptions {
-        src: MemoryImage;
-        red?: ColorChannel;
-        green?: ColorChannel;
-        blue?: ColorChannel;
-        alpha?: ColorChannel;
-    }
-}
-declare module "filter/separable-kernel" {
-    import { MemoryImage } from "common/memory-image";
-    /**
-     * A kernel object to use with **separableConvolution** filtering.
-     */
-    export class SeparableKernel {
-        private readonly coefficients;
-        private readonly size;
-        /**
-         * Get the number of coefficients in the kernel.
-         */
-        get length(): number;
-        /**
-         * Create a separable convolution kernel for the given **radius**.
-         */
-        constructor(size: number);
-        private reflect;
-        private applyCoeffsLine;
-        /**
-         * Get a coefficient from the kernel.
-         */
-        getCoefficient(index: number): number;
-        /**
-         * Set a coefficient in the kernel.
-         */
-        setCoefficient(index: number, c: number): void;
-        /**
-         * Apply the kernel to the **src** image, storing the results in **dst**,
-         * for a single dimension. If **horizontal** is true, the filter will be
-         * applied to the horizontal axis, otherwise it will be appied to the
-         * vertical axis.
-         */
-        apply(src: MemoryImage, dst: MemoryImage, horizontal?: boolean): void;
-        /**
-         * Scale all of the coefficients by **s**.
-         */
-        scaleCoefficients(s: number): void;
-    }
-}
-declare module "filter/vignette-options" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    export interface VignetteOptions {
-        src: MemoryImage;
-        start?: number;
-        end?: number;
-        amount?: number;
-    }
-}
-declare module "filter/image-filter" {
-    import { MemoryImage } from "common/memory-image";
-    import { AdjustColorOptions } from "filter/adjust-color-options";
-    import { ColorOffsetOptions } from "filter/color-offset-options";
-    import { ConvolutionOptions } from "filter/convolution-options";
-    import { NoiseType } from "filter/noise-type";
-    import { PixelateMode } from "filter/pixelate-mode";
-    import { QuantizeOptions } from "filter/quantize-options";
-    import { RemapColorsOptions } from "filter/remap-colors-options";
-    import { SeparableKernel } from "filter/separable-kernel";
-    import { VignetteOptions } from "filter/vignette-options";
-    export abstract class ImageFilter {
-        private static readonly gaussianKernelCache;
-        private static smoothVignetteStep;
-        /**
-         * Adjust the color of the **src** image using various color transformations.
-         *
-         * **blacks** defines the black level of the image, as a color.
-         *
-         * **whites** defines the white level of the image, as a color.
-         *
-         * **mids** defines the mid level of hte image, as a color.
-         *
-         * **contrast** increases (> 1) / decreases (< 1) the contrast of the image by
-         * pushing colors away/toward neutral gray, where at 0 the image is entirely
-         * neutral gray (0 contrast), 1, the image is not adjusted and > 1 the
-         * image increases contrast.
-         *
-         * **saturation** increases (> 1) / decreases (< 1) the saturation of the image
-         * by pushing colors away/toward their grayscale value, where 0 is grayscale
-         * and 1 is the original image, and > 1 the image becomes more saturated.
-         *
-         * **brightness** is a constant scalar of the image colors. At 0 the image
-         * is black, 1 unmodified, and > 1 the image becomes brighter.
-         *
-         * **gamma** is an exponential scalar of the image colors. At < 1 the image
-         * becomes brighter, and > 1 the image becomes darker. A **gamma** of 1/2.2
-         * will convert the image colors to linear color space.
-         *
-         * **exposure** is an exponential scalar of the image as rgb* pow(2, exposure).
-         * At 0, the image is unmodified; as the exposure increases, the image
-         * brightens.
-         *
-         * **hue** shifts the hue component of the image colors in degrees. A **hue** of
-         * 0 will have no affect, and a **hue** of 45 will shift the hue of all colors
-         * by 45 degrees.
-         *
-         * **amount** controls how much affect this filter has on the **src** image, where
-         * 0 has no effect and 1 has full effect.
-         */
-        static adjustColor(options: AdjustColorOptions): MemoryImage;
-        /**
-         * Set the **brightness** level for the image **src**.
-         * **brightness** is an offset that is added to the red, green, and blue channels
-         * of every pixel.
-         */
-        static brightness(src: MemoryImage, brightness: number): MemoryImage;
-        /**
-         * Generate a normal map from a height-field bump image.
-         *
-         * The red channel of the **src** image is used as an input, 0 represents a low
-         * height and 1 a high value. The optional **strength** parameter allows to set
-         * the strength of the normal image.
-         */
-        static bumpToNormal(src: MemoryImage, strength?: number): MemoryImage;
-        /**
-         * Add the **red**, **green**, **blue** and **alpha** values to the **src** image
-         * colors, a per-channel brightness.
-         */
-        static colorOffset(options: ColorOffsetOptions): MemoryImage;
-        /**
-         * Set the **contrast** level for the image **src**.
-         *
-         * **contrast** values below 100 will decrees the contrast of the image,
-         * and values above 100 will increase the contrast. A contrast of 100
-         * will have no affect.
-         */
-        static contrast(src: MemoryImage, contrast: number): MemoryImage;
-        /**
-         * Apply a 3x3 convolution filter to the **src** image. **filter** should be a
-         * list of 9 numbers.
-         *
-         * The rgb channels will divided by **div** and add **offset**, allowing
-         * filters to normalize and offset the filtered pixel value.
-         */
-        static convolution(options: ConvolutionOptions): MemoryImage;
-        /**
-         * Apply an emboss convolution filter.
-         */
-        static emboss(src: MemoryImage): MemoryImage;
-        /**
-         * Apply gaussian blur to the **src** image. **radius** determines how many pixels
-         * away from the current pixel should contribute to the blur, where 0 is no
-         * blur and the larger the radius, the stronger the blur.
-         */
-        static gaussianBlur(src: MemoryImage, radius: number): MemoryImage;
-        /**
-         * Convert the image to grayscale.
-         */
-        static grayscale(src: MemoryImage): MemoryImage;
-        /**
-         * Invert the colors of the **src** image.
-         */
-        static invert(src: MemoryImage): MemoryImage;
-        /**
-         * Add random noise to pixel values. **sigma** determines how strong the effect
-         * should be. **type** should be one of the following: **NoiseType.gaussian**,
-         * **NoiseType.uniform**, **NoiseType.saltPepper**, **NoiseType.poisson**,
-         * or **NoiseType.rice**.
-         */
-        static noise(image: MemoryImage, sigma: number, type?: NoiseType): MemoryImage;
-        /**
-         * Linearly normalize the colors of the image. All color values will be mapped
-         * to the range **minValue**, **maxValue** inclusive.
-         */
-        static normalize(src: MemoryImage, minValue: number, maxValue: number): MemoryImage;
-        /**
-         * Pixelate the **src** image.
-         *
-         * **blockSize** determines the size of the pixelated blocks.
-         * If **mode** is **PixelateMode.upperLeft** then the upper-left corner of the block
-         * will be used for the block color. Otherwise if **mode** is **PixelateMode.average**,
-         * the average of all the pixels in the block will be used for the block color.
-         */
-        static pixelate(src: MemoryImage, blockSize: number, mode?: PixelateMode): MemoryImage;
-        /**
-         * Quantize the number of colors in image to 256.
-         */
-        static quantize(options: QuantizeOptions): MemoryImage;
-        /**
-         * Remap the color channels of the image.
-         * **red**, **green**, **blue** and **alpha** should be set to one of the following:
-         * **ColorChannel.red**, **ColorChannel.green**, **ColorChannel.blue**, **ColorChannel.alpha**, or
-         * **ColorChannel.luminance**. For example,
-         * **_remapColors({ src: src, red: ColorChannel.green, green: ColorChannel.red })_**
-         * will swap the red and green channels of the image.
-         * **_remapColors({ src: src, alpha: ColorChannel.luminance })_**
-         * will set the alpha channel to the luminance (grayscale) of the image.
-         */
-        static remapColors(options: RemapColorsOptions): MemoryImage;
-        static scaleRgba(src: MemoryImage, r: number, g: number, b: number, a: number): MemoryImage;
-        /**
-         * Apply a generic separable convolution filter the **src** image, using the
-         * given **kernel**.
-         *
-         * **gaussianBlur** is an example of such a filter.
-         */
-        static separableConvolution(src: MemoryImage, kernel: SeparableKernel): MemoryImage;
-        /**
-         * Apply sepia tone to the image.
-         *
-         * **amount** controls the strength of the effect, in the range **0**-**1**.
-         */
-        static sepia(src: MemoryImage, amount?: number): MemoryImage;
-        /**
-         * Apply a smoothing convolution filter to the **src** image.
-         *
-         * **w** is the weight of the current pixel being filtered. If it's greater than
-         * 1, it will make the image sharper.
-         */
-        static smooth(src: MemoryImage, w: number): MemoryImage;
-        /**
-         * Apply Sobel edge detection filtering to the **src** Image.
-         */
-        static sobel(src: MemoryImage, amount?: number): MemoryImage;
-        static vignette(options: VignetteOptions): MemoryImage;
-    }
-}
-declare module "hdr/hdr-to-image" {
-    import { MemoryImage } from "common/memory-image";
-    import { HdrImage } from "hdr/hdr-image";
-    export abstract class HdrToImage {
-        /**
-         * Convert a high dynamic range image to a low dynamic range image,
-         * with optional exposure control.
-         */
-        static hdrToImage(hdr: HdrImage, exposure?: number): MemoryImage;
+    export enum TrimSide {
+        top = 1,
+        bottom = 2,
+        left = 4,
+        right = 8,
+        all = 15
     }
 }
 declare module "transform/trim-mode" {
@@ -4604,148 +7627,280 @@ declare module "transform/trim-mode" {
          */
         transparent = 0,
         /**
-         * Trim an image to the top-left and bottom-right most pixels that are not the
-         * same as the top-left most pixel of the image.
+         * Trim an image to the top-left and bottom-right most pixels that are not
+         * the same as the top-left most pixel of the image.
          */
         topLeftColor = 1,
         /**
-         * Trim an image to the top-left and bottom-right most pixels that are not the
-         * same as the bottom-right most pixel of the image.
+         * Trim an image to the top-left and bottom-right most pixels that are not
+         * the same as the bottom-right most pixel of the image.
          */
         bottomRightColor = 2
     }
 }
-declare module "transform/trim-side" {
-    /** @format */
-    export class TrimSide {
-        /**
-         * Trim the image down from the top.
-         */
-        static readonly top: TrimSide;
-        /**
-         * Trim the image up from the bottom.
-         */
-        static readonly bottom: TrimSide;
-        /**
-         * Trim the left edge of the image.
-         */
-        static readonly left: TrimSide;
-        /**
-         * Trim the right edge of the image.
-         */
-        static readonly right: TrimSide;
-        /**
-         * Trim all edges of the image.
-         */
-        static readonly all: TrimSide;
-        private value;
-        constructor(...sides: [number | TrimSide, ...(number | TrimSide)[]]);
-        has(side: TrimSide): boolean;
-    }
-}
-declare module "transform/trim" {
-    /** @format */
-    import { MemoryImage } from "common/memory-image";
-    import { TrimMode } from "transform/trim-mode";
+declare module "transform/transform" {
+    import { Point } from "common/point";
+    import { Interpolation } from "common/interpolation";
+    import { MemoryImage } from "image/image";
+    import { FlipDirection } from "transform/flip-direction";
     import { TrimSide } from "transform/trim-side";
-    export abstract class TrimTransform {
+    import { Rectangle } from "common/rectangle";
+    import { TrimMode } from "transform/trim-mode";
+    export interface TransformOptions {
+        image: MemoryImage;
+    }
+    export interface CopyCropCircleOptions extends TransformOptions {
+        radius?: number;
+        center?: Point;
+        antialias?: boolean;
+    }
+    export interface CopyCropOptions extends TransformOptions {
+        rect: Rectangle;
+        radius?: number;
+        antialias?: boolean;
+    }
+    export interface CopyRectifyOptions extends TransformOptions {
+        topLeft: Point;
+        topRight: Point;
+        bottomLeft: Point;
+        bottomRight: Point;
+        interpolation?: Interpolation;
+        toImage?: MemoryImage;
+    }
+    export interface CopyResizeCropSquareOptions extends TransformOptions {
+        size: number;
+        interpolation?: Interpolation;
+        radius?: number;
+        antialias?: boolean;
+    }
+    export interface CopyResizeOptionsUsingWidth extends TransformOptions {
+        width: number;
+        height?: number;
+        interpolation?: Interpolation;
+    }
+    export interface CopyResizeOptionsUsingHeight extends TransformOptions {
+        height: number;
+        width?: number;
+        interpolation?: Interpolation;
+    }
+    export interface CopyRotateOptions extends TransformOptions {
+        angle: number;
+        interpolation?: Interpolation;
+    }
+    export interface FlipOptions extends TransformOptions {
+        direction: FlipDirection;
+    }
+    export interface TrimOptions extends TransformOptions {
+        mode?: TrimMode;
+        sides?: TrimSide;
+    }
+    export abstract class Transform {
+        private static rotate90;
+        private static rotate180;
+        private static rotate270;
         /**
          * Find the crop area to be used by the trim function.
+         *
          * Returns the Rectangle. You could pass these constraints
          * to the **copyCrop** function to crop the image.
          */
         private static findTrim;
         /**
+         * If **image** has an orientation value in its exif data, this will rotate the
+         * image so that it physically matches its orientation. This can be used to
+         * bake the orientation of the image for image formats that don't support exif
+         * data.
+         */
+        static bakeOrientation(opt: TransformOptions): MemoryImage;
+        /**
+         * Returns a cropped copy of **image**.
+         */
+        static copyCrop(opt: CopyCropOptions): MemoryImage;
+        /**
+         * Returns a circle cropped copy of **image**, centered at **centerX** and
+         * **centerY** and with the given **radius**. If **radius** is not provided,
+         * a radius filling the image will be used. If **centerX** is not provided,
+         * the horizontal mid-point of the image will be used. If **centerY** is not
+         * provided, the vertical mid-point of the image will be used.
+         */
+        static copyCropCircle(opt: CopyCropCircleOptions): MemoryImage;
+        /**
+         * Returns a copy of the **image** image, flipped by the given **direction**.
+         */
+        static copyFlip(opt: FlipOptions): MemoryImage;
+        /**
+         * Returns a copy of the **image**, where the given rectangle
+         * has been mapped to the full image.
+         */
+        static copyRectify(opt: CopyRectifyOptions): MemoryImage;
+        /**
+         * Returns a resized copy of the **image**.
+         *
+         * If **height** isn't specified, then it will be determined by the aspect
+         * ratio of **image** and **width**.
+         *
+         * If **width** isn't specified, then it will be determined by the aspect ratio
+         * of **image** and **height**.
+         */
+        static copyResize(opt: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight): MemoryImage;
+        /**
+         * Returns a resized and square cropped copy of the **image** of **size** size.
+         */
+        static copyResizeCropSquare(opt: CopyResizeCropSquareOptions): MemoryImage;
+        /**
+         * Returns a copy of the **image**, rotated by **angle** degrees.
+         */
+        static copyRotate(opt: CopyRotateOptions): MemoryImage;
+        /**
+         * Flips the **image** using the given **direction**, which can be one of:
+         * _FlipDirection.horizontal_, _FlipDirection.vertical_ or _FlipDirection.both_.
+         */
+        static flip(opt: FlipOptions): MemoryImage;
+        /**
+         * Flips the **image** vertically.
+         */
+        static flipVertical(opt: TransformOptions): MemoryImage;
+        /**
+         * Flips the **image** horizontally.
+         */
+        static flipHorizontal(opt: TransformOptions): MemoryImage;
+        /**
+         * Flip the **image** horizontally and vertically.
+         */
+        static flipHorizontalVertical(opt: TransformOptions): MemoryImage;
+        /**
          * Automatically crops the image by finding the corners of the image that
          * meet the **mode** criteria (not transparent or a different color).
          *
-         * **mode** can be either **TrimMode.transparent**, **TrimMode.topLeftColor** or
-         * **TrimMode.bottomRightColor**.
+         * **mode** can be either _TrimMode.transparent_, _TrimMode.topLeftColor_ or
+         * _TrimMode.bottomRightColor_.
          *
          * **sides** can be used to control which sides of the image get trimmed,
-         * and can be any combination of **TrimSide.top**, **TrimSide.bottom**, **TrimSide.left**,
-         * and **TrimSide.right**.
+         * and can be any combination of _TrimSide.top_, _TrimSide.bottom_, _TrimSide.left_,
+         * and _TrimSide.right_.
          */
-        static trim(src: MemoryImage, mode?: TrimMode, sides?: TrimSide): MemoryImage;
+        static trim(opt: TrimOptions): MemoryImage;
     }
 }
 declare module "index" {
     /** @format */
-    import { FrameAnimation } from "common/frame-animation";
-    import { MemoryImage } from "common/memory-image";
     import { CompressionLevel, TypedArray } from "common/typings";
+    import { Encoder } from "formats/encoder";
     import { Decoder } from "formats/decoder";
+    import { MemoryImage } from "image/image";
+    import { PngFilterType } from "formats/png/png-filter-type";
+    import { DitherKernel } from "filter/dither-kernel";
+    import { ExifData } from "exif/exif-data";
+    export { ChannelOrder, ChannelOrderLength } from "color/channel-order";
+    export { Channel } from "color/channel";
+    export { ColorFloat16 } from "color/color-float16";
+    export { ColorFloat32 } from "color/color-float32";
+    export { ColorFloat64 } from "color/color-float64";
+    export { ColorInt8 } from "color/color-int8";
+    export { ColorInt16 } from "color/color-int16";
+    export { ColorInt32 } from "color/color-int32";
+    export { ColorRgb8 } from "color/color-rgb8";
+    export { ColorRgba8 } from "color/color-rgba8";
+    export { ColorUint1 } from "color/color-uint1";
+    export { ColorUint2 } from "color/color-uint2";
+    export { ColorUint4 } from "color/color-uint4";
+    export { ColorUint8 } from "color/color-uint8";
+    export { ColorUint16 } from "color/color-uint16";
+    export { ColorUint32 } from "color/color-uint32";
+    export { Color, ColorConvertOptions } from "color/color";
+    export { Format, FormatType, FormatMaxValue, FormatSize, FormatToFormatType, convertFormatValue, } from "color/format";
     export { ArrayUtils } from "common/array-utils";
-    export { BitOperators } from "common/bit-operators";
-    export { BlendMode } from "common/blend-mode";
-    export { ColorChannel } from "common/color-channel";
-    export { ColorModel } from "common/color-model";
-    export { Color } from "common/color";
-    export { Crc32, Crc32Parameters } from "common/crc32";
-    export { DisposeMode } from "common/dispose-mode";
-    export { DitherKernel } from "common/dither-kernel";
-    export { DitherPixel } from "common/dither-pixel";
-    export { FrameAnimation, FrameAnimationInitOptions, } from "common/frame-animation";
-    export { FrameType } from "common/frame-type";
-    export { HeapNode } from "common/heap-node";
-    export { ICCProfileData } from "common/icc-profile-data";
-    export { ICCPCompressionMode } from "common/iccp-compression-mode";
+    export { BitUtils } from "common/bit-utils";
+    export { Crc32, Crc32Options } from "common/crc32";
+    export { Float16 } from "common/float16";
     export { InputBuffer, InputBufferInitOptions } from "common/input-buffer";
     export { Interpolation } from "common/interpolation";
     export { Line } from "common/line";
-    export { MathOperators } from "common/math-operators";
-    export { MemoryImage, MemoryImageInitOptions, MemoryImageInitOptionsColorModel, RgbMemoryImageInitOptions, } from "common/memory-image";
-    export { NeuralQuantizer } from "common/neural-quantizer";
-    export { OctreeNode } from "common/octree-node";
-    export { OctreeQuantizer } from "common/octree-quantizer";
+    export { MathUtils } from "common/math-utils";
     export { OutputBuffer, OutputBufferInitOptions } from "common/output-buffer";
     export { Point } from "common/point";
-    export { Quantizer } from "common/quantizer";
     export { RandomUtils } from "common/random-utils";
     export { Rational } from "common/rational";
     export { Rectangle } from "common/rectangle";
-    export { RgbChannelSet } from "common/rgb-channel-set";
-    export { TextCodec } from "common/text-codec";
-    export { CompressionLevel, TypedArray, BufferEncoding } from "common/typings";
-    export { DrawImageOptions } from "draw/draw-image-options";
-    export { DrawLineOptions } from "draw/draw-line-options";
-    export { Draw } from "draw/draw";
-    export { FillFloodOptions } from "draw/fill-flood-options";
-    export { MaskFloodOptions } from "draw/mask-flood-options";
-    export { ExifAsciiValue } from "exif/exif-value/exif-ascii-value";
-    export { ExifByteValue } from "exif/exif-value/exif-byte-value";
-    export { ExifDoubleValue } from "exif/exif-value/exif-double-value";
-    export { ExifLongValue } from "exif/exif-value/exif-long-value";
-    export { ExifRationalValue } from "exif/exif-value/exif-rational-value";
-    export { ExifSByteValue } from "exif/exif-value/exif-sbyte-value";
-    export { ExifShortValue } from "exif/exif-value/exif-short-value";
-    export { ExifSingleValue } from "exif/exif-value/exif-single-value";
-    export { ExifSLongValue } from "exif/exif-value/exif-slong-value";
-    export { ExifSRationalValue } from "exif/exif-value/exif-srational-value";
-    export { ExifSShortValue } from "exif/exif-value/exif-sshort-value";
-    export { ExifUndefinedValue } from "exif/exif-value/exif-undefined-value";
-    export { ExifValue } from "exif/exif-value/exif-value";
+    export { StringUtils } from "common/string-utils";
+    export { BufferEncoding, CompressionLevel, TypedArray } from "common/typings";
+    export { BlendMode } from "draw/blend-mode";
+    export { CircleQuadrant } from "draw/circle-quadrant";
+    export { Draw, CompositeImageOptions, DrawCircleOptions, DrawLineOptions, DrawPixelOptions, DrawPolygonOptions, DrawRectOptions, FillCircleOptions, FillFloodOptions, FillOptions, FillPolygonOptions, FillRectOptions, MaskFloodOptions, } from "draw/draw";
+    export { LibError } from "error/lib-error";
+    export { IfdAsciiValue } from "exif/ifd-value/ifd-ascii-value";
+    export { IfdByteValue } from "exif/ifd-value/ifd-byte-value";
+    export { IfdDoubleValue } from "exif/ifd-value/ifd-double-value";
+    export { IfdLongValue } from "exif/ifd-value/ifd-long-value";
+    export { IfdRationalValue } from "exif/ifd-value/ifd-rational-value";
+    export { IfdSByteValue } from "exif/ifd-value/ifd-sbyte-value";
+    export { IfdShortValue } from "exif/ifd-value/ifd-short-value";
+    export { IfdSingleValue } from "exif/ifd-value/ifd-single-value";
+    export { IfdSLongValue } from "exif/ifd-value/ifd-slong-value";
+    export { IfdSRationalValue } from "exif/ifd-value/ifd-srational-value";
+    export { IfdSShortValue } from "exif/ifd-value/ifd-sshort-value";
+    export { IfdUndefinedValue } from "exif/ifd-value/ifd-undefined-value";
+    export { IfdValue } from "exif/ifd-value/ifd-value";
     export { ExifData } from "exif/exif-data";
     export { ExifEntry } from "exif/exif-entry";
-    export { ExifIFDContainer } from "exif/exif-ifd-container";
-    export { ExifIFD } from "exif/exif-ifd";
     export { ExifTag, ExifTagInitOptions, ExifGpsTags, ExifImageTags, ExifInteropTags, ExifTagNameToID, } from "exif/exif-tag";
-    export { ExifValueType, ExifValueTypeSize, ExifValueTypeString, getExifValueTypeSize, getExifValueTypeString, } from "exif/exif-value-type";
-    export { AdjustColorOptions } from "filter/adjust-color-options";
-    export { ColorOffsetOptions } from "filter/color-offset-options";
-    export { ConvolutionOptions } from "filter/convolution-options";
-    export { ImageFilter } from "filter/image-filter";
+    export { IfdContainer } from "exif/ifd-container";
+    export { IfdDirectory } from "exif/ifd-directory";
+    export { IfdValueType, IfdValueTypeSize, getIfdValueTypeSize, getIfdValueTypeString, } from "exif/ifd-value-type";
+    export { DitherKernel, DitherKernels } from "filter/dither-kernel";
+    export { Filter, AdjustColorOptions, BillboardOptions, BleachBypassOptions, BulgeDistortionOptions, BumpToNormalOptions, ChromaticAberrationOptions, ColorHalftone, ColorOffsetOptions, ContrastOptions, ConvolutionOptions, CopyImageChannelsOptions, DitherImageOptions, DotScreenOptions, DropShadowOptions, EdgeGlowOptions, EmbossOptions, GammaOptions, GaussianBlurOptions, GrayscaleOptions, HdrToLdrOptions, HexagonPixelateOptions, InvertOptions, LuminanceThresholdOptions, MonochromeOptions, NoiseOptions, NormalizeOptions, PixelateOptions, QuantizeOptions, ReinhardToneMapOptions, RemapColorsOptions, ScaleRgbaOptions, SeparableConvolutionOptions, SepiaOptions, SketchOptions, SmoothOptions, SobelOptions, StretchDistortionOptions, VignetteOptions, } from "filter/filter";
     export { NoiseType } from "filter/noise-type";
     export { PixelateMode } from "filter/pixelate-mode";
     export { QuantizeMethod } from "filter/quantize-method";
-    export { QuantizeOptions } from "filter/quantize-options";
-    export { RemapColorsOptions } from "filter/remap-colors-options";
-    export { SeparableKernel } from "filter/separable-kernel";
-    export { VignetteOptions } from "filter/vignette-options";
+    export { SeparableKernel, SeparableKernelApplyOptions, } from "filter/separable-kernel";
+    export { BmpCompressionMode } from "formats/bmp/bmp-compression-mode";
+    export { BmpFileHeader } from "formats/bmp/bmp-file-header";
+    export { BmpInfo } from "formats/bmp/bmp-info";
+    export { GifColorMap } from "formats/gif/gif-color-map";
+    export { GifImageDesc } from "formats/gif/gif-image-desc";
+    export { GifInfo, GifInfoInitOptions } from "formats/gif/gif-info";
+    export { IcoBmpInfo } from "formats/ico/ico-bmp-info";
+    export { IcoInfoImage, IcoInfoImageInitOptions, } from "formats/ico/ico-info-image";
+    export { IcoInfo } from "formats/ico/ico-info";
+    export { IcoType, IcoTypeLength } from "formats/ico/ico-type";
+    export { HuffmanNode } from "formats/jpeg/huffman-node";
+    export { HuffmanParent } from "formats/jpeg/huffman-parent";
+    export { HuffmanValue } from "formats/jpeg/huffman-value";
+    export { JpegAdobe } from "formats/jpeg/jpeg-adobe";
+    export { JpegComponentData } from "formats/jpeg/jpeg-component-data";
+    export { JpegComponent } from "formats/jpeg/jpeg-component";
+    export { JpegData } from "formats/jpeg/jpeg-data";
+    export { JpegFrame } from "formats/jpeg/jpeg-frame";
+    export { JpegHuffman } from "formats/jpeg/jpeg-huffman";
+    export { JpegInfo } from "formats/jpeg/jpeg-info";
+    export { JpegJfif } from "formats/jpeg/jpeg-jfif";
+    export { JpegMarker } from "formats/jpeg/jpeg-marker";
+    export { JpegQuantize } from "formats/jpeg/jpeg-quantize";
+    export { JpegScan } from "formats/jpeg/jpeg-scan";
+    export { JpegUtils } from "formats/jpeg/jpeg-utils";
+    export { PngBlendMode } from "formats/png/png-blend-mode";
+    export { PngColorType } from "formats/png/png-color-type";
+    export { PngDisposeMode } from "formats/png/png-dispose-mode";
+    export { PngFilterType } from "formats/png/png-filter-type";
+    export { PngFrame, PngFrameInitOptions } from "formats/png/png-frame";
+    export { PngInfo, PngInfoInitOptions } from "formats/png/png-info";
+    export { TgaImageType, TgaImageTypeLength } from "formats/tga/tga-image-type";
+    export { TgaInfo, TgaInfoInitOptions } from "formats/tga/tga-info";
+    export { TiffBitReader } from "formats/tiff/tiff-bit-reader";
+    export { TiffCompression } from "formats/tiff/tiff-compression";
+    export { TiffEntry, TiffEntryInitOptions } from "formats/tiff/tiff-entry";
+    export { TiffFaxDecoder, TiffFaxDecoderInitOptions, } from "formats/tiff/tiff-fax-decoder";
+    export { TiffFormat } from "formats/tiff/tiff-format";
+    export { TiffImageType } from "formats/tiff/tiff-image-type";
+    export { TiffImage } from "formats/tiff/tiff-image";
+    export { TiffInfo, TiffInfoInitOptions } from "formats/tiff/tiff-info";
+    export { LzwDecoder } from "formats/tiff/tiff-lzw-decoder";
+    export { TiffPhotometricType, TiffPhotometricTypeLength, } from "formats/tiff/tiff-photometric-type";
     export { BmpDecoder } from "formats/bmp-decoder";
     export { BmpEncoder } from "formats/bmp-encoder";
     export { DecodeInfo } from "formats/decode-info";
     export { Decoder } from "formats/decoder";
+    export { DibDecoder } from "formats/dib-decoder";
     export { Encoder } from "formats/encoder";
     export { GifDecoder } from "formats/gif-decoder";
     export { GifEncoder, GifEncoderInitOptions } from "formats/gif-encoder";
@@ -4759,127 +7914,173 @@ declare module "index" {
     export { TgaEncoder } from "formats/tga-encoder";
     export { TiffDecoder } from "formats/tiff-decoder";
     export { TiffEncoder } from "formats/tiff-encoder";
-    export { BitmapCompressionMode } from "formats/bmp/bitmap-compression-mode";
-    export { BitmapFileHeader } from "formats/bmp/bitmap-file-header";
-    export { BmpInfo } from "formats/bmp/bmp-info";
-    export { GifColorMap, GifColorMapInitOptions, } from "formats/gif/gif-color-map";
-    export { GifImageDesc } from "formats/gif/gif-image-desc";
-    export { GifInfo, GifInfoInitOptions } from "formats/gif/gif-info";
-    export { IcoBmpInfo } from "formats/ico/ico-bmp-info";
-    export { IcoInfoImage } from "formats/ico/ico-info-image";
-    export { IcoInfo } from "formats/ico/ico-info";
-    export { ComponentData } from "formats/jpeg/component-data";
-    export { JpegAdobe } from "formats/jpeg/jpeg-adobe";
-    export { JpegComponent } from "formats/jpeg/jpeg-component";
-    export { JpegData } from "formats/jpeg/jpeg-data";
-    export { JpegFrame } from "formats/jpeg/jpeg-frame";
-    export { JpegHuffman } from "formats/jpeg/jpeg-huffman";
-    export { JpegInfo } from "formats/jpeg/jpeg-info";
-    export { JpegJfif } from "formats/jpeg/jpeg-jfif";
-    export { JpegQuantize } from "formats/jpeg/jpeg-quantize";
-    export { JpegScan } from "formats/jpeg/jpeg-scan";
-    export { Jpeg } from "formats/jpeg/jpeg";
-    export { PngFrame, PngFrameInitOptions } from "formats/png/png-frame";
-    export { PngInfo, PngInfoInitOptions } from "formats/png/png-info";
-    export { TgaInfo } from "formats/tga/tga-info";
-    export { TiffBitReader } from "formats/tiff/tiff-bit-reader";
-    export { TiffEntry, TiffEntryInitOptions } from "formats/tiff/tiff-entry";
-    export { TiffFaxDecoder, TiffFaxDecoderInitOptions, } from "formats/tiff/tiff-fax-decoder";
-    export { TiffImage } from "formats/tiff/tiff-image";
-    export { TiffInfo, TiffInfoInitOptions } from "formats/tiff/tiff-info";
-    export { LzwDecoder } from "formats/tiff/tiff-lzw-decoder";
-    export { Half } from "hdr/half";
-    export { HdrImage } from "hdr/hdr-image";
-    export { HdrSlice, HdrSliceInitOptions } from "hdr/hdr-slice";
-    export { HdrToImage } from "hdr/hdr-to-image";
-    export { CopyIntoOptions } from "transform/copy-into-options";
-    export { CopyResizeOptionsUsingHeight, CopyResizeOptionsUsingWidth, } from "transform/copy-resize-options";
+    export { WinEncoder } from "formats/win-encoder";
+    export { FrameType } from "image/frame-type";
+    export { HeapNode } from "image/heap-node";
+    export { IccProfile } from "image/icc-profile";
+    export { IccProfileCompression } from "image/icc-profile-compression";
+    export { MemoryImageDataFloat16 } from "image/image-data-float16";
+    export { MemoryImageDataFloat32 } from "image/image-data-float32";
+    export { MemoryImageDataFloat64 } from "image/image-data-float64";
+    export { MemoryImageDataInt8 } from "image/image-data-int8";
+    export { MemoryImageDataInt16 } from "image/image-data-int16";
+    export { MemoryImageDataInt32 } from "image/image-data-int32";
+    export { MemoryImageDataUint1 } from "image/image-data-uint1";
+    export { MemoryImageDataUint2 } from "image/image-data-uint2";
+    export { MemoryImageDataUint4 } from "image/image-data-uint4";
+    export { MemoryImageDataUint8 } from "image/image-data-uint8";
+    export { MemoryImageDataUint16 } from "image/image-data-uint16";
+    export { MemoryImageDataUint32 } from "image/image-data-uint32";
+    export { MemoryImageData } from "image/image-data";
+    export { ImageUtils } from "image/image-utils";
+    export { MemoryImage, MemoryImageCloneOptions, MemoryImageColorExtremes, MemoryImageConvertOptions, MemoryImageCreateOptions, MemoryImageFromBytesOptions, } from "image/image";
+    export { NeuralQuantizer } from "image/neural-quantizer";
+    export { OctreeNode } from "image/octree-node";
+    export { OctreeQuantizer } from "image/octree-quantizer";
+    export { PaletteFloat16 } from "image/palette-float16";
+    export { PaletteFloat32 } from "image/palette-float32";
+    export { PaletteFloat64 } from "image/palette-float64";
+    export { PaletteInt8 } from "image/palette-int8";
+    export { PaletteInt16 } from "image/palette-int16";
+    export { PaletteInt32 } from "image/palette-int32";
+    export { PaletteUint8 } from "image/palette-uint8";
+    export { PaletteUint16 } from "image/palette-uint16";
+    export { PaletteUint32 } from "image/palette-uint32";
+    export { Palette } from "image/palette";
+    export { PixelFloat16 } from "image/pixel-float16";
+    export { PixelFloat32 } from "image/pixel-float32";
+    export { PixelFloat64 } from "image/pixel-float64";
+    export { PixelInt8 } from "image/pixel-int8";
+    export { PixelInt16 } from "image/pixel-int16";
+    export { PixelInt32 } from "image/pixel-int32";
+    export { PixelUint1 } from "image/pixel-uint1";
+    export { PixelUint2 } from "image/pixel-uint2";
+    export { PixelUint4 } from "image/pixel-uint4";
+    export { PixelUint8 } from "image/pixel-uint8";
+    export { PixelUint16 } from "image/pixel-uint16";
+    export { PixelUint32 } from "image/pixel-uint32";
+    export { PixelUndefined } from "image/pixel-undefined";
+    export { PixelRangeIterator } from "image/pixel-range-iterator";
+    export { Pixel, UndefinedPixel } from "image/pixel";
+    export { QuantizerType } from "image/quantizer-type";
+    export { Quantizer } from "image/quantizer";
     export { FlipDirection } from "transform/flip-direction";
-    export { ImageTransform } from "transform/image-transform";
+    export { Transform, CopyCropCircleOptions, CopyCropOptions, CopyRectifyOptions, CopyResizeCropSquareOptions, CopyResizeOptionsUsingHeight, CopyResizeOptionsUsingWidth, CopyRotateOptions, FlipOptions, TransformOptions, TrimOptions, } from "transform/transform";
     export { TrimMode } from "transform/trim-mode";
     export { TrimSide } from "transform/trim-side";
-    export { TrimTransform } from "transform/trim";
+    export interface DecodeOptions {
+        data: TypedArray;
+    }
+    export interface DecodeImageOptions extends DecodeOptions {
+        frame?: number;
+    }
+    export interface DecodeNamedImageOptions extends DecodeImageOptions {
+        name: string;
+    }
+    export interface EncodeOptions {
+        image: MemoryImage;
+    }
+    export interface EncodeNamedImageOptions extends EncodeOptions {
+        name: string;
+    }
+    export interface EncodeJpgOptions extends EncodeOptions {
+        quality?: number;
+    }
+    export interface InjectJpgExifOptions extends DecodeOptions {
+        exifData: ExifData;
+    }
+    export interface EncodeAnimatedOptions extends EncodeOptions {
+        singleFrame?: boolean;
+    }
+    export interface EncodePngOptions extends EncodeAnimatedOptions {
+        level?: CompressionLevel;
+        filter?: PngFilterType;
+    }
+    export interface EncodeGifOptions extends EncodeAnimatedOptions {
+        repeat?: number;
+        samplingFactor?: number;
+        dither?: DitherKernel;
+        ditherSerpentine?: boolean;
+    }
+    export interface EncodeIcoImagesOptions {
+        images: MemoryImage[];
+    }
     /**
-     * Find a **Decoder** that is able to decode the given image **data**.
-     * Use this is you don't know the type of image it is. Since this will
-     * validate the image against all known decoders, it is potentially very slow.
+     * Return the Decoder that can decode image with the given **name**,
+     * by looking at the file extension.
+     */
+    export function findDecoderForNamedImage(name: string): Decoder | undefined;
+    /**
+     * Return the Encoder that can decode image with the given **name**,
+     * by looking at the file extension.
+     */
+    export function findEncoderForNamedImage(name: string): Encoder | undefined;
+    /**
+     * Find a Decoder that is able to decode the given image **data**.
+     * Use this is you don't know the type of image it is.
+     *
+     * **WARNING:** Since this will check the image data against all known decoders,
+     * it is much slower than using an explicit decoder.
      */
     export function findDecoderForData(data: TypedArray): Decoder | undefined;
     /**
      * Decode the given image file bytes by first identifying the format of the
-     * file and using that decoder to decode the file into a single frame [Image].
+     * file and using that decoder to decode the file into a single frame MemoryImage.
+     *
+     * **WARNING:** Since this will check the image data against all known decoders,
+     * it is much slower than using an explicit decoder.
      */
-    export function decodeImage(data: TypedArray): MemoryImage | undefined;
+    export function decodeImage(opt: DecodeImageOptions): MemoryImage | undefined;
     /**
-     * Decode the given image file bytes by first identifying the format of the
-     * file and using that decoder to decode the file into an **FrameAnimation**
-     * containing one or more **MemoryImage** frames.
+     * Decodes the given image file bytes, using the filename extension to
+     * determine the decoder.
      */
-    export function decodeAnimation(data: TypedArray): FrameAnimation | undefined;
+    export function decodeNamedImage(opt: DecodeNamedImageOptions): MemoryImage | undefined;
     /**
-     * Return the **Decoder** that can decode image with the given **name**,
-     * by looking at the file extension. See also **findDecoderForData** to
-     * determine the decoder to use given the bytes of the file.
+     * Encode the MemoryImage to the format determined by the file extension of **name**.
+     * If a format wasn't able to be identified, undefined will be returned.
+     * Otherwise the encoded format bytes of the image will be returned.
      */
-    export function getDecoderForNamedImage(name: string): Decoder | undefined;
-    /**
-     * Identify the format of the image using the file extension of the given
-     * **name**, and decode the given file **bytes** to an **FrameAnimation** with one or more
-     * **MemoryImage** frames. See also **decodeAnimation**.
-     */
-    export function decodeNamedAnimation(data: TypedArray, name: string): FrameAnimation | undefined;
-    /**
-     * Identify the format of the image using the file extension of the given
-     * **name**, and decode the given file **data** to a single frame **MemoryImage**. See
-     * also **decodeImage**.
-     */
-    export function decodeNamedImage(data: TypedArray, name: string): MemoryImage | undefined;
-    /**
-     * Identify the format of the image and encode it with the appropriate
-     * **Encoder**.
-     */
-    export function encodeNamedImage(image: MemoryImage, name: string): Uint8Array | undefined;
+    export function encodeNamedImage(opt: EncodeNamedImageOptions): Uint8Array | undefined;
     /**
      * Decode a JPG formatted image.
      */
-    export function decodeJpg(data: TypedArray): MemoryImage | undefined;
+    export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined;
     /**
      * Encode an image to the JPEG format.
      */
-    export function encodeJpg(image: MemoryImage, quality?: number): Uint8Array;
+    export function encodeJpg(opt: EncodeJpgOptions): Uint8Array;
+    /**
+     * Decode only the ExifData from a JPEG file, returning undefined if it was
+     * unable to.
+     */
+    export function decodeJpgExif(opt: DecodeOptions): ExifData | undefined;
+    /**
+     * Inject ExifData into a JPEG file, replacing any existing EXIF data.
+     * The new JPEG file bytes will be returned, otherwise undefined if there was an
+     * issue.
+     */
+    export function injectJpgExif(opt: InjectJpgExifOptions): Uint8Array | undefined;
     /**
      * Decode a PNG formatted image.
      */
-    export function decodePng(data: TypedArray): MemoryImage | undefined;
-    /**
-     * Decode a PNG formatted animation.
-     */
-    export function decodePngAnimation(data: TypedArray): FrameAnimation | undefined;
+    export function decodePng(opt: DecodeImageOptions): MemoryImage | undefined;
     /**
      * Encode an image to the PNG format.
      */
-    export function encodePng(image: MemoryImage, level?: CompressionLevel): Uint8Array;
-    /**
-     * Encode an animation to the PNG format.
-     */
-    export function encodePngAnimation(animation: FrameAnimation, level?: CompressionLevel): Uint8Array | undefined;
+    export function encodePng(opt: EncodePngOptions): Uint8Array;
     /**
      * Decode a Targa formatted image.
      */
-    export function decodeTga(data: TypedArray): MemoryImage | undefined;
+    export function decodeTga(opt: DecodeImageOptions): MemoryImage | undefined;
     /**
      * Encode an image to the Targa format.
      */
-    export function encodeTga(image: MemoryImage): Uint8Array;
+    export function encodeTga(opt: EncodeOptions): Uint8Array;
     /**
      * Decode a GIF formatted image (first frame for animations).
      */
-    export function decodeGif(data: TypedArray): MemoryImage | undefined;
-    /**
-     * Decode an animated GIF file. If the GIF isn't animated, the animation
-     * will contain a single frame with the GIF's image.
-     */
-    export function decodeGifAnimation(data: TypedArray): FrameAnimation | undefined;
+    export function decodeGif(opt: DecodeImageOptions): MemoryImage | undefined;
     /**
      * Encode an image to the GIF format.
      *
@@ -4892,56 +8093,33 @@ declare module "index" {
      * If you know that you have less than 256 colors in your frames
      * anyway, you should supply a very large **samplingFactor** for maximum performance.
      */
-    export function encodeGif(image: MemoryImage, samplingFactor?: number): Uint8Array;
-    /**
-     * Encode an animation to the GIF format.
-     *
-     * The **samplingFactor** specifies the sampling factor for
-     * NeuQuant image quantization. It is responsible for reducing
-     * the amount of unique colors in your images to 256.
-     * According to https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/,
-     * a sampling factor of 10 gives you a reasonable trade-off between
-     * image quality and quantization speed.
-     * If you know that you have less than 256 colors in your frames
-     * anyway, you should supply a very large **samplingFactor** for maximum performance.
-     *
-     * Here, `30` is used a default value for the **samplingFactor** as
-     * encoding animations is usually a process that takes longer than
-     * encoding a single image (see **encodeGif**).
-     */
-    export function encodeGifAnimation(animation: FrameAnimation, samplingFactor?: number): Uint8Array | undefined;
+    export function encodeGif(opt: EncodeGifOptions): Uint8Array;
     /**
      * Decode a TIFF formatted image.
      */
-    export function decodeTiff(data: TypedArray): MemoryImage | undefined;
-    /**
-     * Decode an multi-image (animated) TIFF file. If the tiff doesn't have
-     * multiple images, the animation will contain a single frame with the tiff's
-     * image.
-     */
-    export function decodeTiffAnimation(data: TypedArray): FrameAnimation | undefined;
+    export function decodeTiff(opt: DecodeImageOptions): MemoryImage | undefined;
     /**
      * Encode an image to the TIFF format.
      */
-    export function encodeTiff(image: MemoryImage): Uint8Array;
+    export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array;
     /**
      * Decode a BMP formatted image.
      */
-    export function decodeBmp(data: TypedArray): MemoryImage | undefined;
+    export function decodeBmp(opt: DecodeOptions): MemoryImage | undefined;
     /**
      * Encode an image to the BMP format.
      */
-    export function encodeBmp(image: MemoryImage): Uint8Array;
-    /**
-     * Encode an image to the ICO format.
-     */
-    export function encodeIco(image: MemoryImage): Uint8Array;
-    /**
-     * Encode a list of images to the ICO format.
-     */
-    export function encodeIcoImages(images: MemoryImage[]): Uint8Array;
+    export function encodeBmp(opt: EncodeOptions): Uint8Array;
     /**
      * Decode an ICO image.
      */
-    export function decodeIco(data: TypedArray): MemoryImage | undefined;
+    export function decodeIco(opt: DecodeImageOptions): MemoryImage | undefined;
+    /**
+     * Encode an image to the ICO format.
+     */
+    export function encodeIco(opt: EncodeAnimatedOptions): Uint8Array;
+    /**
+     * Encode a list of images to the ICO format.
+     */
+    export function encodeIcoImages(opt: EncodeIcoImagesOptions): Uint8Array;
 }

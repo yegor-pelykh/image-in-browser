@@ -1,26 +1,20 @@
 /** @format */
 
-import { Color } from '../../common/color';
-
-export interface GifColorMapInitOptions {
-  numColors: number;
-  bitsPerPixel?: number;
-  colors?: Uint8Array;
-  transparent?: number;
-}
+import { ColorUint8 } from '../../color/color-uint8';
+import { PaletteUint8 } from '../../image/palette-uint8';
 
 export class GifColorMap {
-  private readonly _colors: Uint8Array;
-  public get colors(): Uint8Array {
-    return this._colors;
-  }
-
   private readonly _numColors: number;
   public get numColors(): number {
     return this._numColors;
   }
 
-  private readonly _bitsPerPixel: number;
+  private readonly _palette: PaletteUint8;
+  public get palette(): PaletteUint8 {
+    return this._palette;
+  }
+
+  private _bitsPerPixel: number;
   public get bitsPerPixel(): number {
     return this._bitsPerPixel;
   }
@@ -33,12 +27,10 @@ export class GifColorMap {
     return this._transparent;
   }
 
-  constructor(options: GifColorMapInitOptions) {
-    this._numColors = options.numColors;
-    this._bitsPerPixel =
-      options.bitsPerPixel ?? GifColorMap.bitSize(options.numColors);
-    this._colors = options.colors ?? new Uint8Array(options.numColors * 3);
-    this._transparent = options.transparent;
+  constructor(numColors: number, palette?: PaletteUint8) {
+    this._numColors = numColors;
+    this._palette = palette ?? new PaletteUint8(numColors, 3);
+    this._bitsPerPixel = GifColorMap.bitSize(numColors);
   }
 
   private static bitSize(n: number): number {
@@ -51,53 +43,56 @@ export class GifColorMap {
   }
 
   public static from(other: GifColorMap) {
-    return new GifColorMap({
-      numColors: other.numColors,
-      bitsPerPixel: other.bitsPerPixel,
-      colors: other.colors,
-      transparent: other.transparent,
-    });
+    const palette = PaletteUint8.from(other._palette);
+    const r = new GifColorMap(other.numColors, palette);
+    r._bitsPerPixel = other._bitsPerPixel;
+    r._transparent = other._transparent;
+    return r;
   }
 
-  public getByte(index: number): number {
-    return this._colors[index];
-  }
-
-  public setByte(index: number, value: number): number {
-    return (this._colors[index] = value);
-  }
-
-  public getColor(index: number): number {
-    const ci = index * 3;
-    const a = index === this._transparent ? 0 : 255;
-    return Color.getColor(
-      this._colors[ci],
-      this._colors[ci + 1],
-      this._colors[ci + 2],
-      a
-    );
+  public getColor(index: number): ColorUint8 {
+    const r = this.getRed(index);
+    const g = this.getGreen(index);
+    const b = this.getBlue(index);
+    const a = this.getAlpha(index);
+    return ColorUint8.rgba(r, g, b, a);
   }
 
   public setColor(index: number, r: number, g: number, b: number): void {
-    const ci = index * 3;
-    this._colors[ci] = r;
-    this._colors[ci + 1] = g;
-    this._colors[ci + 2] = b;
+    this._palette.setRgb(index, r, g, b);
   }
 
   public getRed(color: number): number {
-    return this._colors[color * 3];
+    return Math.trunc(this._palette.getRed(color));
   }
 
   public getGreen(color: number): number {
-    return this._colors[color * 3 + 1];
+    return Math.trunc(this._palette.getGreen(color));
   }
 
   public getBlue(color: number): number {
-    return this._colors[color * 3 + 2];
+    return Math.trunc(this._palette.getBlue(color));
   }
 
   public getAlpha(color: number): number {
     return color === this._transparent ? 0 : 255;
+  }
+
+  public getPalette(): PaletteUint8 {
+    if (this._transparent === undefined) {
+      return this._palette;
+    }
+    const p = new PaletteUint8(this._palette.numColors, 4);
+    const l = this._palette.numColors;
+    for (let i = 0; i < l; ++i) {
+      p.setRgba(
+        i,
+        this.getRed(i),
+        this.getGreen(i),
+        this.getBlue(i),
+        this.getAlpha(i)
+      );
+    }
+    return p;
   }
 }

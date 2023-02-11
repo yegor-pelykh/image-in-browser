@@ -1,154 +1,156 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
 import { InputBuffer } from '../common/input-buffer';
-import { ArrayUtils } from '../common/array-utils';
-import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
-import { NotImplementedError } from '../error/not-implemented-error';
-import { HdrImage } from '../hdr/hdr-image';
-import { BitmapFileHeader } from './bmp/bitmap-file-header';
+import { BmpFileHeader } from './bmp/bmp-file-header';
 import { Decoder } from './decoder';
 import { DibDecoder } from './dib-decoder';
 import { IcoBmpInfo } from './ico/ico-bmp-info';
 import { IcoInfo } from './ico/ico-info';
 import { PngDecoder } from './png-decoder';
+import { MemoryImage } from '../image/image';
+import { FrameType } from '../image/frame-type';
 
 export class IcoDecoder implements Decoder {
-  _input?: InputBuffer;
-  _icoInfo?: IcoInfo;
+  private _input?: InputBuffer;
+  private _info?: IcoInfo;
 
-  get numFrames(): number {
-    return this._icoInfo !== undefined ? this._icoInfo.numFrames : 0;
+  public get numFrames(): number {
+    return this._info !== undefined ? this._info.numFrames : 0;
   }
 
   public isValidFile(bytes: Uint8Array): boolean {
     this._input = new InputBuffer({
       buffer: bytes,
     });
-    this._icoInfo = IcoInfo.read(this._input);
-    return this._icoInfo !== undefined;
+    this._info = IcoInfo.read(this._input);
+    return this._info !== undefined;
   }
 
   public startDecode(bytes: Uint8Array): IcoInfo | undefined {
     this._input = new InputBuffer({
       buffer: bytes,
     });
-    this._icoInfo = IcoInfo.read(this._input);
-    return this._icoInfo;
+    this._info = IcoInfo.read(this._input);
+    return this._info;
+  }
+
+  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+    const info = this.startDecode(bytes);
+    if (info === undefined) {
+      return undefined;
+    }
+
+    if (info.images.length === 1 || frame !== undefined) {
+      return this.decodeFrame(frame ?? 0);
+    }
+
+    let firstImage: MemoryImage | undefined = undefined;
+    for (let i = 0; i < info.images.length; i++) {
+      const frame = this.decodeFrame(i);
+      if (frame === undefined) {
+        continue;
+      }
+      if (firstImage === undefined) {
+        frame.frameType = FrameType.sequence;
+        firstImage = frame;
+      } else {
+        firstImage.addFrame(frame);
+      }
+    }
+
+    return firstImage;
   }
 
   public decodeFrame(frame: number): MemoryImage | undefined {
     if (
       this._input === undefined ||
-      this._icoInfo === undefined ||
-      frame >= this._icoInfo.numFrames
+      this._info === undefined ||
+      frame >= this._info.numFrames
     ) {
       return undefined;
     }
-    const imageInfo = this._icoInfo.images![frame];
-    const imageBuffer = ArrayUtils.copyUint8(
-      this._input.buffer,
+
+    const imageInfo = this._info.images[frame];
+    const imageBuffer = this._input.buffer.subarray(
       this._input.start + imageInfo.bytesOffset,
       this._input.start + imageInfo.bytesOffset + imageInfo.bytesSize
     );
 
     const png = new PngDecoder();
     if (png.isValidFile(imageBuffer)) {
-      return png.decodeImage(imageBuffer);
+      return png.decode(imageBuffer);
     }
-    // Should be bmp.
+
+    // should be bmp.
     const dummyBmpHeader = new OutputBuffer({
       size: 14,
     });
-    dummyBmpHeader.writeUint16(BitmapFileHeader.BMP_HEADER_FILETYPE);
+    dummyBmpHeader.writeUint16(BmpFileHeader.signature);
     dummyBmpHeader.writeUint32(imageInfo.bytesSize);
     dummyBmpHeader.writeUint32(0);
     dummyBmpHeader.writeUint32(0);
+
     const bmpInfo = new IcoBmpInfo(
       new InputBuffer({
         buffer: imageBuffer,
       }),
-      new BitmapFileHeader(
+      new BmpFileHeader(
         new InputBuffer({
           buffer: dummyBmpHeader.getBytes(),
         })
       )
     );
+
     if (bmpInfo.headerSize !== 40 && bmpInfo.planes !== 1) {
-      // Invalid header.
+      // invalid header.
       return undefined;
     }
+
     let offset = 0;
-    if (bmpInfo.totalColors === 0 && bmpInfo.bpp <= 8) {
-      // 14 + ...
-      offset = 40 + 4 * (1 << bmpInfo.bpp);
+    if (bmpInfo.totalColors === 0 && bmpInfo.bitsPerPixel <= 8) {
+      offset = 40 + 4 * (1 << bmpInfo.bitsPerPixel);
     } else {
-      // 14 + ...
       offset = 40 + 4 * bmpInfo.totalColors;
     }
-    bmpInfo.fileHeader.offset = offset;
+
+    bmpInfo.header.imageOffset = offset;
     dummyBmpHeader.length -= 4;
     dummyBmpHeader.writeUint32(offset);
     const inp = new InputBuffer({
       buffer: imageBuffer,
     });
-    const bmp = new DibDecoder(inp, bmpInfo);
+    const bmp = new DibDecoder(inp, bmpInfo, true);
+
     const image = bmp.decodeFrame(0);
-    if (image === undefined) {
-      return undefined;
-    }
-    if (bmpInfo.bpp >= 32) {
+    if (image === undefined || bmpInfo.bitsPerPixel >= 32) {
       return image;
     }
+
     const padding = 32 - (bmpInfo.width % 32);
-    const rowLength = Math.floor(
+    const rowLength = Math.trunc(
       (padding === 32 ? bmpInfo.width : bmpInfo.width + padding) / 8
     );
+
     // AND bitmask
     for (let y = 0; y < bmpInfo.height; y++) {
       const line = bmpInfo.readBottomUp ? y : image.height - 1 - y;
       const row = inp.readBytes(rowLength);
+      const p = image.getPixel(0, line);
       for (let x = 0; x < bmpInfo.width; ) {
         const b = row.readByte();
         for (let j = 7; j > -1 && x < bmpInfo.width; j--) {
           if ((b & (1 << j)) !== 0) {
-            // Just set the pixel to completely transparent.
-            image.setPixelRgba(x, line, 0, 0, 0, 0);
+            // set the pixel to completely transparent.
+            p.a = 0;
           }
+          p.next();
           x++;
         }
       }
     }
+
     return image;
-  }
-
-  public decodeHdrFrame(frame: number): HdrImage | undefined {
-    const img = this.decodeFrame(frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
-  }
-
-  public decodeAnimation(_: Uint8Array): FrameAnimation | undefined {
-    throw new NotImplementedError();
-  }
-
-  public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
-    const info = this.startDecode(bytes);
-    if (info === undefined) {
-      return undefined;
-    }
-    return this.decodeFrame(frame);
-  }
-
-  public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
-    const img = this.decodeImage(bytes, frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
   }
 
   /**
@@ -161,8 +163,8 @@ export class IcoDecoder implements Decoder {
     }
     let largestFrame = 0;
     let largestSize = 0;
-    for (let i = 0; i < this._icoInfo!.images!.length; i++) {
-      const image = this._icoInfo!.images![i];
+    for (let i = 0; i < info.images.length; i++) {
+      const image = info.images[i];
       const size = image.width * image.height;
       if (size > largestSize) {
         largestSize = size;

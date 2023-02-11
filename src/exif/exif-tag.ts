@@ -1,10 +1,10 @@
 /** @format */
 
-import { ExifValueType } from './exif-value-type';
+import { IfdValueType } from './ifd-value-type';
 
 export interface ExifTagInitOptions {
   name: string;
-  type?: ExifValueType;
+  type?: IfdValueType;
   count?: number;
 }
 
@@ -14,20 +14,20 @@ export class ExifTag {
     return this._name;
   }
 
-  private readonly _type: ExifValueType;
-  public get type(): ExifValueType {
+  private readonly _type: IfdValueType;
+  public get type(): IfdValueType {
     return this._type;
   }
 
-  private _count: number;
-  public get count(): number {
+  private _count?: number;
+  public get count(): number | undefined {
     return this._count;
   }
 
-  constructor(options: ExifTagInitOptions) {
-    this._name = options.name;
-    this._type = options.type ?? ExifValueType.none;
-    this._count = options.count ?? 1;
+  constructor(opt: ExifTagInitOptions) {
+    this._name = opt.name;
+    this._type = opt.type ?? IfdValueType.none;
+    this._count = opt.count;
   }
 }
 
@@ -237,210 +237,233 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x000b,
     new ExifTag({
       name: 'ProcessingSoftware',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x00fe,
     new ExifTag({
       name: 'SubfileType',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x00ff,
     new ExifTag({
       name: 'OldSubfileType',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0100,
     new ExifTag({
       name: 'ImageWidth',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0101,
     new ExifTag({
       name: 'ImageLength',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0102,
     new ExifTag({
       name: 'BitsPerSample',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0103,
     new ExifTag({
       name: 'Compression',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0106,
     new ExifTag({
       name: 'PhotometricInterpretation',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0107,
     new ExifTag({
       name: 'Thresholding',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0108,
     new ExifTag({
       name: 'CellWidth',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0109,
     new ExifTag({
       name: 'CellLength',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x010a,
     new ExifTag({
       name: 'FillOrder',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x010d,
     new ExifTag({
       name: 'DocumentName',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x010e,
     new ExifTag({
       name: 'ImageDescription',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x010f,
     new ExifTag({
       name: 'Make',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x0110,
     new ExifTag({
       name: 'Model',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x0111,
     new ExifTag({
       name: 'StripOffsets',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
     }),
   ],
   [
     0x0112,
     new ExifTag({
       name: 'Orientation',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0115,
     new ExifTag({
       name: 'SamplesPerPixel',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0116,
     new ExifTag({
       name: 'RowsPerStrip',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0117,
     new ExifTag({
       name: 'StripByteCounts',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0118,
     new ExifTag({
       name: 'MinSampleValue',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0119,
     new ExifTag({
       name: 'MaxSampleValue',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x011a,
     new ExifTag({
       name: 'XResolution',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
+      count: 1,
     }),
   ],
   [
     0x011b,
     new ExifTag({
       name: 'YResolution',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
+      count: 1,
     }),
   ],
   [
     0x011c,
     new ExifTag({
       name: 'PlanarConfiguration',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x011d,
     new ExifTag({
       name: 'PageName',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x011e,
     new ExifTag({
       name: 'XPosition',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
+      count: 1,
     }),
   ],
   [
     0x011f,
     new ExifTag({
       name: 'YPosition',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
+      count: 1,
     }),
   ],
   [
     0x0122,
     new ExifTag({
       name: 'GrayResponseUnit',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
@@ -465,14 +488,15 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0128,
     new ExifTag({
       name: 'ResolutionUnit',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0129,
     new ExifTag({
       name: 'PageNumber',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
       count: 2,
     }),
   ],
@@ -486,7 +510,7 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x012d,
     new ExifTag({
       name: 'TransferFunction',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
       count: 768,
     }),
   ],
@@ -494,42 +518,43 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0131,
     new ExifTag({
       name: 'Software',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x0132,
     new ExifTag({
       name: 'DateTime',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x013b,
     new ExifTag({
       name: 'Artist',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x013c,
     new ExifTag({
       name: 'HostComputer',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x013d,
     new ExifTag({
       name: 'Predictor',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x013e,
     new ExifTag({
       name: 'WhitePoint',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
       count: 2,
     }),
   ],
@@ -537,7 +562,7 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x013f,
     new ExifTag({
       name: 'PrimaryChromaticities',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
       count: 6,
     }),
   ],
@@ -545,13 +570,14 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0140,
     new ExifTag({
       name: 'ColorMap',
+      type: IfdValueType.short,
     }),
   ],
   [
     0x0141,
     new ExifTag({
       name: 'HalftoneHints',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
       count: 2,
     }),
   ],
@@ -559,20 +585,23 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0142,
     new ExifTag({
       name: 'TileWidth',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0143,
     new ExifTag({
       name: 'TileLength',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x0144,
     new ExifTag({
       name: 'TileOffsets',
+      type: IfdValueType.long,
     }),
   ],
   [
@@ -627,7 +656,7 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0151,
     new ExifTag({
       name: 'TargetPrinter',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
@@ -640,6 +669,8 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0153,
     new ExifTag({
       name: 'SampleFormat',
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
@@ -688,7 +719,7 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0211,
     new ExifTag({
       name: 'YCbCrCoefficients',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
       count: 3,
     }),
   ],
@@ -696,21 +727,23 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x0212,
     new ExifTag({
       name: 'YCbCrSubSampling',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0213,
     new ExifTag({
       name: 'YCbCrPositioning',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x0214,
     new ExifTag({
       name: 'ReferenceBlackWhite',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
       count: 6,
     }),
   ],
@@ -719,14 +752,16 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x02bc,
     new ExifTag({
       name: 'ApplicationNotes',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x4746,
     new ExifTag({
       name: 'Rating',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
@@ -751,28 +786,30 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x8298,
     new ExifTag({
       name: 'Copyright',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x829a,
     new ExifTag({
       name: 'ExposureTime',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
+      count: 1,
     }),
   ],
   [
     0x829d,
     new ExifTag({
       name: 'FNumber',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
     }),
   ],
   [
     0x83bb,
     new ExifTag({
       name: 'IPTC-NAA',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   // Exif Tags
@@ -792,14 +829,14 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x8822,
     new ExifTag({
       name: 'ExposureProgram',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
     }),
   ],
   [
     0x8824,
     new ExifTag({
       name: 'SpectralSensitivity',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   // GPS tags
@@ -813,7 +850,8 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x8827,
     new ExifTag({
       name: 'ISOSpeed',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
@@ -826,69 +864,73 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x8830,
     new ExifTag({
       name: 'SensitivityType',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x8832,
     new ExifTag({
       name: 'RecommendedExposureIndex',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x8833,
     new ExifTag({
       name: 'ISOSpeed',
-      type: ExifValueType.long,
+      type: IfdValueType.long,
+      count: 1,
     }),
   ],
   [
     0x9000,
     new ExifTag({
       name: 'ExifVersion',
-      type: ExifValueType.undefined,
+      type: IfdValueType.undefined,
     }),
   ],
   [
     0x9003,
     new ExifTag({
       name: 'DateTimeOriginal',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x9004,
     new ExifTag({
       name: 'DateTimeDigitized',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x9010,
     new ExifTag({
       name: 'OffsetTime',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x9011,
     new ExifTag({
       name: 'OffsetTimeOriginal',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x9012,
     new ExifTag({
       name: 'OffsetTimeDigitized',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x9101,
     new ExifTag({
       name: 'ComponentsConfiguration',
+      type: IfdValueType.undefined,
     }),
   ],
   [
@@ -967,12 +1009,14 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0x927c,
     new ExifTag({
       name: 'MakerNote',
+      type: IfdValueType.undefined,
     }),
   ],
   [
     0x9286,
     new ExifTag({
       name: 'UserComment',
+      type: IfdValueType.undefined,
     }),
   ],
   [
@@ -1033,21 +1077,24 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0xa001,
     new ExifTag({
       name: 'ColorSpace',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0xa002,
     new ExifTag({
       name: 'ExifImageWidth',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0xa003,
     new ExifTag({
       name: 'ExifImageLength',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
@@ -1211,14 +1258,14 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0xa430,
     new ExifTag({
       name: 'CameraOwnerName',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0xa431,
     new ExifTag({
       name: 'BodySerialNumber',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
@@ -1231,28 +1278,29 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0xa433,
     new ExifTag({
       name: 'LensMake',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0xa434,
     new ExifTag({
       name: 'LensModel',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0xa435,
     new ExifTag({
       name: 'LensSerialNumber',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0xa500,
     new ExifTag({
       name: 'Gamma',
-      type: ExifValueType.rational,
+      type: IfdValueType.rational,
+      count: 1,
     }),
   ],
   [
@@ -1277,14 +1325,14 @@ export const ExifImageTags = new Map<number, ExifTag>([
     0xfde8,
     new ExifTag({
       name: 'OwnerName',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0xfde9,
     new ExifTag({
       name: 'SerialNumber',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
 ]);
@@ -1294,35 +1342,37 @@ export const ExifInteropTags = new Map<number, ExifTag>([
     0x0001,
     new ExifTag({
       name: 'InteropIndex',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x0002,
     new ExifTag({
       name: 'InteropVersion',
-      type: ExifValueType.undefined,
+      type: IfdValueType.undefined,
     }),
   ],
   [
     0x1000,
     new ExifTag({
       name: 'RelatedImageFileFormat',
-      type: ExifValueType.ascii,
+      type: IfdValueType.ascii,
     }),
   ],
   [
     0x1001,
     new ExifTag({
       name: 'RelatedImageWidth',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
   [
     0x1002,
     new ExifTag({
       name: 'RelatedImageLength',
-      type: ExifValueType.short,
+      type: IfdValueType.short,
+      count: 1,
     }),
   ],
 ]);

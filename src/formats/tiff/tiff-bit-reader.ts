@@ -3,16 +3,16 @@
 import { InputBuffer } from '../../common/input-buffer';
 
 export class TiffBitReader {
-  private static readonly BITMASK = [0, 1, 3, 7, 15, 31, 63, 127, 255];
+  private static readonly _bitMask = [0, 1, 3, 7, 15, 31, 63, 127, 255];
 
-  private bitBuffer = 0;
+  private _bitBuffer = 0;
 
-  private bitPosition = 0;
+  private _bitPosition = 0;
 
-  private input: InputBuffer;
+  private _input: InputBuffer;
 
   constructor(input: InputBuffer) {
-    this.input = input;
+    this._input = input;
   }
 
   /**
@@ -24,34 +24,34 @@ export class TiffBitReader {
       return 0;
     }
 
-    if (this.bitPosition === 0) {
-      this.bitPosition = 8;
-      this.bitBuffer = this.input.readByte();
+    if (this._bitPosition === 0) {
+      this._bitPosition = 8;
+      this._bitBuffer = this._input.readByte();
     }
 
     let value = 0;
 
-    while (nBits > this.bitPosition) {
+    while (nBits > this._bitPosition) {
       value =
-        (value << this.bitPosition) +
-        (this.bitBuffer & TiffBitReader.BITMASK[this.bitPosition]);
-      nBits -= this.bitPosition;
-      this.bitPosition = 8;
-      this.bitBuffer = this.input.readByte();
+        (value << this._bitPosition) +
+        (this._bitBuffer & TiffBitReader._bitMask[this._bitPosition]);
+      nBits -= this._bitPosition;
+      this._bitPosition = 8;
+      this._bitBuffer = this._input.readByte();
     }
 
     if (nBits > 0) {
-      if (this.bitPosition === 0) {
-        this.bitPosition = 8;
-        this.bitBuffer = this.input.readByte();
+      if (this._bitPosition === 0) {
+        this._bitPosition = 8;
+        this._bitBuffer = this._input.readByte();
       }
 
       value =
         (value << nBits) +
-        ((this.bitBuffer >> (this.bitPosition - nBits)) &
-          TiffBitReader.BITMASK[nBits]);
+        ((this._bitBuffer >> (this._bitPosition - nBits)) &
+          TiffBitReader._bitMask[nBits]);
 
-      this.bitPosition -= nBits;
+      this._bitPosition -= nBits;
     }
 
     return value;
@@ -65,6 +65,6 @@ export class TiffBitReader {
    *  Flush the rest of the bits in the buffer so the next read starts at the next byte.
    */
   public flushByte() {
-    return (this.bitPosition = 0);
+    return (this._bitPosition = 0);
   }
 }

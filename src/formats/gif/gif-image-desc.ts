@@ -73,9 +73,7 @@ export class GifImageDesc {
     this._interlaced = (b & 0x40) !== 0;
 
     if ((b & 0x80) !== 0) {
-      this._colorMap = new GifColorMap({
-        numColors: 1 << bitsPerPixel,
-      });
+      this._colorMap = new GifColorMap(1 << bitsPerPixel);
       for (let i = 0; i < this._colorMap.numColors; ++i) {
         this._colorMap.setColor(
           i,

@@ -1,8 +1,10 @@
 /** @format */
 
+import { HuffmanNode } from './huffman-node';
+
 export class JpegHuffman {
-  private readonly _children: Array<unknown> = new Array<unknown>();
-  public get children(): Array<unknown> {
+  private readonly _children: Array<HuffmanNode | undefined> = [];
+  public get children(): Array<HuffmanNode | undefined> {
     return this._children;
   }
 

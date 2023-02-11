@@ -1,91 +1,81 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
 import { InputBuffer } from '../common/input-buffer';
 import { ArrayUtils } from '../common/array-utils';
-import { MemoryImage } from '../common/memory-image';
-import { ImageError } from '../error/image-error';
-import { HdrImage } from '../hdr/hdr-image';
-import { ImageTransform } from '../transform/image-transform';
 import { Decoder } from './decoder';
 import { GifColorMap } from './gif/gif-color-map';
 import { GifImageDesc } from './gif/gif-image-desc';
 import { GifInfo } from './gif/gif-info';
+import { MemoryImage } from '../image/image';
+import { ColorUint8 } from '../color/color-uint8';
 
 /**
  * A decoder for the GIF image format. This supports both single frame and
  * animated GIF files, and transparency.
  */
 export class GifDecoder implements Decoder {
-  private static readonly STAMP_SIZE: number = 6;
+  private static readonly _stampSize: number = 6;
+  private static readonly _gif87Stamp: string = 'GIF87a';
+  private static readonly _gif89Stamp: string = 'GIF89a';
 
-  private static readonly GIF87_STAMP: string = 'GIF87a';
+  private static readonly _imageDescRecordType: number = 0x2c;
+  private static readonly _extensionRecordType: number = 0x21;
+  private static readonly _terminateRecordType: number = 0x3b;
 
-  private static readonly GIF89_STAMP: string = 'GIF89a';
+  private static readonly _graphicControlExt: number = 0xf9;
+  private static readonly _applicationExt: number = 0xff;
 
-  private static readonly IMAGE_DESC_RECORD_TYPE: number = 0x2c;
-
-  private static readonly EXTENSION_RECORD_TYPE: number = 0x21;
-
-  private static readonly TERMINATE_RECORD_TYPE: number = 0x3b;
-
-  private static readonly GRAPHIC_CONTROL_EXT: number = 0xf9;
-
-  private static readonly APPLICATION_EXT: number = 0xff;
-
-  private static readonly LZ_MAX_CODE: number = 4095;
-
-  private static readonly LZ_BITS: number = 12;
+  private static readonly _lzMaxCode: number = 4095;
+  private static readonly _lzBits: number = 12;
 
   // Impossible code, to signal empty.
-  private static readonly NO_SUCH_CODE: number = 4098;
+  private static readonly _noSuchCode: number = 4098;
 
-  private static readonly CODE_MASKS: number[] = [
+  private static readonly _codeMasks: number[] = [
     0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
     0x01ff, 0x03ff, 0x07ff, 0x0fff,
   ];
 
-  private static readonly INTERLACED_OFFSET: number[] = [0, 4, 2, 1];
+  private static readonly _interlacedOffset: number[] = [0, 4, 2, 1];
+  private static readonly _interlacedJump: number[] = [8, 8, 4, 2];
 
-  private static readonly INTERLACED_JUMP: number[] = [8, 8, 4, 2];
+  private _input?: InputBuffer;
 
-  private info?: GifInfo;
+  private _info?: GifInfo;
 
-  private input?: InputBuffer;
+  private _repeat = 0;
 
-  private repeat = 0;
+  private _buffer?: Uint8Array;
 
-  private buffer?: Uint8Array;
+  private _stack!: Uint8Array;
 
-  private stack!: Uint8Array;
+  private _suffix!: Uint8Array;
 
-  private suffix!: Uint8Array;
+  private _prefix?: Uint32Array;
 
-  private prefix?: Uint32Array;
+  private _bitsPerPixel = 0;
 
-  private bitsPerPixel = 0;
+  private _pixelCount?: number;
 
-  private pixelCount?: number;
+  private _currentShiftDWord = 0;
 
-  private currentShiftDWord = 0;
+  private _currentShiftState = 0;
 
-  private currentShiftState = 0;
+  private _stackPtr = 0;
 
-  private stackPtr = 0;
+  private _currentCode?: number;
 
-  private currentCode?: number;
+  private _lastCode = 0;
 
-  private lastCode = 0;
+  private _maxCode1 = 0;
 
-  private maxCode1 = 0;
+  private _runningBits = 0;
 
-  private runningBits = 0;
+  private _runningCode = 0;
 
-  private runningCode = 0;
+  private _eofCode = 0;
 
-  private eofCode = 0;
-
-  private clearCode = 0;
+  private _clearCode = 0;
 
   /**
    * How many frames are available to decode?
@@ -94,7 +84,7 @@ export class GifDecoder implements Decoder {
    * to the constructor, or calling getInfo.
    */
   public get numFrames(): number {
-    return this.info !== undefined ? this.info.numFrames : 0;
+    return this._info !== undefined ? this._info.numFrames : 0;
   }
 
   constructor(bytes?: Uint8Array) {
@@ -107,7 +97,7 @@ export class GifDecoder implements Decoder {
    * Routine to trace the Prefixes linked list until we get a prefix which is
    * not code, but a pixel value (less than ClearCode). Returns that pixel value.
    * If image is defective, we might loop here forever, so we limit the loops to
-   * the maximum possible if image O.k. - LZ_MAX_CODE times.
+   * the maximum possible if image O.k. - lzMaxCode times.
    */
   private static getPrefixChar(
     prefix: Uint32Array,
@@ -116,11 +106,11 @@ export class GifDecoder implements Decoder {
   ): number {
     let c = code;
     let i = 0;
-    while (c > clearCode && i++ <= GifDecoder.LZ_MAX_CODE) {
-      if (c > GifDecoder.LZ_MAX_CODE) {
-        return GifDecoder.NO_SUCH_CODE;
+    while (c > clearCode && i++ <= GifDecoder._lzMaxCode) {
+      if (c > GifDecoder._lzMaxCode) {
+        return GifDecoder._noSuchCode;
       }
-      c = prefix[code];
+      c = prefix[c];
     }
     return c;
   }
@@ -132,52 +122,53 @@ export class GifDecoder implements Decoder {
     line: Uint8Array
   ): void {
     if (colorMap !== undefined) {
-      for (let x = 0, width = line.length; x < width; ++x) {
-        image.setPixel(x, y, colorMap.getColor(line[x]));
+      const width = line.length;
+      for (let x = 0; x < width; ++x) {
+        image.setPixelRgb(x, y, line[x], 0, 0);
       }
     }
   }
 
   private getInfo(): boolean {
-    if (this.input === undefined) {
+    if (this._input === undefined) {
       return false;
     }
 
-    const tag = this.input.readString(GifDecoder.STAMP_SIZE);
-    if (tag !== GifDecoder.GIF87_STAMP && tag !== GifDecoder.GIF89_STAMP) {
+    const tag = this._input.readString(GifDecoder._stampSize);
+    if (tag !== GifDecoder._gif87Stamp && tag !== GifDecoder._gif89Stamp) {
       return false;
     }
 
-    const width = this.input.readUint16();
-    const height = this.input.readUint16();
+    const width = this._input.readUint16();
+    const height = this._input.readUint16();
 
-    const b = this.input.readByte();
+    const b = this._input.readByte();
     const colorResolution = (((b & 0x70) + 1) >> 4) + 1;
 
     const bitsPerPixel = (b & 0x07) + 1;
-    const backgroundColor = this.input.readByte();
+    const backgroundColor = new ColorUint8(
+      new Uint8Array([this._input.readByte()])
+    );
 
-    this.input.skip(1);
+    this._input.skip(1);
 
     let globalColorMap: GifColorMap | undefined = undefined;
     // Is there a global color map?
     if ((b & 0x80) !== 0) {
-      globalColorMap = new GifColorMap({
-        numColors: 1 << bitsPerPixel,
-      });
+      globalColorMap = new GifColorMap(1 << bitsPerPixel);
 
       // Get the global color map:
       for (let i = 0; i < globalColorMap.numColors; ++i) {
-        const r = this.input.readByte();
-        const g = this.input.readByte();
-        const b = this.input.readByte();
+        const r = this._input.readByte();
+        const g = this._input.readByte();
+        const b = this._input.readByte();
         globalColorMap.setColor(i, r, g, b);
       }
     }
 
-    const isGif89 = tag === GifDecoder.GIF89_STAMP;
+    const isGif89 = tag === GifDecoder._gif89Stamp;
 
-    this.info = new GifInfo({
+    this._info = new GifInfo({
       width: width,
       height: height,
       colorResolution: colorResolution,
@@ -190,11 +181,11 @@ export class GifDecoder implements Decoder {
   }
 
   private skipImage(): GifImageDesc | undefined {
-    if (this.input === undefined || this.input.isEOS) {
+    if (this._input === undefined || this._input.isEOS) {
       return undefined;
     }
-    const gifImage = new GifImageDesc(this.input);
-    this.input.skip(1);
+    const gifImage = new GifImageDesc(this._input);
+    this._input.skip(1);
     this.skipRemainder();
     return gifImage;
   }
@@ -205,16 +196,16 @@ export class GifDecoder implements Decoder {
    * The block should NOT be freed by the user (not dynamically allocated).
    */
   private skipRemainder(): boolean {
-    if (this.input === undefined || this.input.isEOS) {
+    if (this._input === undefined || this._input.isEOS) {
       return true;
     }
-    let b = this.input.readByte();
-    while (b !== 0 && !this.input.isEOS) {
-      this.input.skip(b);
-      if (this.input.isEOS) {
+    let b = this._input.readByte();
+    while (b !== 0 && !this._input.isEOS) {
+      this._input.skip(b);
+      if (this._input.isEOS) {
         return true;
       }
-      b = this.input.readByte();
+      b = this._input.readByte();
     }
     return true;
   }
@@ -226,7 +217,7 @@ export class GifDecoder implements Decoder {
       const b1 = input.readByte();
       const b2 = input.readByte();
       if (b1 === 0x03 && b2 === 0x01) {
-        this.repeat = input.readUint16();
+        this._repeat = input.readUint16();
       }
     } else {
       this.skipRemainder();
@@ -246,7 +237,7 @@ export class GifDecoder implements Decoder {
     const transparentFlag = b & 0x1;
 
     const recordType = input.peekBytes(1).getByte(0);
-    if (recordType === GifDecoder.IMAGE_DESC_RECORD_TYPE) {
+    if (recordType === GifDecoder._imageDescRecordType) {
       input.skip(1);
       const gifImage = this.skipImage();
       if (gifImage === undefined) {
@@ -259,67 +250,315 @@ export class GifDecoder implements Decoder {
       if (transparentFlag !== 0) {
         if (
           gifImage.colorMap === undefined &&
-          this.info!.globalColorMap !== undefined
+          this._info!.globalColorMap !== undefined
         ) {
-          gifImage.colorMap = GifColorMap.from(this.info!.globalColorMap);
+          gifImage.colorMap = GifColorMap.from(this._info!.globalColorMap);
         }
         if (gifImage.colorMap !== undefined) {
           gifImage.colorMap.transparent = transparent;
         }
       }
 
-      this.info!.frames.push(gifImage);
+      this._info!.frames.push(gifImage);
     }
   }
 
-  private decodeFrameImage(gifImage: GifImageDesc): MemoryImage | undefined {
-    if (this.buffer === undefined) {
+  private getLine(line: Uint8Array): boolean {
+    this._pixelCount = this._pixelCount! - line.length;
+
+    if (!this.decompressLine(line)) {
+      return false;
+    }
+
+    // Flush any remainder blocks.
+    if (this._pixelCount === 0) {
+      this.skipRemainder();
+    }
+
+    return true;
+  }
+
+  /**
+   * The LZ decompression routine:
+   * This version decompress the given gif file into Line of length LineLen.
+   * This routine can be called few times (one per scan line, for example), in
+   * order the complete the whole image.
+   */
+  private decompressLine(line: Uint8Array): boolean {
+    if (this._stackPtr > GifDecoder._lzMaxCode) {
+      return false;
+    }
+
+    const lineLen = line.length;
+    let i = 0;
+
+    if (this._stackPtr !== 0) {
+      // Let pop the stack off before continuing to read the gif file:
+      while (this._stackPtr !== 0 && i < lineLen) {
+        line[i++] = this._stack[--this._stackPtr];
+      }
+    }
+
+    let currentPrefix: number | undefined = undefined;
+
+    // Decode LineLen items.
+    while (i < lineLen) {
+      this._currentCode = this.decompressInput();
+      if (this._currentCode === undefined) {
+        return false;
+      }
+
+      if (this._currentCode === this._eofCode) {
+        // Note however that usually we will not be here as we will stop
+        // decoding as soon as we got all the pixel, or EOF code will
+        // not be read at all, and DGifGetLine/Pixel clean everything.
+        return false;
+      }
+
+      if (this._currentCode === this._clearCode) {
+        // We need to start over again:
+        for (let j = 0; j <= GifDecoder._lzMaxCode; j++) {
+          this._prefix![j] = GifDecoder._noSuchCode;
+        }
+
+        this._runningCode = this._eofCode + 1;
+        this._runningBits = this._bitsPerPixel + 1;
+        this._maxCode1 = 1 << this._runningBits;
+        this._lastCode = GifDecoder._noSuchCode;
+      } else {
+        // Its regular code - if in pixel range simply add it to output
+        // stream, otherwise trace to codes linked list until the prefix
+        // is in pixel range:
+        if (this._currentCode < this._clearCode) {
+          // This is simple - its pixel scalar, so add it to output:
+          line[i++] = this._currentCode;
+        } else {
+          // Its a code to needed to be traced: trace the linked list
+          // until the prefix is a pixel, while pushing the suffix
+          // pixels on our stack. If we done, pop the stack in reverse
+          // (thats what stack is good for!) order to output. */
+          if (this._prefix![this._currentCode] === GifDecoder._noSuchCode) {
+            // Only allowed if CrntCode is exactly the running code:
+            // In that case CrntCode = XXXCode, CrntCode or the
+            // prefix code is last code and the suffix char is
+            // exactly the prefix of last code!
+            if (this._currentCode === this._runningCode - 2) {
+              currentPrefix = this._lastCode;
+              const prefixChar = GifDecoder.getPrefixChar(
+                this._prefix!,
+                this._lastCode,
+                this._clearCode
+              );
+              this._stack[this._stackPtr++] = prefixChar;
+              this._suffix[this._runningCode - 2] = prefixChar;
+            } else {
+              return false;
+            }
+          } else {
+            currentPrefix = this._currentCode;
+          }
+
+          // Now (if image is O.K.) we should not get an noSuchCode
+          // During the trace. As we might loop forever, in case of
+          // defective image, we count the number of loops we trace
+          // and stop if we got lzMaxCode. obviously we can not
+          // loop more than that.
+          let j = 0;
+          while (
+            j++ <= GifDecoder._lzMaxCode &&
+            currentPrefix > this._clearCode &&
+            currentPrefix <= GifDecoder._lzMaxCode
+          ) {
+            this._stack[this._stackPtr++] = this._suffix[currentPrefix];
+            currentPrefix = this._prefix![currentPrefix];
+          }
+
+          if (
+            j >= GifDecoder._lzMaxCode ||
+            currentPrefix > GifDecoder._lzMaxCode
+          ) {
+            return false;
+          }
+
+          // Push the last character on stack:
+          this._stack[this._stackPtr++] = currentPrefix;
+
+          // Now lets pop all the stack into output:
+          while (this._stackPtr !== 0 && i < lineLen) {
+            line[i++] = this._stack[--this._stackPtr];
+          }
+        }
+
+        if (
+          this._lastCode !== GifDecoder._noSuchCode &&
+          this._prefix![this._runningCode - 2] === GifDecoder._noSuchCode
+        ) {
+          this._prefix![this._runningCode - 2] = this._lastCode;
+
+          if (this._currentCode === this._runningCode - 2) {
+            // Only allowed if CrntCode is exactly the running code:
+            // In that case CrntCode = XXXCode, CrntCode or the
+            // prefix code is last code and the suffix char is
+            // exactly the prefix of last code!
+            this._suffix[this._runningCode - 2] = GifDecoder.getPrefixChar(
+              this._prefix!,
+              this._lastCode,
+              this._clearCode
+            );
+          } else {
+            this._suffix[this._runningCode - 2] = GifDecoder.getPrefixChar(
+              this._prefix!,
+              this._currentCode,
+              this._clearCode
+            );
+          }
+        }
+
+        this._lastCode = this._currentCode;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * The LZ decompression input routine:
+   * This routine is responsible for the decompression of the bit stream from
+   * 8 bits (bytes) packets, into the real codes.
+   */
+  private decompressInput(): number | undefined {
+    // The image can't contain more than LZ_BITS per code.
+    if (this._runningBits > GifDecoder._lzBits) {
+      return undefined;
+    }
+
+    while (this._currentShiftState < this._runningBits) {
+      // Needs to get more bytes from input stream for next code:
+      const nextByte = this.bufferedInput()!;
+
+      this._currentShiftDWord |= nextByte << this._currentShiftState;
+      this._currentShiftState += 8;
+    }
+
+    const code: number =
+      this._currentShiftDWord & GifDecoder._codeMasks[this._runningBits];
+
+    this._currentShiftDWord >>= this._runningBits;
+    this._currentShiftState -= this._runningBits;
+
+    // If code cannot fit into RunningBits bits, must raise its size. Note
+    // however that codes above 4095 are used for special signaling.
+    // If we're using lzBits bits already and we're at the max code, just
+    // keep using the table as it is, don't increment Private->RunningCode.
+    if (
+      this._runningCode < GifDecoder._lzMaxCode + 2 &&
+      ++this._runningCode > this._maxCode1 &&
+      this._runningBits < GifDecoder._lzBits
+    ) {
+      this._maxCode1 <<= 1;
+      this._runningBits++;
+    }
+
+    return code;
+  }
+
+  /**
+   * This routines read one gif data block at a time and buffers it internally
+   * so that the decompression routine could access it.
+   * The routine returns the next byte from its internal buffer (or read next
+   * block in if buffer empty) and returns undefined on failure.
+   */
+  private bufferedInput(): number | undefined {
+    let nextByte = 0;
+    if (this._buffer![0] === 0) {
+      // Needs to read the next buffer - this one is empty:
+      this._buffer![0] = this._input!.readByte();
+
+      // There shouldn't be any empty data blocks here as the LZW spec
+      // says the LZW termination code should come first. Therefore we
+      // shouldn't be inside this routine at that point.
+      if (this._buffer![0] === 0) {
+        return undefined;
+      }
+
+      const from = this._input!.readBytes(this._buffer![0]).toUint8Array();
+
+      ArrayUtils.copyRange(from, 0, this._buffer![0], this._buffer!, 1);
+
+      nextByte = this._buffer![1];
+      // We use now the second place as last char read!
+      this._buffer![1] = 2;
+      this._buffer![0]--;
+    } else {
+      nextByte = this._buffer![this._buffer![1]++];
+      this._buffer![0]--;
+    }
+
+    return nextByte;
+  }
+
+  private initDecode(): void {
+    this._buffer = new Uint8Array(256);
+    this._stack = new Uint8Array(GifDecoder._lzMaxCode);
+    this._suffix = new Uint8Array(GifDecoder._lzMaxCode + 1);
+    this._prefix = new Uint32Array(GifDecoder._lzMaxCode + 1);
+  }
+
+  private decodeImage(gifImage: GifImageDesc): MemoryImage | undefined {
+    if (this._input === undefined || this._info === undefined) {
+      return undefined;
+    }
+
+    if (this._buffer === undefined) {
       this.initDecode();
     }
 
-    this.bitsPerPixel = this.input!.readByte();
-    this.clearCode = 1 << this.bitsPerPixel;
-    this.eofCode = this.clearCode + 1;
-    this.runningCode = this.eofCode + 1;
-    this.runningBits = this.bitsPerPixel + 1;
-    this.maxCode1 = 1 << this.runningBits;
-    this.stackPtr = 0;
-    this.lastCode = GifDecoder.NO_SUCH_CODE;
-    this.currentShiftState = 0;
-    this.currentShiftDWord = 0;
-    this.buffer![0] = 0;
-    this.prefix!.fill(GifDecoder.NO_SUCH_CODE, 0, this.prefix!.length);
+    this._bitsPerPixel = this._input.readByte();
+    this._clearCode = 1 << this._bitsPerPixel;
+    this._eofCode = this._clearCode + 1;
+    this._runningCode = this._eofCode + 1;
+    this._runningBits = this._bitsPerPixel + 1;
+    this._maxCode1 = 1 << this._runningBits;
+    this._stackPtr = 0;
+    this._lastCode = GifDecoder._noSuchCode;
+    this._currentShiftState = 0;
+    this._currentShiftDWord = 0;
+    this._buffer![0] = 0;
+    this._prefix!.fill(GifDecoder._noSuchCode, 0, this._prefix!.length);
 
     const width = gifImage.width;
     const height = gifImage.height;
 
     if (
-      gifImage.x + width > this.info!.width ||
-      gifImage.y + height > this.info!.height
+      gifImage.x + width > this._info.width ||
+      gifImage.y + height > this._info.height
     ) {
       return undefined;
     }
 
     const colorMap =
       gifImage.colorMap !== undefined
-        ? gifImage.colorMap
-        : this.info!.globalColorMap;
+        ? gifImage.colorMap!
+        : this._info.globalColorMap!;
 
-    this.pixelCount = width * height;
+    this._pixelCount = width * height;
 
     const image = new MemoryImage({
       width: width,
       height: height,
+      numChannels: 1,
+      palette: colorMap.getPalette(),
     });
+
     const line = new Uint8Array(width);
 
     if (gifImage.interlaced) {
       const row = gifImage.y;
       for (let i = 0, j = 0; i < 4; ++i) {
         for (
-          let y = row + GifDecoder.INTERLACED_OFFSET[i];
+          let y = row + GifDecoder._interlacedOffset[i];
           y < row + height;
-          y += GifDecoder.INTERLACED_JUMP[i], ++j
+          y += GifDecoder._interlacedJump[i], ++j
         ) {
           if (!this.getLine(line)) {
             return image;
@@ -335,254 +574,15 @@ export class GifDecoder implements Decoder {
         GifDecoder.updateImage(image, y, colorMap, line);
       }
     }
+
     return image;
-  }
-
-  private getLine(line: Uint8Array): boolean {
-    this.pixelCount = this.pixelCount! - line.length;
-
-    if (!this.decompressLine(line)) {
-      return false;
-    }
-
-    // Flush any remainder blocks.
-    if (this.pixelCount === 0) {
-      this.skipRemainder();
-    }
-
-    return true;
-  }
-
-  /**
-   * The LZ decompression routine:
-   * This version decompress the given gif file into Line of length LineLen.
-   * This routine can be called few times (one per scan line, for example), in
-   * order the complete the whole image.
-   */
-  private decompressLine(line: Uint8Array): boolean {
-    if (this.stackPtr > GifDecoder.LZ_MAX_CODE) {
-      return false;
-    }
-
-    const lineLen = line.length;
-    let i = 0;
-
-    if (this.stackPtr !== 0) {
-      // Let pop the stack off before continuing to read the gif file:
-      while (this.stackPtr !== 0 && i < lineLen) {
-        line[i++] = this.stack[--this.stackPtr];
-      }
-    }
-
-    let currentPrefix: number | undefined = undefined;
-
-    // Decode LineLen items.
-    while (i < lineLen) {
-      this.currentCode = this.decompressInput();
-      if (this.currentCode === undefined) {
-        return false;
-      }
-
-      if (this.currentCode === this.eofCode) {
-        // Note however that usually we will not be here as we will stop
-        // decoding as soon as we got all the pixel, or EOF code will
-        // not be read at all, and DGifGetLine/Pixel clean everything.
-        return false;
-      }
-
-      if (this.currentCode === this.clearCode) {
-        // We need to start over again:
-        for (let j = 0; j <= GifDecoder.LZ_MAX_CODE; j++) {
-          this.prefix![j] = GifDecoder.NO_SUCH_CODE;
-        }
-
-        this.runningCode = this.eofCode + 1;
-        this.runningBits = this.bitsPerPixel + 1;
-        this.maxCode1 = 1 << this.runningBits;
-        this.lastCode = GifDecoder.NO_SUCH_CODE;
-      } else {
-        // Its regular code - if in pixel range simply add it to output
-        // stream, otherwise trace to codes linked list until the prefix
-        // is in pixel range:
-        if (this.currentCode < this.clearCode) {
-          // This is simple - its pixel scalar, so add it to output:
-          line[i++] = this.currentCode;
-        } else {
-          // Its a code to needed to be traced: trace the linked list
-          // until the prefix is a pixel, while pushing the suffix
-          // pixels on our stack. If we done, pop the stack in reverse
-          // (thats what stack is good for!) order to output. */
-          if (this.prefix![this.currentCode] === GifDecoder.NO_SUCH_CODE) {
-            // Only allowed if CrntCode is exactly the running code:
-            // In that case CrntCode = XXXCode, CrntCode or the
-            // prefix code is last code and the suffix char is
-            // exactly the prefix of last code!
-            if (this.currentCode === this.runningCode - 2) {
-              currentPrefix = this.lastCode;
-              const prefixChar = GifDecoder.getPrefixChar(
-                this.prefix!,
-                this.lastCode,
-                this.clearCode
-              );
-              this.stack[this.stackPtr++] = prefixChar;
-              this.suffix[this.runningCode - 2] = prefixChar;
-            } else {
-              return false;
-            }
-          } else {
-            currentPrefix = this.currentCode;
-          }
-
-          // Now (if image is O.K.) we should not get an NO_SUCH_CODE
-          // During the trace. As we might loop forever, in case of
-          // defective image, we count the number of loops we trace
-          // and stop if we got LZ_MAX_CODE. obviously we can not
-          // loop more than that.
-          let j = 0;
-          while (
-            j++ <= GifDecoder.LZ_MAX_CODE &&
-            currentPrefix > this.clearCode &&
-            currentPrefix <= GifDecoder.LZ_MAX_CODE
-          ) {
-            this.stack[this.stackPtr++] = this.suffix[currentPrefix];
-            currentPrefix = this.prefix![currentPrefix];
-          }
-
-          if (
-            j >= GifDecoder.LZ_MAX_CODE ||
-            currentPrefix > GifDecoder.LZ_MAX_CODE
-          ) {
-            return false;
-          }
-
-          // Push the last character on stack:
-          this.stack[this.stackPtr++] = currentPrefix;
-
-          // Now lets pop all the stack into output:
-          while (this.stackPtr !== 0 && i < lineLen) {
-            line[i++] = this.stack[--this.stackPtr];
-          }
-        }
-
-        if (
-          this.lastCode !== GifDecoder.NO_SUCH_CODE &&
-          this.prefix![this.runningCode - 2] === GifDecoder.NO_SUCH_CODE
-        ) {
-          this.prefix![this.runningCode - 2] = this.lastCode;
-
-          if (this.currentCode === this.runningCode - 2) {
-            // Only allowed if CrntCode is exactly the running code:
-            // In that case CrntCode = XXXCode, CrntCode or the
-            // prefix code is last code and the suffix char is
-            // exactly the prefix of last code!
-            this.suffix[this.runningCode - 2] = GifDecoder.getPrefixChar(
-              this.prefix!,
-              this.lastCode,
-              this.clearCode
-            );
-          } else {
-            this.suffix[this.runningCode - 2] = GifDecoder.getPrefixChar(
-              this.prefix!,
-              this.currentCode,
-              this.clearCode
-            );
-          }
-        }
-
-        this.lastCode = this.currentCode;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * The LZ decompression input routine:
-   * This routine is responsible for the decompression of the bit stream from
-   * 8 bits (bytes) packets, into the real codes.
-   */
-  private decompressInput(): number | undefined {
-    // The image can't contain more than LZ_BITS per code.
-    if (this.runningBits > GifDecoder.LZ_BITS) {
-      return undefined;
-    }
-
-    while (this.currentShiftState < this.runningBits) {
-      // Needs to get more bytes from input stream for next code:
-      const nextByte = this.bufferedInput()!;
-
-      this.currentShiftDWord |= nextByte << this.currentShiftState;
-      this.currentShiftState += 8;
-    }
-
-    const code: number =
-      this.currentShiftDWord & GifDecoder.CODE_MASKS[this.runningBits];
-
-    this.currentShiftDWord >>= this.runningBits;
-    this.currentShiftState -= this.runningBits;
-
-    // If code cannot fit into RunningBits bits, must raise its size. Note
-    // however that codes above 4095 are used for special signaling.
-    // If we're using LZ_BITS bits already and we're at the max code, just
-    // keep using the table as it is, don't increment Private->RunningCode.
-    if (
-      this.runningCode < GifDecoder.LZ_MAX_CODE + 2 &&
-      ++this.runningCode > this.maxCode1 &&
-      this.runningBits < GifDecoder.LZ_BITS
-    ) {
-      this.maxCode1 <<= 1;
-      this.runningBits++;
-    }
-
-    return code;
-  }
-
-  /**
-   * This routines read one gif data block at a time and buffers it internally
-   * so that the decompression routine could access it.
-   * The routine returns the next byte from its internal buffer (or read next
-   * block in if buffer empty) and returns undefined on failure.
-   */
-  private bufferedInput(): number | undefined {
-    let nextByte = 0;
-    if (this.buffer![0] === 0) {
-      // Needs to read the next buffer - this one is empty:
-      this.buffer![0] = this.input!.readByte();
-
-      // There shouldn't be any empty data blocks here as the LZW spec
-      // says the LZW termination code should come first. Therefore we
-      // shouldn't be inside this routine at that point.
-      if (this.buffer![0] === 0) {
-        return undefined;
-      }
-
-      const from = this.input!.readBytes(this.buffer![0]).toUint8Array();
-      ArrayUtils.setRange(this.buffer!, 1, 1 + this.buffer![0], from);
-
-      nextByte = this.buffer![1];
-      // We use now the second place as last char read!
-      this.buffer![1] = 2;
-      this.buffer![0]--;
-    } else {
-      nextByte = this.buffer![this.buffer![1]++];
-      this.buffer![0]--;
-    }
-
-    return nextByte;
-  }
-
-  private initDecode(): void {
-    this.buffer = new Uint8Array(256);
-    this.stack = new Uint8Array(GifDecoder.LZ_MAX_CODE);
-    this.suffix = new Uint8Array(GifDecoder.LZ_MAX_CODE + 1);
-    this.prefix = new Uint32Array(GifDecoder.LZ_MAX_CODE + 1);
   }
 
   /**
    * Is the given file a valid Gif image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    this.input = new InputBuffer({
+    this._input = new InputBuffer({
       buffer: bytes,
     });
     return this.getInfo();
@@ -593,7 +593,7 @@ export class GifDecoder implements Decoder {
    * If the file is not a valid Gif image, undefined is returned.
    */
   public startDecode(bytes: Uint8Array): GifInfo | undefined {
-    this.input = new InputBuffer({
+    this._input = new InputBuffer({
       buffer: bytes,
     });
 
@@ -602,102 +602,67 @@ export class GifDecoder implements Decoder {
     }
 
     try {
-      while (!this.input.isEOS) {
-        const recordType = this.input.readByte();
+      while (!this._input.isEOS) {
+        const recordType = this._input.readByte();
         switch (recordType) {
-          case GifDecoder.IMAGE_DESC_RECORD_TYPE: {
+          case GifDecoder._imageDescRecordType: {
             const gifImage = this.skipImage();
             if (gifImage === undefined) {
-              return this.info;
+              return this._info;
             }
-            this.info!.frames.push(gifImage);
+            this._info!.frames.push(gifImage);
             break;
           }
-          case GifDecoder.EXTENSION_RECORD_TYPE: {
-            const extCode = this.input.readByte();
-            if (extCode === GifDecoder.APPLICATION_EXT) {
-              this.readApplicationExt(this.input);
-            } else if (extCode === GifDecoder.GRAPHIC_CONTROL_EXT) {
-              this.readGraphicsControlExt(this.input);
+          case GifDecoder._extensionRecordType: {
+            const extCode = this._input.readByte();
+            if (extCode === GifDecoder._applicationExt) {
+              this.readApplicationExt(this._input);
+            } else if (extCode === GifDecoder._graphicControlExt) {
+              this.readGraphicsControlExt(this._input);
             } else {
               this.skipRemainder();
             }
             break;
           }
-          case GifDecoder.TERMINATE_RECORD_TYPE: {
-            // this._numFrames = info.numFrames;
-            return this.info;
+          case GifDecoder._terminateRecordType: {
+            return this._info;
           }
           default:
             break;
         }
       }
     } catch (error) {
-      const strError = JSON.stringify(error);
-      throw new ImageError(strError);
+      // ignore
     }
 
-    // this._numFrames = info.numFrames;
-    return this.info;
+    return this._info;
   }
 
-  public decodeFrame(frame: number): MemoryImage | undefined {
-    if (this.input === undefined || this.info === undefined) {
+  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+    if (this.startDecode(bytes) === undefined || this._info === undefined) {
       return undefined;
     }
 
-    if (frame >= this.info.frames.length || frame < 0) {
-      return undefined;
+    if (this._info.numFrames === 1) {
+      return this.decodeFrame(frame ?? 0);
     }
 
-    // this._frame = frame;
-    const gifImage = this.info.frames[frame];
-    this.input.offset = gifImage.inputPosition;
-
-    return this.decodeFrameImage(this.info.frames[frame]);
-  }
-
-  public decodeHdrFrame(frame: number): HdrImage | undefined {
-    const img = this.decodeFrame(frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
-  }
-
-  /**
-   * Decode all of the frames of an animated gif. For single image gifs,
-   * this will return an animation with a single frame.
-   */
-  public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
-    if (this.startDecode(bytes) === undefined) {
-      return undefined;
-    }
-
-    if (this.input === undefined || this.info === undefined) {
-      return undefined;
-    }
-
-    const animation = new FrameAnimation({
-      width: this.info.width,
-      height: this.info.height,
-      loopCount: this.repeat,
-    });
-
+    let firstImage: MemoryImage | undefined = undefined;
     let lastImage: MemoryImage | undefined = undefined;
-
-    for (let i = 0; i < this.info.numFrames; ++i) {
-      const frame = this.info.frames[i];
+    for (let i = 0; i < this._info.numFrames; ++i) {
+      const frame = this._info.frames[i];
       const image = this.decodeFrame(i);
       if (image === undefined) {
         return undefined;
       }
 
-      if (lastImage === undefined) {
+      // Convert to MS
+      image.frameDuration = frame.duration * 10;
+
+      if (firstImage === undefined || lastImage === undefined) {
+        firstImage = image;
         lastImage = image;
-        // Convert to MS
-        lastImage.duration = frame.duration * 10;
-        animation.addFrame(lastImage);
+        image.loopCount = this._repeat;
         continue;
       }
 
@@ -709,56 +674,54 @@ export class GifDecoder implements Decoder {
         frame.clearFrame
       ) {
         lastImage = image;
-        // Convert to MS
-        lastImage.duration = frame.duration * 10;
-        animation.addFrame(lastImage);
+        firstImage.addFrame(lastImage);
         continue;
       }
 
       if (frame.clearFrame) {
-        lastImage = new MemoryImage({
-          width: lastImage.width,
-          height: lastImage.height,
-        });
         const colorMap =
           frame.colorMap !== undefined
             ? frame.colorMap
-            : this.info!.globalColorMap;
-        lastImage.fill(colorMap!.getColor(this.info!.backgroundColor));
+            : this._info.globalColorMap!;
+
+        lastImage = new MemoryImage({
+          width: lastImage.width,
+          height: lastImage.height,
+          numChannels: 1,
+          palette: colorMap.getPalette(),
+        });
+        lastImage.clear(colorMap.getColor(this._info.backgroundColor!.r));
       } else {
         lastImage = MemoryImage.from(lastImage);
       }
 
-      ImageTransform.copyInto({
-        dst: lastImage,
-        src: image,
-        dstX: frame.x,
-        dstY: frame.y,
-      });
+      lastImage.frameDuration = image.frameDuration;
 
-      // Convert 1/100 sec to ms.
-      lastImage.duration = frame.duration * 10;
+      for (const p of image) {
+        if (p.a !== 0) {
+          lastImage.setPixel(p.x + frame.x, p.y + frame.y, p);
+        }
+      }
 
-      animation.addFrame(lastImage);
+      firstImage.addFrame(lastImage);
     }
 
-    return animation;
+    return firstImage;
   }
 
-  public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
-    if (this.startDecode(bytes) === undefined) {
+  public decodeFrame(frame: number): MemoryImage | undefined {
+    if (this._input === undefined || this._info === undefined) {
       return undefined;
     }
-    // this._frame = 0;
-    // this._numFrames = 1;
-    return this.decodeFrame(frame);
-  }
 
-  public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
-    const img = this.decodeImage(bytes, frame);
-    if (img === undefined) {
+    if (frame >= this._info.frames.length || frame < 0) {
       return undefined;
     }
-    return HdrImage.fromImage(img);
+
+    // this._frame = frame;
+    const gifImage = this._info.frames[frame];
+    this._input.offset = gifImage.inputPosition;
+
+    return this.decodeImage(this._info.frames[frame]);
   }
 }

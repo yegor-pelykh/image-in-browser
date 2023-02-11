@@ -1,10 +1,7 @@
 /** @format */
 
-import { Color } from '../common/color';
-import { FrameAnimation } from '../common/frame-animation';
-import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
-import { RgbChannelSet } from '../common/rgb-channel-set';
+import { MemoryImage } from '../image/image';
 import { Encoder } from './encoder';
 
 /**
@@ -16,7 +13,7 @@ export class TgaEncoder implements Encoder {
     return this._supportsAnimation;
   }
 
-  public encodeImage(image: MemoryImage): Uint8Array {
+  public encode(image: MemoryImage, _singleFrame = false): Uint8Array {
     const out = new OutputBuffer({
       bigEndian: true,
     });
@@ -29,26 +26,32 @@ export class TgaEncoder implements Encoder {
     header[13] = (image.width >> 8) & 0xff;
     header[14] = image.height & 0xff;
     header[15] = (image.height >> 8) & 0xff;
-    header[16] = image.rgbChannelSet === RgbChannelSet.rgb ? 24 : 32;
+    const nc = image.palette?.numChannels ?? image.numChannels;
+    header[16] = nc === 3 ? 24 : 32;
 
     out.writeBytes(header);
 
-    for (let y = image.height - 1; y >= 0; --y) {
-      for (let x = 0; x < image.width; ++x) {
-        const c = image.getPixel(x, y);
-        out.writeByte(Color.getBlue(c));
-        out.writeByte(Color.getGreen(c));
-        out.writeByte(Color.getRed(c));
-        if (image.rgbChannelSet === RgbChannelSet.rgba) {
-          out.writeByte(Color.getAlpha(c));
+    if (nc === 4) {
+      for (let y = image.height - 1; y >= 0; --y) {
+        for (let x = 0; x < image.width; ++x) {
+          const c = image.getPixel(x, y);
+          out.writeByte(Math.trunc(c.b));
+          out.writeByte(Math.trunc(c.g));
+          out.writeByte(Math.trunc(c.r));
+          out.writeByte(Math.trunc(c.a));
+        }
+      }
+    } else {
+      for (let y = image.height - 1; y >= 0; --y) {
+        for (let x = 0; x < image.width; ++x) {
+          const c = image.getPixel(x, y);
+          out.writeByte(Math.trunc(c.b));
+          out.writeByte(Math.trunc(c.g));
+          out.writeByte(Math.trunc(c.r));
         }
       }
     }
 
     return out.getBytes();
-  }
-
-  public encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined {
-    return undefined;
   }
 }

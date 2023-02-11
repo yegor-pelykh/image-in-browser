@@ -1,9 +1,8 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
-import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
-import { ImageError } from '../error/image-error';
+import { LibError } from '../error/lib-error';
+import { MemoryImage } from '../image/image';
 import { Encoder } from './encoder';
 import { PngEncoder } from './png-encoder';
 
@@ -13,7 +12,7 @@ export abstract class WinEncoder implements Encoder {
     return this._type;
   }
 
-  private _supportsAnimation = false;
+  private _supportsAnimation = true;
   get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
@@ -26,32 +25,39 @@ export abstract class WinEncoder implements Encoder {
     return 0;
   }
 
+  public encode(image: MemoryImage, singleFrame = false): Uint8Array {
+    if (image.hasAnimation && !singleFrame) {
+      return this.encodeImages(image.frames);
+    } else {
+      return this.encodeImages([image]);
+    }
+  }
+
   public encodeImages(images: MemoryImage[]): Uint8Array {
     const count = images.length;
 
     const out = new OutputBuffer();
 
-    // Header
-    // Reserved
+    // header
     out.writeUint16(0);
-    // Type: ICO => 1; CUR => 2
-    out.writeUint16(this.type);
+    // type: ICO => 1; CUR => 2
+    out.writeUint16(this._type);
     out.writeUint16(count);
 
-    // File header with image directory byte size
+    // file header with image directory byte size
     let offset = 6 + count * 16;
 
-    const imageDatas: Uint8Array[] = [];
+    const imageDataList: Uint8Array[] = [];
 
     let i = 0;
     for (const img of images) {
       if (img.width > 256 || img.height > 256) {
-        throw new ImageError('ICO and CUR support only sizes until 256');
+        throw new LibError('ICO and CUR support only sizes until 256');
       }
 
-      // Image width in pixels
+      // image width in pixels
       out.writeByte(img.width);
-      // Image height in pixels
+      // image height in pixels
       out.writeByte(img.height);
       // Color count, should be 0 if more than 256 colors
       out.writeByte(0);
@@ -61,32 +67,23 @@ export abstract class WinEncoder implements Encoder {
       out.writeUint16(this.bitsPerPixelOrYHotSpot(i));
 
       // Use png instead of bmp encoded data, it's supported since Windows Vista
-      const data = new PngEncoder().encodeImage(img);
+      const data: Uint8Array = new PngEncoder().encode(img);
 
-      // Size of the image's data in bytes
+      // size of the image's data in bytes
       out.writeUint32(data.length);
-
-      // Offset of data from the beginning of the file
+      // offset of data from the beginning of the file
       out.writeUint32(offset);
 
       // add the size of bytes to get the new begin of the next image
       offset += data.length;
       i++;
-      imageDatas.push(data);
+      imageDataList.push(data);
     }
 
-    for (const imageData of imageDatas) {
+    for (const imageData of imageDataList) {
       out.writeBytes(imageData);
     }
 
     return out.getBytes();
-  }
-
-  public encodeImage(image: MemoryImage): Uint8Array {
-    return this.encodeImages([image]);
-  }
-
-  public encodeAnimation(_: FrameAnimation): Uint8Array | undefined {
-    return undefined;
   }
 }

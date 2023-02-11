@@ -3,7 +3,7 @@
 export enum NoiseType {
   gaussian,
   uniform,
-  saltPepper,
+  saltAndPepper,
   poisson,
   rice,
 }

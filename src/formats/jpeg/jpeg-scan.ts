@@ -1,12 +1,19 @@
 /** @format */
 
 import { InputBuffer } from '../../common/input-buffer';
-import { ImageError } from '../../error/image-error';
-import { Jpeg } from './jpeg';
+import { LibError } from '../../error/lib-error';
+import { HuffmanNode } from './huffman-node';
+import { HuffmanParent } from './huffman-parent';
+import { HuffmanValue } from './huffman-value';
 import { JpegComponent } from './jpeg-component';
+import { JpegData } from './jpeg-data';
 import { JpegFrame } from './jpeg-frame';
+import { JpegMarker } from './jpeg-marker';
 
-type DecodeFunction = (component: JpegComponent, block: Int32Array) => void;
+export type DecodeFunction = (
+  component: JpegComponent,
+  block: Int32Array
+) => void;
 
 export class JpegScan {
   private _input: InputBuffer;
@@ -150,11 +157,8 @@ export class JpegScan {
     if (this._bitsData === 0xff) {
       const nextByte = this.input.readByte();
       if (nextByte !== 0) {
-        throw new ImageError(
-          `unexpected marker: ${((this._bitsData << 8) | nextByte).toString(
-            16
-          )}`
-        );
+        const marker = ((this._bitsData << 8) | nextByte).toString(16);
+        throw new LibError(`unexpected marker: ${marker}`);
       }
     }
 
@@ -162,13 +166,17 @@ export class JpegScan {
     return (this._bitsData >> 7) & 1;
   }
 
-  private decodeHuffman(tree: []): number | undefined {
-    let node = tree;
+  private decodeHuffman(
+    tree: Array<HuffmanNode | undefined>
+  ): number | undefined {
+    let node: HuffmanNode | undefined = new HuffmanParent(tree);
     let bit: number | undefined = undefined;
     while ((bit = this.readBit()) !== undefined) {
-      node = node[bit];
-      if (typeof node === 'number') {
-        return Math.trunc(node);
+      if (node instanceof HuffmanParent) {
+        node = node.children[bit];
+      }
+      if (node instanceof HuffmanValue) {
+        return node.value;
       }
     }
     return undefined;
@@ -222,7 +230,7 @@ export class JpegScan {
 
       s = this.receiveAndExtend(s);
 
-      const z = Jpeg.dctZigZag[k];
+      const z = JpegData.dctZigZag[k];
       zz[z] = s;
       k++;
     }
@@ -259,7 +267,7 @@ export class JpegScan {
         continue;
       }
       k += r;
-      const z = Jpeg.dctZigZag[k];
+      const z = JpegData.dctZigZag[k];
       zz[z] = this.receiveAndExtend(s) * (1 << this._successive);
       k++;
     }
@@ -271,13 +279,13 @@ export class JpegScan {
     let s = 0;
     let r = 0;
     while (k <= e) {
-      const z = Jpeg.dctZigZag[k];
+      const z = JpegData.dctZigZag[k];
       switch (this._successiveACState) {
         case 0: {
           // Initial state
           const rs = this.decodeHuffman(component.huffmanTableAC);
           if (rs === undefined) {
-            throw new ImageError('Invalid progressive encoding');
+            throw new LibError('Invalid progressive encoding');
           }
           s = rs & 15;
           r = rs >> 4;
@@ -291,7 +299,7 @@ export class JpegScan {
             }
           } else {
             if (s !== 1) {
-              throw new ImageError('invalid ACn encoding');
+              throw new LibError('invalid ACn encoding');
             }
             this._successiveACNextValue = this.receiveAndExtend(s);
             this._successiveACState = r !== 0 ? 2 : 3;
@@ -440,7 +448,7 @@ export class JpegScan {
       const m1 = this._input.getByte(0);
       const m2 = this._input.getByte(1);
       if (m1 === 0xff) {
-        if (m2 >= Jpeg.M_RST0 && m2 <= Jpeg.M_RST7) {
+        if (m2 >= JpegMarker.rst0 && m2 <= JpegMarker.rst7) {
           this._input.skip(2);
         } else {
           break;

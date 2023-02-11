@@ -1,5 +1,7 @@
 /** @format */
 
+import { HuffmanNode } from './huffman-node';
+
 export class JpegComponent {
   private readonly _quantizationTableList: Array<Int16Array | undefined>;
 
@@ -30,19 +32,19 @@ export class JpegComponent {
     return this._blocksPerColumn;
   }
 
-  private _huffmanTableDC: [] = [];
-  public set huffmanTableDC(v: []) {
+  private _huffmanTableDC: Array<HuffmanNode | undefined> = [];
+  public set huffmanTableDC(v: Array<HuffmanNode | undefined>) {
     this._huffmanTableDC = v;
   }
-  public get huffmanTableDC(): [] {
+  public get huffmanTableDC(): Array<HuffmanNode | undefined> {
     return this._huffmanTableDC;
   }
 
-  private _huffmanTableAC: [] = [];
-  public set huffmanTableAC(v: []) {
+  private _huffmanTableAC: Array<HuffmanNode | undefined> = [];
+  public set huffmanTableAC(v: Array<HuffmanNode | undefined>) {
     this._huffmanTableAC = v;
   }
-  public get huffmanTableAC(): [] {
+  public get huffmanTableAC(): Array<HuffmanNode | undefined> {
     return this._huffmanTableAC;
   }
 

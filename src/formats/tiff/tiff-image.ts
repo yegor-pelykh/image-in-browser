@@ -1,179 +1,30 @@
 /** @format */
 
 import { inflate } from 'uzip';
-import { BitOperators } from '../../common/bit-operators';
-import { Color } from '../../common/color';
+import { ColorUtils } from '../../color/color-utils';
+import { Format } from '../../color/format';
+import { ArrayUtils } from '../../common/array-utils';
+import { BitUtils } from '../../common/bit-utils';
+import { Float16 } from '../../common/float16';
 import { InputBuffer } from '../../common/input-buffer';
-import { MathOperators } from '../../common/math-operators';
-import { MemoryImage } from '../../common/memory-image';
-import { ImageError } from '../../error/image-error';
-import { Half } from '../../hdr/half';
-import { HdrImage } from '../../hdr/hdr-image';
-import { HdrSlice } from '../../hdr/hdr-slice';
+import { LibError } from '../../error/lib-error';
+import { ExifTagNameToID } from '../../exif/exif-tag';
+import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type';
+import { MemoryImage } from '../../image/image';
 import { JpegDecoder } from '../jpeg-decoder';
 import { TiffBitReader } from './tiff-bit-reader';
+import { TiffCompression } from './tiff-compression';
 import { TiffEntry } from './tiff-entry';
 import { TiffFaxDecoder } from './tiff-fax-decoder';
+import { TiffFormat } from './tiff-format';
+import { TiffImageType } from './tiff-image-type';
 import { LzwDecoder } from './tiff-lzw-decoder';
+import {
+  TiffPhotometricType,
+  TiffPhotometricTypeLength,
+} from './tiff-photometric-type';
 
 export class TiffImage {
-  // Compression types
-  public static readonly COMPRESSION_NONE = 1;
-  public static readonly COMPRESSION_CCITT_RLE = 2;
-  public static readonly COMPRESSION_CCITT_FAX3 = 3;
-  public static readonly COMPRESSION_CCITT_FAX4 = 4;
-  public static readonly COMPRESSION_LZW = 5;
-  public static readonly COMPRESSION_OLD_JPEG = 6;
-  public static readonly COMPRESSION_JPEG = 7;
-  public static readonly COMPRESSION_NEXT = 32766;
-  public static readonly COMPRESSION_CCITT_RLEW = 32771;
-  public static readonly COMPRESSION_PACKBITS = 32773;
-  public static readonly COMPRESSION_THUNDERSCAN = 32809;
-  public static readonly COMPRESSION_IT8CTPAD = 32895;
-  public static readonly COMPRESSION_IT8LW = 32896;
-  public static readonly COMPRESSION_IT8MP = 32897;
-  public static readonly COMPRESSION_IT8BL = 32898;
-  public static readonly COMPRESSION_PIXARFILM = 32908;
-  public static readonly COMPRESSION_PIXARLOG = 32909;
-  public static readonly COMPRESSION_DEFLATE = 32946;
-  public static readonly COMPRESSION_ZIP = 8;
-  public static readonly COMPRESSION_DCS = 32947;
-  public static readonly COMPRESSION_JBIG = 34661;
-  public static readonly COMPRESSION_SGILOG = 34676;
-  public static readonly COMPRESSION_SGILOG24 = 34677;
-  public static readonly COMPRESSION_JP2000 = 34712;
-
-  // Photometric types
-  public static readonly PHOTOMETRIC_BLACKISZERO = 1;
-  public static readonly PHOTOMETRIC_RGB = 2;
-
-  // Image types
-  public static readonly TYPE_UNSUPPORTED = -1;
-  public static readonly TYPE_BILEVEL = 0;
-  public static readonly TYPE_GRAY_4BIT = 1;
-  public static readonly TYPE_GRAY = 2;
-  public static readonly TYPE_GRAY_ALPHA = 3;
-  public static readonly TYPE_PALETTE = 4;
-  public static readonly TYPE_RGB = 5;
-  public static readonly TYPE_RGB_ALPHA = 6;
-  public static readonly TYPE_YCBCR_SUB = 7;
-  public static readonly TYPE_GENERIC = 8;
-
-  // Sample Formats
-  public static readonly FORMAT_UINT = 1;
-  public static readonly FORMAT_INT = 2;
-  public static readonly FORMAT_FLOAT = 3;
-
-  // Tag types
-  public static readonly TAG_ARTIST = 315;
-  public static readonly TAG_BITS_PER_SAMPLE = 258;
-  public static readonly TAG_CELL_LENGTH = 265;
-  public static readonly TAG_CELL_WIDTH = 264;
-  public static readonly TAG_COLOR_MAP = 320;
-  public static readonly TAG_COMPRESSION = 259;
-  public static readonly TAG_DATE_TIME = 306;
-  public static readonly TAG_EXIF_IFD = 34665;
-  public static readonly TAG_EXTRA_SAMPLES = 338;
-  public static readonly TAG_FILL_ORDER = 266;
-  public static readonly TAG_FREE_BYTE_COUNTS = 289;
-  public static readonly TAG_FREE_OFFSETS = 288;
-  public static readonly TAG_GRAY_RESPONSE_CURVE = 291;
-  public static readonly TAG_GRAY_RESPONSE_UNIT = 290;
-  public static readonly TAG_HOST_COMPUTER = 316;
-  public static readonly TAG_ICC_PROFILE = 34675;
-  public static readonly TAG_IMAGE_DESCRIPTION = 270;
-  public static readonly TAG_IMAGE_LENGTH = 257;
-  public static readonly TAG_IMAGE_WIDTH = 256;
-  public static readonly TAG_IPTC = 33723;
-  public static readonly TAG_MAKE = 271;
-  public static readonly TAG_MAX_SAMPLE_VALUE = 281;
-  public static readonly TAG_MIN_SAMPLE_VALUE = 280;
-  public static readonly TAG_MODEL = 272;
-  public static readonly TAG_NEW_SUBFILE_TYPE = 254;
-  public static readonly TAG_ORIENTATION = 274;
-  public static readonly TAG_PHOTOMETRIC_INTERPRETATION = 262;
-  public static readonly TAG_PHOTOSHOP = 34377;
-  public static readonly TAG_PLANAR_CONFIGURATION = 284;
-  public static readonly TAG_PREDICTOR = 317;
-  public static readonly TAG_RESOLUTION_UNIT = 296;
-  public static readonly TAG_ROWS_PER_STRIP = 278;
-  public static readonly TAG_SAMPLES_PER_PIXEL = 277;
-  public static readonly TAG_SOFTWARE = 305;
-  public static readonly TAG_STRIP_BYTE_COUNTS = 279;
-  public static readonly TAG_STRIP_OFFSETS = 273;
-  public static readonly TAG_SUBFILE_TYPE = 255;
-  public static readonly TAG_T4_OPTIONS = 292;
-  public static readonly TAG_T6_OPTIONS = 293;
-  public static readonly TAG_THRESHOLDING = 263;
-  public static readonly TAG_TILE_WIDTH = 322;
-  public static readonly TAG_TILE_LENGTH = 323;
-  public static readonly TAG_TILE_OFFSETS = 324;
-  public static readonly TAG_TILE_BYTE_COUNTS = 325;
-  public static readonly TAG_SAMPLE_FORMAT = 339;
-  public static readonly TAG_XMP = 700;
-  public static readonly TAG_X_RESOLUTION = 282;
-  public static readonly TAG_Y_RESOLUTION = 283;
-  public static readonly TAG_YCBCR_COEFFICIENTS = 529;
-  public static readonly TAG_YCBCR_SUBSAMPLING = 530;
-  public static readonly TAG_YCBCR_POSITIONING = 531;
-
-  public static readonly TAG_NAME: Map<number, string> = new Map<
-    number,
-    string
-  >([
-    [TiffImage.TAG_ARTIST, 'artist'],
-    [TiffImage.TAG_BITS_PER_SAMPLE, 'bitsPerSample'],
-    [TiffImage.TAG_CELL_LENGTH, 'cellLength'],
-    [TiffImage.TAG_CELL_WIDTH, 'cellWidth'],
-    [TiffImage.TAG_COLOR_MAP, 'colorMap'],
-    [TiffImage.TAG_COMPRESSION, 'compression'],
-    [TiffImage.TAG_DATE_TIME, 'dateTime'],
-    [TiffImage.TAG_EXIF_IFD, 'exifIFD'],
-    [TiffImage.TAG_EXTRA_SAMPLES, 'extraSamples'],
-    [TiffImage.TAG_FILL_ORDER, 'fillOrder'],
-    [TiffImage.TAG_FREE_BYTE_COUNTS, 'freeByteCounts'],
-    [TiffImage.TAG_FREE_OFFSETS, 'freeOffsets'],
-    [TiffImage.TAG_GRAY_RESPONSE_CURVE, 'grayResponseCurve'],
-    [TiffImage.TAG_GRAY_RESPONSE_UNIT, 'grayResponseUnit'],
-    [TiffImage.TAG_HOST_COMPUTER, 'hostComputer'],
-    [TiffImage.TAG_ICC_PROFILE, 'iccProfile'],
-    [TiffImage.TAG_IMAGE_DESCRIPTION, 'imageDescription'],
-    [TiffImage.TAG_IMAGE_LENGTH, 'imageLength'],
-    [TiffImage.TAG_IMAGE_WIDTH, 'imageWidth'],
-    [TiffImage.TAG_IPTC, 'iptc'],
-    [TiffImage.TAG_MAKE, 'make'],
-    [TiffImage.TAG_MAX_SAMPLE_VALUE, 'maxSampleValue'],
-    [TiffImage.TAG_MIN_SAMPLE_VALUE, 'minSampleValue'],
-    [TiffImage.TAG_MODEL, 'model'],
-    [TiffImage.TAG_NEW_SUBFILE_TYPE, 'newSubfileType'],
-    [TiffImage.TAG_ORIENTATION, 'orientation'],
-    [TiffImage.TAG_PHOTOMETRIC_INTERPRETATION, 'photometricInterpretation'],
-    [TiffImage.TAG_PHOTOSHOP, 'photoshop'],
-    [TiffImage.TAG_PLANAR_CONFIGURATION, 'planarConfiguration'],
-    [TiffImage.TAG_PREDICTOR, 'predictor'],
-    [TiffImage.TAG_RESOLUTION_UNIT, 'resolutionUnit'],
-    [TiffImage.TAG_ROWS_PER_STRIP, 'rowsPerStrip'],
-    [TiffImage.TAG_SAMPLES_PER_PIXEL, 'samplesPerPixel'],
-    [TiffImage.TAG_SOFTWARE, 'software'],
-    [TiffImage.TAG_STRIP_BYTE_COUNTS, 'stripByteCounts'],
-    [TiffImage.TAG_STRIP_OFFSETS, 'stropOffsets'],
-    [TiffImage.TAG_SUBFILE_TYPE, 'subfileType'],
-    [TiffImage.TAG_T4_OPTIONS, 't4Options'],
-    [TiffImage.TAG_T6_OPTIONS, 't6Options'],
-    [TiffImage.TAG_THRESHOLDING, 'thresholding'],
-    [TiffImage.TAG_TILE_WIDTH, 'tileWidth'],
-    [TiffImage.TAG_TILE_LENGTH, 'tileLength'],
-    [TiffImage.TAG_TILE_OFFSETS, 'tileOffsets'],
-    [TiffImage.TAG_TILE_BYTE_COUNTS, 'tileByteCounts'],
-    [TiffImage.TAG_XMP, 'xmp'],
-    [TiffImage.TAG_X_RESOLUTION, 'xResolution'],
-    [TiffImage.TAG_Y_RESOLUTION, 'yResolution'],
-    [TiffImage.TAG_YCBCR_COEFFICIENTS, 'yCbCrCoefficients'],
-    [TiffImage.TAG_YCBCR_SUBSAMPLING, 'yCbCrSubsampling'],
-    [TiffImage.TAG_YCBCR_POSITIONING, 'yCbCrPositioning'],
-    [TiffImage.TAG_SAMPLE_FORMAT, 'sampleFormat'],
-  ]);
-
   private readonly _tags: Map<number, TiffEntry> = new Map<number, TiffEntry>();
   public get tags(): Map<number, TiffEntry> {
     return this._tags;
@@ -189,8 +40,8 @@ export class TiffImage {
     return this._height;
   }
 
-  private _photometricType: number | undefined;
-  public get photometricType(): number | undefined {
+  private _photometricType: TiffPhotometricType = TiffPhotometricType.unknown;
+  public get photometricType(): TiffPhotometricType {
     return this._photometricType;
   }
 
@@ -209,13 +60,13 @@ export class TiffImage {
     return this._samplesPerPixel;
   }
 
-  private _sampleFormat = TiffImage.FORMAT_UINT;
-  public get sampleFormat(): number {
+  private _sampleFormat: TiffFormat = TiffFormat.uint;
+  public get sampleFormat(): TiffFormat {
     return this._sampleFormat;
   }
 
-  private _imageType = TiffImage.TYPE_UNSUPPORTED;
-  public get imageType(): number {
+  private _imageType: TiffImageType = TiffImageType.invalid;
+  public get imageType(): TiffImageType {
     return this._imageType;
   }
 
@@ -299,23 +150,24 @@ export class TiffImage {
     return this._extraSamples;
   }
 
-  private _colorMap: number[] | undefined;
-  public get colorMap(): number[] | undefined {
+  private _colorMapSamples = 0;
+  public get colorMapSamples(): number {
+    return this._colorMapSamples;
+  }
+
+  private _colorMap: Uint16Array | undefined;
+  public get colorMap(): Uint16Array | undefined {
     return this._colorMap;
   }
 
   // Starting index in the [colorMap] for the red channel.
-  private colorMapRed = 0;
+  private _colorMapRed = 0;
 
   // Starting index in the [colorMap] for the green channel.
-  private colorMapGreen = 0;
+  private _colorMapGreen = 0;
 
   // Starting index in the [colorMap] for the blue channel.
-  private colorMapBlue = 0;
-
-  private image?: MemoryImage;
-
-  private hdrImage?: HdrImage;
+  private _colorMapBlue = 0;
 
   public get isValid(): boolean {
     return this._width !== 0 && this._height !== 0;
@@ -323,52 +175,80 @@ export class TiffImage {
 
   constructor(p: InputBuffer) {
     const p3 = InputBuffer.from(p);
+
     const numDirEntries = p.readUint16();
     for (let i = 0; i < numDirEntries; ++i) {
       const tag = p.readUint16();
-      const type = p.readUint16();
-      const numValues = p.readUint32();
-      const entry = new TiffEntry({
-        tag: tag,
-        type: type,
-        numValues: numValues,
-        p: p3,
-      });
-
+      const ti = p.readUint16();
+      const type = ti as IfdValueType;
+      const typeSize = IfdValueTypeSize[ti];
+      const count = p.readUint32();
+      let valueOffset = 0;
       // The value for the tag is either stored in another location,
       // or within the tag itself (if the size fits in 4 bytes).
       // We're not reading the data here, just storing offsets.
-      if (entry.numValues * entry.typeSize > 4) {
-        entry.valueOffset = p.readUint32();
+      if (count * typeSize > 4) {
+        valueOffset = p.readUint32();
       } else {
-        entry.valueOffset = p.offset;
-        p.offset += 4;
+        valueOffset = p.offset;
+        p.skip(4);
       }
+
+      const entry = new TiffEntry({
+        tag: tag,
+        type: type,
+        count: count,
+        p: p3,
+        valueOffset: valueOffset,
+      });
 
       this._tags.set(entry.tag, entry);
 
-      if (entry.tag === TiffImage.TAG_IMAGE_WIDTH) {
-        this._width = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_IMAGE_LENGTH) {
-        this._height = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_PHOTOMETRIC_INTERPRETATION) {
-        this._photometricType = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_COMPRESSION) {
-        this._compression = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_BITS_PER_SAMPLE) {
-        this._bitsPerSample = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_SAMPLES_PER_PIXEL) {
-        this._samplesPerPixel = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_PREDICTOR) {
-        this._predictor = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_SAMPLE_FORMAT) {
-        this._sampleFormat = entry.readValue();
-      } else if (entry.tag === TiffImage.TAG_COLOR_MAP) {
-        this._colorMap = entry.readValues();
-        this.colorMapRed = 0;
-        this.colorMapGreen = Math.trunc(this._colorMap.length / 3);
-        this.colorMapBlue = this.colorMapGreen * 2;
+      if (tag === ExifTagNameToID.get('ImageWidth')) {
+        this._width = entry.read()?.toInt() ?? 0;
+      } else if (tag === ExifTagNameToID.get('ImageLength')) {
+        this._height = entry.read()?.toInt() ?? 0;
+      } else if (tag === ExifTagNameToID.get('PhotometricInterpretation')) {
+        const v = entry.read();
+        if (v === undefined) {
+          this._photometricType = TiffPhotometricType.unknown;
+        } else {
+          const pt = v.toInt();
+          if (pt < TiffPhotometricTypeLength) {
+            this._photometricType = pt as TiffPhotometricType;
+          } else {
+            this._photometricType = TiffPhotometricType.unknown;
+          }
+        }
+      } else if (tag === ExifTagNameToID.get('Compression')) {
+        this._compression = entry.read()?.toInt() ?? 0;
+      } else if (tag === ExifTagNameToID.get('BitsPerSample')) {
+        this._bitsPerSample = entry.read()?.toInt() ?? 0;
+      } else if (tag === ExifTagNameToID.get('SamplesPerPixel')) {
+        this._samplesPerPixel = entry.read()?.toInt() ?? 0;
+      } else if (tag === ExifTagNameToID.get('Predictor')) {
+        this._predictor = entry.read()?.toInt() ?? 0;
+      } else if (tag === ExifTagNameToID.get('SampleFormat')) {
+        const v = entry.read()?.toInt() ?? 0;
+        this._sampleFormat = v as TiffFormat;
+      } else if (tag === ExifTagNameToID.get('ColorMap')) {
+        const v = entry.read();
+        if (v !== undefined) {
+          this._colorMap = new Uint16Array(v.toData().buffer);
+          this._colorMapRed = 0;
+          this._colorMapGreen = Math.trunc(this._colorMap.length / 3);
+          this._colorMapBlue = this._colorMapGreen * 2;
+        }
       }
+    }
+
+    if (
+      this._colorMap !== undefined &&
+      this._photometricType === TiffPhotometricType.palette
+    ) {
+      // Only support RGB palettes.
+      this._colorMapSamples = 3;
+      this._samplesPerPixel = 1;
     }
 
     if (this._width === 0 || this._height === 0) {
@@ -376,33 +256,40 @@ export class TiffImage {
     }
 
     if (this._colorMap !== undefined && this._bitsPerSample === 8) {
-      for (let i = 0, len = this._colorMap.length; i < len; ++i) {
-        this._colorMap[i] >>= 8;
+      const cm = this._colorMap;
+      const len = cm.length;
+      for (let i = 0; i < len; ++i) {
+        cm[i] >>= 8;
       }
     }
 
-    if (this._photometricType === 0) {
+    if (this._photometricType === TiffPhotometricType.whiteIsZero) {
       this._isWhiteZero = true;
     }
 
-    if (this.hasTag(TiffImage.TAG_TILE_OFFSETS)) {
+    if (this.hasTag(ExifTagNameToID.get('TileOffsets')!)) {
       this._tiled = true;
       // Image is in tiled format
-      this._tileWidth = this.readTag(TiffImage.TAG_TILE_WIDTH);
-      this._tileHeight = this.readTag(TiffImage.TAG_TILE_LENGTH);
-      this._tileOffsets = this.readTagList(TiffImage.TAG_TILE_OFFSETS);
-      this._tileByteCounts = this.readTagList(TiffImage.TAG_TILE_BYTE_COUNTS);
+      this._tileWidth = this.readTag(ExifTagNameToID.get('TileWidth')!);
+      this._tileHeight = this.readTag(ExifTagNameToID.get('TileLength')!);
+      this._tileOffsets = this.readTagList(ExifTagNameToID.get('TileOffsets')!);
+      this._tileByteCounts = this.readTagList(
+        ExifTagNameToID.get('TileByteCounts')!
+      );
     } else {
       this._tiled = false;
 
-      this._tileWidth = this.readTag(TiffImage.TAG_TILE_WIDTH, this._width);
-      if (!this.hasTag(TiffImage.TAG_ROWS_PER_STRIP)) {
+      this._tileWidth = this.readTag(
+        ExifTagNameToID.get('TileWidth')!,
+        this._width
+      );
+      if (!this.hasTag(ExifTagNameToID.get('RowsPerStrip')!)) {
         this._tileHeight = this.readTag(
-          TiffImage.TAG_TILE_LENGTH,
+          ExifTagNameToID.get('TileLength')!,
           this._height
         );
       } else {
-        const l = this.readTag(TiffImage.TAG_ROWS_PER_STRIP);
+        const l = this.readTag(ExifTagNameToID.get('RowsPerStrip')!);
         let infinity = 1;
         infinity = (infinity << 32) - 1;
         if (l === infinity) {
@@ -413,8 +300,12 @@ export class TiffImage {
         }
       }
 
-      this._tileOffsets = this.readTagList(TiffImage.TAG_STRIP_OFFSETS);
-      this._tileByteCounts = this.readTagList(TiffImage.TAG_STRIP_BYTE_COUNTS);
+      this._tileOffsets = this.readTagList(
+        ExifTagNameToID.get('StripOffsets')!
+      );
+      this._tileByteCounts = this.readTagList(
+        ExifTagNameToID.get('StripByteCounts')!
+      );
     }
 
     // Calculate number of tiles and the tileSize in bytes
@@ -426,92 +317,86 @@ export class TiffImage {
     );
     this._tileSize = this._tileWidth * this._tileHeight * this._samplesPerPixel;
 
-    this._fillOrder = this.readTag(TiffImage.TAG_FILL_ORDER, 1);
-    this._t4Options = this.readTag(TiffImage.TAG_T4_OPTIONS);
-    this._t6Options = this.readTag(TiffImage.TAG_T6_OPTIONS);
-    this._extraSamples = this.readTag(TiffImage.TAG_EXTRA_SAMPLES);
+    this._fillOrder = this.readTag(ExifTagNameToID.get('FillOrder')!, 1);
+    this._t4Options = this.readTag(ExifTagNameToID.get('T4Options')!);
+    this._t6Options = this.readTag(ExifTagNameToID.get('T6Options')!);
+    this._extraSamples = this.readTag(ExifTagNameToID.get('ExtraSamples')!);
 
     // Determine which kind of image we are dealing with.
     switch (this._photometricType) {
-      // WhiteIsZero
-      case 0:
-      // BlackIsZero
-      // falls through
-      case 1:
+      case TiffPhotometricType.whiteIsZero:
+      case TiffPhotometricType.blackIsZero:
         if (this._bitsPerSample === 1 && this._samplesPerPixel === 1) {
-          this._imageType = TiffImage.TYPE_BILEVEL;
+          this._imageType = TiffImageType.bilevel;
         } else if (this._bitsPerSample === 4 && this._samplesPerPixel === 1) {
-          this._imageType = TiffImage.TYPE_GRAY_4BIT;
+          this._imageType = TiffImageType.gray4bit;
         } else if (this._bitsPerSample % 8 === 0) {
           if (this._samplesPerPixel === 1) {
-            this._imageType = TiffImage.TYPE_GRAY;
+            this._imageType = TiffImageType.gray;
           } else if (this._samplesPerPixel === 2) {
-            this._imageType = TiffImage.TYPE_GRAY_ALPHA;
+            this._imageType = TiffImageType.grayAlpha;
           } else {
-            this._imageType = TiffImage.TYPE_GENERIC;
+            this._imageType = TiffImageType.generic;
           }
         }
         break;
-      // RGB
-      case 2:
+      case TiffPhotometricType.rgb:
         if (this._bitsPerSample % 8 === 0) {
           if (this._samplesPerPixel === 3) {
-            this._imageType = TiffImage.TYPE_RGB;
+            this._imageType = TiffImageType.rgb;
           } else if (this._samplesPerPixel === 4) {
-            this._imageType = TiffImage.TYPE_RGB_ALPHA;
+            this._imageType = TiffImageType.rgba;
           } else {
-            this._imageType = TiffImage.TYPE_GENERIC;
+            this._imageType = TiffImageType.generic;
           }
         }
         break;
-      // RGB Palette
-      case 3:
+      case TiffPhotometricType.palette:
         if (
           this._samplesPerPixel === 1 &&
+          this._colorMap !== undefined &&
           (this._bitsPerSample === 4 ||
             this._bitsPerSample === 8 ||
             this._bitsPerSample === 16)
         ) {
-          this._imageType = TiffImage.TYPE_PALETTE;
+          this._imageType = TiffImageType.palette;
         }
         break;
-      // Transparency mask
-      case 4:
+      case TiffPhotometricType.transparencyMask:
+        // Transparency mask
         if (this._bitsPerSample === 1 && this._samplesPerPixel === 1) {
-          this._imageType = TiffImage.TYPE_BILEVEL;
+          this._imageType = TiffImageType.bilevel;
         }
         break;
-      // YCbCr
-      case 6:
+      case TiffPhotometricType.yCbCr:
         if (
-          this._compression === TiffImage.COMPRESSION_JPEG &&
+          this._compression === TiffCompression.jpeg &&
           this._bitsPerSample === 8 &&
           this._samplesPerPixel === 3
         ) {
-          this._imageType = TiffImage.TYPE_RGB;
+          this._imageType = TiffImageType.rgb;
         } else {
-          if (this.hasTag(TiffImage.TAG_YCBCR_SUBSAMPLING)) {
-            const v = this._tags
-              .get(TiffImage.TAG_YCBCR_SUBSAMPLING)!
-              .readValues();
-            this._chromaSubH = v[0];
-            this._chromaSubV = v[1];
+          if (this.hasTag(ExifTagNameToID.get('YCbCrSubSampling')!)) {
+            const s = ExifTagNameToID.get('YCbCrSubSampling')!;
+            const v = this._tags.get(s)!.read()!;
+            this._chromaSubH = v.toInt();
+            this._chromaSubV = v.toInt(1);
           } else {
             this._chromaSubH = 2;
             this._chromaSubV = 2;
           }
 
           if (this._chromaSubH * this._chromaSubV === 1) {
-            this._imageType = TiffImage.TYPE_GENERIC;
+            this._imageType = TiffImageType.generic;
           } else if (this._bitsPerSample === 8 && this._samplesPerPixel === 3) {
-            this._imageType = TiffImage.TYPE_YCBCR_SUB;
+            this._imageType = TiffImageType.yCbCrSub;
           }
         }
         break;
-      // Other including CMYK, CIE L*a*b*, unknown.
       default:
+        // Other including CMYK, CIE L*a*b*, unknown.
         if (this._bitsPerSample % 8 === 0) {
-          this._imageType = TiffImage.TYPE_GENERIC;
+          this._imageType = TiffImageType.generic;
         }
         break;
     }
@@ -521,18 +406,21 @@ export class TiffImage {
     if (!this.hasTag(type)) {
       return defaultValue;
     }
-    return this._tags.get(type)!.readValue();
+    return this._tags.get(type)!.read()?.toInt() ?? 0;
   }
 
   private readTagList(type: number): number[] | undefined {
     if (!this.hasTag(type)) {
       return undefined;
     }
-    return this._tags.get(type)!.readValues();
+    const tag = this._tags.get(type)!;
+    const value = tag.read()!;
+    return ArrayUtils.generate<number>(tag.count, (i) => value.toInt(i));
   }
 
   private decodeBilevelTile(
     p: InputBuffer,
+    image: MemoryImage,
     tileX: number,
     tileY: number
   ): void {
@@ -544,8 +432,8 @@ export class TiffImage {
 
     const byteCount = this._tileByteCounts![tileIndex];
 
-    let bdata: InputBuffer | undefined = undefined;
-    if (this._compression === TiffImage.COMPRESSION_PACKBITS) {
+    let byteData: InputBuffer | undefined = undefined;
+    if (this._compression === TiffCompression.packBits) {
       // Since the decompressed data will still be packed
       // 8 pixels into 1 byte, calculate bytesInThisTile
       let bytesInThisTile = 0;
@@ -555,17 +443,17 @@ export class TiffImage {
         bytesInThisTile =
           (Math.trunc(this._tileWidth / 8) + 1) * this._tileHeight;
       }
-      bdata = new InputBuffer({
+      byteData = new InputBuffer({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
-      this.decodePackbits(p, bytesInThisTile, bdata.buffer);
-    } else if (this._compression === TiffImage.COMPRESSION_LZW) {
-      bdata = new InputBuffer({
+      this.decodePackBits(p, bytesInThisTile, byteData.buffer);
+    } else if (this._compression === TiffCompression.lzw) {
+      byteData = new InputBuffer({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
 
       const decoder = new LzwDecoder();
-      decoder.decode(InputBuffer.from(p, 0, byteCount), bdata.buffer);
+      decoder.decode(InputBuffer.from(p, 0, byteCount), byteData.buffer);
 
       // Horizontal Differencing Predictor
       if (this._predictor === 2) {
@@ -578,15 +466,15 @@ export class TiffImage {
             i++
           ) {
             const b =
-              bdata.getByte(count) +
-              bdata.getByte(count - this._samplesPerPixel);
-            bdata.setByte(count, b);
+              byteData.getByte(count) +
+              byteData.getByte(count - this._samplesPerPixel);
+            byteData.setByte(count, b);
             count++;
           }
         }
       }
-    } else if (this._compression === TiffImage.COMPRESSION_CCITT_RLE) {
-      bdata = new InputBuffer({
+    } else if (this._compression === TiffCompression.ccittRle) {
+      byteData = new InputBuffer({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       try {
@@ -595,12 +483,12 @@ export class TiffImage {
           width: this._tileWidth,
           height: this._tileHeight,
         });
-        decoder.decode1D(bdata, p, 0, this._tileHeight);
+        decoder.decode1D(byteData, p, 0, this._tileHeight);
       } catch (_) {
         // skip
       }
-    } else if (this._compression === TiffImage.COMPRESSION_CCITT_FAX3) {
-      bdata = new InputBuffer({
+    } else if (this._compression === TiffCompression.ccittFax3) {
+      byteData = new InputBuffer({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       try {
@@ -609,12 +497,12 @@ export class TiffImage {
           width: this._tileWidth,
           height: this._tileHeight,
         });
-        decoder.decode2D(bdata, p, 0, this._tileHeight, this._t4Options);
+        decoder.decode2D(byteData, p, 0, this._tileHeight, this._t4Options);
       } catch (_) {
         // skip
       }
-    } else if (this._compression === TiffImage.COMPRESSION_CCITT_FAX4) {
-      bdata = new InputBuffer({
+    } else if (this._compression === TiffCompression.ccittFax4) {
+      byteData = new InputBuffer({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       try {
@@ -623,53 +511,56 @@ export class TiffImage {
           width: this._tileWidth,
           height: this._tileHeight,
         });
-        decoder.decodeT6(bdata, p, 0, this._tileHeight, this._t6Options);
+        decoder.decodeT6(byteData, p, 0, this._tileHeight, this._t6Options);
       } catch (_) {
         // skip
       }
-    } else if (this._compression === TiffImage.COMPRESSION_ZIP) {
+    } else if (this._compression === TiffCompression.zip) {
       const data = p.toUint8Array(0, byteCount);
       const outData = inflate(data);
-      bdata = new InputBuffer({
+      byteData = new InputBuffer({
         buffer: outData,
       });
-    } else if (this._compression === TiffImage.COMPRESSION_DEFLATE) {
+    } else if (this._compression === TiffCompression.deflate) {
       const data = p.toUint8Array(0, byteCount);
       const outData = inflate(data);
-      bdata = new InputBuffer({
+      byteData = new InputBuffer({
         buffer: outData,
       });
-    } else if (this._compression === TiffImage.COMPRESSION_NONE) {
-      bdata = p;
+    } else if (this._compression === TiffCompression.none) {
+      byteData = p;
     } else {
-      throw new ImageError(
-        `Unsupported Compression Type: ${this._compression}`
-      );
+      throw new LibError(`Unsupported Compression Type: ${this._compression}`);
     }
 
-    const br = new TiffBitReader(bdata);
-    const white = this._isWhiteZero ? 0xff000000 : 0xffffffff;
-    const black = this._isWhiteZero ? 0xffffffff : 0xff000000;
+    const br = new TiffBitReader(byteData);
+    const mx = image.maxChannelValue;
+    const black = this._isWhiteZero ? mx : 0;
+    const white = this._isWhiteZero ? 0 : mx;
 
-    const img = this.image!;
     for (let y = 0, py = outY; y < this._tileHeight; ++y, ++py) {
       for (let x = 0, px = outX; x < this._tileWidth; ++x, ++px) {
-        if (py >= img.height || px >= img.width) break;
+        if (py >= image.height || px >= image.width) break;
         if (br.readBits(1) === 0) {
-          img.setPixel(px, py, black);
+          image.setPixelRgb(px, py, black, 0, 0);
         } else {
-          img.setPixel(px, py, white);
+          image.setPixelRgb(px, py, white, 0, 0);
         }
       }
       br.flushByte();
     }
   }
 
-  private decodeTile(p: InputBuffer, tileX: number, tileY: number): void {
+  private decodeTile(
+    p: InputBuffer,
+    image: MemoryImage,
+    tileX: number,
+    tileY: number
+  ): void {
     // Read the data, uncompressing as needed. There are four cases:
     // bilevel, palette-RGB, 4-bit grayscale, and everything else.
-    if (this._imageType === TiffImage.TYPE_BILEVEL) {
-      this.decodeBilevelTile(p, tileX, tileY);
+    if (this._imageType === TiffImageType.bilevel) {
+      this.decodeBilevelTile(p, image, tileX, tileY);
       return;
     }
 
@@ -688,84 +579,74 @@ export class TiffImage {
       bytesInThisTile *= 4;
     }
 
-    let bdata: InputBuffer | undefined = undefined;
+    let byteData: InputBuffer | undefined = undefined;
     if (
       this._bitsPerSample === 8 ||
       this._bitsPerSample === 16 ||
       this._bitsPerSample === 32 ||
       this._bitsPerSample === 64
     ) {
-      if (this._compression === TiffImage.COMPRESSION_NONE) {
-        bdata = p;
-      } else if (this._compression === TiffImage.COMPRESSION_LZW) {
-        bdata = new InputBuffer({
+      if (this._compression === TiffCompression.none) {
+        byteData = p;
+      } else if (this._compression === TiffCompression.lzw) {
+        byteData = new InputBuffer({
           buffer: new Uint8Array(bytesInThisTile),
         });
         const decoder = new LzwDecoder();
         try {
-          decoder.decode(InputBuffer.from(p, 0, byteCount), bdata.buffer);
+          decoder.decode(InputBuffer.from(p, 0, byteCount), byteData.buffer);
         } catch (e) {
-          console.error(e);
+          // ignore
         }
         // Horizontal Differencing Predictor
         if (this._predictor === 2) {
           let count = 0;
           for (let j = 0; j < this._tileHeight; j++) {
             count = this._samplesPerPixel * (j * this._tileWidth + 1);
-            for (
-              let i = this._samplesPerPixel,
-                len = this._tileWidth * this._samplesPerPixel;
-              i < len;
-              i++
-            ) {
-              const b =
-                bdata.getByte(count) +
-                bdata.getByte(count - this._samplesPerPixel);
-              bdata.setByte(count, b);
+            const len = this._tileWidth * this._samplesPerPixel;
+            for (let i = this._samplesPerPixel; i < len; i++) {
+              byteData.setByte(
+                count,
+                byteData.getByte(count) +
+                  byteData.getByte(count - this._samplesPerPixel)
+              );
               count++;
             }
           }
         }
-      } else if (this._compression === TiffImage.COMPRESSION_PACKBITS) {
-        bdata = new InputBuffer({
+      } else if (this._compression === TiffCompression.packBits) {
+        byteData = new InputBuffer({
           buffer: new Uint8Array(bytesInThisTile),
         });
-        this.decodePackbits(p, bytesInThisTile, bdata.buffer);
-      } else if (this._compression === TiffImage.COMPRESSION_DEFLATE) {
+        this.decodePackBits(p, bytesInThisTile, byteData.buffer);
+      } else if (this._compression === TiffCompression.deflate) {
         const data = p.toUint8Array(0, byteCount);
         const outData = inflate(data);
-        bdata = new InputBuffer({
+        byteData = new InputBuffer({
           buffer: outData,
         });
-      } else if (this._compression === TiffImage.COMPRESSION_ZIP) {
+      } else if (this._compression === TiffCompression.zip) {
         const data = p.toUint8Array(0, byteCount);
         const outData = inflate(data);
-        bdata = new InputBuffer({
+        byteData = new InputBuffer({
           buffer: outData,
         });
-      } else if (this._compression === TiffImage.COMPRESSION_OLD_JPEG) {
-        this.image ??= new MemoryImage({
-          width: this._width,
-          height: this._height,
-        });
+      } else if (this._compression === TiffCompression.oldJpeg) {
         const data = p.toUint8Array(0, byteCount);
-        const tile = new JpegDecoder().decodeImage(data);
+        const tile = new JpegDecoder().decode(data);
         if (tile !== undefined) {
           this.jpegToImage(
             tile,
-            this.image,
+            image,
             outX,
             outY,
             this._tileWidth,
             this._tileHeight
           );
         }
-        if (this.hdrImage !== undefined) {
-          this.hdrImage = HdrImage.fromImage(this.image);
-        }
         return;
       } else {
-        throw new ImageError(
+        throw new LibError(
           `Unsupported Compression Type: ${this._compression}`
         );
       }
@@ -781,279 +662,164 @@ export class TiffImage {
           ++x, ++px
         ) {
           if (this._samplesPerPixel === 1) {
-            if (this._sampleFormat === TiffImage.FORMAT_FLOAT) {
-              let sample = 0.0;
+            if (this._sampleFormat === TiffFormat.float) {
+              let sample = 0;
               if (this._bitsPerSample === 32) {
-                sample = bdata.readFloat32();
+                sample = byteData.readFloat32();
               } else if (this._bitsPerSample === 64) {
-                sample = bdata.readFloat64();
+                sample = byteData.readFloat64();
               } else if (this._bitsPerSample === 16) {
-                sample = Half.halfToDouble(bdata.readUint16());
+                sample = Float16.float16ToDouble(byteData.readUint16());
               }
-              if (this.hdrImage !== undefined) {
-                this.hdrImage.setRed(px, py, sample);
-              }
-              if (this.image !== undefined) {
-                const gray = MathOperators.clampInt255(sample * 255);
-                let c = 0;
-                if (
-                  this._photometricType === 3 &&
-                  this._colorMap !== undefined
-                ) {
-                  c = Color.getColor(
-                    this._colorMap[this.colorMapRed + gray],
-                    this._colorMap[this.colorMapGreen + gray],
-                    this._colorMap[this.colorMapBlue + gray]
-                  );
-                } else {
-                  c = Color.getColor(gray, gray, gray);
-                }
-                this.image.setPixel(px, py, c);
-              }
+              image.setPixelR(px, py, sample);
             } else {
-              let gray = 0;
+              let sample = 0;
               if (this._bitsPerSample === 8) {
-                gray =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                sample =
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
               } else if (this._bitsPerSample === 16) {
-                gray =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                sample =
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
               } else if (this._bitsPerSample === 32) {
-                gray =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                sample =
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
               }
 
-              if (this.hdrImage !== undefined) {
-                this.hdrImage.setRed(px, py, gray);
+              if (this._photometricType === TiffPhotometricType.whiteIsZero) {
+                const mx = Math.trunc(image.maxChannelValue);
+                sample = mx - sample;
               }
 
-              if (this.image !== undefined) {
-                gray =
-                  this._bitsPerSample === 16
-                    ? gray >> 8
-                    : this._bitsPerSample === 32
-                    ? gray >> 24
-                    : gray;
-                if (this._photometricType === 0) {
-                  gray = 255 - gray;
-                }
-
-                let c = 0;
-                if (
-                  this._photometricType === 3 &&
-                  this._colorMap !== undefined
-                ) {
-                  c = Color.getColor(
-                    this._colorMap[this.colorMapRed + gray],
-                    this._colorMap[this.colorMapGreen + gray],
-                    this._colorMap[this.colorMapBlue + gray]
-                  );
-                } else {
-                  c = Color.getColor(gray, gray, gray);
-                }
-
-                this.image.setPixel(px, py, c);
-              }
+              image.setPixelR(px, py, sample);
             }
           } else if (this._samplesPerPixel === 2) {
             let gray = 0;
             let alpha = 0;
             if (this._bitsPerSample === 8) {
               gray =
-                this._sampleFormat === TiffImage.FORMAT_INT
-                  ? bdata.readInt8()
-                  : bdata.readByte();
+                this._sampleFormat === TiffFormat.int
+                  ? byteData.readInt8()
+                  : byteData.readByte();
               alpha =
-                this._sampleFormat === TiffImage.FORMAT_INT
-                  ? bdata.readInt8()
-                  : bdata.readByte();
+                this._sampleFormat === TiffFormat.int
+                  ? byteData.readInt8()
+                  : byteData.readByte();
             } else if (this._bitsPerSample === 16) {
               gray =
-                this._sampleFormat === TiffImage.FORMAT_INT
-                  ? bdata.readInt16()
-                  : bdata.readUint16();
+                this._sampleFormat === TiffFormat.int
+                  ? byteData.readInt16()
+                  : byteData.readUint16();
               alpha =
-                this._sampleFormat === TiffImage.FORMAT_INT
-                  ? bdata.readInt16()
-                  : bdata.readUint16();
+                this._sampleFormat === TiffFormat.int
+                  ? byteData.readInt16()
+                  : byteData.readUint16();
             } else if (this._bitsPerSample === 32) {
               gray =
-                this._sampleFormat === TiffImage.FORMAT_INT
-                  ? bdata.readInt32()
-                  : bdata.readUint32();
+                this._sampleFormat === TiffFormat.int
+                  ? byteData.readInt32()
+                  : byteData.readUint32();
               alpha =
-                this._sampleFormat === TiffImage.FORMAT_INT
-                  ? bdata.readInt32()
-                  : bdata.readUint32();
+                this._sampleFormat === TiffFormat.int
+                  ? byteData.readInt32()
+                  : byteData.readUint32();
             }
 
-            if (this.hdrImage !== undefined) {
-              this.hdrImage.setRed(px, py, gray);
-              this.hdrImage.setGreen(px, py, alpha);
-            }
-
-            if (this.image !== undefined) {
-              gray =
-                this._bitsPerSample === 16
-                  ? gray >> 8
-                  : this._bitsPerSample === 32
-                  ? gray >> 24
-                  : gray;
-              alpha =
-                this._bitsPerSample === 16
-                  ? alpha >> 8
-                  : this._bitsPerSample === 32
-                  ? alpha >> 24
-                  : alpha;
-              const c = Color.getColor(gray, gray, gray, alpha);
-              this.image.setPixel(px, py, c);
-            }
+            image.setPixelRgb(px, py, gray, alpha, 0);
           } else if (this._samplesPerPixel === 3) {
-            if (this._sampleFormat === TiffImage.FORMAT_FLOAT) {
+            if (this._sampleFormat === TiffFormat.float) {
               let r = 0.0;
               let g = 0.0;
               let b = 0.0;
               if (this._bitsPerSample === 32) {
-                r = bdata.readFloat32();
-                g = bdata.readFloat32();
-                b = bdata.readFloat32();
+                r = byteData.readFloat32();
+                g = byteData.readFloat32();
+                b = byteData.readFloat32();
               } else if (this._bitsPerSample === 64) {
-                r = bdata.readFloat64();
-                g = bdata.readFloat64();
-                b = bdata.readFloat64();
+                r = byteData.readFloat64();
+                g = byteData.readFloat64();
+                b = byteData.readFloat64();
               } else if (this._bitsPerSample === 16) {
-                r = Half.halfToDouble(bdata.readUint16());
-                g = Half.halfToDouble(bdata.readUint16());
-                b = Half.halfToDouble(bdata.readUint16());
+                r = Float16.float16ToDouble(byteData.readUint16());
+                g = Float16.float16ToDouble(byteData.readUint16());
+                b = Float16.float16ToDouble(byteData.readUint16());
               }
-              if (this.hdrImage !== undefined) {
-                this.hdrImage.setRed(px, py, r);
-                this.hdrImage.setGreen(px, py, g);
-                this.hdrImage.setBlue(px, py, b);
-              }
-              if (this.image !== undefined) {
-                const ri = MathOperators.clampInt255(r * 255);
-                const gi = MathOperators.clampInt255(g * 255);
-                const bi = MathOperators.clampInt255(b * 255);
-                const c = Color.getColor(ri, gi, bi);
-                this.image.setPixel(px, py, c);
-              }
+              image.setPixelRgb(px, py, r, g, b);
             } else {
               let r = 0;
               let g = 0;
               let b = 0;
               if (this._bitsPerSample === 8) {
                 r =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
                 g =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
                 b =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
               } else if (this._bitsPerSample === 16) {
                 r =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
                 g =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
                 b =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
               } else if (this._bitsPerSample === 32) {
                 r =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
                 g =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
                 b =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
               }
 
-              if (this.hdrImage !== undefined) {
-                this.hdrImage.setRed(px, py, r);
-                this.hdrImage.setGreen(px, py, g);
-                this.hdrImage.setBlue(px, py, b);
-              }
-
-              if (this.image !== undefined) {
-                r =
-                  this._bitsPerSample === 16
-                    ? r >> 8
-                    : this._bitsPerSample === 32
-                    ? r >> 24
-                    : r;
-                g =
-                  this._bitsPerSample === 16
-                    ? g >> 8
-                    : this._bitsPerSample === 32
-                    ? g >> 24
-                    : g;
-                b =
-                  this._bitsPerSample === 16
-                    ? b >> 8
-                    : this._bitsPerSample === 32
-                    ? b >> 24
-                    : b;
-                const c = Color.getColor(r, g, b);
-                this.image.setPixel(px, py, c);
-              }
+              image.setPixelRgb(px, py, r, g, b);
             }
           } else if (this._samplesPerPixel >= 4) {
-            if (this._sampleFormat === TiffImage.FORMAT_FLOAT) {
+            if (this._sampleFormat === TiffFormat.float) {
               let r = 0.0;
               let g = 0.0;
               let b = 0.0;
               let a = 0.0;
               if (this._bitsPerSample === 32) {
-                r = bdata.readFloat32();
-                g = bdata.readFloat32();
-                b = bdata.readFloat32();
-                a = bdata.readFloat32();
+                r = byteData.readFloat32();
+                g = byteData.readFloat32();
+                b = byteData.readFloat32();
+                a = byteData.readFloat32();
               } else if (this._bitsPerSample === 64) {
-                r = bdata.readFloat64();
-                g = bdata.readFloat64();
-                b = bdata.readFloat64();
-                a = bdata.readFloat64();
+                r = byteData.readFloat64();
+                g = byteData.readFloat64();
+                b = byteData.readFloat64();
+                a = byteData.readFloat64();
               } else if (this._bitsPerSample === 16) {
-                r = Half.halfToDouble(bdata.readUint16());
-                g = Half.halfToDouble(bdata.readUint16());
-                b = Half.halfToDouble(bdata.readUint16());
-                a = Half.halfToDouble(bdata.readUint16());
+                r = Float16.float16ToDouble(byteData.readUint16());
+                g = Float16.float16ToDouble(byteData.readUint16());
+                b = Float16.float16ToDouble(byteData.readUint16());
+                a = Float16.float16ToDouble(byteData.readUint16());
               }
-              if (this.hdrImage !== undefined) {
-                this.hdrImage.setRed(px, py, r);
-                this.hdrImage.setGreen(px, py, g);
-                this.hdrImage.setBlue(px, py, b);
-                this.hdrImage.setAlpha(px, py, a);
-              }
-              if (this.image !== undefined) {
-                const ri = MathOperators.clampInt255(r * 255);
-                const gi = MathOperators.clampInt255(g * 255);
-                const bi = MathOperators.clampInt255(b * 255);
-                const ai = MathOperators.clampInt255(a * 255);
-                const c = Color.getColor(ri, gi, bi, ai);
-                this.image.setPixel(px, py, c);
-              }
+              image.setPixelRgba(px, py, r, g, b, a);
             } else {
               let r = 0;
               let g = 0;
@@ -1061,98 +827,72 @@ export class TiffImage {
               let a = 0;
               if (this._bitsPerSample === 8) {
                 r =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
                 g =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
                 b =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
                 a =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt8()
-                    : bdata.readByte();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt8()
+                    : byteData.readByte();
               } else if (this._bitsPerSample === 16) {
                 r =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
                 g =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
                 b =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
                 a =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt16()
-                    : bdata.readUint16();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt16()
+                    : byteData.readUint16();
               } else if (this._bitsPerSample === 32) {
                 r =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
                 g =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
                 b =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
                 a =
-                  this._sampleFormat === TiffImage.FORMAT_INT
-                    ? bdata.readInt32()
-                    : bdata.readUint32();
+                  this._sampleFormat === TiffFormat.int
+                    ? byteData.readInt32()
+                    : byteData.readUint32();
               }
 
-              if (this.hdrImage !== undefined) {
-                this.hdrImage.setRed(px, py, r);
-                this.hdrImage.setGreen(px, py, g);
-                this.hdrImage.setBlue(px, py, b);
-                this.hdrImage.setAlpha(px, py, a);
+              if (this._photometricType === TiffPhotometricType.cmyk) {
+                const rgba = ColorUtils.cmykToRgb(r, g, b, a);
+                r = rgba[0];
+                g = rgba[1];
+                b = rgba[2];
+                a = Math.trunc(image.maxChannelValue);
               }
 
-              if (this.image !== undefined) {
-                r =
-                  this._bitsPerSample === 16
-                    ? r >> 8
-                    : this._bitsPerSample === 32
-                    ? r >> 24
-                    : r;
-                g =
-                  this._bitsPerSample === 16
-                    ? g >> 8
-                    : this._bitsPerSample === 32
-                    ? g >> 24
-                    : g;
-                b =
-                  this._bitsPerSample === 16
-                    ? b >> 8
-                    : this._bitsPerSample === 32
-                    ? b >> 24
-                    : b;
-                a =
-                  this._bitsPerSample === 16
-                    ? a >> 8
-                    : this._bitsPerSample === 32
-                    ? a >> 24
-                    : a;
-                const c = Color.getColor(r, g, b, a);
-                this.image.setPixel(px, py, c);
-              }
+              image.setPixelRgba(px, py, r, g, b, a);
             }
           }
         }
       }
     } else {
-      throw new ImageError(`Unsupported bitsPerSample: ${this._bitsPerSample}`);
+      throw new LibError(`Unsupported bitsPerSample: ${this._bitsPerSample}`);
     }
   }
 
@@ -1176,7 +916,7 @@ export class TiffImage {
   /**
    * Uncompress packbits compressed image data.
    */
-  private decodePackbits(
+  private decodePackBits(
     data: InputBuffer,
     arraySize: number,
     dst: Uint8Array
@@ -1185,7 +925,7 @@ export class TiffImage {
     let dstCount = 0;
 
     while (dstCount < arraySize) {
-      const b = BitOperators.toInt8(data.getByte(srcCount++));
+      const b = BitUtils.uint8ToInt8(data.getByte(srcCount++));
       if (b >= 0 && b <= 127) {
         // literal run packet
         for (let i = 0; i < b + 1; ++i) {
@@ -1205,36 +945,68 @@ export class TiffImage {
   }
 
   public decode(p: InputBuffer): MemoryImage {
-    this.image = new MemoryImage({
+    const isFloat = this._sampleFormat === TiffFormat.float;
+    const isInt = this._sampleFormat === TiffFormat.int;
+    const format =
+      this._bitsPerSample === 1
+        ? Format.uint1
+        : this._bitsPerSample === 2
+        ? Format.uint2
+        : this._bitsPerSample === 4
+        ? Format.uint4
+        : isFloat && this._bitsPerSample === 16
+        ? Format.float16
+        : isFloat && this._bitsPerSample === 32
+        ? Format.float32
+        : isFloat && this._bitsPerSample === 64
+        ? Format.float64
+        : isInt && this._bitsPerSample === 8
+        ? Format.int8
+        : isInt && this._bitsPerSample === 16
+        ? Format.int16
+        : isInt && this._bitsPerSample === 32
+        ? Format.int32
+        : this._bitsPerSample === 16
+        ? Format.uint16
+        : this._bitsPerSample === 32
+        ? Format.uint32
+        : Format.uint8;
+    const hasPalette =
+      this._colorMap !== undefined &&
+      this._photometricType === TiffPhotometricType.palette;
+    const numChannels = hasPalette ? 3 : this._samplesPerPixel;
+
+    const image = new MemoryImage({
       width: this._width,
       height: this._height,
+      format: format,
+      numChannels: numChannels,
+      withPalette: hasPalette,
     });
-    for (let tileY = 0, ti = 0; tileY < this._tilesY; ++tileY) {
-      for (let tileX = 0; tileX < this._tilesX; ++tileX, ++ti) {
-        this.decodeTile(p, tileX, tileY);
-      }
-    }
-    return this.image;
-  }
 
-  public decodeHdr(p: InputBuffer): HdrImage {
-    this.hdrImage = HdrImage.create(
-      this._width,
-      this._height,
-      this._samplesPerPixel,
-      this._sampleFormat === TiffImage.FORMAT_UINT
-        ? HdrSlice.UINT
-        : this._sampleFormat === TiffImage.FORMAT_INT
-        ? HdrSlice.INT
-        : HdrSlice.FLOAT,
-      this._bitsPerSample
-    );
-    for (let tileY = 0, ti = 0; tileY < this._tilesY; ++tileY) {
-      for (let tileX = 0; tileX < this._tilesX; ++tileX, ++ti) {
-        this.decodeTile(p, tileX, tileY);
+    if (hasPalette) {
+      const p = image.palette!;
+      const cm = this._colorMap!;
+      const numChannels = 3;
+      // Only support RGB palettes
+      const numColors = Math.trunc(cm.length / numChannels);
+      for (let i = 0; i < numColors; ++i) {
+        p.setRgb(
+          i,
+          cm[this._colorMapRed + i],
+          cm[this._colorMapGreen + i],
+          cm[this._colorMapBlue + i]
+        );
       }
     }
-    return this.hdrImage;
+
+    for (let tileY = 0, ti = 0; tileY < this._tilesY; ++tileY) {
+      for (let tileX = 0; tileX < this._tilesX; ++tileX, ++ti) {
+        this.decodeTile(p, image, tileX, tileY);
+      }
+    }
+
+    return image;
   }
 
   public hasTag(tag: number): boolean {
