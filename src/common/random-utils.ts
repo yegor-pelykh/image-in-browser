@@ -2,14 +2,14 @@
 
 export abstract class RandomUtils {
   /**
-   * Return a random variable between [**-1**,**1**].
+   * Return a random number between [-1, 1].
    */
   public static crand(): number {
     return 1 - 2 * Math.random();
   }
 
   /**
-   * Return a random variable following a gaussian distribution and a standard
+   * Return a random number following a gaussian distribution and a standard
    * deviation of 1.
    */
   public static grand(): number {
@@ -40,5 +40,12 @@ export abstract class RandomUtils {
       s *= Math.random();
     }
     return k - 1;
+  }
+
+  /**
+   * Generates a non-negative random integer in the range from 0, inclusive, to **max**, exclusive.
+   */
+  public static intrand(max: number) {
+    return Math.floor(Math.random() * max);
   }
 }

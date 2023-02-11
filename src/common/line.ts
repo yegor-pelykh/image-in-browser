@@ -3,59 +3,85 @@
 import { Point } from './point';
 
 export class Line {
-  private _startX = 0;
-  private _startY = 0;
-  private _endX = 0;
-  private _endY = 0;
-  private _dx = 0;
-  private _dy = 0;
+  private _x1: number;
+  private _y1: number;
+  private _x2: number;
+  private _y2: number;
 
-  public get startX(): number {
-    return this._startX;
+  public get x1(): number {
+    return this._x1;
   }
 
-  public get startY(): number {
-    return this._startY;
+  public get y1(): number {
+    return this._y1;
   }
 
-  public get endX(): number {
-    return this._endX;
+  public get x2(): number {
+    return this._x2;
   }
 
-  public get endY(): number {
-    return this._endY;
+  public get y2(): number {
+    return this._y2;
   }
 
   public get dx(): number {
-    return this._dx;
+    return this._x2 - this._x1;
   }
 
   public get dy(): number {
-    return this._dy;
+    return this._y2 - this._y1;
   }
 
   constructor(x1: number, y1: number, x2: number, y2: number) {
-    this.initialize(x1, y1, x2, y2);
+    this._x1 = x1;
+    this._y1 = y1;
+    this._x2 = x2;
+    this._y2 = y2;
   }
 
   public static from(other: Line) {
-    return new Line(other.startX, other.startY, other.endX, other.endY);
+    return new Line(other.x1, other.y1, other.x2, other.y2);
   }
 
-  private initialize(x1: number, y1: number, x2: number, y2: number) {
-    this._startX = Math.min(x1, x2);
-    this._startY = Math.min(y1, y2);
-    this._endX = Math.max(x1, x2);
-    this._endY = Math.max(y1, y2);
-    this._dx = this._endX - this._startX;
-    this._dy = this._endY - this._startY;
+  public movePoint1(x: number, y: number) {
+    this._x1 = x;
+    this._y1 = y;
   }
 
-  public moveStart(x: number, y: number) {
-    this.initialize(x, y, this._endX, this._endY);
+  public movePoint2(x: number, y: number) {
+    this._x2 = x;
+    this._y2 = y;
   }
 
-  public moveEnd(x: number, y: number) {
-    this.initialize(this._startX, this._startY, x, y);
+  public swapXY1() {
+    const tmp = this._x1;
+    this._x1 = this._y1;
+    this._y1 = tmp;
+  }
+
+  public swapXY2() {
+    const tmp = this._x2;
+    this._x2 = this._y2;
+    this._y2 = tmp;
+  }
+
+  public flipX() {
+    const tmp = this._x1;
+    this._x1 = this._x2;
+    this._x2 = tmp;
+  }
+
+  public flipY() {
+    const tmp = this._y1;
+    this._y1 = this._y2;
+    this._y2 = tmp;
+  }
+
+  public clone(): Line {
+    return new Line(this._x1, this._y1, this._x2, this._y2);
+  }
+
+  public toString(): string {
+    return `${this.constructor.name} (x1: ${this._x1}, y1: ${this._y1}, x2: ${this._x2}, y2: ${this._y2})`;
   }
 }

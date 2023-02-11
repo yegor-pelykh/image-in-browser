@@ -1,6 +1,6 @@
 /** @format */
 
-export interface Crc32Parameters {
+export interface Crc32Options {
   buffer: Uint8Array;
   baseCrc?: number;
   position?: number;
@@ -8,7 +8,7 @@ export interface Crc32Parameters {
 }
 
 export abstract class Crc32 {
-  private static readonly crcTable = new Uint32Array(Crc32.makeTable());
+  private static readonly _crcTable = new Uint32Array(Crc32.makeTable());
 
   private static makeTable() {
     const table: number[] = [];
@@ -23,15 +23,15 @@ export abstract class Crc32 {
     return table;
   }
 
-  public static getChecksum(options: Crc32Parameters) {
-    const t = Crc32.crcTable;
-    const len = options.length ?? options.buffer.length;
-    const pos = options.position ?? 0;
+  public static getChecksum(opt: Crc32Options) {
+    const t = Crc32._crcTable;
+    const len = opt.length ?? opt.buffer.length;
+    const pos = opt.position ?? 0;
     const end = pos + len;
 
-    let result = (options.baseCrc ?? 0) ^ -1;
+    let result = (opt.baseCrc ?? 0) ^ -1;
     for (let i = pos; i < end; i++) {
-      result = (result >>> 8) ^ t[(result ^ options.buffer[i]) & 0xff];
+      result = (result >>> 8) ^ t[(result ^ opt.buffer[i]) & 0xff];
     }
 
     return (result ^ -1) >>> 0;

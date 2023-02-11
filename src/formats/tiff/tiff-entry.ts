@@ -1,80 +1,54 @@
 /** @format */
 
 import { InputBuffer } from '../../common/input-buffer';
-import { ImageError } from '../../error/image-error';
+import { LibError } from '../../error/lib-error';
+import { ExifImageTags } from '../../exif/exif-tag';
+import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type';
+import { IfdAsciiValue } from '../../exif/ifd-value/ifd-ascii-value';
+import { IfdByteValue } from '../../exif/ifd-value/ifd-byte-value';
+import { IfdDoubleValue } from '../../exif/ifd-value/ifd-double-value';
+import { IfdLongValue } from '../../exif/ifd-value/ifd-long-value';
+import { IfdRationalValue } from '../../exif/ifd-value/ifd-rational-value';
+import { IfdSByteValue } from '../../exif/ifd-value/ifd-sbyte-value';
+import { IfdSingleValue } from '../../exif/ifd-value/ifd-single-value';
+import { IfdSLongValue } from '../../exif/ifd-value/ifd-slong-value';
+import { IfdSRationalValue } from '../../exif/ifd-value/ifd-srational-value';
+import { IfdSShortValue } from '../../exif/ifd-value/ifd-sshort-value';
+import { IfdValue } from '../../exif/ifd-value/ifd-value';
 import { TiffImage } from './tiff-image';
 
 export interface TiffEntryInitOptions {
   tag: number;
   type: number;
-  numValues: number;
+  count: number;
   p: InputBuffer;
+  valueOffset: number;
 }
 
 export class TiffEntry {
-  private static readonly SIZE_OF_TYPE: number[] = [
-    //  0 = n/a
-    0,
-    //  1 = byte
-    1,
-    //  2 = ascii
-    1,
-    //  3 = short
-    2,
-    //  4 = long
-    4,
-    //  5 = rational
-    8,
-    //  6 = sbyte
-    1,
-    //  7 = undefined
-    1,
-    //  8 = sshort
-    2,
-    //  9 = slong
-    4,
-    // 10 = srational
-    8,
-    // 11 = float
-    4,
-    // 12 = double
-    8, 0,
-  ];
-
-  public static readonly TYPE_BYTE = 1;
-  public static readonly TYPE_ASCII = 2;
-  public static readonly TYPE_SHORT = 3;
-  public static readonly TYPE_LONG = 4;
-  public static readonly TYPE_RATIONAL = 5;
-  public static readonly TYPE_SBYTE = 6;
-  public static readonly TYPE_UNDEFINED = 7;
-  public static readonly TYPE_SSHORT = 8;
-  public static readonly TYPE_SLONG = 9;
-  public static readonly TYPE_SRATIONAL = 10;
-  public static readonly TYPE_FLOAT = 11;
-  public static readonly TYPE_DOUBLE = 12;
-
   private _tag: number;
   public get tag(): number {
     return this._tag;
   }
 
-  private _type: number;
-  public get type(): number {
+  private _type: IfdValueType;
+  public get type(): IfdValueType {
     return this._type;
   }
 
-  private _numValues: number;
-  public get numValues(): number {
-    return this._numValues;
+  private _count: number;
+  public get count(): number {
+    return this._count;
   }
 
-  private _valueOffset: number | undefined;
-  public get valueOffset(): number | undefined {
+  private _valueOffset: number;
+  public get valueOffset(): number {
     return this._valueOffset;
   }
-  public set valueOffset(v: number | undefined) {
-    this._valueOffset = v;
+
+  private _value: IfdValue | undefined;
+  public get value(): IfdValue | undefined {
+    return this._value;
   }
 
   private _p: InputBuffer;
@@ -82,120 +56,69 @@ export class TiffEntry {
     return this._p;
   }
 
-  get isValid(): boolean {
-    return this._type < 13 && this._type > 0;
+  public get isValid(): boolean {
+    return this._type !== IfdValueType.none;
   }
 
-  get typeSize(): number {
-    return this.isValid ? TiffEntry.SIZE_OF_TYPE[this._type] : 0;
+  public get typeSize(): number {
+    return this.isValid ? IfdValueTypeSize[this._type] : 0;
   }
 
-  get isString(): boolean {
-    return this._type === TiffEntry.TYPE_ASCII;
+  public get isString(): boolean {
+    return this._type === IfdValueType.ascii;
   }
 
-  constructor(options: TiffEntryInitOptions) {
-    this._tag = options.tag;
-    this._type = options.type;
-    this._numValues = options.numValues;
-    this._p = options.p;
+  constructor(opt: TiffEntryInitOptions) {
+    this._tag = opt.tag;
+    this._type = opt.type;
+    this._count = opt.count;
+    this._p = opt.p;
+    this._valueOffset = opt.valueOffset;
   }
 
-  private readValueInternal(): number {
+  public read(): IfdValue | undefined {
+    if (this._value !== undefined) {
+      return this._value;
+    }
+
+    this._p.offset = this._valueOffset;
+    const data = this.p.readBytes(this._count * this.typeSize);
     switch (this._type) {
-      case TiffEntry.TYPE_BYTE:
-      case TiffEntry.TYPE_ASCII:
-        return this._p.readByte();
-      case TiffEntry.TYPE_SHORT:
-        return this._p.readUint16();
-      case TiffEntry.TYPE_LONG:
-        return this._p.readUint32();
-      case TiffEntry.TYPE_RATIONAL: {
-        const num = this._p.readUint32();
-        const den = this._p.readUint32();
-        if (den === 0) {
-          return 0;
-        }
-        return Math.trunc(num / den);
-      }
-      case TiffEntry.TYPE_SBYTE:
-        throw new ImageError('Unhandled value type: SBYTE');
-      case TiffEntry.TYPE_UNDEFINED:
-        return this._p.readByte();
-      case TiffEntry.TYPE_SSHORT:
-        throw new ImageError('Unhandled value type: SSHORT');
-      case TiffEntry.TYPE_SLONG:
-        throw new ImageError('Unhandled value type: SLONG');
-      case TiffEntry.TYPE_SRATIONAL:
-        throw new ImageError('Unhandled value type: SRATIONAL');
-      case TiffEntry.TYPE_FLOAT:
-        throw new ImageError('Unhandled value type: FLOAT');
-      case TiffEntry.TYPE_DOUBLE:
-        throw new ImageError('Unhandled value type: DOUBLE');
+      case IfdValueType.byte:
+        return (this._value = IfdByteValue.data(data, this._count));
+      case IfdValueType.ascii:
+        return (this._value = IfdAsciiValue.data(data, this._count));
+      case IfdValueType.undefined:
+        return (this._value = IfdByteValue.data(data, this._count));
+      case IfdValueType.short:
+        return (this._value = IfdSShortValue.data(data, this._count));
+      case IfdValueType.long:
+        return (this._value = IfdLongValue.data(data, this._count));
+      case IfdValueType.rational:
+        return (this._value = IfdRationalValue.data(data, this._count));
+      case IfdValueType.single:
+        return (this._value = IfdSingleValue.data(data, this._count));
+      case IfdValueType.double:
+        return (this._value = IfdDoubleValue.data(data, this._count));
+      case IfdValueType.sByte:
+        return (this._value = IfdSByteValue.data(data, this._count));
+      case IfdValueType.sShort:
+        return (this._value = IfdSShortValue.data(data, this._count));
+      case IfdValueType.sLong:
+        return (this._value = IfdSLongValue.data(data, this._count));
+      case IfdValueType.sRational:
+        return (this._value = IfdSRationalValue.data(data, this._count));
+      default:
+      case IfdValueType.none:
+        return undefined;
     }
-    return 0;
   }
 
-  public toString() {
-    if (TiffImage.TAG_NAME.has(this._tag)) {
-      return `${TiffImage.TAG_NAME.get(this._tag)}: $type $numValues`;
+  public toString(): string {
+    const exifTag = ExifImageTags.get(this._tag);
+    if (exifTag !== undefined) {
+      return `${exifTag.name}: ${this._type} ${this._count}`;
     }
-    return `<${this._tag}>: ${this._type} ${this._numValues}`;
-  }
-
-  public readValue(): number {
-    this._p.offset = this._valueOffset!;
-    return this.readValueInternal();
-  }
-
-  public readValues(): number[] {
-    this._p.offset = this._valueOffset!;
-    const values: number[] = [];
-    for (let i = 0; i < this._numValues; ++i) {
-      values.push(this.readValueInternal());
-    }
-    return values;
-  }
-
-  public readString(): string {
-    if (this._type !== TiffEntry.TYPE_ASCII) {
-      throw new ImageError('readString requires ASCII entity');
-    }
-    // TODO: ASCII fields can contain multiple strings, separated with a NULL.
-    return String.fromCharCode(...this.readValues());
-  }
-
-  public read(): number[] {
-    this._p.offset = this._valueOffset!;
-    const values: number[] = [];
-    for (let i = 0; i < this._numValues; ++i) {
-      switch (this._type) {
-        case TiffEntry.TYPE_BYTE:
-        case TiffEntry.TYPE_ASCII:
-          values.push(this._p.readByte());
-          break;
-        case TiffEntry.TYPE_SHORT:
-          values.push(this._p.readUint16());
-          break;
-        case TiffEntry.TYPE_LONG:
-          values.push(this._p.readUint32());
-          break;
-        case TiffEntry.TYPE_RATIONAL: {
-          const num = this._p.readUint32();
-          const den = this._p.readUint32();
-          if (den !== 0) {
-            values.push(num / den);
-          }
-          break;
-        }
-        case TiffEntry.TYPE_FLOAT:
-          values.push(this._p.readFloat32());
-          break;
-        case TiffEntry.TYPE_DOUBLE:
-          values.push(this._p.readFloat64());
-          break;
-      }
-    }
-    return values;
+    return `${this.constructor.name} (<${this._tag}>: ${this._type} ${this._count})`;
   }
 }

@@ -1,10 +1,8 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
 import { InputBuffer } from '../common/input-buffer';
-import { MemoryImage } from '../common/memory-image';
-import { ImageError } from '../error/image-error';
-import { HdrImage } from '../hdr/hdr-image';
+import { LibError } from '../error/lib-error';
+import { MemoryImage } from '../image/image';
 import { Decoder } from './decoder';
 import { JpegData } from './jpeg/jpeg-data';
 import { JpegInfo } from './jpeg/jpeg-info';
@@ -13,12 +11,11 @@ import { JpegInfo } from './jpeg/jpeg-info';
  * Decode a jpeg encoded image.
  */
 export class JpegDecoder implements Decoder {
-  private info?: JpegInfo;
-
-  private input?: InputBuffer;
+  private _input?: InputBuffer;
+  private _info?: JpegInfo;
 
   public get numFrames(): number {
-    return this.info !== undefined ? this.info.numFrames : 0;
+    return this._info !== undefined ? this._info.numFrames : 0;
   }
 
   /**
@@ -29,66 +26,36 @@ export class JpegDecoder implements Decoder {
   }
 
   public startDecode(bytes: Uint8Array): JpegInfo | undefined {
-    this.input = new InputBuffer({
+    this._input = new InputBuffer({
       buffer: bytes,
       bigEndian: true,
     });
-    this.info = new JpegData().readInfo(bytes);
-    return this.info;
+    this._info = new JpegData().readInfo(bytes);
+    return this._info;
   }
 
   public decodeFrame(_: number): MemoryImage | undefined {
-    if (this.input === undefined) {
+    if (this._input === undefined) {
       return undefined;
     }
+
     const jpeg = new JpegData();
-    jpeg.read(this.input.buffer);
+    jpeg.read(this._input.buffer);
     if (jpeg.frames.length !== 1) {
-      throw new ImageError('only single frame JPEGs supported');
+      throw new LibError('Only single frame JPEGs supported.');
     }
 
     return jpeg.getImage();
   }
 
-  public decodeHdrFrame(frame: number): HdrImage | undefined {
-    const img = this.decodeFrame(frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
-  }
-
-  public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
-    const image = this.decodeImage(bytes);
-    if (image === undefined) {
-      return undefined;
-    }
-
-    const animation = new FrameAnimation({
-      width: image.width,
-      height: image.height,
-    });
-    animation.addFrame(image);
-
-    return animation;
-  }
-
-  public decodeImage(bytes: Uint8Array, _?: number): MemoryImage | undefined {
+  public decode(bytes: Uint8Array, _frame?: number): MemoryImage | undefined {
     const jpeg = new JpegData();
     jpeg.read(bytes);
 
     if (jpeg.frames.length !== 1) {
-      throw new ImageError('only single frame JPEGs supported');
+      throw new LibError('Only single frame JPEGs supported.');
     }
 
     return jpeg.getImage();
-  }
-
-  public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
-    const img = this.decodeImage(bytes, frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
   }
 }

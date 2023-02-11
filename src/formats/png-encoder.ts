@@ -1,21 +1,22 @@
 /** @format */
 
 import { deflate } from 'uzip';
-import { BlendMode } from '../common/blend-mode';
-import { Color } from '../common/color';
 import { Crc32 } from '../common/crc32';
-import { DisposeMode } from '../common/dispose-mode';
-import { FrameAnimation } from '../common/frame-animation';
-import { ICCProfileData } from '../common/icc-profile-data';
-import { MemoryImage } from '../common/memory-image';
 import { OutputBuffer } from '../common/output-buffer';
-import { RgbChannelSet } from '../common/rgb-channel-set';
-import { TextCodec } from '../common/text-codec';
+import { StringUtils } from '../common/string-utils';
 import { CompressionLevel } from '../common/typings';
 import { Encoder } from './encoder';
+import { Quantizer } from '../image/quantizer';
+import { PngFilterType } from './png/png-filter-type';
+import { MemoryImage } from '../image/image';
+import { Format } from '../color/format';
+import { NeuralQuantizer } from '../image/neural-quantizer';
+import { PngColorType } from './png/png-color-type';
+import { Palette } from '../image/palette';
+import { IccProfile } from '../image/icc-profile';
 
 export interface PngEncoderInitOptions {
-  filter?: number;
+  filter?: PngFilterType;
   level?: CompressionLevel;
 }
 
@@ -23,66 +24,40 @@ export interface PngEncoderInitOptions {
  * Encode an image to the PNG format.
  */
 export class PngEncoder implements Encoder {
-  private static readonly FILTER_NONE = 0;
+  private _globalQuantizer: Quantizer | undefined;
 
-  private static readonly FILTER_SUB = 1;
+  private _filter: PngFilterType;
 
-  private static readonly FILTER_UP = 2;
+  private _level: number;
 
-  private static readonly FILTER_AVERAGE = 3;
+  private _repeat = 0;
 
-  private static readonly FILTER_PAETH = 4;
+  private _frames = 0;
 
-  private static readonly FILTER_AGRESSIVE = 5;
+  private _sequenceNumber = 0;
 
-  private rgbChannelSet?: RgbChannelSet;
+  private _isAnimated = false;
 
-  private filter: number;
-
-  private level: number;
-
-  private repeat = 0;
-
-  private xOffset = 0;
-
-  private yOffset = 0;
-
-  private delay?: number;
-
-  private disposeMethod: DisposeMode = DisposeMode.none;
-
-  private blendMethod: BlendMode = BlendMode.source;
-
-  private width = 0;
-
-  private height = 0;
-
-  private frames = 0;
-
-  private sequenceNumber = 0;
-
-  private isAnimated = false;
-
-  private output?: OutputBuffer;
+  private _output: OutputBuffer | undefined;
 
   /**
    * Does this encoder support animation?
    */
   private _supportsAnimation = true;
-  get supportsAnimation() {
+  public get supportsAnimation() {
     return this._supportsAnimation;
   }
 
-  constructor(options?: PngEncoderInitOptions) {
-    this.filter = options?.filter ?? PngEncoder.FILTER_PAETH;
-    this.level = options?.level ?? 6;
+  constructor(opt?: PngEncoderInitOptions) {
+    this._filter = opt?.filter ?? PngFilterType.paeth;
+    this._level = opt?.level ?? 6;
   }
 
   /**
    * Return the CRC of the bytes
    */
   private static crc(type: string, bytes: Uint8Array): number {
-    const typeCodeUnits = TextCodec.getCodePoints(type);
+    const typeCodeUnits = StringUtils.getCodePoints(type);
     const crc = Crc32.getChecksum({
       buffer: typeCodeUnits,
     });
@@ -98,119 +73,91 @@ export class PngEncoder implements Encoder {
     chunk: Uint8Array
   ): void {
     out.writeUint32(chunk.length);
-    const typeCodeUnits = TextCodec.getCodePoints(type);
+    const typeCodeUnits = StringUtils.getCodePoints(type);
     out.writeBytes(typeCodeUnits);
     out.writeBytes(chunk);
     const crc = PngEncoder.crc(type, chunk);
     out.writeUint32(crc);
   }
 
-  private static filterSub(
-    image: MemoryImage,
-    oi: number,
-    row: number,
-    out: Uint8Array
+  private static write(
+    bpc: number,
+    row: Uint8Array,
+    ri: number,
+    out: Uint8Array,
+    oi: number
   ): number {
-    let oindex = oi;
-
-    out[oindex++] = PngEncoder.FILTER_SUB;
-
-    out[oindex++] = Color.getRed(image.getPixel(0, row));
-    out[oindex++] = Color.getGreen(image.getPixel(0, row));
-    out[oindex++] = Color.getBlue(image.getPixel(0, row));
-    if (image.rgbChannelSet === RgbChannelSet.rgba) {
-      out[oindex++] = Color.getAlpha(image.getPixel(0, row));
+    let _bpc = bpc;
+    let _oi = oi;
+    _bpc--;
+    while (_bpc >= 0) {
+      out[_oi++] = row[ri + _bpc];
+      _bpc--;
     }
+    return _oi;
+  }
 
-    for (let x = 1; x < image.width; ++x) {
-      const ar = Color.getRed(image.getPixel(x - 1, row));
-      const ag = Color.getGreen(image.getPixel(x - 1, row));
-      const ab = Color.getBlue(image.getPixel(x - 1, row));
-
-      const r = Color.getRed(image.getPixel(x, row));
-      const g = Color.getGreen(image.getPixel(x, row));
-      const b = Color.getBlue(image.getPixel(x, row));
-
-      out[oindex++] = (r - ar) & 0xff;
-      out[oindex++] = (g - ag) & 0xff;
-      out[oindex++] = (b - ab) & 0xff;
-      if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const aa = Color.getAlpha(image.getPixel(x - 1, row));
-        const a = Color.getAlpha(image.getPixel(x, row));
-        out[oindex++] = (a - aa) & 0xff;
+  private static filterSub(
+    row: Uint8Array,
+    bpc: number,
+    bpp: number,
+    out: Uint8Array,
+    oi: number
+  ): number {
+    let _oi = oi;
+    out[_oi++] = PngFilterType.sub;
+    for (let x = 0; x < bpp; x += bpc) {
+      _oi = PngEncoder.write(bpc, row, x, out, _oi);
+    }
+    const l = row.length;
+    for (let x = bpp; x < l; x += bpc) {
+      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
+        out[_oi++] = (row[x + c2] - row[x + c2 - bpp]) & 0xff;
       }
     }
-
-    return oindex;
+    return _oi;
   }
 
   private static filterUp(
-    image: MemoryImage,
+    row: Uint8Array,
+    bpc: number,
+    out: Uint8Array,
     oi: number,
-    row: number,
-    out: Uint8Array
+    prevRow?: Uint8Array
   ): number {
-    let oindex = oi;
-
-    out[oindex++] = PngEncoder.FILTER_UP;
-
-    for (let x = 0; x < image.width; ++x) {
-      const br = row === 0 ? 0 : Color.getRed(image.getPixel(x, row - 1));
-      const bg = row === 0 ? 0 : Color.getGreen(image.getPixel(x, row - 1));
-      const bb = row === 0 ? 0 : Color.getBlue(image.getPixel(x, row - 1));
-
-      const xr = Color.getRed(image.getPixel(x, row));
-      const xg = Color.getGreen(image.getPixel(x, row));
-      const xb = Color.getBlue(image.getPixel(x, row));
-
-      out[oindex++] = (xr - br) & 0xff;
-      out[oindex++] = (xg - bg) & 0xff;
-      out[oindex++] = (xb - bb) & 0xff;
-      if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const ba = row === 0 ? 0 : Color.getAlpha(image.getPixel(x, row - 1));
-        const xa = Color.getAlpha(image.getPixel(x, row));
-        out[oindex++] = (xa - ba) & 0xff;
+    let _oi = oi;
+    out[_oi++] = PngFilterType.up;
+    const l = row.length;
+    for (let x = 0; x < l; x += bpc) {
+      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
+        const b = prevRow !== undefined ? prevRow[x + c2] : 0;
+        out[_oi++] = (row[x + c2] - b) & 0xff;
       }
     }
-
-    return oindex;
+    return _oi;
   }
 
   private static filterAverage(
-    image: MemoryImage,
+    row: Uint8Array,
+    bpc: number,
+    bpp: number,
+    out: Uint8Array,
     oi: number,
-    row: number,
-    out: Uint8Array
+    prevRow?: Uint8Array
   ): number {
-    let oindex = oi;
-
-    out[oindex++] = PngEncoder.FILTER_AVERAGE;
-
-    for (let x = 0; x < image.width; ++x) {
-      const ar = x === 0 ? 0 : Color.getRed(image.getPixel(x - 1, row));
-      const ag = x === 0 ? 0 : Color.getGreen(image.getPixel(x - 1, row));
-      const ab = x === 0 ? 0 : Color.getBlue(image.getPixel(x - 1, row));
-
-      const br = row === 0 ? 0 : Color.getRed(image.getPixel(x, row - 1));
-      const bg = row === 0 ? 0 : Color.getGreen(image.getPixel(x, row - 1));
-      const bb = row === 0 ? 0 : Color.getBlue(image.getPixel(x, row - 1));
-
-      const xr = Color.getRed(image.getPixel(x, row));
-      const xg = Color.getGreen(image.getPixel(x, row));
-      const xb = Color.getBlue(image.getPixel(x, row));
-
-      out[oindex++] = (xr - ((ar + br) >> 1)) & 0xff;
-      out[oindex++] = (xg - ((ag + bg) >> 1)) & 0xff;
-      out[oindex++] = (xb - ((ab + bb) >> 1)) & 0xff;
-      if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const aa = x === 0 ? 0 : Color.getAlpha(image.getPixel(x - 1, row));
-        const ba = row === 0 ? 0 : Color.getAlpha(image.getPixel(x, row - 1));
-        const xa = Color.getAlpha(image.getPixel(x, row));
-        out[oindex++] = (xa - ((aa + ba) >> 1)) & 0xff;
+    let _oi = oi;
+    out[_oi++] = PngFilterType.average;
+    const l = row.length;
+    for (let x = 0; x < l; x += bpc) {
+      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
+        const x2 = x + c2;
+        const p1 = x2 < bpp ? 0 : row[x2 - bpp];
+        const p2 = prevRow === undefined ? 0 : prevRow[x2];
+        const p3 = row[x2];
+        out[_oi++] = p3 - ((p1 + p2) >> 1);
       }
     }
-
-    return oindex;
+    return _oi;
   }
 
   private static paethPredictor(a: number, b: number, c: number): number {
@@ -227,84 +174,59 @@ export class PngEncoder implements Encoder {
   }
 
   private static filterPaeth(
-    image: MemoryImage,
+    row: Uint8Array,
+    bpc: number,
+    bpp: number,
+    out: Uint8Array,
     oi: number,
-    row: number,
-    out: Uint8Array
+    prevRow?: Uint8Array
   ): number {
-    let oindex = oi;
-
-    out[oindex++] = PngEncoder.FILTER_PAETH;
-    for (let x = 0; x < image.width; ++x) {
-      const ar = x === 0 ? 0 : Color.getRed(image.getPixel(x - 1, row));
-      const ag = x === 0 ? 0 : Color.getGreen(image.getPixel(x - 1, row));
-      const ab = x === 0 ? 0 : Color.getBlue(image.getPixel(x - 1, row));
-
-      const br = row === 0 ? 0 : Color.getRed(image.getPixel(x, row - 1));
-      const bg = row === 0 ? 0 : Color.getGreen(image.getPixel(x, row - 1));
-      const bb = row === 0 ? 0 : Color.getBlue(image.getPixel(x, row - 1));
-
-      const cr =
-        row === 0 || x === 0 ? 0 : Color.getRed(image.getPixel(x - 1, row - 1));
-      const cg =
-        row === 0 || x === 0
-          ? 0
-          : Color.getGreen(image.getPixel(x - 1, row - 1));
-      const cb =
-        row === 0 || x === 0
-          ? 0
-          : Color.getBlue(image.getPixel(x - 1, row - 1));
-
-      const xr = Color.getRed(image.getPixel(x, row));
-      const xg = Color.getGreen(image.getPixel(x, row));
-      const xb = Color.getBlue(image.getPixel(x, row));
-
-      const pr = PngEncoder.paethPredictor(ar, br, cr);
-      const pg = PngEncoder.paethPredictor(ag, bg, cg);
-      const pb = PngEncoder.paethPredictor(ab, bb, cb);
-
-      out[oindex++] = (xr - pr) & 0xff;
-      out[oindex++] = (xg - pg) & 0xff;
-      out[oindex++] = (xb - pb) & 0xff;
-      if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        const aa = x === 0 ? 0 : Color.getAlpha(image.getPixel(x - 1, row));
-        const ba = row === 0 ? 0 : Color.getAlpha(image.getPixel(x, row - 1));
-        const ca =
-          row === 0 || x === 0
-            ? 0
-            : Color.getAlpha(image.getPixel(x - 1, row - 1));
-        const xa = Color.getAlpha(image.getPixel(x, row));
-        const pa = PngEncoder.paethPredictor(aa, ba, ca);
-        out[oindex++] = (xa - pa) & 0xff;
+    let _oi = oi;
+    out[_oi++] = PngFilterType.paeth;
+    const l = row.length;
+    for (let x = 0; x < l; x += bpc) {
+      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
+        const x2 = x + c2;
+        const p0 = x2 < bpp ? 0 : row[x2 - bpp];
+        const p1 = prevRow === undefined ? 0 : prevRow[x2];
+        const p2 = x2 < bpp || prevRow === undefined ? 0 : prevRow[x2 - bpp];
+        const p = row[x2];
+        const pi = PngEncoder.paethPredictor(p0, p1, p2);
+        out[_oi++] = (p - pi) & 0xff;
       }
     }
-
-    return oindex;
+    return _oi;
   }
 
   private static filterNone(
-    image: MemoryImage,
-    oi: number,
-    row: number,
-    out: Uint8Array
+    rowBytes: Uint8Array,
+    bpc: number,
+    out: Uint8Array,
+    oi: number
   ): number {
-    let oindex = oi;
-    out[oindex++] = PngEncoder.FILTER_NONE;
-    for (let x = 0; x < image.width; ++x) {
-      const c = image.getPixel(x, row);
-      out[oindex++] = Color.getRed(c);
-      out[oindex++] = Color.getGreen(c);
-      out[oindex++] = Color.getBlue(c);
-      if (image.rgbChannelSet === RgbChannelSet.rgba) {
-        out[oindex++] = Color.getAlpha(image.getPixel(x, row));
+    let _oi = oi;
+    out[_oi++] = PngFilterType.none;
+    if (bpc === 1) {
+      const l = rowBytes.length;
+      for (let i = 0; i < l; ++i) {
+        out[_oi++] = rowBytes[i];
+      }
+    } else {
+      const l = rowBytes.length;
+      for (let i = 0; i < l; i += bpc) {
+        _oi = PngEncoder.write(bpc, rowBytes, i, out, _oi);
       }
     }
-    return oindex;
+    return _oi;
   }
 
-  private writeHeader(width: number, height: number): void {
+  private static numChannels(image: MemoryImage): number {
+    return image.hasPalette ? 1 : image.numChannels;
+  }
+
+  private writeHeader(image: MemoryImage): void {
     // PNG file signature
-    this.output!.writeBytes(
+    this._output!.writeBytes(
       new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     );
 
@@ -312,41 +234,50 @@ export class PngEncoder implements Encoder {
     const chunk = new OutputBuffer({
       bigEndian: true,
     });
-    chunk.writeUint32(width);
-    chunk.writeUint32(height);
-    chunk.writeByte(8);
-    chunk.writeByte(this.rgbChannelSet === RgbChannelSet.rgb ? 2 : 6);
-    // Compression method
+
+    // width
+    chunk.writeUint32(image.width);
+    // height
+    chunk.writeUint32(image.height);
+    // bit depth
+    chunk.writeByte(image.bitsPerChannel);
+    chunk.writeByte(
+      image.hasPalette
+        ? PngColorType.indexed
+        : image.numChannels === 1
+        ? PngColorType.grayscale
+        : image.numChannels === 2
+        ? PngColorType.grayscaleAlpha
+        : image.numChannels === 3
+        ? PngColorType.rgb
+        : PngColorType.rgba
+    );
+    // compression method: 0:deflate
     chunk.writeByte(0);
-    // Filter method
+    // filter method: 0:adaptive
     chunk.writeByte(0);
-    // Interlace method
+    // interlace method: 0:no interlace
     chunk.writeByte(0);
-    PngEncoder.writeChunk(this.output!, 'IHDR', chunk.getBytes());
+    PngEncoder.writeChunk(this._output!, 'IHDR', chunk.getBytes());
   }
 
-  private writeICCPChunk(_?: OutputBuffer, iccp?: ICCProfileData): void {
-    if (iccp === undefined) {
-      return;
-    }
-
+  private writeICCPChunk(iccp: IccProfile): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
     });
 
-    // Name
-    const nameCodeUnits = TextCodec.getCodePoints(iccp.name);
+    // name
+    const nameCodeUnits = StringUtils.getCodePoints(iccp.name);
     chunk.writeBytes(nameCodeUnits);
     chunk.writeByte(0);
 
-    // Compression
-    // 0 - deflate
+    // compression (0 - deflate)
     chunk.writeByte(0);
 
     // profile data
     chunk.writeBytes(iccp.compressed());
 
-    PngEncoder.writeChunk(this.output!, 'iCCP', chunk.getBytes());
+    PngEncoder.writeChunk(this._output!, 'iCCP', chunk.getBytes());
   }
 
   private writeAnimationControlChunk(): void {
@@ -354,166 +285,247 @@ export class PngEncoder implements Encoder {
       bigEndian: true,
     });
     // Number of frames
-    chunk.writeUint32(this.frames);
+    chunk.writeUint32(this._frames);
     // Loop count
-    chunk.writeUint32(this.repeat);
-    PngEncoder.writeChunk(this.output!, 'acTL', chunk.getBytes());
+    chunk.writeUint32(this._repeat);
+    PngEncoder.writeChunk(this._output!, 'acTL', chunk.getBytes());
   }
 
-  private applyFilter(image: MemoryImage, out: Uint8Array): void {
-    let oi = 0;
-    for (let y = 0; y < image.height; ++y) {
-      switch (this.filter) {
-        case PngEncoder.FILTER_SUB:
-          oi = PngEncoder.filterSub(image, oi, y, out);
-          break;
-        case PngEncoder.FILTER_UP:
-          oi = PngEncoder.filterUp(image, oi, y, out);
-          break;
-        case PngEncoder.FILTER_AVERAGE:
-          oi = PngEncoder.filterAverage(image, oi, y, out);
-          break;
-        case PngEncoder.FILTER_PAETH:
-          oi = PngEncoder.filterPaeth(image, oi, y, out);
-          break;
-        case PngEncoder.FILTER_AGRESSIVE:
-          // TODO Apply all five filters and select the filter that produces
-          // the smallest sum of absolute values per row.
-          oi = PngEncoder.filterPaeth(image, oi, y, out);
-          break;
-        default:
-          oi = PngEncoder.filterNone(image, oi, y, out);
-          break;
-      }
-    }
-  }
-
-  private writeFrameControlChunk(): void {
+  private writeFrameControlChunk(image: MemoryImage): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
     });
-    chunk.writeUint32(this.sequenceNumber);
-    chunk.writeUint32(this.width);
-    chunk.writeUint32(this.height);
-    chunk.writeUint32(this.xOffset);
-    chunk.writeUint32(this.yOffset);
-    chunk.writeUint16(this.delay!);
-    // Delay denominator
+
+    chunk.writeUint32(this._sequenceNumber);
+    chunk.writeUint32(image.width);
+    chunk.writeUint32(image.height);
+    // xOffset
+    chunk.writeUint32(0);
+    // yOffset
+    chunk.writeUint32(0);
+    chunk.writeUint16(image.frameDuration);
+    // delay denominator
     chunk.writeUint16(1000);
-    chunk.writeByte(this.disposeMethod);
-    chunk.writeByte(this.blendMethod);
-    PngEncoder.writeChunk(this.output!, 'fcTL', chunk.getBytes());
+    // dispose method 0: APNG_DISPOSE_OP_NONE
+    chunk.writeByte(1);
+    // blend method 0: APNG_BLEND_OP_SOURCE
+    chunk.writeByte(0);
+    PngEncoder.writeChunk(this._output!, 'fcTL', chunk.getBytes());
+  }
+
+  private writePalette(palette: Palette): void {
+    if (
+      palette.format === Format.uint8 &&
+      palette.numChannels === 3 &&
+      palette.numColors === 256
+    ) {
+      PngEncoder.writeChunk(this._output!, 'PLTE', palette.toUint8Array());
+    } else {
+      const chunk = new OutputBuffer({
+        size: palette.numColors * 3,
+        bigEndian: true,
+      });
+      const nc = palette.numColors;
+      for (let i = 0; i < nc; ++i) {
+        chunk.writeByte(Math.trunc(palette.getRed(i)));
+        chunk.writeByte(Math.trunc(palette.getGreen(i)));
+        chunk.writeByte(Math.trunc(palette.getBlue(i)));
+      }
+      PngEncoder.writeChunk(this._output!, 'PLTE', chunk.getBytes());
+    }
+
+    if (palette.numChannels === 4) {
+      const chunk = new OutputBuffer({
+        size: palette.numColors,
+        bigEndian: true,
+      });
+      const nc = palette.numColors;
+      for (let i = 0; i < nc; ++i) {
+        const a = Math.trunc(palette.getAlpha(i));
+        chunk.writeByte(a);
+      }
+      PngEncoder.writeChunk(this._output!, 'tRNS', chunk.getBytes());
+    }
   }
 
   private writeTextChunk(keyword: string, text: string): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
     });
-    const keywordBytes = TextCodec.getCodePoints(keyword);
-    const textBytes = TextCodec.getCodePoints(text);
+    const keywordBytes = StringUtils.getCodePoints(keyword);
+    const textBytes = StringUtils.getCodePoints(text);
     chunk.writeBytes(keywordBytes);
     chunk.writeByte(0);
     chunk.writeBytes(textBytes);
-    PngEncoder.writeChunk(this.output!, 'tEXt', chunk.getBytes());
+    PngEncoder.writeChunk(this._output!, 'tEXt', chunk.getBytes());
+  }
+
+  private filter(image: MemoryImage, out: Uint8Array): void {
+    let oi = 0;
+    const filter = image.hasPalette ? PngFilterType.none : this._filter;
+    const buffer = image.buffer;
+    const rowStride = image.data!.rowStride;
+    const nc = PngEncoder.numChannels(image);
+    const bpp = (nc * image.bitsPerChannel + 7) >> 3;
+    const bpc = (image.bitsPerChannel + 7) >> 3;
+
+    let rowOffset = 0;
+    let prevRow: Uint8Array | undefined = undefined;
+    for (let y = 0; y < image.height; ++y) {
+      const rowBytes =
+        buffer !== undefined
+          ? new Uint8Array(buffer, rowOffset, rowStride)
+          : new Uint8Array();
+      rowOffset += rowStride;
+
+      switch (filter) {
+        case PngFilterType.sub:
+          oi = PngEncoder.filterSub(rowBytes, bpc, bpp, out, oi);
+          break;
+        case PngFilterType.up:
+          oi = PngEncoder.filterUp(rowBytes, bpc, out, oi, prevRow);
+          break;
+        case PngFilterType.average:
+          oi = PngEncoder.filterAverage(rowBytes, bpc, bpp, out, oi, prevRow);
+          break;
+        case PngFilterType.paeth:
+          oi = PngEncoder.filterPaeth(rowBytes, bpc, bpp, out, oi, prevRow);
+          break;
+        default:
+          oi = PngEncoder.filterNone(rowBytes, bpc, out, oi);
+          break;
+      }
+      prevRow = rowBytes;
+    }
   }
 
   public addFrame(image: MemoryImage): void {
-    this.xOffset = image.xOffset;
-    this.yOffset = image.xOffset;
-    this.delay = image.duration;
-    this.disposeMethod = image.disposeMethod;
-    this.blendMethod = image.blendMethod;
+    let _image = image;
+    // PNG can't encode HDR formats, and can only encode formats with fewer
+    // than 8 bits if they have a palette. In the case of incompatible
+    // formats, convert them to uint8.
+    if (
+      (_image.isHdrFormat && _image.format !== Format.uint16) ||
+      (_image.bitsPerChannel < 8 &&
+        !_image.hasPalette &&
+        _image.numChannels > 1)
+    ) {
+      _image = _image.convert({
+        format: Format.uint8,
+      });
+    }
 
-    if (this.output === undefined) {
-      this.output = new OutputBuffer({
+    if (this._output === undefined) {
+      this._output = new OutputBuffer({
         bigEndian: true,
       });
 
-      this.rgbChannelSet = image.rgbChannelSet;
-      this.width = image.width;
-      this.height = image.height;
+      this.writeHeader(_image);
 
-      this.writeHeader(this.width, this.height);
+      if (_image.iccProfile !== undefined) {
+        this.writeICCPChunk(_image.iccProfile);
+      }
 
-      this.writeICCPChunk(this.output, image.iccProfile);
+      if (_image.hasPalette) {
+        if (this._globalQuantizer !== undefined) {
+          this.writePalette(this._globalQuantizer!.palette);
+        } else {
+          this.writePalette(_image.palette!);
+        }
+      }
 
-      if (this.isAnimated) {
+      if (this._isAnimated) {
         this.writeAnimationControlChunk();
       }
     }
 
+    const nc = PngEncoder.numChannels(_image);
+
+    const channelBytes = _image.format === Format.uint16 ? 2 : 1;
+
     // Include room for the filter bytes (1 byte per row).
     const filteredImage = new Uint8Array(
-      image.width * image.height * image.numberOfChannels + image.height
+      _image.width * _image.height * nc * channelBytes + image.height
     );
 
-    this.applyFilter(image, filteredImage);
+    this.filter(_image, filteredImage);
 
     const compressed = deflate(filteredImage, {
-      level: this.level,
+      level: this._level,
     });
 
-    if (image.textData !== undefined) {
-      for (const [key, value] of image.textData) {
+    if (_image.textData !== undefined) {
+      for (const [key, value] of _image.textData) {
         this.writeTextChunk(key, value);
       }
     }
 
-    if (this.isAnimated) {
-      this.writeFrameControlChunk();
-      this.sequenceNumber++;
+    if (this._isAnimated) {
+      this.writeFrameControlChunk(_image);
+      this._sequenceNumber++;
     }
 
-    if (this.sequenceNumber <= 1) {
-      PngEncoder.writeChunk(this.output!, 'IDAT', compressed);
+    if (this._sequenceNumber <= 1) {
+      PngEncoder.writeChunk(this._output, 'IDAT', compressed);
     } else {
-      // FdAT chunk
+      // fdAT chunk
       const fdat = new OutputBuffer({
         bigEndian: true,
       });
-      fdat.writeUint32(this.sequenceNumber);
+      fdat.writeUint32(this._sequenceNumber);
       fdat.writeBytes(compressed);
-      PngEncoder.writeChunk(this.output!, 'fdAT', fdat.getBytes());
+      PngEncoder.writeChunk(this._output, 'fdAT', fdat.getBytes());
 
-      this.sequenceNumber++;
+      this._sequenceNumber++;
     }
   }
 
   public finish(): Uint8Array | undefined {
     let bytes: Uint8Array | undefined = undefined;
-    if (this.output === undefined) {
+    if (this._output === undefined) {
       return bytes;
     }
 
-    PngEncoder.writeChunk(this.output, 'IEND', new Uint8Array());
+    PngEncoder.writeChunk(this._output, 'IEND', new Uint8Array());
 
-    this.sequenceNumber = 0;
+    this._sequenceNumber = 0;
 
-    bytes = this.output.getBytes();
-    this.output = undefined;
+    bytes = this._output.getBytes();
+    this._output = undefined;
     return bytes;
   }
 
   /**
-   * Encode a single frame image.
+   * Encode **image** to the PNG format.
    */
-  encodeImage(image: MemoryImage): Uint8Array {
-    this.isAnimated = false;
-    this.addFrame(image);
-    return this.finish()!;
-  }
+  public encode(image: MemoryImage, singleFrame = false): Uint8Array {
+    if (!image.hasAnimation || singleFrame) {
+      this._isAnimated = false;
+      this.addFrame(image);
+    } else {
+      this._isAnimated = true;
+      this._frames = image.frames.length;
+      this._repeat = image.loopCount;
 
-  /**
-   * Encode an animation.
-   */
-  public encodeAnimation(animation: FrameAnimation): Uint8Array | undefined {
-    this.isAnimated = true;
-    this.frames = animation.frames.length;
-    this.repeat = animation.loopCount;
+      if (image.hasPalette) {
+        const q = new NeuralQuantizer(image);
+        this._globalQuantizer = q;
+        for (const frame of image.frames) {
+          if (frame !== image) {
+            q.addImage(frame);
+          }
+        }
+      }
 
-    for (const f of animation) {
-      this.addFrame(f);
+      for (const frame of image.frames) {
+        if (this._globalQuantizer !== undefined) {
+          const newImage = this._globalQuantizer.getIndexImage(frame);
+          this.addFrame(newImage);
+        } else {
+          this.addFrame(frame);
+        }
+      }
     }
-    return this.finish();
+    return this.finish()!;
   }
 }

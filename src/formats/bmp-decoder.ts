@@ -1,31 +1,30 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
+import { Format } from '../color/format';
 import { InputBuffer } from '../common/input-buffer';
-import { MemoryImage } from '../common/memory-image';
-import { HdrImage } from '../hdr/hdr-image';
-import { BitmapFileHeader } from './bmp/bitmap-file-header';
+import { MemoryImage } from '../image/image';
+import { BmpFileHeader } from './bmp/bmp-file-header';
 import { BmpInfo } from './bmp/bmp-info';
 import { Decoder } from './decoder';
 
 export class BmpDecoder implements Decoder {
-  protected input?: InputBuffer;
-
-  protected info?: BmpInfo;
+  protected _input?: InputBuffer;
+  protected _info?: BmpInfo;
+  protected _forceRgba: boolean;
 
   public get numFrames(): number {
-    return this.info !== undefined ? this.info.numFrames : 0;
+    return this._info !== undefined ? this._info.numFrames : 0;
   }
 
-  private pixelDataOffset(): number | undefined {
-    return this.info !== undefined ? this.info.fileHeader.offset : undefined;
+  constructor(forceRgba = false) {
+    this._forceRgba = forceRgba;
   }
 
   /**
    * Is the given file a valid BMP image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    return BitmapFileHeader.isValidFile(
+    return BmpFileHeader.isValidFile(
       new InputBuffer({
         buffer: bytes,
       })
@@ -36,46 +35,86 @@ export class BmpDecoder implements Decoder {
     if (!this.isValidFile(bytes)) {
       return undefined;
     }
-    this.input = new InputBuffer({
+    this._input = new InputBuffer({
       buffer: bytes,
     });
-    this.info = new BmpInfo(this.input);
-    return this.info;
+    this._info = new BmpInfo(this._input);
+    return this._info;
   }
 
   /**
    * Decode a single frame from the data stat was set with **startDecode**.
    * If **frame** is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have **frame** 0. An **AnimationFrame**
+   * Non animated image files will only have **frame** 0. An animation frame
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
    */
-  public decodeFrame(_: number): MemoryImage | undefined {
-    if (this.input === undefined || this.info === undefined) {
+  public decodeFrame(_frame: number): MemoryImage | undefined {
+    if (this._input === undefined || this._info === undefined) {
       return undefined;
     }
 
-    const offset = this.pixelDataOffset();
-    if (offset === undefined) {
-      return undefined;
-    }
+    const inf = this._info;
+    this._input.offset = inf.header.imageOffset;
 
-    this.input.offset = offset;
-    let rowStride = (this.info.width * this.info.bpp) >> 3;
-    if (rowStride % 4 !== 0) {
-      rowStride += 4 - (rowStride % 4);
-    }
+    const bpp = inf.bitsPerPixel;
+    const rowStride = Math.trunc((inf.width * bpp + 31) / 32) * 4;
+    const nc = this._forceRgba
+      ? 4
+      : bpp === 1 || bpp === 4 || bpp === 8
+      ? 1
+      : bpp === 32
+      ? 4
+      : 3;
+    const format = this._forceRgba
+      ? Format.uint8
+      : bpp === 1
+      ? Format.uint1
+      : bpp === 2
+      ? Format.uint2
+      : bpp === 4
+      ? Format.uint4
+      : bpp === 8
+      ? Format.uint8
+      : bpp === 16
+      ? Format.uint8
+      : bpp === 24
+      ? Format.uint8
+      : bpp === 32
+      ? Format.uint8
+      : Format.uint8;
+    const palette = this._forceRgba ? undefined : inf.palette;
 
     const image = new MemoryImage({
-      width: this.info.width,
-      height: this.info.height,
+      width: inf.width,
+      height: inf.height,
+      format: format,
+      numChannels: nc,
+      palette: palette,
     });
+
     for (let y = image.height - 1; y >= 0; --y) {
-      const line = this.info.readBottomUp ? y : image.height - 1 - y;
-      const row = this.input.readBytes(rowStride);
-      for (let x = 0; x < image.width; ) {
-        this.info.decodeRgba(row, (color) => {
-          return image.setPixelSafe(x++, line, color);
+      const line = inf.readBottomUp ? y : image.height - 1 - y;
+      const row = this._input.readBytes(rowStride);
+      const w = image.width;
+      let x = 0;
+      const p = image.getPixel(0, line);
+      while (x < w) {
+        inf.decodePixel(row, (r, g, b, a) => {
+          if (x < w) {
+            if (this._forceRgba && inf.palette !== undefined) {
+              const pi = Math.trunc(r);
+              const pr = inf.palette!.getRed(pi);
+              const pg = inf.palette!.getGreen(pi);
+              const pb = inf.palette!.getBlue(pi);
+              const pa = inf.palette!.getAlpha(pi);
+              p.setRgba(pr, pg, pb, pa);
+            } else {
+              p.setRgba(r, g, b, a);
+            }
+            p.next();
+            x++;
+          }
         });
       }
     }
@@ -83,54 +122,15 @@ export class BmpDecoder implements Decoder {
     return image;
   }
 
-  public decodeHdrFrame(frame: number): HdrImage | undefined {
-    const img = this.decodeFrame(frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
-  }
-
-  /**
-   * Decode all of the frames from an animation. If the file is not an
-   * animation, a single frame animation is returned. If there was a problem
-   * decoding the file, undefined is returned.
-   */
-  public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
-    if (!this.isValidFile(bytes)) {
-      return undefined;
-    }
-
-    const image = this.decodeImage(bytes);
-    if (image === undefined) {
-      return undefined;
-    }
-
-    const animation = new FrameAnimation();
-    animation.addFrame(image);
-
-    return animation;
-  }
-
   /**
    * Decode the file and extract a single image from it. If the file is
    * animated, the specified **frame** will be decoded. If there was a problem
    * decoding the file, undefined is returned.
    */
-  public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
-    if (!this.isValidFile(bytes)) {
+  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+    if (this.startDecode(bytes) === undefined) {
       return undefined;
     }
-
-    this.startDecode(bytes);
-    return this.decodeFrame(frame);
-  }
-
-  public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
-    const img = this.decodeImage(bytes, frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
+    return this.decodeFrame(frame ?? 0);
   }
 }

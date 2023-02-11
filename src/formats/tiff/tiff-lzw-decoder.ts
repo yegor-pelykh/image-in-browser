@@ -1,50 +1,50 @@
 /** @format */
 
 import { InputBuffer } from '../../common/input-buffer';
-import { ImageError } from '../../error/image-error';
+import { LibError } from '../../error/lib-error';
 
 export class LzwDecoder {
-  private static readonly LZ_MAX_CODE = 4095;
-  private static readonly NO_SUCH_CODE = 4098;
-  private static readonly AND_TABLE: number[] = [511, 1023, 2047, 4095];
+  private static readonly _lzMaxCode = 4095;
+  private static readonly _noSuchCode = 4098;
+  private static readonly _andTable: number[] = [511, 1023, 2047, 4095];
 
-  private readonly buffer = new Uint8Array(4096);
+  private readonly _buffer = new Uint8Array(4096);
 
-  private bitsToGet = 9;
-  private bytePointer = 0;
-  private nextData = 0;
-  private nextBits = 0;
-  private data!: Uint8Array;
-  private dataLength!: number;
-  private out!: Uint8Array;
-  private outPointer!: number;
-  private table!: Uint8Array;
-  private prefix!: Uint32Array;
-  private tableIndex?: number;
-  private bufferLength!: number;
+  private _bitsToGet = 9;
+  private _bytePointer = 0;
+  private _nextData = 0;
+  private _nextBits = 0;
+  private _data!: Uint8Array;
+  private _dataLength!: number;
+  private _out!: Uint8Array;
+  private _outPointer!: number;
+  private _table!: Uint8Array;
+  private _prefix!: Uint32Array;
+  private _tableIndex?: number;
+  private _bufferLength!: number;
 
   private addString(string: number, newString: number): void {
-    this.table[this.tableIndex!] = newString;
-    this.prefix[this.tableIndex!] = string;
-    this.tableIndex = this.tableIndex! + 1;
+    this._table[this._tableIndex!] = newString;
+    this._prefix[this._tableIndex!] = string;
+    this._tableIndex = this._tableIndex! + 1;
 
-    if (this.tableIndex === 511) {
-      this.bitsToGet = 10;
-    } else if (this.tableIndex === 1023) {
-      this.bitsToGet = 11;
-    } else if (this.tableIndex === 2047) {
-      this.bitsToGet = 12;
+    if (this._tableIndex === 511) {
+      this._bitsToGet = 10;
+    } else if (this._tableIndex === 1023) {
+      this._bitsToGet = 11;
+    } else if (this._tableIndex === 2047) {
+      this._bitsToGet = 12;
     }
   }
 
   private getString(code: number): void {
-    this.bufferLength = 0;
+    this._bufferLength = 0;
     let c = code;
-    this.buffer[this.bufferLength++] = this.table[c];
-    c = this.prefix[c];
-    while (c !== LzwDecoder.NO_SUCH_CODE) {
-      this.buffer[this.bufferLength++] = this.table[c];
-      c = this.prefix[c];
+    this._buffer[this._bufferLength++] = this._table[c];
+    c = this._prefix[c];
+    while (c !== LzwDecoder._noSuchCode) {
+      this._buffer[this._bufferLength++] = this._table[c];
+      c = this._prefix[c];
     }
   }
 
@@ -52,23 +52,23 @@ export class LzwDecoder {
    * Returns the next 9, 10, 11 or 12 bits
    */
   private getNextCode(): number {
-    if (this.bytePointer >= this.dataLength) {
+    if (this._bytePointer >= this._dataLength) {
       return 257;
     }
 
-    while (this.nextBits < this.bitsToGet) {
-      if (this.bytePointer >= this.dataLength) {
+    while (this._nextBits < this._bitsToGet) {
+      if (this._bytePointer >= this._dataLength) {
         return 257;
       }
-      this.nextData =
-        ((this.nextData << 8) + this.data[this.bytePointer++]) & 0xffffffff;
-      this.nextBits += 8;
+      this._nextData =
+        ((this._nextData << 8) + this._data[this._bytePointer++]) & 0xffffffff;
+      this._nextBits += 8;
     }
 
-    this.nextBits -= this.bitsToGet;
+    this._nextBits -= this._bitsToGet;
     const code =
-      (this.nextData >> this.nextBits) &
-      LzwDecoder.AND_TABLE[this.bitsToGet - 9];
+      (this._nextData >> this._nextBits) &
+      LzwDecoder._andTable[this._bitsToGet - 9];
 
     return code;
   }
@@ -77,65 +77,65 @@ export class LzwDecoder {
    * Initialize the string table.
    */
   private initializeStringTable(): void {
-    this.table = new Uint8Array(LzwDecoder.LZ_MAX_CODE + 1);
-    this.prefix = new Uint32Array(LzwDecoder.LZ_MAX_CODE + 1);
-    this.prefix.fill(LzwDecoder.NO_SUCH_CODE, 0, this.prefix.length);
+    this._table = new Uint8Array(LzwDecoder._lzMaxCode + 1);
+    this._prefix = new Uint32Array(LzwDecoder._lzMaxCode + 1);
+    this._prefix.fill(LzwDecoder._noSuchCode, 0, this._prefix.length);
 
     for (let i = 0; i < 256; i++) {
-      this.table[i] = i;
+      this._table[i] = i;
     }
 
-    this.bitsToGet = 9;
+    this._bitsToGet = 9;
 
-    this.tableIndex = 258;
+    this._tableIndex = 258;
   }
 
   public decode(p: InputBuffer, out: Uint8Array): void {
-    this.out = out;
+    this._out = out;
     const outLen = out.length;
-    this.outPointer = 0;
-    this.data = p.buffer;
-    this.dataLength = this.data.length;
-    this.bytePointer = p.offset;
+    this._outPointer = 0;
+    this._data = p.buffer;
+    this._dataLength = this._data.length;
+    this._bytePointer = p.offset;
 
-    if (this.data[0] === 0x00 && this.data[1] === 0x01) {
-      throw new ImageError('Invalid LZW Data');
+    if (this._data[0] === 0x00 && this._data[1] === 0x01) {
+      throw new LibError('Invalid LZW Data');
     }
 
     this.initializeStringTable();
 
-    this.nextData = 0;
-    this.nextBits = 0;
+    this._nextData = 0;
+    this._nextBits = 0;
 
     let oldCode = 0;
 
     let code = this.getNextCode();
-    while (code !== 257 && this.outPointer < outLen) {
+    while (code !== 257 && this._outPointer < outLen) {
       if (code === 256) {
         this.initializeStringTable();
         code = this.getNextCode();
-        this.bufferLength = 0;
+        this._bufferLength = 0;
         if (code === 257) {
           break;
         }
 
-        this.out[this.outPointer++] = code;
+        this._out[this._outPointer++] = code;
         oldCode = code;
       } else {
-        if (code < this.tableIndex!) {
+        if (code < this._tableIndex!) {
           this.getString(code);
-          for (let i = this.bufferLength - 1; i >= 0; --i) {
-            this.out[this.outPointer++] = this.buffer[i];
+          for (let i = this._bufferLength - 1; i >= 0; --i) {
+            this._out[this._outPointer++] = this._buffer[i];
           }
-          this.addString(oldCode, this.buffer[this.bufferLength - 1]);
+          this.addString(oldCode, this._buffer[this._bufferLength - 1]);
           oldCode = code;
         } else {
           this.getString(oldCode);
-          for (let i = this.bufferLength - 1; i >= 0; --i) {
-            this.out[this.outPointer++] = this.buffer[i];
+          for (let i = this._bufferLength - 1; i >= 0; --i) {
+            this._out[this._outPointer++] = this._buffer[i];
           }
-          this.out[this.outPointer++] = this.buffer[this.bufferLength - 1];
-          this.addString(oldCode, this.buffer[this.bufferLength - 1]);
+          this._out[this._outPointer++] = this._buffer[this._bufferLength - 1];
+          this.addString(oldCode, this._buffer[this._bufferLength - 1]);
 
           oldCode = code;
         }

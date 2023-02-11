@@ -1,5 +1,8 @@
 /** @format */
 
+import { PngBlendMode } from './png-blend-mode';
+import { PngDisposeMode } from './png-dispose-mode';
+
 export interface PngFrameInitOptions {
   sequenceNumber?: number;
   width?: number;
@@ -14,65 +17,53 @@ export interface PngFrameInitOptions {
 
 // Decodes a frame from a PNG animation.
 export class PngFrame {
-  // DisposeMode
-  public static readonly APNG_DISPOSE_OP_NONE = 0;
-
-  public static readonly APNG_DISPOSE_OP_BACKGROUND = 1;
-
-  public static readonly APNG_DISPOSE_OP_PREVIOUS = 2;
-
-  // BlendMode
-  public static readonly APNG_BLEND_OP_SOURCE = 0;
-
-  public static readonly APNG_BLEND_OP_OVER = 1;
-
   private readonly _fdat: number[] = [];
   public get fdat(): number[] {
     return this._fdat;
   }
 
-  private _sequenceNumber?: number;
-  public get sequenceNumber(): number | undefined {
+  private _sequenceNumber: number;
+  public get sequenceNumber(): number {
     return this._sequenceNumber;
   }
 
-  private _width?: number;
-  public get width(): number | undefined {
+  private _width: number;
+  public get width(): number {
     return this._width;
   }
 
-  private _height?: number;
-  public get height(): number | undefined {
+  private _height: number;
+  public get height(): number {
     return this._height;
   }
 
-  private _xOffset?: number;
-  public get xOffset(): number | undefined {
+  private _xOffset: number;
+  public get xOffset(): number {
     return this._xOffset;
   }
 
-  private _yOffset?: number;
-  public get yOffset(): number | undefined {
+  private _yOffset: number;
+  public get yOffset(): number {
     return this._yOffset;
   }
 
-  private _delayNum?: number;
-  public get delayNum(): number | undefined {
+  private _delayNum: number;
+  public get delayNum(): number {
     return this._delayNum;
   }
 
-  private _delayDen?: number;
-  public get delayDen(): number | undefined {
+  private _delayDen: number;
+  public get delayDen(): number {
     return this._delayDen;
   }
 
-  private _dispose?: number;
-  public get dispose(): number | undefined {
+  private _dispose: PngDisposeMode;
+  public get dispose(): PngDisposeMode {
     return this._dispose;
   }
 
-  private _blend?: number;
-  public get blend(): number | undefined {
+  private _blend: PngBlendMode;
+  public get blend(): PngBlendMode {
     return this._blend;
   }
 
@@ -86,15 +77,15 @@ export class PngFrame {
     return this._delayNum / this._delayDen;
   }
 
-  constructor(options: PngFrameInitOptions) {
-    this._sequenceNumber = options?.sequenceNumber;
-    this._width = options?.width;
-    this._height = options?.height;
-    this._xOffset = options?.xOffset;
-    this._yOffset = options?.yOffset;
-    this._delayNum = options?.delayNum;
-    this._delayDen = options?.delayDen;
-    this._dispose = options?.dispose;
-    this._blend = options?.blend;
+  constructor(opt: PngFrameInitOptions) {
+    this._sequenceNumber = opt?.sequenceNumber ?? 0;
+    this._width = opt?.width ?? 0;
+    this._height = opt?.height ?? 0;
+    this._xOffset = opt?.xOffset ?? 0;
+    this._yOffset = opt?.yOffset ?? 0;
+    this._delayNum = opt?.delayNum ?? 0;
+    this._delayDen = opt?.delayDen ?? 0;
+    this._dispose = opt?.dispose ?? PngDisposeMode.none;
+    this._blend = opt?.blend ?? PngBlendMode.source;
   }
 }

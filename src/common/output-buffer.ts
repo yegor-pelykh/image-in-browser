@@ -10,7 +10,7 @@ export interface OutputBufferInitOptions {
 
 export class OutputBuffer {
   // 8k block-size
-  private static readonly BLOCK_SIZE = 0x2000;
+  private static readonly _blockSize = 0x2000;
 
   private _buffer: Uint8Array;
   public get buffer(): Uint8Array {
@@ -36,9 +36,9 @@ export class OutputBuffer {
   /**
    * Create a byte buffer for writing.
    */
-  constructor(options?: OutputBufferInitOptions) {
-    this._bigEndian = options?.bigEndian ?? false;
-    this._buffer = new Uint8Array(options?.size ?? OutputBuffer.BLOCK_SIZE);
+  constructor(opt?: OutputBufferInitOptions) {
+    this._bigEndian = opt?.bigEndian ?? false;
+    this._buffer = new Uint8Array(opt?.size ?? OutputBuffer._blockSize);
     this._length = 0;
   }
 
@@ -46,14 +46,14 @@ export class OutputBuffer {
    * Grow the buffer to accommodate additional data.
    */
   private expandBuffer(required?: number): void {
-    let blockSize: number = OutputBuffer.BLOCK_SIZE;
+    let blockSize: number = OutputBuffer._blockSize;
     if (required !== undefined) {
       blockSize = required;
     } else if (this._buffer.length > 0) {
       blockSize = this._buffer.length * 2;
     }
     const newBuffer = new Uint8Array(this._buffer.length + blockSize);
-    ArrayUtils.setRange(newBuffer, 0, this._buffer.length, this._buffer);
+    ArrayUtils.copyRange(this._buffer, 0, this._buffer.length, newBuffer, 0);
     this._buffer = newBuffer;
   }
 
@@ -65,7 +65,7 @@ export class OutputBuffer {
    * Clear the buffer.
    */
   public clear(): void {
-    this._buffer = new Uint8Array(OutputBuffer.BLOCK_SIZE);
+    this._buffer = new Uint8Array(OutputBuffer._blockSize);
     this._length = 0;
   }
 
@@ -90,31 +90,28 @@ export class OutputBuffer {
    * Write a set of bytes to the end of the buffer.
    */
   public writeBytes(bytes: Uint8Array, length?: number): void {
-    const correctedLength = length ?? bytes.length;
-    while (this._length + correctedLength > this._buffer.length) {
-      this.expandBuffer(this._length + correctedLength - this._buffer.length);
+    const bytesLength = length ?? bytes.length;
+    while (this._length + bytesLength > this._buffer.length) {
+      this.expandBuffer(this._length + bytesLength - this._buffer.length);
     }
-    ArrayUtils.setRange(
-      this._buffer,
-      this._length,
-      this._length + correctedLength,
-      bytes
-    );
-    this._length += correctedLength;
+    ArrayUtils.copyRange(bytes, 0, bytesLength, this._buffer, this._length);
+    this._length += bytesLength;
   }
 
   public writeBuffer(bytes: InputBuffer): void {
-    while (length + bytes.length > this._buffer.length) {
-      this.expandBuffer(length + bytes.length - this._buffer.length);
+    const bytesLength = bytes.length;
+    const requiredLength = this._length + bytesLength;
+    while (requiredLength > this._buffer.length) {
+      this.expandBuffer(requiredLength - this._buffer.length);
     }
-    ArrayUtils.setRange(
-      this._buffer,
-      length,
-      length + bytes.length,
+    ArrayUtils.copyRange(
       bytes.buffer,
-      bytes.offset
+      bytes.offset,
+      bytesLength,
+      this._buffer,
+      this._length
     );
-    this._length += bytes.length;
+    this._length += bytesLength;
   }
 
   /**
@@ -196,7 +193,7 @@ export class OutputBuffer {
   }
 
   /**
-   * Return the subarray of the buffer in the range **start**:**end**.
+   * Return the subarray of the buffer in the range [**start**,**end**].
    * If **start** or **end** are < 0 then it is relative to the end of the buffer.
    * If **end** is not specified (or undefined), then it is the end of the buffer.
    * This is equivalent to the python list range operator.

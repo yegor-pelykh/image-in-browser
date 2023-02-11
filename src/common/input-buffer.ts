@@ -1,8 +1,8 @@
 /** @format */
 
-import { ImageError } from '../error/image-error';
-import { BitOperators } from './bit-operators';
-import { TextCodec } from './text-codec';
+import { LibError } from '../error/lib-error';
+import { BitUtils } from './bit-utils';
+import { StringUtils } from './string-utils';
 
 export interface InputBufferInitOptions {
   buffer: Uint8Array;
@@ -49,36 +49,34 @@ export class InputBuffer {
   /**
    *  The current read position relative to the start of the buffer.
    */
-  get position(): number {
+  public get position(): number {
     return this._offset - this._start;
   }
 
   /**
    * How many bytes are left in the stream.
    */
-  get length(): number {
+  public get length(): number {
     return this._end - this._offset;
   }
 
   /**
    * Is the current position at the end of the stream?
    */
-  get isEOS(): boolean {
+  public get isEOS(): boolean {
     return this._offset >= this._end;
   }
 
   /**
    * Create a InputStream for reading from an Array<int>
    */
-  constructor(options: InputBufferInitOptions) {
-    this._buffer = options.buffer;
-    this._bigEndian = options.bigEndian ?? false;
-    this._offset = options.offset ?? 0;
+  constructor(opt: InputBufferInitOptions) {
+    this._buffer = opt.buffer;
+    this._bigEndian = opt.bigEndian ?? false;
+    this._offset = opt.offset ?? 0;
     this._start = this._offset;
     this._end =
-      options.length !== undefined
-        ? this._start + options.length
-        : this._buffer.length;
+      opt.length !== undefined ? this._start + opt.length : this._buffer.length;
   }
 
   /**
@@ -134,7 +132,7 @@ export class InputBuffer {
   }
 
   /**
-   * Return a InputStream to read a subset of this stream. It does not
+   * Return an InputBuffer to read a subset of this stream. It does not
    * move the read position of this stream. **position** is specified relative
    * to the start of the buffer. If **position** is not specified, the current
    * read position is used. If **length** is not specified, the remainder of this
@@ -158,11 +156,8 @@ export class InputBuffer {
    * was not found.
    */
   public indexOf(value: number, offset = 0): number {
-    for (
-      let i = this._offset + offset, end = this._offset + this.length;
-      i < end;
-      ++i
-    ) {
+    const end = this.offset + this.length;
+    for (let i = this.offset + offset; i < end; ++i) {
       if (this._buffer[i] === value) {
         return i - this._start;
       }
@@ -193,7 +188,7 @@ export class InputBuffer {
   }
 
   public readInt8(): number {
-    return BitOperators.toInt8(this.readByte());
+    return BitUtils.uint8ToInt8(this.readByte());
   }
 
   /**
@@ -219,7 +214,7 @@ export class InputBuffer {
         }
         codes.push(c);
       }
-      throw new ImageError('EOF reached without finding string terminator');
+      throw new LibError('EOF reached without finding string terminator.');
     }
 
     const s = this.readBytes(length);
@@ -237,11 +232,12 @@ export class InputBuffer {
       const c = this.readByte();
       if (c === 0) {
         const array = new Uint8Array(codes);
-        return TextCodec.utf8Decoder.decode(array);
+        return StringUtils.utf8Decoder.decode(array);
       }
       codes.push(c);
     }
-    throw new ImageError('EOF reached without finding string terminator');
+    const array = new Uint8Array(codes);
+    return StringUtils.utf8Decoder.decode(array);
   }
 
   /**
@@ -260,7 +256,7 @@ export class InputBuffer {
    * Read a 16-bit word from the stream.
    */
   public readInt16(): number {
-    return BitOperators.toInt16(this.readUint16());
+    return BitUtils.uint16ToInt16(this.readUint16());
   }
 
   /**
@@ -280,35 +276,34 @@ export class InputBuffer {
    * Read a 32-bit word from the stream.
    */
   public readUint32(): number {
-    const b1 = this._buffer[this._offset++] & 0xff;
-    const b2 = this._buffer[this._offset++] & 0xff;
-    const b3 = this._buffer[this._offset++] & 0xff;
-    const b4 = this._buffer[this._offset++] & 0xff;
-    const d = this._bigEndian
-      ? (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
-      : (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
-    return BitOperators.toUint32(d);
+    return BitUtils.int32ToUint32(this.readInt32());
   }
 
   /**
    * Read a signed 32-bit integer from the stream.
    */
   public readInt32(): number {
-    return BitOperators.toInt32(this.readUint32());
+    const b1 = this._buffer[this._offset++] & 0xff;
+    const b2 = this._buffer[this._offset++] & 0xff;
+    const b3 = this._buffer[this._offset++] & 0xff;
+    const b4 = this._buffer[this._offset++] & 0xff;
+    return this._bigEndian
+      ? (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
+      : (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
   }
 
   /**
    * Read a 32-bit float.
    */
   public readFloat32(): number {
-    return BitOperators.toFloat32(this.readUint32());
+    return BitUtils.uint32ToFloat32(this.readUint32());
   }
 
   /**
    * Read a 64-bit float.
    */
   public readFloat64(): number {
-    return BitOperators.toFloat64(this.readUint64());
+    return BitUtils.uint64ToFloat64(this.readUint64());
   }
 
   /**

@@ -176,7 +176,8 @@
           "error",
           {
             "allow": [
-              "methods"
+              "methods",
+              "setters"
             ]
           }
         ],

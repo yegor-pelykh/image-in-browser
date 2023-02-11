@@ -1,5 +1,6 @@
 /** @format */
 
+import { Color } from '../../color/color';
 import { DecodeInfo } from '../decode-info';
 import { TiffImage } from './tiff-image';
 
@@ -41,8 +42,8 @@ export class TiffInfo implements DecodeInfo {
     return this._height;
   }
 
-  private _backgroundColor = 0xffffffff;
-  get backgroundColor(): number {
+  private _backgroundColor: Color | undefined = undefined;
+  public get backgroundColor(): Color | undefined {
     throw this._backgroundColor;
   }
 
@@ -50,11 +51,11 @@ export class TiffInfo implements DecodeInfo {
     return this._images.length;
   }
 
-  constructor(options: TiffInfoInitOptions) {
-    this._bigEndian = options.bigEndian;
-    this._signature = options.signature;
-    this._ifdOffset = options.ifdOffset;
-    this._images = options.images;
+  constructor(opt: TiffInfoInitOptions) {
+    this._bigEndian = opt.bigEndian;
+    this._signature = opt.signature;
+    this._ifdOffset = opt.ifdOffset;
+    this._images = opt.images;
     if (this._images.length > 0) {
       this._width = this._images[0].width;
       this._height = this._images[0].height;

@@ -1,6 +1,7 @@
 /** @format */
 
-import { ImageError } from '../error/image-error';
+import { LibError } from '../error/lib-error';
+import { Rational } from './rational';
 import { TypedArray } from './typings';
 
 export abstract class ArrayUtils {
@@ -90,17 +91,89 @@ export abstract class ArrayUtils {
     } else if (from instanceof Float64Array) {
       return ArrayUtils.copyFloat64(from, begin, end);
     }
-    throw new ImageError('Unknown array type');
+    throw new LibError('Unknown array type');
   }
 
-  public static setRange<T extends TypedArray>(
-    to: T,
-    start: number,
-    end: number,
+  public static copyRange<T extends TypedArray>(
     from: T,
-    skipCount = 0
+    fromStart: number,
+    fromEnd: number,
+    to: T,
+    toStart: number
   ): void {
-    const viewFrom = from.subarray(skipCount, end - start);
-    to.set(viewFrom, start);
+    const viewFrom = from.subarray(fromStart, fromEnd);
+    to.set(viewFrom, toStart);
+  }
+
+  public static fill<T>(length: number, value: T): T[] {
+    const a = new Array<T>(length);
+    return a.fill(value);
+  }
+
+  public static generate<T>(length: number, func: (index: number) => T): T[] {
+    const a = new Array<T>(length);
+    for (let i = 0; i < length; ++i) {
+      a[i] = func(i);
+    }
+    return a;
+  }
+
+  public static equals(
+    a1: TypedArray | unknown[],
+    a2: TypedArray | unknown[]
+  ): boolean {
+    if (a1 === a2) return true;
+    if (a1.length !== a2.length) return false;
+    for (let i = 0, l = a1.length; i < l; i++) {
+      if (
+        ArrayUtils.isNumArrayOrTypedArray(a1[i]) &&
+        ArrayUtils.isNumArrayOrTypedArray(a2[i])
+      ) {
+        if (
+          !ArrayUtils.equals(
+            a1[i] as TypedArray | unknown[],
+            a2[i] as TypedArray | unknown[]
+          )
+        )
+          return false;
+      } else if (a1[i] !== a2[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static equalsRationalArray(a1: Rational[], a2: Rational[]): boolean {
+    if (a1 === a2) return true;
+    if (a1.length !== a2.length) return false;
+    for (let i = 0, l = a1.length; i < l; i++) {
+      if (!a1[i].equals(a2[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static getNumEnumValues<T extends object>(t: T): number[] {
+    return Object.values(t).filter((v) => typeof v === 'number');
+  }
+
+  public static isNumArrayOrTypedArray(obj: unknown) {
+    return Boolean(
+      obj &&
+        typeof obj === 'object' &&
+        ((Array.isArray(obj) &&
+          (obj as Array<unknown>).every((v) => typeof v === 'number')) ||
+          (ArrayBuffer.isView(obj) && !(obj instanceof DataView)))
+    );
+  }
+
+  public static isArrayOfRational(obj: unknown) {
+    return Boolean(
+      obj &&
+        typeof obj === 'object' &&
+        Array.isArray(obj) &&
+        (obj as Array<unknown>).every((v) => v instanceof Rational)
+    );
   }
 }

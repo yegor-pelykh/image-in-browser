@@ -1,190 +1,98 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
-import { MemoryImage } from '../common/memory-image';
+import { Format, FormatType } from '../color/format';
 import { OutputBuffer } from '../common/output-buffer';
-import { HdrImage } from '../hdr/hdr-image';
-import { HdrSlice } from '../hdr/hdr-slice';
+import { LibError } from '../error/lib-error';
+import { ExifData } from '../exif/exif-data';
+import { IfdUndefinedValue } from '../exif/ifd-value/ifd-undefined-value';
+import { MemoryImage } from '../image/image';
 import { Encoder } from './encoder';
-import { TiffEntry } from './tiff/tiff-entry';
-import { TiffImage } from './tiff/tiff-image';
+import { TiffCompression } from './tiff/tiff-compression';
+import { TiffFormat } from './tiff/tiff-format';
+import { TiffPhotometricType } from './tiff/tiff-photometric-type';
 
 /**
- * Encode a TIFF image.
+ * Encode a MemoryImage to the TIFF format.
  */
 export class TiffEncoder implements Encoder {
-  private static readonly LITTLE_ENDIAN = 0x4949;
-  private static readonly SIGNATURE = 42;
-
   private _supportsAnimation = false;
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
-  private writeHeader(out: OutputBuffer): void {
-    // byteOrder
-    out.writeUint16(TiffEncoder.LITTLE_ENDIAN);
-    // TIFF signature
-    out.writeUint16(TiffEncoder.SIGNATURE);
-    // Offset to the start of the IFD tags
-    out.writeUint32(8);
+  private getSampleFormat(image: MemoryImage): number {
+    switch (image.formatType) {
+      case FormatType.uint:
+        return TiffFormat.uint;
+      case FormatType.int:
+        return TiffFormat.int;
+      case FormatType.float:
+        return TiffFormat.float;
+    }
+    throw new LibError('Unknown TIFF format type.');
   }
 
-  private writeImage(out: OutputBuffer, image: MemoryImage): void {
-    // number of IFD entries
-    out.writeUint16(11);
+  public encode(image: MemoryImage, _singleFrame = false): Uint8Array {
+    let img = image;
 
-    this.writeEntryUint32(out, TiffImage.TAG_IMAGE_WIDTH, image.width);
-    this.writeEntryUint32(out, TiffImage.TAG_IMAGE_LENGTH, image.height);
-    this.writeEntryUint16(out, TiffImage.TAG_BITS_PER_SAMPLE, 8);
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_COMPRESSION,
-      TiffImage.COMPRESSION_NONE
-    );
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_PHOTOMETRIC_INTERPRETATION,
-      TiffImage.PHOTOMETRIC_RGB
-    );
-    this.writeEntryUint16(out, TiffImage.TAG_SAMPLES_PER_PIXEL, 4);
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_SAMPLE_FORMAT,
-      TiffImage.FORMAT_UINT
-    );
+    const out = new OutputBuffer();
 
-    this.writeEntryUint32(out, TiffImage.TAG_ROWS_PER_STRIP, image.height);
-    this.writeEntryUint16(out, TiffImage.TAG_PLANAR_CONFIGURATION, 1);
-    this.writeEntryUint32(
-      out,
-      TiffImage.TAG_STRIP_BYTE_COUNTS,
-      image.width * image.height * 4
-    );
-    this.writeEntryUint32(out, TiffImage.TAG_STRIP_OFFSETS, out.length + 4);
-    out.writeBytes(image.getBytes());
-  }
+    // TIFF is really just an EXIF structure (or, really, EXIF is just a TIFF
+    // structure).
 
-  private writeHdrImage(out: OutputBuffer, image: HdrImage): void {
-    // number of IFD entries
-    out.writeUint16(11);
-
-    this.writeEntryUint32(out, TiffImage.TAG_IMAGE_WIDTH, image.width);
-    this.writeEntryUint32(out, TiffImage.TAG_IMAGE_LENGTH, image.height);
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_BITS_PER_SAMPLE,
-      image.bitsPerSample
-    );
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_COMPRESSION,
-      TiffImage.COMPRESSION_NONE
-    );
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_PHOTOMETRIC_INTERPRETATION,
-      image.numberOfChannels === 1
-        ? TiffImage.PHOTOMETRIC_BLACKISZERO
-        : TiffImage.PHOTOMETRIC_RGB
-    );
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_SAMPLES_PER_PIXEL,
-      image.numberOfChannels
-    );
-    this.writeEntryUint16(
-      out,
-      TiffImage.TAG_SAMPLE_FORMAT,
-      this.getSampleFormat(image)
-    );
-
-    const bytesPerSample = Math.trunc(image.bitsPerSample / 8);
-    const imageSize =
-      image.width * image.height * image.slices.size * bytesPerSample;
-
-    this.writeEntryUint32(out, TiffImage.TAG_ROWS_PER_STRIP, image.height);
-    this.writeEntryUint16(out, TiffImage.TAG_PLANAR_CONFIGURATION, 1);
-    this.writeEntryUint32(out, TiffImage.TAG_STRIP_BYTE_COUNTS, imageSize);
-    this.writeEntryUint32(out, TiffImage.TAG_STRIP_OFFSETS, out.length + 4);
-
-    const channels: Uint8Array[] = [];
-    if (image.blue !== undefined) {
-      // ? Why does this channel order working but not RGB?
-      channels.push(image.blue.getBytes());
-    }
-    if (image.red !== undefined) {
-      channels.push(image.red.getBytes());
-    }
-    if (image.green !== undefined) {
-      channels.push(image.green.getBytes());
-    }
-    if (image.alpha !== undefined) {
-      channels.push(image.alpha.getBytes());
-    }
-    if (image.depth !== undefined) {
-      channels.push(image.depth.getBytes());
+    const exif = new ExifData();
+    if (img.exifData.size > 0) {
+      exif.imageIfd.copyFrom(img.exifData.imageIfd);
     }
 
-    for (let y = 0, pi = 0; y < image.height; ++y) {
-      for (let x = 0; x < image.width; ++x, pi += bytesPerSample) {
-        for (let c = 0; c < channels.length; ++c) {
-          const ch = channels[c];
-          for (let b = 0; b < bytesPerSample; ++b) {
-            out.writeByte(ch[pi + b]);
-          }
+    // TODO: support encoding HDR images to TIFF.
+    if (img.isHdrFormat) {
+      img = img.convert({
+        format: Format.uint8,
+      });
+    }
+
+    const type =
+      img.numChannels === 1
+        ? TiffPhotometricType.blackIsZero
+        : img.hasPalette
+        ? TiffPhotometricType.palette
+        : TiffPhotometricType.rgb;
+
+    const nc = img.numChannels;
+
+    const ifd0 = exif.imageIfd;
+    ifd0.setValue('ImageWidth', img.width);
+    ifd0.setValue('ImageHeight', img.height);
+    ifd0.setValue('BitsPerSample', img.bitsPerChannel);
+    ifd0.setValue('SampleFormat', this.getSampleFormat(img));
+    ifd0.setValue('SamplesPerPixel', img.hasPalette ? 1 : nc);
+    ifd0.setValue('Compression', TiffCompression.none);
+    ifd0.setValue('PhotometricInterpretation', type);
+    ifd0.setValue('RowsPerStrip', img.height);
+    ifd0.setValue('PlanarConfiguration', 1);
+    ifd0.setValue('TileWidth', img.width);
+    ifd0.setValue('TileLength', img.height);
+    ifd0.setValue('StripByteCounts', img.byteLength);
+    ifd0.setValue('StripOffsets', new IfdUndefinedValue(img.toUint8Array()));
+
+    if (img.hasPalette) {
+      const p = img.palette!;
+      // Only support RGB palettes
+      const numCh = 3;
+      const numC = p.numColors;
+      const colorMap = new Uint16Array(numC * numCh);
+      for (let c = 0, ci = 0; c < numCh; ++c) {
+        for (let i = 0; i < numC; ++i) {
+          colorMap[ci++] = Math.trunc(p.get(i, c)) << 8;
         }
       }
+
+      ifd0.setValue('ColorMap', colorMap);
     }
-  }
 
-  private getSampleFormat(image: HdrImage): number {
-    switch (image.sampleFormat) {
-      case HdrSlice.UINT:
-        return TiffImage.FORMAT_UINT;
-      case HdrSlice.INT:
-        return TiffImage.FORMAT_INT;
-    }
-    return TiffImage.FORMAT_FLOAT;
-  }
+    exif.write(out);
 
-  private writeEntryUint16(out: OutputBuffer, tag: number, data: number): void {
-    out.writeUint16(tag);
-    out.writeUint16(TiffEntry.TYPE_SHORT);
-    // number of values
-    out.writeUint32(1);
-    out.writeUint16(data);
-    // pad to 4 bytes
-    out.writeUint16(0);
-  }
-
-  private writeEntryUint32(out: OutputBuffer, tag: number, data: number): void {
-    out.writeUint16(tag);
-    out.writeUint16(TiffEntry.TYPE_LONG);
-    // number of values
-    out.writeUint32(1);
-    out.writeUint32(data);
-  }
-
-  public encodeImage(image: MemoryImage): Uint8Array {
-    const out = new OutputBuffer();
-    this.writeHeader(out);
-    this.writeImage(out, image);
-    // no offset to the next image
-    out.writeUint32(0);
-    return out.getBytes();
-  }
-
-  public encodeAnimation(_animation: FrameAnimation): Uint8Array | undefined {
-    return undefined;
-  }
-
-  public encodeHdrImage(image: HdrImage): Uint8Array {
-    const out = new OutputBuffer();
-    this.writeHeader(out);
-    this.writeHdrImage(out, image);
-    // no offset to the next image
-    out.writeUint32(0);
     return out.getBytes();
   }
 }

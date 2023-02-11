@@ -1,57 +1,42 @@
 /** @format */
 
 import { inflate } from 'uzip';
-import { Color } from '../common/color';
 import { Crc32 } from '../common/crc32';
-import { FrameAnimation } from '../common/frame-animation';
-import { ICCPCompressionMode } from '../common/iccp-compression-mode';
-import { ICCProfileData } from '../common/icc-profile-data';
 import { InputBuffer } from '../common/input-buffer';
 import { ArrayUtils } from '../common/array-utils';
-import { MemoryImage } from '../common/memory-image';
-import { RgbChannelSet } from '../common/rgb-channel-set';
-import { TextCodec } from '../common/text-codec';
-import { ImageError } from '../error/image-error';
-import { NotImplementedError } from '../error/not-implemented-error';
-import { HdrImage } from '../hdr/hdr-image';
-import { ImageTransform } from '../transform/image-transform';
+import { StringUtils } from '../common/string-utils';
+import { LibError } from '../error/lib-error';
 import { DecodeInfo } from './decode-info';
 import { Decoder } from './decoder';
 import { PngFrame } from './png/png-frame';
 import { PngInfo } from './png/png-info';
+import { PngColorType } from './png/png-color-type';
+import { PngDisposeMode } from './png/png-dispose-mode';
+import { PngBlendMode } from './png/png-blend-mode';
+import { ColorRgba8 } from '../color/color-rgba8';
+import { ColorRgb8 } from '../color/color-rgb8';
+import { MemoryImage, MemoryImageCreateOptions } from '../image/image';
+import { PaletteUint8 } from '../image/palette-uint8';
+import { Format } from '../color/format';
+import { IccProfile } from '../image/icc-profile';
+import { IccProfileCompression } from '../image/icc-profile-compression';
+import { Draw } from '../draw/draw';
+import { BlendMode } from '../draw/blend-mode';
+import { PngFilterType } from './png/png-filter-type';
+import { Pixel } from '../image/pixel';
 
 /**
  * Decode a PNG encoded image.
  */
 export class PngDecoder implements Decoder {
-  private static readonly GRAYSCALE = 0;
-
-  private static readonly RGB = 2;
-
-  private static readonly INDEXED = 3;
-
-  private static readonly GRAYSCALE_ALPHA = 4;
-
-  private static readonly RGBA = 6;
-
-  private static readonly FILTER_NONE = 0;
-
-  private static readonly FILTER_SUB = 1;
-
-  private static readonly FILTER_UP = 2;
-
-  private static readonly FILTER_AVERAGE = 3;
-
-  private static readonly FILTER_PAETH = 4;
-
-  private _info?: PngInfo;
-  public get info(): PngInfo | undefined {
-    return this._info;
-  }
-
   private _input?: InputBuffer;
   public get input(): InputBuffer | undefined {
     return this._input;
+  }
+
+  private _info: PngInfo = new PngInfo();
+  public get info(): PngInfo {
+    return this._info;
   }
 
   private _progressY = 0;
@@ -73,42 +58,43 @@ export class PngDecoder implements Decoder {
    * The number of frames that can be decoded.
    */
   public get numFrames(): number {
-    return this._info !== undefined ? this._info.numFrames : 0;
+    return this._info.numFrames;
   }
 
   private static unfilter(
-    filterType: number,
+    filterType: PngFilterType,
     bpp: number,
     row: Uint8Array,
-    prevRow: Uint8Array
+    prevRow?: Uint8Array
   ): void {
     const rowBytes = row.length;
 
     switch (filterType) {
-      case PngDecoder.FILTER_NONE:
+      case PngFilterType.none:
         break;
-      case PngDecoder.FILTER_SUB:
+      case PngFilterType.sub:
         for (let x = bpp; x < rowBytes; ++x) {
           row[x] = (row[x] + row[x - bpp]) & 0xff;
         }
         break;
-      case PngDecoder.FILTER_UP:
+      case PngFilterType.up:
         for (let x = 0; x < rowBytes; ++x) {
-          row[x] = (row[x] + prevRow[x]) & 0xff;
+          const b = prevRow !== undefined ? prevRow[x] : 0;
+          row[x] = (row[x] + b) & 0xff;
         }
         break;
-      case PngDecoder.FILTER_AVERAGE:
+      case PngFilterType.average:
         for (let x = 0; x < rowBytes; ++x) {
           const a = x < bpp ? 0 : row[x - bpp];
-          const b = prevRow[x];
+          const b = prevRow !== undefined ? prevRow[x] : 0;
           row[x] = (row[x] + ((a + b) >> 1)) & 0xff;
         }
         break;
-      case PngDecoder.FILTER_PAETH:
+      case PngFilterType.paeth:
         for (let x = 0; x < rowBytes; ++x) {
           const a = x < bpp ? 0 : row[x - bpp];
-          const b = prevRow[x];
-          const c = x < bpp ? 0 : prevRow[x - bpp];
+          const b = prevRow !== undefined ? prevRow[x] : 0;
+          const c = x < bpp || prevRow === undefined ? 0 : prevRow[x - bpp];
 
           const p = a + b - c;
 
@@ -129,31 +115,15 @@ export class PngDecoder implements Decoder {
         }
         break;
       default:
-        throw new ImageError(`Invalid filter value: ${filterType}`);
+        throw new LibError(`Invalid filter value: ${filterType}`);
     }
-  }
-
-  private static convert16to8(c: number): number {
-    return c >> 8;
-  }
-
-  private static convert1to8(c: number): number {
-    return c === 0 ? 0 : 255;
-  }
-
-  private static convert2to8(c: number): number {
-    return c * 85;
-  }
-
-  private static convert4to8(c: number): number {
-    return c << 4;
   }
 
   /**
    * Return the CRC of the bytes
    */
   private static crc(type: string, bytes: Uint8Array): number {
-    const typeCodeUnits = TextCodec.getCodePoints(type);
+    const typeCodeUnits = StringUtils.getCodePoints(type);
     const crc = Crc32.getChecksum({
       buffer: typeCodeUnits,
     });
@@ -177,20 +147,19 @@ export class PngDecoder implements Decoder {
     passHeight: number
   ): void {
     let channels = 1;
-    if (this._info!.colorType === PngDecoder.GRAYSCALE_ALPHA) {
+    if (this._info.colorType === PngColorType.grayscaleAlpha) {
       channels = 2;
-    } else if (this._info!.colorType === PngDecoder.RGB) {
+    } else if (this._info.colorType === PngColorType.rgb) {
       channels = 3;
-    } else if (this._info!.colorType === PngDecoder.RGBA) {
+    } else if (this._info.colorType === PngColorType.rgba) {
       channels = 4;
     }
 
-    const pixelDepth = channels * this._info!.bits!;
+    const pixelDepth = channels * this._info.bits;
     const bpp = (pixelDepth + 7) >> 3;
     const rowBytes = (pixelDepth * passWidth + 7) >> 3;
 
-    const line = new Uint8Array(rowBytes);
-    const inData = [line, line];
+    const inData: Array<Uint8Array | undefined> = [undefined, undefined];
 
     const pixel = [0, 0, 0, 0];
 
@@ -200,10 +169,10 @@ export class PngDecoder implements Decoder {
       srcY < passHeight;
       ++srcY, dstY += yStep, ri = 1 - ri, this._progressY++
     ) {
-      const filterType = input.readByte();
+      const filterType = input.readByte() as PngFilterType;
       inData[ri] = input.readBytes(rowBytes).toUint8Array();
 
-      const row = inData[ri];
+      const row = inData[ri]!;
       const prevRow = inData[1 - ri];
 
       // Before the image is compressed, it was filtered to improve compression.
@@ -230,15 +199,12 @@ export class PngDecoder implements Decoder {
         ++srcX, dstX += xStep
       ) {
         this.readPixel(rowInput, pixel);
-        const c = this.getColor(pixel);
-        image.setPixel(dstX, dstY, c);
+        this.setPixel(image.getPixel(dstX, dstY), pixel);
 
         if (blockWidth > 1 || blockHeight > 1) {
-          // Let xMax: number = Math.min(dstX + blockWidth, _info.width);
-          // let xPixels: number = xMax - dstX;
           for (let i = 0; i < blockHeight; ++i) {
             for (let j = 0; j < blockWidth; ++j) {
-              image.setPixelSafe(dstX + j, dstY + j, c);
+              this.setPixel(image.getPixelSafe(dstX + j, dstY + i), pixel);
             }
           }
         }
@@ -248,18 +214,18 @@ export class PngDecoder implements Decoder {
 
   private process(input: InputBuffer, image: MemoryImage): void {
     let channels = 1;
-    if (this._info!.colorType === PngDecoder.GRAYSCALE_ALPHA) {
+    if (this._info.colorType === PngColorType.grayscaleAlpha) {
       channels = 2;
-    } else if (this._info!.colorType === PngDecoder.RGB) {
+    } else if (this._info.colorType === PngColorType.rgb) {
       channels = 3;
-    } else if (this._info!.colorType === PngDecoder.RGBA) {
+    } else if (this._info.colorType === PngColorType.rgba) {
       channels = 4;
     }
 
     const pixelDepth = channels * this._info!.bits!;
 
-    const w = this._info!.width;
-    const h = this._info!.height;
+    const w = this._info.width;
+    const h = this._info.height;
 
     const rowBytes = (w * pixelDepth + 7) >> 3;
     const bpp = (pixelDepth + 7) >> 3;
@@ -269,8 +235,10 @@ export class PngDecoder implements Decoder {
 
     const pixel = [0, 0, 0, 0];
 
-    for (let y = 0, pi = 0, ri = 0; y < h; ++y, ri = 1 - ri) {
-      const filterType = input.readByte();
+    const pIter = image[Symbol.iterator]();
+    let pIterRes = pIter.next();
+    for (let y = 0, ri = 0; y < h; ++y, ri = 1 - ri) {
+      const filterType = input.readByte() as PngFilterType;
       inData[ri] = input.readBytes(rowBytes).toUint8Array();
 
       const row = inData[ri];
@@ -291,7 +259,8 @@ export class PngDecoder implements Decoder {
 
       for (let x = 0; x < w; ++x) {
         this.readPixel(rowInput, pixel);
-        image.setPixelByIndex(pi++, this.getColor(pixel));
+        this.setPixel(pIterRes.value, pixel);
+        pIterRes = pIter.next();
       }
     }
   }
@@ -320,7 +289,7 @@ export class PngDecoder implements Decoder {
     // Not enough buffer
     while (this._bitBufferLen < numBits) {
       if (input.isEOS) {
-        throw new ImageError('Invalid PNG data.');
+        throw new LibError('Invalid PNG data.');
       }
 
       // Input byte
@@ -365,235 +334,91 @@ export class PngDecoder implements Decoder {
    * Read the next pixel from the input stream.
    */
   private readPixel(input: InputBuffer, pixel: number[]): void {
-    switch (this._info!.colorType) {
-      case PngDecoder.GRAYSCALE:
-        pixel[0] = this.readBits(input, this._info!.bits!);
+    switch (this._info.colorType) {
+      case PngColorType.grayscale:
+        pixel[0] = this.readBits(input, this._info.bits!);
         return;
-      case PngDecoder.RGB:
-        pixel[0] = this.readBits(input, this._info!.bits!);
-        pixel[1] = this.readBits(input, this._info!.bits!);
-        pixel[2] = this.readBits(input, this._info!.bits!);
+      case PngColorType.rgb:
+        pixel[0] = this.readBits(input, this._info.bits!);
+        pixel[1] = this.readBits(input, this._info.bits!);
+        pixel[2] = this.readBits(input, this._info.bits!);
         return;
-      case PngDecoder.INDEXED:
-        pixel[0] = this.readBits(input, this._info!.bits!);
+      case PngColorType.indexed:
+        pixel[0] = this.readBits(input, this._info.bits!);
         return;
-      case PngDecoder.GRAYSCALE_ALPHA:
-        pixel[0] = this.readBits(input, this._info!.bits!);
-        pixel[1] = this.readBits(input, this._info!.bits!);
+      case PngColorType.grayscaleAlpha:
+        pixel[0] = this.readBits(input, this._info.bits!);
+        pixel[1] = this.readBits(input, this._info.bits!);
         return;
-      case PngDecoder.RGBA:
-        pixel[0] = this.readBits(input, this._info!.bits!);
-        pixel[1] = this.readBits(input, this._info!.bits!);
-        pixel[2] = this.readBits(input, this._info!.bits!);
-        pixel[3] = this.readBits(input, this._info!.bits!);
+      case PngColorType.rgba:
+        pixel[0] = this.readBits(input, this._info.bits!);
+        pixel[1] = this.readBits(input, this._info.bits!);
+        pixel[2] = this.readBits(input, this._info.bits!);
+        pixel[3] = this.readBits(input, this._info.bits!);
         return;
     }
-    throw new NotImplementedError(
-      `Invalid color type: ${this._info!.colorType}.`
-    );
+    throw new LibError(`Invalid color type: ${this._info.colorType}.`);
   }
 
-  /**
-   * Get the color with the list of components.
-   */
-  private getColor(raw: number[]): number {
-    switch (this._info!.colorType) {
-      case PngDecoder.GRAYSCALE: {
-        let g = 0;
-        switch (this._info!.bits) {
-          case 1:
-            g = PngDecoder.convert1to8(raw[0]);
-            break;
-          case 2:
-            g = PngDecoder.convert2to8(raw[0]);
-            break;
-          case 4:
-            g = PngDecoder.convert4to8(raw[0]);
-            break;
-          case 8:
-            g = raw[0];
-            break;
-          case 16:
-            g = PngDecoder.convert16to8(raw[0]);
-            break;
+  // Get the color with the list of components.
+  private setPixel(p: Pixel, raw: number[]): void {
+    switch (this._info.colorType) {
+      case PngColorType.grayscale:
+        if (this._info.transparency !== undefined && this._info.bits > 8) {
+          const t = this._info.transparency!;
+          const a = ((t[0] & 0xff) << 24) | (t[1] & 0xff);
+          const g = raw[0];
+          p.setRgba(g, g, g, g !== a ? p.maxChannelValue : 0);
+          return;
         }
+        p.setRgb(raw[0], 0, 0);
+        return;
+      case PngColorType.rgb:
+        {
+          const r = raw[0];
+          const g = raw[1];
+          const b = raw[2];
 
-        g = this._info!.colorLut![g];
-
-        if (this._info!.transparency !== undefined) {
-          const a =
-            ((this._info!.transparency[0] & 0xff) << 24) |
-            (this._info!.transparency[1] & 0xff);
-          if (raw[0] === a) {
-            return Color.getColor(g, g, g, 0);
+          if (this._info.transparency !== undefined) {
+            const t = this._info.transparency!;
+            const tr = ((t[0] & 0xff) << 8) | (t[1] & 0xff);
+            const tg = ((t[2] & 0xff) << 8) | (t[3] & 0xff);
+            const tb = ((t[4] & 0xff) << 8) | (t[5] & 0xff);
+            if (raw[0] !== tr || raw[1] !== tg || raw[2] !== tb) {
+              p.setRgba(r, g, b, p.maxChannelValue);
+              return;
+            }
           }
+
+          p.setRgb(r, g, b);
         }
-
-        return Color.getColor(g, g, g);
-      }
-      case PngDecoder.RGB: {
-        let r = 0;
-        let g = 0;
-        let b = 0;
-        switch (this._info!.bits) {
-          case 1:
-            r = PngDecoder.convert1to8(raw[0]);
-            g = PngDecoder.convert1to8(raw[1]);
-            b = PngDecoder.convert1to8(raw[2]);
-            break;
-          case 2:
-            r = PngDecoder.convert2to8(raw[0]);
-            g = PngDecoder.convert2to8(raw[1]);
-            b = PngDecoder.convert2to8(raw[2]);
-            break;
-          case 4:
-            r = PngDecoder.convert4to8(raw[0]);
-            g = PngDecoder.convert4to8(raw[1]);
-            b = PngDecoder.convert4to8(raw[2]);
-            break;
-          case 8:
-            r = raw[0];
-            g = raw[1];
-            b = raw[2];
-            break;
-          case 16:
-            r = PngDecoder.convert16to8(raw[0]);
-            g = PngDecoder.convert16to8(raw[1]);
-            b = PngDecoder.convert16to8(raw[2]);
-            break;
-        }
-
-        r = this._info!.colorLut![r]!;
-        g = this._info!.colorLut![g]!;
-        b = this._info!.colorLut![b]!;
-
-        if (this._info!.transparency !== undefined) {
-          const tr =
-            ((this._info!.transparency[0] & 0xff) << 8) |
-            (this._info!.transparency[1] & 0xff);
-          const tg =
-            ((this._info!.transparency[2] & 0xff) << 8) |
-            (this._info!.transparency[3] & 0xff);
-          const tb =
-            ((this._info!.transparency[4] & 0xff) << 8) |
-            (this._info!.transparency[5] & 0xff);
-          if (raw[0] === tr && raw[1] === tg && raw[2] === tb) {
-            return Color.getColor(r, g, b, 0);
-          }
-        }
-
-        return Color.getColor(r, g, b);
-      }
-      case PngDecoder.INDEXED: {
-        const p = raw[0] * 3;
-
-        const a =
-          this._info!.transparency !== undefined &&
-          raw[0] < this._info!.transparency.length
-            ? this._info!.transparency[raw[0]]
-            : 255;
-
-        if (p >= this._info!.palette!.length) {
-          return Color.getColor(255, 255, 255, a);
-        }
-
-        const r = this._info!.palette![p]!;
-        const g = this._info!.palette![p + 1]!;
-        const b = this._info!.palette![p + 2]!;
-
-        return Color.getColor(r, g, b, a);
-      }
-      case PngDecoder.GRAYSCALE_ALPHA: {
-        let g = 0;
-        let a = 0;
-        switch (this._info!.bits) {
-          case 1:
-            g = PngDecoder.convert1to8(raw[0]);
-            a = PngDecoder.convert1to8(raw[1]);
-            break;
-          case 2:
-            g = PngDecoder.convert2to8(raw[0]);
-            a = PngDecoder.convert2to8(raw[1]);
-            break;
-          case 4:
-            g = PngDecoder.convert4to8(raw[0]);
-            a = PngDecoder.convert4to8(raw[1]);
-            break;
-          case 8:
-            g = raw[0];
-            a = raw[1];
-            break;
-          case 16:
-            g = PngDecoder.convert16to8(raw[0]);
-            a = PngDecoder.convert16to8(raw[1]);
-            break;
-        }
-
-        g = this._info!.colorLut![g]!;
-
-        return Color.getColor(g, g, g, a);
-      }
-      case PngDecoder.RGBA: {
-        let r = 0;
-        let g = 0;
-        let b = 0;
-        let a = 0;
-        switch (this._info!.bits) {
-          case 1:
-            r = PngDecoder.convert1to8(raw[0]);
-            g = PngDecoder.convert1to8(raw[1]);
-            b = PngDecoder.convert1to8(raw[2]);
-            a = PngDecoder.convert1to8(raw[3]);
-            break;
-          case 2:
-            r = PngDecoder.convert2to8(raw[0]);
-            g = PngDecoder.convert2to8(raw[1]);
-            b = PngDecoder.convert2to8(raw[2]);
-            a = PngDecoder.convert2to8(raw[3]);
-            break;
-          case 4:
-            r = PngDecoder.convert4to8(raw[0]);
-            g = PngDecoder.convert4to8(raw[1]);
-            b = PngDecoder.convert4to8(raw[2]);
-            a = PngDecoder.convert4to8(raw[3]);
-            break;
-          case 8:
-            r = raw[0];
-            g = raw[1];
-            b = raw[2];
-            a = raw[3];
-            break;
-          case 16:
-            r = PngDecoder.convert16to8(raw[0]);
-            g = PngDecoder.convert16to8(raw[1]);
-            b = PngDecoder.convert16to8(raw[2]);
-            a = PngDecoder.convert16to8(raw[3]);
-            break;
-        }
-
-        r = this._info!.colorLut![r]!;
-        g = this._info!.colorLut![g]!;
-        b = this._info!.colorLut![b]!;
-
-        return Color.getColor(r, g, b, a);
-      }
+        return;
+      case PngColorType.indexed:
+        p.index = raw[0];
+        return;
+      case PngColorType.grayscaleAlpha:
+        p.setRgb(raw[0], raw[1], 0);
+        return;
+      case PngColorType.rgba:
+        p.setRgba(raw[0], raw[1], raw[2], raw[3]);
+        return;
     }
 
-    throw new ImageError(`Invalid color type: ${this._info!.colorType}.`);
+    throw new LibError(`Invalid color type: ${this._info.colorType}.`);
   }
 
   /**
    * Is the given file a valid PNG image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    const input = new InputBuffer({
+    this._input = new InputBuffer({
       buffer: bytes,
       bigEndian: true,
     });
-    const pngHeader = input.readBytes(8);
-    const PNG_HEADER = [137, 80, 78, 71, 13, 10, 26, 10];
+    const headerBytes = this._input.readBytes(8);
+    const expectedHeaderBytes = [137, 80, 78, 71, 13, 10, 26, 10];
     for (let i = 0; i < 8; ++i) {
-      if (pngHeader.getByte(i) !== PNG_HEADER[i]) {
+      if (headerBytes.getByte(i) !== expectedHeaderBytes[i]) {
         return false;
       }
     }
@@ -605,16 +430,8 @@ export class PngDecoder implements Decoder {
    * process the frames until they are requested with decodeFrame.
    */
   public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
-    this._input = new InputBuffer({
-      buffer: bytes,
-      bigEndian: true,
-    });
-    const pngHeader = this._input.readBytes(8);
-    const expectedHeader = [137, 80, 78, 71, 13, 10, 26, 10];
-    for (let i = 0; i < 8; ++i) {
-      if (pngHeader.getByte(i) !== expectedHeader[i]) {
-        return undefined;
-      }
+    if (!this.isValidFile(bytes) || this._input === undefined) {
+      return undefined;
     }
 
     while (true) {
@@ -622,122 +439,99 @@ export class PngDecoder implements Decoder {
       let chunkSize = this._input.readUint32();
       const chunkType = this._input.readString(4);
       switch (chunkType) {
-        case 'tEXt': {
-          if (this._info === undefined) {
-            this._info = new PngInfo();
-          }
-          const txtData = this._input.readBytes(chunkSize).toUint8Array();
-          for (let i = 0, l = txtData.length; i < l; ++i) {
-            if (txtData[i] === 0) {
-              const key = TextCodec.latin1Decoder.decode(
-                ArrayUtils.copyUint8(txtData, 0, i)
-              );
-              const text = TextCodec.latin1Decoder.decode(
-                ArrayUtils.copyUint8(txtData, i + 1)
-              );
-              this._info.textData.set(key, text);
-              break;
+        case 'tEXt':
+          {
+            const txtData = this._input.readBytes(chunkSize).toUint8Array();
+            const l = txtData.length;
+            for (let i = 0; i < l; ++i) {
+              if (txtData[i] === 0) {
+                const key = StringUtils.latin1Decoder.decode(
+                  ArrayUtils.copyUint8(txtData, 0, i)
+                );
+                const text = StringUtils.latin1Decoder.decode(
+                  ArrayUtils.copyUint8(txtData, i + 1)
+                );
+                this._info.textData.set(key, text);
+                break;
+              }
             }
+            // CRC
+            this._input.skip(4);
           }
-          // CRC
-          this._input.skip(4);
           break;
-        }
         case 'IHDR': {
           const hdr = InputBuffer.from(this._input.readBytes(chunkSize));
           const hdrBytes: Uint8Array = hdr.toUint8Array();
-
-          const width = hdr.readUint32();
-          const height = hdr.readUint32();
-          const bits = hdr.readByte();
-          const colorType = hdr.readByte();
-          const compressionMethod = hdr.readByte();
-          const filterMethod = hdr.readByte();
-          const interlaceMethod = hdr.readByte();
-
-          this._info = new PngInfo({
-            width: width,
-            height: height,
-            bits: bits,
-            colorType: colorType,
-            compressionMethod: compressionMethod,
-            filterMethod: filterMethod,
-            interlaceMethod: interlaceMethod,
-          });
-
-          // Validate some of the info in the header to make sure we support
-          // the proposed image data.
-          if (
-            ![
-              PngDecoder.GRAYSCALE,
-              PngDecoder.RGB,
-              PngDecoder.INDEXED,
-              PngDecoder.GRAYSCALE_ALPHA,
-              PngDecoder.RGBA,
-            ].includes(this._info.colorType!)
-          ) {
-            return undefined;
-          }
+          this._info.width = hdr.readUint32();
+          this._info.height = hdr.readUint32();
+          this._info.bits = hdr.readByte();
+          this._info.colorType = hdr.readByte();
+          this._info.compressionMethod = hdr.readByte();
+          this._info.filterMethod = hdr.readByte();
+          this._info.interlaceMethod = hdr.readByte();
 
           if (this._info.filterMethod !== 0) {
             return undefined;
           }
 
           switch (this._info.colorType) {
-            case PngDecoder.GRAYSCALE:
+            case PngColorType.grayscale:
               if (![1, 2, 4, 8, 16].includes(this._info.bits!)) {
                 return undefined;
               }
               break;
-            case PngDecoder.RGB:
+            case PngColorType.rgb:
               if (![8, 16].includes(this._info.bits!)) {
                 return undefined;
               }
               break;
-            case PngDecoder.INDEXED:
+            case PngColorType.indexed:
               if (![1, 2, 4, 8].includes(this._info.bits!)) {
                 return undefined;
               }
               break;
-            case PngDecoder.GRAYSCALE_ALPHA:
+            case PngColorType.grayscaleAlpha:
               if (![8, 16].includes(this._info.bits!)) {
                 return undefined;
               }
               break;
-            case PngDecoder.RGBA:
+            case PngColorType.rgba:
               if (![8, 16].includes(this._info.bits!)) {
                 return undefined;
               }
               break;
+            default:
+              // The proposed image data is not supported.
+              return undefined;
           }
 
           const crc = this._input.readUint32();
           const computedCrc = PngDecoder.crc(chunkType, hdrBytes);
           if (crc !== computedCrc) {
-            throw new ImageError(`Invalid ${chunkType} checksum`);
+            throw new LibError(`Invalid ${chunkType} checksum`);
           }
           break;
         }
         case 'PLTE': {
-          this._info!.palette = this._input.readBytes(chunkSize).toUint8Array();
+          this._info.palette = this._input.readBytes(chunkSize).toUint8Array();
           const crc = this._input.readUint32();
-          const computedCrc = PngDecoder.crc(chunkType, this._info!.palette);
+          const computedCrc = PngDecoder.crc(chunkType, this._info.palette);
           if (crc !== computedCrc) {
-            throw new ImageError(`Invalid ${chunkType} checksum`);
+            throw new LibError(`Invalid ${chunkType} checksum`);
           }
           break;
         }
         case 'tRNS': {
-          this._info!.transparency = this._input
+          this._info.transparency = this._input
             .readBytes(chunkSize)
             .toUint8Array();
           const crc = this._input.readUint32();
           const computedCrc = PngDecoder.crc(
             chunkType,
-            this._info!.transparency
+            this._info.transparency
           );
           if (crc !== computedCrc) {
-            throw new ImageError(`Invalid ${chunkType} checksum`);
+            throw new LibError(`Invalid ${chunkType} checksum`);
           }
           break;
         }
@@ -749,20 +543,20 @@ export class PngDecoder implements Decoder {
         }
         case 'gAMA': {
           if (chunkSize !== 4) {
-            throw new ImageError('Invalid gAMA chunk');
+            throw new LibError('Invalid gAMA chunk');
           }
           const gammaInt = this._input.readUint32();
           // CRC
           this._input.skip(4);
-          // A gamma of 1.0 doesn't have any affect, so pretend we didn't get
+          // A gamma of 1 doesn't have any affect, so pretend we didn't get
           // a gamma in that case.
           if (gammaInt !== 100000) {
-            this._info!.gamma = gammaInt / 100000.0;
+            this._info.gamma = gammaInt / 100000.0;
           }
           break;
         }
         case 'IDAT': {
-          this._info!.idat.push(inputPos);
+          this._info.idat.push(inputPos);
           this._input.skip(chunkSize);
           // CRC
           this._input.skip(4);
@@ -770,8 +564,8 @@ export class PngDecoder implements Decoder {
         }
         case 'acTL': {
           // Animation control chunk
-          this._info!.numFrames = this._input.readUint32();
-          this._info!.repeat = this._input.readUint32();
+          this._info.numFrames = this._input.readUint32();
+          this._info.repeat = this._input.readUint32();
           // CRC
           this._input.skip(4);
           break;
@@ -785,8 +579,8 @@ export class PngDecoder implements Decoder {
           const yOffset = this._input.readUint32();
           const delayNum = this._input.readUint16();
           const delayDen = this._input.readUint16();
-          const dispose = this._input.readByte();
-          const blend = this._input.readByte();
+          const dispose = this._input.readByte() as PngDisposeMode;
+          const blend = this._input.readByte() as PngBlendMode;
           // CRC
           this._input.skip(4);
 
@@ -801,12 +595,12 @@ export class PngDecoder implements Decoder {
             dispose: dispose,
             blend: blend,
           });
-          this._info!.frames.push(frame);
+          this._info.frames.push(frame);
           break;
         }
         case 'fdAT': {
           const sequenceNumber = this._input.readUint32();
-          const frame = this._info!.frames[this._info!.frames.length - 1];
+          const frame = this._info.frames[this._info.frames.length - 1];
           frame.fdat.push(inputPos);
           this._input.skip(chunkSize - 4);
           // CRC
@@ -814,24 +608,35 @@ export class PngDecoder implements Decoder {
           break;
         }
         case 'bKGD': {
-          if (this._info!.colorType === 3) {
+          if (this._info.colorType === PngColorType.indexed) {
             const paletteIndex = this._input.readByte();
             chunkSize--;
             const p3 = paletteIndex * 3;
-            const r = this._info!.palette![p3]!;
-            const g = this._info!.palette![p3 + 1]!;
-            const b = this._info!.palette![p3 + 2]!;
-            this._info!.backgroundColor = Color.fromRgb(r, g, b);
+            const r = this._info.palette![p3]!;
+            const g = this._info.palette![p3 + 1]!;
+            const b = this._info.palette![p3 + 2]!;
+            if (this._info.transparency !== undefined) {
+              const isTransparent =
+                this._info.transparency.includes(paletteIndex);
+              this._info.backgroundColor = new ColorRgba8(
+                r,
+                g,
+                b,
+                isTransparent ? 0 : 255
+              );
+            } else {
+              this._info.backgroundColor = new ColorRgb8(r, g, b);
+            }
           } else if (
-            this._info!.colorType === 0 ||
-            this._info!.colorType === 4
+            this._info.colorType === PngColorType.grayscale ||
+            this._info.colorType === PngColorType.grayscaleAlpha
           ) {
             /* Const gray: number = */
             this._input.readUint16();
             chunkSize -= 2;
           } else if (
-            this._info!.colorType === 2 ||
-            this._info!.colorType === 6
+            this._info.colorType === PngColorType.rgb ||
+            this._info.colorType === PngColorType.rgba
           ) {
             /* Const r: number = */
             this._input.readUint16();
@@ -849,12 +654,12 @@ export class PngDecoder implements Decoder {
           break;
         }
         case 'iCCP': {
-          this._info!.iCCPName = this._input.readString();
+          this._info.iccpName = this._input.readString();
           // 0: deflate
-          this._info!.iCCPCompression = this._input.readByte();
-          chunkSize -= this._info!.iCCPName.length + 2;
+          this._info.iccpCompression = this._input.readByte();
+          chunkSize -= this._info.iccpName.length + 2;
           const profile = this._input.readBytes(chunkSize);
-          this._info!.iCCPData = profile.toUint8Array();
+          this._info.iccpData = profile.toUint8Array();
           // CRC
           this._input.skip(4);
           break;
@@ -883,7 +688,7 @@ export class PngDecoder implements Decoder {
    * Decode the frame (assuming **startDecode** has already been called).
    */
   public decodeFrame(frame: number): MemoryImage | undefined {
-    if (this._input === undefined || this._info === undefined) {
+    if (this._input === undefined) {
       return undefined;
     }
 
@@ -893,8 +698,9 @@ export class PngDecoder implements Decoder {
 
     if (!this._info.isAnimated || frame === 0) {
       let totalSize = 0;
+      const len = this._info.idat.length;
       const dataBlocks: Uint8Array[] = new Array<Uint8Array>();
-      for (let i = 0, len = this._info.idat.length; i < len; ++i) {
+      for (let i = 0; i < len; ++i) {
         this._input.offset = this._info.idat[i];
         const chunkSize = this._input.readUint32();
         const chunkType = this._input.readString(4);
@@ -904,7 +710,7 @@ export class PngDecoder implements Decoder {
         const crc = this._input.readUint32();
         const computedCrc = PngDecoder.crc(chunkType, data);
         if (crc !== computedCrc) {
-          throw new ImageError(`Invalid ${chunkType} checksum`);
+          throw new LibError(`Invalid ${chunkType} checksum`);
         }
       }
       imageData = new Uint8Array(totalSize);
@@ -915,7 +721,7 @@ export class PngDecoder implements Decoder {
       }
     } else {
       if (frame < 0 || frame >= this._info.frames.length) {
-        throw new ImageError(`Invalid Frame Number: ${frame}`);
+        throw new LibError(`Invalid Frame Number: ${frame}`);
       }
 
       const f = this._info.frames[frame];
@@ -943,18 +749,16 @@ export class PngDecoder implements Decoder {
       }
     }
 
-    const rgbChannelSet: RgbChannelSet =
-      this._info.colorType === PngDecoder.GRAYSCALE_ALPHA ||
-      this._info.colorType === PngDecoder.RGBA ||
-      this._info.transparency !== undefined
-        ? RgbChannelSet.rgba
-        : RgbChannelSet.rgb;
-
-    const image = new MemoryImage({
-      width: width!,
-      height: height!,
-      rgbChannelSet: rgbChannelSet,
-    });
+    let numChannels =
+      this._info.colorType === PngColorType.indexed
+        ? 1
+        : this._info.colorType === PngColorType.grayscale
+        ? 1
+        : this._info.colorType === PngColorType.grayscaleAlpha
+        ? 2
+        : this._info.colorType === PngColorType.rgba
+        ? 4
+        : 3;
 
     let uncompressed: Uint8Array | undefined = undefined;
     try {
@@ -971,29 +775,118 @@ export class PngDecoder implements Decoder {
     });
     this.resetBits();
 
-    // Set up a LUT to transform colors for gamma correction.
-    if (this._info.colorLut === undefined) {
-      this._info.colorLut = [];
-      for (let i = 0; i < 256; i++) {
-        const c = i;
-        this._info.colorLut.push(c);
-      }
+    let palette: PaletteUint8 | undefined = undefined;
 
-      // Apply the LUT to the palette, if necessary.
-      if (this._info.palette !== undefined && this._info.gamma !== undefined) {
-        for (let i = 0; i < this._info.palette.length; ++i) {
-          this._info.palette[i] = this._info.colorLut[this._info.palette[i]];
+    // Non-indexed PNGs may have a palette, but it only provides a suggested
+    // set of colors to which an RGB color can be quantized if not displayed
+    // directly. In this case, just ignore the palette.
+    if (this._info.colorType === PngColorType.indexed) {
+      if (this._info.palette !== undefined) {
+        const p = this._info.palette!;
+        const numColors = Math.trunc(p.length / 3);
+        const t = this._info.transparency;
+        const tl = t !== undefined ? t.length : 0;
+        const nc = t !== undefined ? 4 : 3;
+        palette = new PaletteUint8(numColors, nc);
+        for (let i = 0, pi = 0; i < numColors; ++i, pi += 3) {
+          let a = 255;
+          if (nc === 4 && i < tl) {
+            a = t![i];
+          }
+          palette.setRgba(i, p[pi]!, p[pi + 1]!, p[pi + 2]!, a);
         }
       }
     }
 
+    // grayscale images with no palette but with transparency, get
+    // converted to a indexed palette image.
+    if (
+      this._info.colorType === PngColorType.grayscale &&
+      this._info.transparency !== undefined &&
+      palette === undefined &&
+      this._info.bits <= 8
+    ) {
+      const t = this._info.transparency!;
+      const nt = t.length;
+      const numColors = 1 << this._info.bits;
+      palette = new PaletteUint8(numColors, 4);
+      // palette color are 8-bit, so convert the grayscale bit value to the
+      // 8-bit palette value.
+      const to8bit =
+        this._info.bits === 1
+          ? 255
+          : this._info.bits === 2
+          ? 85
+          : this._info.bits === 4
+          ? 17
+          : 1;
+      for (let i = 0; i < numColors; ++i) {
+        const g = i * to8bit;
+        palette.setRgba(i, g, g, g, 255);
+      }
+      for (let i = 0; i < nt; i += 2) {
+        const ti = ((t[i] & 0xff) << 8) | (t[i + 1] & 0xff);
+        if (ti < numColors) {
+          palette.set(ti, 3, 0);
+        }
+      }
+    }
+
+    const format =
+      this._info.bits === 1
+        ? Format.uint1
+        : this._info.bits === 2
+        ? Format.uint2
+        : this._info.bits === 4
+        ? Format.uint4
+        : this._info.bits === 16
+        ? Format.uint16
+        : Format.uint8;
+
+    if (
+      this._info.colorType === PngColorType.grayscale &&
+      this._info.transparency !== undefined &&
+      this._info.bits > 8
+    ) {
+      numChannels = 4;
+    }
+
+    if (
+      this._info.colorType === PngColorType.rgb &&
+      this._info.transparency !== undefined
+    ) {
+      numChannels = 4;
+    }
+
+    const opt: MemoryImageCreateOptions = {
+      width: width,
+      height: height,
+      numChannels: numChannels,
+      palette: palette,
+      format: format,
+    };
+
+    if (this._info.iccpData !== undefined) {
+      opt.iccProfile = new IccProfile(
+        this._info.iccpName,
+        IccProfileCompression.deflate,
+        this._info.iccpData
+      );
+    }
+
+    if (this._info.textData.size > 0) {
+      opt.textData = new Map<string, string>(this._info.textData);
+    }
+
+    const image = new MemoryImage(opt);
+
     const origW = this._info.width;
     const origH = this._info.height;
-    this._info.width = width!;
-    this._info.height = height!;
+    this._info.width = width;
+    this._info.height = height;
 
-    const w = width!;
-    const h = height!;
+    const w = width;
+    const h = height;
     this._progressY = 0;
     if (this._info.interlaceMethod !== 0) {
       this.processPass(input, image, 0, 0, 8, 8, (w + 7) >> 3, (h + 7) >> 3);
@@ -1010,58 +903,32 @@ export class PngDecoder implements Decoder {
     this._info.width = origW;
     this._info.height = origH;
 
-    if (this._info.iCCPData !== undefined) {
-      image.iccProfile = new ICCProfileData(
-        this._info.iCCPName,
-        ICCPCompressionMode.deflate,
-        this._info.iCCPData
-      );
-    }
-
-    if (this._info.textData.size > 0) {
-      image.addTextData(this._info.textData);
-    }
-
     return image;
   }
 
-  public decodeHdrFrame(frame: number): HdrImage | undefined {
-    const img = this.decodeFrame(frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
-  }
-
-  public decodeAnimation(bytes: Uint8Array): FrameAnimation | undefined {
+  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
     if (this.startDecode(bytes) === undefined) {
       return undefined;
     }
 
-    const animation = new FrameAnimation({
-      width: this._info!.width,
-      height: this._info!.height,
-    });
-
-    if (!this._info!.isAnimated) {
-      const image = this.decodeFrame(0)!;
-      animation.addFrame(image);
-      return animation;
+    if (!this._info.isAnimated || frame !== undefined) {
+      return this.decodeFrame(frame ?? 0);
     }
 
+    let firstImage: MemoryImage | undefined = undefined;
     let lastImage: MemoryImage | undefined = undefined;
-    for (let i = 0; i < this._info!.numFrames; ++i) {
-      const frame = this._info!.frames[i];
+    for (let i = 0; i < this._info.numFrames; ++i) {
+      const frame = this._info.frames[i];
       const image = this.decodeFrame(i);
       if (image === undefined) {
         continue;
       }
 
-      if (lastImage === undefined) {
+      if (firstImage === undefined || lastImage === undefined) {
+        firstImage = image;
         lastImage = image;
         // Convert to MS
-        lastImage.duration = Math.trunc(frame.delay * 1000);
-        animation.addFrame(lastImage);
+        lastImage.frameDuration = Math.trunc(frame.delay * 1000);
         continue;
       }
 
@@ -1070,57 +937,42 @@ export class PngDecoder implements Decoder {
         image.height === lastImage.height &&
         frame.xOffset === 0 &&
         frame.yOffset === 0 &&
-        frame.blend === PngFrame.APNG_BLEND_OP_SOURCE
+        frame.blend === PngBlendMode.source
       ) {
         lastImage = image;
         // Convert to MS
-        lastImage.duration = Math.trunc(frame.delay * 1000);
-        animation.addFrame(lastImage);
+        lastImage.frameDuration = Math.trunc(frame.delay * 1000);
+        firstImage.addFrame(lastImage);
         continue;
       }
 
       const dispose = frame.dispose;
-      if (dispose === PngFrame.APNG_DISPOSE_OP_BACKGROUND) {
-        lastImage = new MemoryImage({
-          width: lastImage.width,
-          height: lastImage.height,
-        });
-        lastImage.fill(this._info!.backgroundColor);
-      } else if (dispose === PngFrame.APNG_DISPOSE_OP_PREVIOUS) {
+      if (dispose === PngDisposeMode.background) {
+        lastImage = MemoryImage.from(lastImage);
+        lastImage.clear(this._info.backgroundColor);
+      } else if (dispose === PngDisposeMode.previous) {
         lastImage = MemoryImage.from(lastImage);
       } else {
         lastImage = MemoryImage.from(lastImage);
       }
 
       // Convert to MS
-      lastImage.duration = Math.trunc(frame.delay * 1000);
+      lastImage.frameDuration = Math.trunc(frame.delay * 1000);
 
-      ImageTransform.copyInto({
+      Draw.compositeImage({
         dst: lastImage,
         src: image,
         dstX: frame.xOffset,
         dstY: frame.yOffset,
-        blend: frame.blend === PngFrame.APNG_BLEND_OP_OVER,
+        blend:
+          frame.blend === PngBlendMode.over
+            ? BlendMode.alpha
+            : BlendMode.direct,
       });
 
-      animation.addFrame(lastImage);
+      firstImage.addFrame(lastImage);
     }
 
-    return animation;
-  }
-
-  public decodeImage(bytes: Uint8Array, frame = 0): MemoryImage | undefined {
-    if (this.startDecode(bytes) === undefined) {
-      return undefined;
-    }
-    return this.decodeFrame(frame);
-  }
-
-  public decodeHdrImage(bytes: Uint8Array, frame = 0): HdrImage | undefined {
-    const img = this.decodeImage(bytes, frame);
-    if (img === undefined) {
-      return undefined;
-    }
-    return HdrImage.fromImage(img);
+    return firstImage;
   }
 }

@@ -1,28 +1,13 @@
 /** @format */
 
+import { Color } from '../../color/color';
+import { ArrayUtils } from '../../common/array-utils';
 import { InputBuffer } from '../../common/input-buffer';
 import { DecodeInfo } from '../decode-info';
 import { IcoInfoImage } from './ico-info-image';
-
-const TYPE_ICO = 1;
-const TYPE_CUR = 2;
+import { IcoType, IcoTypeLength } from './ico-type';
 
 export class IcoInfo implements DecodeInfo {
-  private readonly _type?: number;
-  public get type(): number | undefined {
-    return this._type;
-  }
-
-  private readonly _images?: IcoInfoImage[];
-  public get images(): IcoInfoImage[] | undefined {
-    return this._images;
-  }
-
-  private readonly _numFrames: number;
-  public get numFrames(): number {
-    return this._numFrames;
-  }
-
   private _width = 0;
   public get width(): number {
     return this._width;
@@ -33,14 +18,29 @@ export class IcoInfo implements DecodeInfo {
     return this._height;
   }
 
-  private _backgroundColor = 0xffffffff;
-  public get backgroundColor(): number {
+  private readonly _type: IcoType;
+  public get type(): IcoType {
+    return this._type;
+  }
+
+  private readonly _numFrames: number;
+  public get numFrames(): number {
+    return this._numFrames;
+  }
+
+  private _backgroundColor: Color | undefined = undefined;
+  public get backgroundColor(): Color | undefined {
     return this._backgroundColor;
   }
 
-  constructor(numFrames: number, type?: number, images?: IcoInfoImage[]) {
-    this._numFrames = numFrames;
+  private readonly _images: IcoInfoImage[];
+  public get images(): IcoInfoImage[] {
+    return this._images;
+  }
+
+  constructor(type: number, numFrames: number, images: IcoInfoImage[]) {
     this._type = type;
+    this._numFrames = numFrames;
     this._images = images;
   }
 
@@ -48,37 +48,33 @@ export class IcoInfo implements DecodeInfo {
     if (input.readUint16() !== 0) {
       return undefined;
     }
-    const type = input.readUint16();
-    if (![TYPE_ICO, TYPE_CUR].includes(type)) {
+    const t = input.readUint16();
+    if (t >= IcoTypeLength) {
       return undefined;
     }
-    if (type === TYPE_CUR) {
-      // We currently do not support CUR format.
+    const type = t as IcoType;
+    if (type === IcoType.cur) {
+      // CUR format not yet supported.
       return undefined;
     }
-    const imageCount = input.readUint16();
-    const images: IcoInfoImage[] = [];
-    for (let i = 0; i < imageCount; i++) {
-      const width = input.readByte();
-      const height = input.readByte();
-      const colorPalette = input.readByte();
-      input.skip(1);
-      const colorPlanes = input.readUint16();
-      const bitsPerPixel = input.readUint16();
-      const bytesSize = input.readUint32();
-      const bytesOffset = input.readUint32();
 
-      const image = new IcoInfoImage(
-        width,
-        height,
-        colorPalette,
-        bytesSize,
-        bytesOffset,
-        colorPlanes,
-        bitsPerPixel
-      );
-      images.push(image);
-    }
-    return new IcoInfo(imageCount, type, images);
+    const imageCount = input.readUint16();
+
+    const images = ArrayUtils.generate<IcoInfoImage>(
+      imageCount,
+      (_) =>
+        new IcoInfoImage({
+          width: input.readByte(),
+          height: input.readByte(),
+          colorPalette: input.readByte(),
+          // ignore 1 byte
+          colorPlanes: (input.skip(1), input).readUint16(),
+          bitsPerPixel: input.readUint16(),
+          bytesSize: input.readUint32(),
+          bytesOffset: input.readUint32(),
+        })
+    );
+
+    return new IcoInfo(type, imageCount, images);
   }
 }

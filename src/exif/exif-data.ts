@@ -3,58 +3,76 @@
 import { InputBuffer } from '../common/input-buffer';
 import { OutputBuffer } from '../common/output-buffer';
 import { ExifEntry } from './exif-entry';
-import { ExifIFD } from './exif-ifd';
-import { ExifIFDContainer } from './exif-ifd-container';
-import { ExifImageTags } from './exif-tag';
-import { ExifValueType, ExifValueTypeSize } from './exif-value-type';
-import { ExifAsciiValue } from './exif-value/exif-ascii-value';
-import { ExifByteValue } from './exif-value/exif-byte-value';
-import { ExifDoubleValue } from './exif-value/exif-double-value';
-import { ExifLongValue } from './exif-value/exif-long-value';
-import { ExifRationalValue } from './exif-value/exif-rational-value';
-import { ExifSByteValue } from './exif-value/exif-sbyte-value';
-import { ExifShortValue } from './exif-value/exif-short-value';
-import { ExifSingleValue } from './exif-value/exif-single-value';
-import { ExifSLongValue } from './exif-value/exif-slong-value';
-import { ExifSRationalValue } from './exif-value/exif-srational-value';
-import { ExifSShortValue } from './exif-value/exif-sshort-value';
-import { ExifUndefinedValue } from './exif-value/exif-undefined-value';
-import { ExifValue } from './exif-value/exif-value';
+import { ExifImageTags, ExifTagNameToID } from './exif-tag';
+import { IfdContainer } from './ifd-container';
+import { IfdDirectory } from './ifd-directory';
+import { IfdValueType, IfdValueTypeSize } from './ifd-value-type';
+import { IfdAsciiValue } from './ifd-value/ifd-ascii-value';
+import { IfdByteValue } from './ifd-value/ifd-byte-value';
+import { IfdDoubleValue } from './ifd-value/ifd-double-value';
+import { IfdLongValue } from './ifd-value/ifd-long-value';
+import { IfdRationalValue } from './ifd-value/ifd-rational-value';
+import { IfdSByteValue } from './ifd-value/ifd-sbyte-value';
+import { IfdShortValue } from './ifd-value/ifd-short-value';
+import { IfdSingleValue } from './ifd-value/ifd-single-value';
+import { IfdSLongValue } from './ifd-value/ifd-slong-value';
+import { IfdSRationalValue } from './ifd-value/ifd-srational-value';
+import { IfdSShortValue } from './ifd-value/ifd-sshort-value';
+import { IfdUndefinedValue } from './ifd-value/ifd-undefined-value';
+import { IfdValue } from './ifd-value/ifd-value';
 
-export class ExifData extends ExifIFDContainer {
-  public get imageIfd(): ExifIFD {
+export class ExifData extends IfdContainer {
+  public get imageIfd(): IfdDirectory {
     return this.get('ifd0');
   }
 
-  public get thumbnailIfd(): ExifIFD {
+  public get thumbnailIfd(): IfdDirectory {
     return this.get('ifd1');
   }
 
-  public get exifIfd(): ExifIFD {
+  public get exifIfd(): IfdDirectory {
     return this.get('ifd0').sub.get('exif');
   }
 
-  public get gpsIfd(): ExifIFD {
+  public get gpsIfd(): IfdDirectory {
     return this.get('ifd0').sub.get('gps');
   }
 
-  public get interopIfd(): ExifIFD {
+  public get interopIfd(): IfdDirectory {
     return this.get('ifd0').sub.get('interop');
+  }
+
+  public get dataSize(): number {
+    return 8 + (this.directories.get('ifd0')?.dataSize ?? 0);
   }
 
   private writeDirectory(
     out: OutputBuffer,
-    ifd: ExifIFD,
+    ifd: IfdDirectory,
     dataOffset: number
   ): number {
     let offset = dataOffset;
+    const stripOffsetTag = ExifTagNameToID.get('StripOffsets');
     out.writeUint16(ifd.size);
     for (const tag of ifd.keys) {
       const value = ifd.getValue(tag)!;
 
+      // Special-case StripOffsets, used by TIFF, that if it points to
+      // Undefined value type, then its storing the image data and should
+      // be translated to the StripOffsets long type.
+      const tagType =
+        tag === stripOffsetTag && value.type === IfdValueType.undefined
+          ? IfdValueType.long
+          : value.type;
+
+      const tagLength =
+        tag === stripOffsetTag && value.type === IfdValueType.undefined
+          ? 1
+          : value.length;
+
       out.writeUint16(tag);
-      out.writeUint16(value.type);
-      out.writeUint32(value.length);
+      out.writeUint16(tagType);
+      out.writeUint32(tagLength);
 
       let size = value.dataSize;
       if (size <= 4) {
@@ -71,7 +89,10 @@ export class ExifData extends ExifIFDContainer {
     return offset;
   }
 
-  private writeDirectoryLargeValues(out: OutputBuffer, ifd: ExifIFD): void {
+  private writeDirectoryLargeValues(
+    out: OutputBuffer,
+    ifd: IfdDirectory
+  ): void {
     for (const value of ifd.values) {
       const size = value.dataSize;
       if (size > 4) {
@@ -87,10 +108,10 @@ export class ExifData extends ExifIFDContainer {
 
     const entry = new ExifEntry(tag, undefined);
 
-    if (format > Object.keys(ExifValueType).length) return entry;
+    if (format > Object.keys(IfdValueType).length) return entry;
 
-    const f = format as ExifValueType;
-    const fsize = ExifValueTypeSize[format];
+    const f = format as IfdValueType;
+    const fsize = IfdValueTypeSize[format];
     const size = count * fsize;
 
     const endOffset = block.offset + 4;
@@ -107,43 +128,43 @@ export class ExifData extends ExifIFDContainer {
     const data = block.readBytes(size);
 
     switch (f) {
-      case ExifValueType.none:
+      case IfdValueType.none:
         break;
-      case ExifValueType.sbyte:
-        entry.value = ExifSByteValue.fromData(data, count);
+      case IfdValueType.sByte:
+        entry.value = IfdSByteValue.data(data, count);
         break;
-      case ExifValueType.byte:
-        entry.value = ExifByteValue.fromData(data, count);
+      case IfdValueType.byte:
+        entry.value = IfdByteValue.data(data, count);
         break;
-      case ExifValueType.undefined:
-        entry.value = ExifUndefinedValue.fromData(data, count);
+      case IfdValueType.undefined:
+        entry.value = IfdUndefinedValue.data(data, count);
         break;
-      case ExifValueType.ascii:
-        entry.value = ExifAsciiValue.fromData(data, count);
+      case IfdValueType.ascii:
+        entry.value = IfdAsciiValue.data(data, count);
         break;
-      case ExifValueType.short:
-        entry.value = ExifShortValue.fromData(data, count);
+      case IfdValueType.short:
+        entry.value = IfdShortValue.data(data, count);
         break;
-      case ExifValueType.long:
-        entry.value = ExifLongValue.fromData(data, count);
+      case IfdValueType.long:
+        entry.value = IfdLongValue.data(data, count);
         break;
-      case ExifValueType.rational:
-        entry.value = ExifRationalValue.fromData(data, count);
+      case IfdValueType.rational:
+        entry.value = IfdRationalValue.data(data, count);
         break;
-      case ExifValueType.srational:
-        entry.value = ExifSRationalValue.fromData(data, count);
+      case IfdValueType.sRational:
+        entry.value = IfdSRationalValue.data(data, count);
         break;
-      case ExifValueType.sshort:
-        entry.value = ExifSShortValue.fromData(data, count);
+      case IfdValueType.sShort:
+        entry.value = IfdSShortValue.data(data, count);
         break;
-      case ExifValueType.slong:
-        entry.value = ExifSLongValue.fromData(data, count);
+      case IfdValueType.sLong:
+        entry.value = IfdSLongValue.data(data, count);
         break;
-      case ExifValueType.single:
-        entry.value = ExifSingleValue.fromData(data, count);
+      case IfdValueType.single:
+        entry.value = IfdSingleValue.data(data, count);
         break;
-      case ExifValueType.double:
-        entry.value = ExifDoubleValue.fromData(data, count);
+      case IfdValueType.double:
+        entry.value = IfdDoubleValue.data(data, count);
         break;
     }
 
@@ -153,7 +174,8 @@ export class ExifData extends ExifIFDContainer {
   }
 
   public static from(other: ExifData) {
-    return new ExifData(other.directories);
+    const dirs = new Map<string, IfdDirectory>(other.directories);
+    return new ExifData(dirs);
   }
 
   public static fromInputBuffer(input: InputBuffer) {
@@ -171,7 +193,7 @@ export class ExifData extends ExifIFDContainer {
     return false;
   }
 
-  public getTag(tag: number): ExifValue | undefined {
+  public getTag(tag: number): IfdValue | undefined {
     for (const directory of this.directories.values()) {
       if (directory.has(tag)) {
         return directory.getValue(tag);
@@ -196,7 +218,7 @@ export class ExifData extends ExifIFDContainer {
     out.writeUint32(8);
 
     if (this.directories.get('ifd0') === undefined)
-      this.directories.set('ifd0', new ExifIFD());
+      this.directories.set('ifd0', new IfdDirectory());
 
     // offset to first ifd block, from start of tiff header
     let dataOffset = 8;
@@ -206,19 +228,19 @@ export class ExifData extends ExifIFDContainer {
       offsets.set(name, dataOffset);
 
       if (ifd.sub.has('exif')) {
-        ifd.setValue(0x8769, new ExifLongValue(0));
+        ifd.setValue(0x8769, new IfdLongValue(0));
       } else {
         ifd.setValue(0x8769, undefined);
       }
 
       if (ifd.sub.has('interop')) {
-        ifd.setValue(0xa005, new ExifLongValue(0));
+        ifd.setValue(0xa005, new IfdLongValue(0));
       } else {
         ifd.setValue(0xa005, undefined);
       }
 
       if (ifd.sub.has('gps')) {
-        ifd.setValue(0x8825, new ExifLongValue(0));
+        ifd.setValue(0x8825, new IfdLongValue(0));
       } else {
         ifd.setValue(0x8825, undefined);
       }
@@ -299,11 +321,10 @@ export class ExifData extends ExifIFDContainer {
 
     // Tiff header
     const endian = block.readUint16();
-
     if (endian === 0x4949) {
       // II
       block.bigEndian = false;
-      if (block.readUint16() !== 0x2a00) {
+      if (block.readUint16() !== 0x002a) {
         block.bigEndian = saveEndian;
         return false;
       }
@@ -325,7 +346,7 @@ export class ExifData extends ExifIFDContainer {
     while (ifdOffset > 0) {
       block.offset = blockOffset + ifdOffset;
 
-      const directory = new ExifIFD();
+      const directory = new IfdDirectory();
       const numEntries = block.readUint16();
 
       const dir = new Array<ExifEntry>();
@@ -357,7 +378,7 @@ export class ExifData extends ExifIFDContainer {
         if (d.has(dt)) {
           const ifdOffset = d.getValue(dt)!.toInt();
           block.offset = blockOffset + ifdOffset;
-          const directory = new ExifIFD();
+          const directory = new IfdDirectory();
           const numEntries = block.readUint16();
 
           const dir = new Array<ExifEntry>();
@@ -378,6 +399,10 @@ export class ExifData extends ExifIFDContainer {
 
     block.bigEndian = saveEndian;
     return false;
+  }
+
+  public clone(): ExifData {
+    return ExifData.from(this);
   }
 
   public toString(): string {
@@ -405,6 +430,6 @@ export class ExifData extends ExifIFDContainer {
         }
       }
     }
-    return s.toString();
+    return `${this.constructor.name} (${s})`;
   }
 }

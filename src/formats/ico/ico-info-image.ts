@@ -1,5 +1,15 @@
 /** @format */
 
+export interface IcoInfoImageInitOptions {
+  width: number;
+  height: number;
+  colorPalette: number;
+  bytesSize: number;
+  bytesOffset: number;
+  colorPlanes: number;
+  bitsPerPixel: number;
+}
+
 export class IcoInfoImage {
   private readonly _width: number;
   public get width(): number {
@@ -36,21 +46,13 @@ export class IcoInfoImage {
     return this._bitsPerPixel;
   }
 
-  constructor(
-    width: number,
-    height: number,
-    colorPalette: number,
-    bytesSize: number,
-    bytesOffset: number,
-    colorPlanes: number,
-    bitsPerPixel: number
-  ) {
-    this._width = width;
-    this._height = height;
-    this._colorPalette = colorPalette;
-    this._bytesSize = bytesSize;
-    this._bytesOffset = bytesOffset;
-    this._colorPlanes = colorPlanes;
-    this._bitsPerPixel = bitsPerPixel;
+  constructor(opt: IcoInfoImageInitOptions) {
+    this._width = opt.width;
+    this._height = opt.height;
+    this._colorPalette = opt.colorPalette;
+    this._bytesSize = opt.bytesSize;
+    this._bytesOffset = opt.bytesOffset;
+    this._colorPlanes = opt.colorPlanes;
+    this._bitsPerPixel = opt.bitsPerPixel;
   }
 }

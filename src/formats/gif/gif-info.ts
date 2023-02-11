@@ -1,5 +1,6 @@
 /** @format */
 
+import { Color } from '../../color/color';
 import { DecodeInfo } from '../decode-info';
 import { GifColorMap } from './gif-color-map';
 import { GifImageDesc } from './gif-image-desc';
@@ -7,7 +8,7 @@ import { GifImageDesc } from './gif-image-desc';
 export interface GifInfoInitOptions {
   width?: number;
   height?: number;
-  backgroundColor?: number;
+  backgroundColor?: Color;
   frames?: Array<GifImageDesc>;
   colorResolution?: number;
   globalColorMap?: GifColorMap;
@@ -15,18 +16,18 @@ export interface GifInfoInitOptions {
 }
 
 export class GifInfo implements DecodeInfo {
-  private _width;
+  private _width = 0;
   public get width(): number {
     return this._width;
   }
 
-  private _height;
+  private _height = 0;
   public get height(): number {
     return this._height;
   }
 
-  private _backgroundColor;
-  public get backgroundColor(): number {
+  private _backgroundColor: Color | undefined = undefined;
+  public get backgroundColor(): Color | undefined {
     return this._backgroundColor;
   }
 
@@ -54,13 +55,13 @@ export class GifInfo implements DecodeInfo {
     return this.frames.length;
   }
 
-  constructor(options?: GifInfoInitOptions) {
-    this._width = options?.width ?? 0;
-    this._height = options?.height ?? 0;
-    this._backgroundColor = options?.backgroundColor ?? 0xffffffff;
-    this._frames = options?.frames ?? new Array<GifImageDesc>();
-    this._colorResolution = options?.colorResolution ?? 0;
-    this._globalColorMap = options?.globalColorMap;
-    this._isGif89 = options?.isGif89 ?? false;
+  constructor(opt?: GifInfoInitOptions) {
+    this._width = opt?.width ?? 0;
+    this._height = opt?.height ?? 0;
+    this._backgroundColor = opt?.backgroundColor;
+    this._frames = opt?.frames ?? new Array<GifImageDesc>();
+    this._colorResolution = opt?.colorResolution ?? 0;
+    this._globalColorMap = opt?.globalColorMap;
+    this._isGif89 = opt?.isGif89 ?? false;
   }
 }

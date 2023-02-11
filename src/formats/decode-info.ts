@@ -1,5 +1,7 @@
 /** @format */
 
+import { Color } from '../color/color';
+
 /**
  * Provides information about the image being decoded.
  */
@@ -17,7 +19,7 @@ export interface DecodeInfo {
   /**
    * The suggested background color of the canvas.
    */
-  get backgroundColor(): number;
+  get backgroundColor(): Color | undefined;
 
   /**
    * The number of frames that can be decoded.

@@ -1,6 +1,7 @@
 /** @format */
 
-import { MathOperators } from '../common/math-operators';
+import { MathUtils } from './math-utils';
+import { StringUtils } from './string-utils';
 
 export class Rational {
   private _numerator: number;
@@ -13,13 +14,13 @@ export class Rational {
     return this._denominator;
   }
 
-  public get asInt(): number {
+  public get toInt(): number {
     return this.denominator !== 0
       ? Math.trunc(this.numerator / this.denominator)
       : 0;
   }
 
-  public get asDouble(): number {
+  public get toDouble(): number {
     return this.denominator !== 0 ? this.numerator / this.denominator : 0;
   }
 
@@ -29,22 +30,21 @@ export class Rational {
   }
 
   public simplify(): void {
-    const d = MathOperators.gcd(this.numerator, this.denominator);
+    const d = MathUtils.gcd(this.numerator, this.denominator);
     if (d !== 0) {
       this._numerator = Math.trunc(this.numerator / d);
       this._denominator = Math.trunc(this.denominator / d);
     }
   }
 
-  public equalsTo(other: unknown) {
+  public equals(other: Rational) {
     return (
-      other instanceof Rational &&
       this._numerator === other._numerator &&
       this._denominator === other._denominator
     );
   }
 
   public toString(): string {
-    return `${this._numerator}/${this._denominator}`;
+    return `${this.constructor.name} (${this._numerator}/${this._denominator})`;
   }
 }

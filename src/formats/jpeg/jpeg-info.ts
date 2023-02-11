@@ -1,5 +1,6 @@
 /** @format */
 
+import { Color } from '../../color/color';
 import { DecodeInfo } from '../decode-info';
 
 export class JpegInfo implements DecodeInfo {
@@ -13,14 +14,14 @@ export class JpegInfo implements DecodeInfo {
     return this._height;
   }
 
-  private _backgroundColor = 0xffffffff;
-  public get backgroundColor(): number {
-    return this._backgroundColor;
-  }
-
   private _numFrames = 1;
   public get numFrames(): number {
     return this._numFrames;
+  }
+
+  private _backgroundColor: Color | undefined = undefined;
+  public get backgroundColor(): Color | undefined {
+    return this._backgroundColor;
   }
 
   public setSize(width: number, height: number) {

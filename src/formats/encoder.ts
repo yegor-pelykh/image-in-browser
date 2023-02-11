@@ -1,25 +1,21 @@
 /** @format */
 
-import { FrameAnimation } from '../common/frame-animation';
-import { MemoryImage } from '../common/memory-image';
+import { MemoryImage } from '../image/image';
 
 /**
  * Base class for image format encoders.
  */
 export interface Encoder {
   /**
-   * Does this encoder support animation?
+   * True if the encoder supports animated images; otherwise false.
    */
   get supportsAnimation(): boolean;
 
   /**
-   * Encode a single image.
+   * Encode an **image** to an image format.
+   * If **singleFrame** is true, only the one MemoryImage will be encoded;
+   * otherwise if image has animation, all frames of the **image** will be
+   * encoded if the encoder supports animation.
    */
-  encodeImage(image: MemoryImage): Uint8Array;
-
-  /**
-   * Encode an animation. Not all formats support animation, and undefined
-   * will be returned if not.
-   */
-  encodeAnimation(animation: FrameAnimation): Uint8Array | undefined;
+  encode(image: MemoryImage, singleFrame?: boolean): Uint8Array;
 }
