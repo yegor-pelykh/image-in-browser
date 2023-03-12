@@ -1,5 +1,7 @@
 /** @format */
 
+import { Color } from '../color/color';
+import { Format } from '../color/format';
 import { ArrayUtils } from '../common/array-utils';
 import { MathUtils } from '../common/math-utils';
 import { OutputBuffer } from '../common/output-buffer';
@@ -736,7 +738,12 @@ export class JpegEncoder implements Encoder {
             xx -= x + col - width + 1;
           }
 
-          const p = image.getPixel(xx, yy);
+          let p: Color = image.getPixel(xx, yy);
+          if (p.format !== Format.uint8) {
+            p = p.convert({
+              format: Format.uint8,
+            });
+          }
           const r = Math.trunc(p.r);
           const g = Math.trunc(p.g);
           const b = Math.trunc(p.b);
