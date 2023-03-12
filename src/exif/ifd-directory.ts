@@ -485,6 +485,9 @@ export class IfdDirectory {
 
   public copyFrom(other: IfdDirectory): void {
     other._data.forEach((value, tag) => this._data.set(tag, value.clone()));
+    for (const [tag, value] of other._sub.entries) {
+      this._sub.set(tag, value.clone());
+    }
   }
 
   public clone(): IfdDirectory {
