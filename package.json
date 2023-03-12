@@ -105,10 +105,7 @@
     "build:src-js": "tsc -p tsconfig.build.json --removeComments",
     "build:src-typings": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "build:src": "npm run build:src-js && npm run build:src-typings",
-    "build:compact-js": "node build.js",
-    "build:compact-typings": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outFile lib-compact/index.d.ts",
-    "build:compact": "npm run build:compact-js && npm run build:compact-typings",
-    "build": "npm run format && npm run build:src && npm run build:compact",
+    "build": "npm run format && npm run build:src",
     "release": "standard-version"
   },
   "devDependencies": {
@@ -117,7 +114,6 @@
     "@types/uzip": "^0.20201231.0",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",
-    "esbuild": "^0.17.11",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.7.0",
     "jest": "^29.5.0",
