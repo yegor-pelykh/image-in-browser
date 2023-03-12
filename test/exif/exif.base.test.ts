@@ -62,11 +62,12 @@ describe('Exif', () => {
     const out = new OutputBuffer();
     exif.write(out);
 
-    const exif2 = new ExifData();
+    const exif1 = new ExifData();
     const input = new InputBuffer({
       buffer: out.getBytes(),
     });
-    exif2.read(input);
+    exif1.read(input);
+    const exif2 = exif1.clone();
 
     expect(exif2.imageIfd.size).toBe(exif.imageIfd.size);
 
