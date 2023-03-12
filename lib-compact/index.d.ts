@@ -1895,6 +1895,7 @@ declare module "exif/ifd-directory" {
         get sub(): IfdContainer;
         get keys(): IterableIterator<number>;
         get values(): IterableIterator<IfdValue>;
+        get entries(): IterableIterator<[number, IfdValue]>;
         get size(): number;
         get isEmpty(): boolean;
         get hasUserComment(): boolean;
@@ -1956,6 +1957,7 @@ declare module "exif/ifd-container" {
         protected directories: Map<string, IfdDirectory>;
         get keys(): IterableIterator<string>;
         get values(): IterableIterator<IfdDirectory>;
+        get entries(): IterableIterator<[string, IfdDirectory]>;
         get size(): number;
         get isEmpty(): boolean;
         constructor(directories?: Map<string, IfdDirectory>);
