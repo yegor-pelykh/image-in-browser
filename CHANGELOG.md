@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/yegor-pelykh/image-in-browser/compare/v1.4.7...v1.5.0) (2023-03-12)
+
+
+### Features
+
+* Added the ability to iterate over ifd entries ([d3d213c](https://github.com/yegor-pelykh/image-in-browser/commit/d3d213cf31b6e854f6c89bd1b1b9169d8cff4fbb))
+
+
+### Bug Fixes
+
+* Make sure jpeg encoder converts image pixel to uint8 if it's not ([341d99b](https://github.com/yegor-pelykh/image-in-browser/commit/341d99b1dd61f81278dcc7d7caede8cc39a16b52))
+* Update copyFrom method of IfdDirectory to do a full deep copy ([227bb41](https://github.com/yegor-pelykh/image-in-browser/commit/227bb410a1dccf77d69eaa75b8914f3aecb8e5e1))
+
 ### [1.4.7](https://github.com/yegor-pelykh/image-in-browser/compare/v1.4.6...v1.4.7) (2023-02-11)
 
 ### [1.4.6](https://github.com/yegor-pelykh/image-in-browser/compare/v1.4.5...v1.4.6) (2022-12-13)
