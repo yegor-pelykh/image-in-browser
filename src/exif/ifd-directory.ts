@@ -37,6 +37,10 @@ export class IfdDirectory {
     return this._data.values();
   }
 
+  public get entries(): IterableIterator<[number, IfdValue]> {
+    return this._data.entries();
+  }
+
   public get size(): number {
     return this._data.size;
   }
@@ -251,10 +255,9 @@ export class IfdDirectory {
       }
     }
     // storage for sub-ifd blocks
-    for (const subName of this.sub.keys) {
-      const subIfd = this.sub.get(subName);
-      let subSize = 2 + 12 * subIfd.size;
-      for (const value of subIfd.values) {
+    for (const [_subName, subDir] of this.sub.entries) {
+      let subSize = 2 + 12 * subDir.size;
+      for (const value of subDir.values) {
         const dataSize = value.dataSize;
         if (dataSize > 4) {
           subSize += dataSize;

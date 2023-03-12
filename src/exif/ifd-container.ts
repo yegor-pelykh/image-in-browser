@@ -13,6 +13,10 @@ export class IfdContainer {
     return this.directories.values();
   }
 
+  public get entries(): IterableIterator<[string, IfdDirectory]> {
+    return this.directories.entries();
+  }
+
   public get size(): number {
     return this.directories.size;
   }

@@ -54,9 +54,7 @@ export class ExifData extends IfdContainer {
     let offset = dataOffset;
     const stripOffsetTag = ExifTagNameToID.get('StripOffsets');
     out.writeUint16(ifd.size);
-    for (const tag of ifd.keys) {
-      const value = ifd.getValue(tag)!;
-
+    for (const [tag, value] of ifd.entries) {
       // Special-case StripOffsets, used by TIFF, that if it points to
       // Undefined value type, then its storing the image data and should
       // be translated to the StripOffsets long type.
@@ -257,11 +255,10 @@ export class ExifData extends IfdContainer {
       }
 
       // storage for sub-ifd blocks
-      for (const subName of ifd.sub.keys) {
-        const subIfd = ifd.sub.get(subName);
+      for (const [subName, subDir] of ifd.sub.entries) {
         offsets.set(subName, dataOffset);
-        let subSize = 2 + 12 * subIfd.size;
-        for (const value of subIfd.values) {
+        let subSize = 2 + 12 * subDir.size;
+        for (const value of subDir.values) {
           const dataSize = value.dataSize;
           if (dataSize > 4) {
             subSize += dataSize;
@@ -301,12 +298,11 @@ export class ExifData extends IfdContainer {
 
       this.writeDirectoryLargeValues(out, ifd);
 
-      for (const subName of ifd.sub.keys) {
-        const subIfd = ifd.sub.get(subName);
+      for (const [subName, subDir] of ifd.sub.entries) {
         const subOffset = offsets.get(subName)!;
-        const dataOffset = subOffset + 2 + 12 * subIfd.size;
-        this.writeDirectory(out, subIfd, dataOffset);
-        this.writeDirectoryLargeValues(out, subIfd);
+        const dataOffset = subOffset + 2 + 12 * subDir.size;
+        this.writeDirectory(out, subDir, dataOffset);
+        this.writeDirectoryLargeValues(out, subDir);
       }
     }
 
@@ -409,19 +405,16 @@ export class ExifData extends IfdContainer {
     let s = '';
     for (const [name, directory] of this.directories) {
       s += `${name}\n`;
-      for (const tag of directory.keys) {
-        const value = directory.getValue(tag);
+      for (const [tag, value] of directory.entries) {
         if (value === undefined) {
           s += `\t${this.getTagName(tag)}\n`;
         } else {
           s += `\t${this.getTagName(tag)}: ${value.toString()}\n`;
         }
       }
-      for (const subName of directory.sub.keys) {
+      for (const [subName, subDir] of directory.sub.entries) {
         s += `${subName}\n`;
-        const subDirectory = directory.sub.get(subName);
-        for (const tag of subDirectory.keys) {
-          const value = subDirectory.getValue(tag);
+        for (const [tag, value] of subDir.entries) {
           if (value === undefined) {
             s += `\t${this.getTagName(tag)}\n`;
           } else {
