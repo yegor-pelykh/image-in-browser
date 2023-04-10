@@ -65,6 +65,7 @@ export interface MemoryImageCreateOptions extends MemoryImageInitializeOptions {
 
 export interface MemoryImageFromBytesOptions extends MemoryImageCreateOptions {
   bytes: ArrayBufferLike;
+  byteOffset?: number;
   rowStride?: number;
   channelOrder?: ChannelOrder;
 }
@@ -490,6 +491,8 @@ export class MemoryImage implements Iterable<Pixel> {
    * **numChannels** and _ChannelOrder.rgba_ for **order** will be assumed.
    */
   public static fromBytes(opt: MemoryImageFromBytesOptions): MemoryImage {
+    const byteOffset = opt.byteOffset ?? 0;
+
     const image = new MemoryImage();
     image._loopCount = opt.loopCount ?? 0;
     image._frameType = opt.frameType ?? FrameType.sequence;
@@ -564,7 +567,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
     if (image.data !== undefined) {
       const toBytes = image.data.toUint8Array();
-      const fromBytes = new Uint8Array(opt.bytes);
+      const fromBytes = new Uint8Array(opt.bytes, byteOffset);
 
       const rowStride =
         opt.rowStride ?? opt.width * numChannels * FormatSize.get(format)!;
