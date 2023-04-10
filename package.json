@@ -106,7 +106,7 @@
     "build:src-typings": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "build:src": "npm run build:src-js && npm run build:src-typings",
     "build": "npm run format && npm run build:src",
-    "release": "standard-version"
+    "release": "release-it"
   },
   "devDependencies": {
     "@types/jest": "^29.4.0",
