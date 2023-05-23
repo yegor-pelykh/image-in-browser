@@ -427,9 +427,8 @@ export class GifEncoder implements Encoder {
     if (this._encodedFrames === 0) {
       this.writeHeader(this._width, this._height);
       this.writeApplicationExt();
-    } else {
-      this.writeGraphicsCtrlExt(this._lastImage!);
     }
+    this.writeGraphicsCtrlExt(this._lastImage!);
 
     this.addImage(this._lastImage!, this._width, this._height);
 
