@@ -9,6 +9,7 @@ import {
   FormatMaxValue,
   FormatSize,
   FormatType,
+  getRowStride,
 } from '../color/format';
 import { ArrayUtils } from '../common/array-utils';
 import { Interpolation } from '../common/interpolation';
@@ -570,7 +571,7 @@ export class MemoryImage implements Iterable<Pixel> {
       const fromBytes = new Uint8Array(opt.bytes, byteOffset);
 
       const rowStride =
-        opt.rowStride ?? opt.width * numChannels * FormatSize.get(format)!;
+        opt.rowStride ?? getRowStride(opt.width, numChannels, format);
       const dataStride = image.data.rowStride;
       const stride = Math.min(rowStride, dataStride);
 

@@ -47,6 +47,7 @@ export {
   FormatMaxValue,
   FormatSize,
   FormatToFormatType,
+  getRowStride,
   convertFormatValue,
 } from './color/format';
 

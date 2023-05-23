@@ -1,6 +1,7 @@
 /** @format */
 
 import {
+  ArrayUtils,
   ChannelOrder,
   ColorRgb8,
   decodePng,
@@ -10,6 +11,7 @@ import {
   MemoryImage,
   Pixel,
 } from '../../src';
+import { getRowStride } from '../../src/color/format';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
@@ -21,6 +23,18 @@ describe('Image', () => {
 
     const i1 = new MemoryImage();
     expect(i1.isValid).toBe(false);
+  });
+
+  test('rowStride', () => {
+    for (const format of ArrayUtils.getNumEnumValues(Format)) {
+      const img = new MemoryImage({
+        width: 10,
+        height: 1,
+        format: format,
+      });
+      const rowStride = getRowStride(10, 3, format);
+      expect(img.rowStride).toBe(rowStride);
+    }
   });
 
   test('fromBytes', () => {

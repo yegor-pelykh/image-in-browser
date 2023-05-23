@@ -76,6 +76,23 @@ export const FormatMaxValue = new Map<Format, number>([
 ]);
 
 /**
+ * Calculates the row stride for an image with specified **width**, **numChannels** and **format**.
+ */
+export function getRowStride(
+  width: number,
+  numChannels: number,
+  format: Format
+) {
+  return format === Format.uint1
+    ? Math.ceil((width * numChannels) / 8)
+    : format === Format.uint2
+    ? Math.ceil((width * numChannels) / 4)
+    : format === Format.uint4
+    ? Math.ceil((width * numChannels) / 2)
+    : width * numChannels * FormatSize.get(format)!;
+}
+
+/**
  * Convert a value from the **from** format to the **to** format.
  */
 export function convertFormatValue(
