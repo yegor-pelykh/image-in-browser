@@ -619,7 +619,7 @@ export class GifDecoder implements Decoder {
               return this._info;
             }
             gifImage.duration = this._duration;
-            gifImage.clearFrame = this._disposalMethod == 2;
+            gifImage.clearFrame = this._disposalMethod === 2;
             if (this._transparentFlag !== 0) {
               if (
                 gifImage.colorMap === undefined &&
