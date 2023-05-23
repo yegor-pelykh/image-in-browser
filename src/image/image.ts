@@ -950,6 +950,14 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
+   * Get the pixel index from the given **x**, **y** coordinate.
+   */
+  public getPixelIndex(x: number, y: number) {
+    const index = this._data?.getPixel(x, y).index;
+    return index !== undefined ? Math.trunc(index) : 0;
+  }
+
+  /**
    * Get the pixel using the given **interpolation** type for non-integer pixel
    * coordinates.
    */

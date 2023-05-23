@@ -44,6 +44,56 @@ describe('Format: GIF', () => {
     );
   });
 
+  test('hand_anim resize', () => {
+    const input1 = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'hand_anim.gif'
+    );
+    const g1 = decodeGif({
+      data: input1,
+    });
+
+    expect(g1).toBeDefined();
+    if (g1 === undefined) {
+      return;
+    }
+
+    const g2 = Transform.copyResize({
+      image: g1,
+      width: Math.trunc(g1.width / 2),
+      height: Math.trunc(g1.height / 2),
+    });
+
+    for (const f of g2.frames) {
+      const p1 = g1.frames[f.frameIndex].getPixel(0, 0);
+      const p2 = f.getPixel(0, 0);
+      const equals = p1.equals(p2);
+      expect(equals).toBe(true);
+
+      const g3 = encodeGif({
+        image: f,
+        singleFrame: true,
+      });
+      TestUtils.writeToFile(
+        TestFolder.output,
+        TestSection.gif,
+        `hand_${f.frameIndex}.gif`,
+        g3
+      );
+    }
+
+    const g2output = encodeGif({
+      image: g2,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.gif,
+      'hand_anim_resize.gif',
+      g2output
+    );
+  });
+
   test('transparencyAnim', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,

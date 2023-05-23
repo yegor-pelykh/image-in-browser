@@ -569,9 +569,8 @@ export abstract class Transform {
     const numFrames = src.numFrames;
     for (let i = 0; i < numFrames; ++i) {
       const frame = src.frames[i];
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(frame, width, height, true);
+      const dst = MemoryImage.fromResized(frame, width, height, true);
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
       const dy = frame.height / height;
@@ -610,10 +609,19 @@ export abstract class Transform {
           }
         }
       } else if (interpolation === Interpolation.nearest) {
-        for (let y = 0; y < height; ++y) {
-          const y2 = Math.trunc(y * dy);
-          for (let x = 0; x < width; ++x) {
-            dst.setPixel(x, y, frame.getPixel(scaleX[x], y2));
+        if (frame.hasPalette) {
+          for (let y = 0; y < height; ++y) {
+            const y2 = Math.trunc(y * dy);
+            for (let x = 0; x < width; ++x) {
+              dst.setPixelIndex(x, y, frame.getPixelIndex(scaleX[x], y2));
+            }
+          }
+        } else {
+          for (let y = 0; y < height; ++y) {
+            const y2 = Math.trunc(y * dy);
+            for (let x = 0; x < width; ++x) {
+              dst.setPixel(x, y, frame.getPixel(scaleX[x], y2));
+            }
           }
         }
       } else {

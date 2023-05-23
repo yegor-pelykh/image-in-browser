@@ -37,6 +37,45 @@ describe('Image', () => {
     }
   });
 
+  test('fromResized', () => {
+    const i1 = new MemoryImage({
+      width: 20,
+      height: 20,
+      withPalette: true,
+      numChannels: 4,
+    });
+
+    i1.addFrame(
+      new MemoryImage({
+        width: 20,
+        height: 20,
+        palette: i1.palette,
+      })
+    );
+    i1.addFrame(
+      new MemoryImage({
+        width: 20,
+        height: 20,
+        palette: i1.palette,
+      })
+    );
+
+    for (let i = 0; i < 256; ++i) {
+      i1.palette?.setRgba(i, i, i, i, i);
+    }
+
+    const i2 = MemoryImage.fromResized(i1, 10, 10);
+
+    for (const img of i2.frames) {
+      for (let i = 0; i < 256; ++i) {
+        expect(img.palette?.get(i, 0)).toBe(i);
+        expect(img.palette?.get(i, 1)).toBe(i);
+        expect(img.palette?.get(i, 2)).toBe(i);
+        expect(img.palette?.get(i, 3)).toBe(i);
+      }
+    }
+  });
+
   test('fromBytes', () => {
     const w = 256;
     const h = 256;
