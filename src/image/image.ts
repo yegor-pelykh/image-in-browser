@@ -363,6 +363,9 @@ export class MemoryImage implements Iterable<Pixel> {
   public get frameIndex(): number {
     return this._frameIndex;
   }
+  public set frameIndex(v: number) {
+    this._frameIndex = v;
+  }
 
   constructor(opt?: MemoryImageCreateOptions) {
     if (opt !== undefined) {

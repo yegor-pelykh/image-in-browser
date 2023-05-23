@@ -254,6 +254,10 @@ export class OctreeQuantizer implements Quantizer {
       palette: this.palette,
     });
 
+    target.frameIndex = image.frameIndex;
+    target.frameType = image.frameType;
+    target.frameDuration = image.frameDuration;
+
     const imageIt = image[Symbol.iterator]();
     const targetIt = target[Symbol.iterator]();
     let imageItRes: IteratorResult<Pixel> | undefined = undefined;
