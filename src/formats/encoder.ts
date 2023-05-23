@@ -3,6 +3,14 @@
 import { MemoryImage } from '../image/image';
 
 /**
+ * Object interface for specifying Encoder.encode parameters.
+ */
+export interface EncoderEncodeOptions {
+  image: MemoryImage;
+  singleFrame?: boolean;
+}
+
+/**
  * Base class for image format encoders.
  */
 export interface Encoder {
@@ -17,5 +25,5 @@ export interface Encoder {
    * otherwise if image has animation, all frames of the **image** will be
    * encoded if the encoder supports animation.
    */
-  encode(image: MemoryImage, singleFrame?: boolean): Uint8Array;
+  encode(opt: EncoderEncodeOptions): Uint8Array;
 }

@@ -7,7 +7,7 @@ import { MathUtils } from '../common/math-utils';
 import { OutputBuffer } from '../common/output-buffer';
 import { ExifData } from '../exif/exif-data';
 import { MemoryImage } from '../image/image';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 import { JpegMarker } from './jpeg/jpeg-marker';
 
 /**
@@ -691,7 +691,9 @@ export class JpegEncoder implements Encoder {
     return _dc;
   }
 
-  public encode(image: MemoryImage, _singleFrame = false): Uint8Array {
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    const image = opt.image;
+
     const fp = new OutputBuffer({
       bigEndian: true,
     });

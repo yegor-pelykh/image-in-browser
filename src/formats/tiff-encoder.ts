@@ -6,7 +6,7 @@ import { LibError } from '../error/lib-error';
 import { ExifData } from '../exif/exif-data';
 import { IfdUndefinedValue } from '../exif/ifd-value/ifd-undefined-value';
 import { MemoryImage } from '../image/image';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 import { TiffCompression } from './tiff/tiff-compression';
 import { TiffFormat } from './tiff/tiff-format';
 import { TiffPhotometricType } from './tiff/tiff-photometric-type';
@@ -32,8 +32,8 @@ export class TiffEncoder implements Encoder {
     throw new LibError('Unknown TIFF format type.');
   }
 
-  public encode(image: MemoryImage, _singleFrame = false): Uint8Array {
-    let img = image;
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    let image = opt.image;
 
     const out = new OutputBuffer();
 
@@ -41,43 +41,43 @@ export class TiffEncoder implements Encoder {
     // structure).
 
     const exif = new ExifData();
-    if (img.exifData.size > 0) {
-      exif.imageIfd.copyFrom(img.exifData.imageIfd);
+    if (image.exifData.size > 0) {
+      exif.imageIfd.copyFrom(image.exifData.imageIfd);
     }
 
     // TODO: support encoding HDR images to TIFF.
-    if (img.isHdrFormat) {
-      img = img.convert({
+    if (image.isHdrFormat) {
+      image = image.convert({
         format: Format.uint8,
       });
     }
 
     const type =
-      img.numChannels === 1
+      image.numChannels === 1
         ? TiffPhotometricType.blackIsZero
-        : img.hasPalette
+        : image.hasPalette
         ? TiffPhotometricType.palette
         : TiffPhotometricType.rgb;
 
-    const nc = img.numChannels;
+    const nc = image.numChannels;
 
     const ifd0 = exif.imageIfd;
-    ifd0.setValue('ImageWidth', img.width);
-    ifd0.setValue('ImageHeight', img.height);
-    ifd0.setValue('BitsPerSample', img.bitsPerChannel);
-    ifd0.setValue('SampleFormat', this.getSampleFormat(img));
-    ifd0.setValue('SamplesPerPixel', img.hasPalette ? 1 : nc);
+    ifd0.setValue('ImageWidth', image.width);
+    ifd0.setValue('ImageHeight', image.height);
+    ifd0.setValue('BitsPerSample', image.bitsPerChannel);
+    ifd0.setValue('SampleFormat', this.getSampleFormat(image));
+    ifd0.setValue('SamplesPerPixel', image.hasPalette ? 1 : nc);
     ifd0.setValue('Compression', TiffCompression.none);
     ifd0.setValue('PhotometricInterpretation', type);
-    ifd0.setValue('RowsPerStrip', img.height);
+    ifd0.setValue('RowsPerStrip', image.height);
     ifd0.setValue('PlanarConfiguration', 1);
-    ifd0.setValue('TileWidth', img.width);
-    ifd0.setValue('TileLength', img.height);
-    ifd0.setValue('StripByteCounts', img.byteLength);
-    ifd0.setValue('StripOffsets', new IfdUndefinedValue(img.toUint8Array()));
+    ifd0.setValue('TileWidth', image.width);
+    ifd0.setValue('TileLength', image.height);
+    ifd0.setValue('StripByteCounts', image.byteLength);
+    ifd0.setValue('StripOffsets', new IfdUndefinedValue(image.toUint8Array()));
 
-    if (img.hasPalette) {
-      const p = img.palette!;
+    if (image.hasPalette) {
+      const p = image.palette!;
       // Only support RGB palettes
       const numCh = 3;
       const numC = p.numColors;

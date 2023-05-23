@@ -5,7 +5,7 @@ import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../image/image';
 import { BmpFileHeader } from './bmp/bmp-file-header';
 import { BmpInfo } from './bmp/bmp-info';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 
 export class BmpDecoder implements Decoder {
   protected _input?: InputBuffer;
@@ -43,13 +43,9 @@ export class BmpDecoder implements Decoder {
   }
 
   /**
-   * Decode a single frame from the data stat was set with **startDecode**.
-   * If **frame** is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have **frame** 0. An animation frame
-   * is returned, which provides the image, and top-left coordinates of the
-   * image, as animated frames may only occupy a subset of the canvas.
+   * Decode a single frame.
    */
-  public decodeFrame(_frame: number): MemoryImage | undefined {
+  public decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;
     }
@@ -124,13 +120,16 @@ export class BmpDecoder implements Decoder {
 
   /**
    * Decode the file and extract a single image from it. If the file is
-   * animated, the specified **frame** will be decoded. If there was a problem
+   * animated, the specified **frameIndex** will be decoded. If there was a problem
    * decoding the file, undefined is returned.
    */
-  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+    const frameIndex = opt.frameIndex ?? 0;
+
     if (this.startDecode(bytes) === undefined) {
       return undefined;
     }
-    return this.decodeFrame(frame ?? 0);
+    return this.decodeFrame(frameIndex);
   }
 }

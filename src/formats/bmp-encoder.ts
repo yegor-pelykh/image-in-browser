@@ -6,7 +6,7 @@ import { MemoryImage } from '../image/image';
 import { PaletteUint8 } from '../image/palette-uint8';
 import { BmpCompressionMode } from './bmp/bmp-compression-mode';
 import { BmpFileHeader } from './bmp/bmp-file-header';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 
 /**
  * Encode a BMP image.
@@ -17,13 +17,14 @@ export class BmpEncoder implements Encoder {
     return this._supportsAnimation;
   }
 
-  public encode(image: MemoryImage, _singleFrame = false): Uint8Array {
-    const out = new OutputBuffer();
-    let img = image;
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    let image = opt.image;
 
-    const nc = img.numChannels;
-    let palette = img.palette;
-    const format = img.format;
+    const out = new OutputBuffer();
+
+    const nc = image.numChannels;
+    let palette = image.palette;
+    const format = image.format;
 
     if (format === Format.uint1 && nc === 1 && palette === undefined) {
       // add palette
@@ -32,102 +33,102 @@ export class BmpEncoder implements Encoder {
       palette.setRgb(1, 255, 255, 255);
     } else if (format === Format.uint1 && nc === 2) {
       // => uint2 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint2,
         numChannels: 1,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint1 && nc === 3 && palette === undefined) {
       // => uint4 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint4,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint1 && nc === 4) {
       // => uint8,4 - only 32bpp supports alpha
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         numChannels: 4,
       });
     } else if (format === Format.uint2 && nc === 1 && palette === undefined) {
       // => uint2 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint2,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint2 && nc === 2) {
       // => uint8 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint2 && nc === 3 && palette === undefined) {
       // => uint8 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint2 && nc === 4) {
       // => uint8 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint4 && nc === 1 && palette === undefined) {
       // => uint8 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         withPalette: true,
       });
-      palette = img.palette;
+      palette = image.palette;
     } else if (format === Format.uint4 && nc === 2) {
       // => uint8,3
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         numChannels: 3,
       });
     } else if (format === Format.uint4 && nc === 3 && palette === undefined) {
       // => uint8,3
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         numChannels: 3,
       });
     } else if (format === Format.uint4 && nc === 4) {
       // => uint8,4
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         numChannels: 4,
       });
     } else if (format === Format.uint8 && nc === 1 && palette === undefined) {
       // => uint8 palette
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         withPalette: true,
       });
     } else if (format === Format.uint8 && nc === 2) {
       // => uint8,3
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
         numChannels: 3,
       });
-    } else if (img.isHdrFormat) {
+    } else if (image.isHdrFormat) {
       // => uint8,[3,4]
-      img = img.convert({
+      image = image.convert({
         format: Format.uint8,
       });
-    } else if (img.hasPalette && img.numChannels === 4) {
-      img = img.convert({
+    } else if (image.hasPalette && image.numChannels === 4) {
+      image = image.convert({
         numChannels: 4,
       });
     }
 
-    let bpp = img.bitsPerChannel * img.data!.numChannels;
+    let bpp = image.bitsPerChannel * image.data!.numChannels;
     if (bpp === 12) {
       bpp = 16;
     }
@@ -135,17 +136,17 @@ export class BmpEncoder implements Encoder {
     const compression =
       bpp > 8 ? BmpCompressionMode.bitfields : BmpCompressionMode.none;
 
-    const imageStride = img.rowStride;
-    const fileStride = Math.trunc((img.width * bpp + 31) / 32) * 4;
+    const imageStride = image.rowStride;
+    const fileStride = Math.trunc((image.width * bpp + 31) / 32) * 4;
     const rowPaddingSize = fileStride - imageStride;
     const rowPadding =
       rowPaddingSize > 0
         ? new Uint8Array(rowPaddingSize).fill(0xff)
         : undefined;
-    const imageFileSize = fileStride * img.height;
+    const imageFileSize = fileStride * image.height;
     const headerInfoSize = bpp > 8 ? 124 : 40;
     const headerSize = headerInfoSize + 14;
-    const paletteSize = (img.palette?.numColors ?? 0) * 4;
+    const paletteSize = (image.palette?.numColors ?? 0) * 4;
     const origImageOffset = headerSize + paletteSize;
     const imageOffset = origImageOffset;
     const gapSize = imageOffset - origImageOffset;
@@ -160,8 +161,8 @@ export class BmpEncoder implements Encoder {
     // offset to image data
     out.writeUint32(imageOffset);
     out.writeUint32(headerInfoSize);
-    out.writeUint32(img.width);
-    out.writeUint32(img.height);
+    out.writeUint32(image.width);
+    out.writeUint32(image.height);
     // planes
     out.writeUint16(1);
     // bits per pixel
@@ -284,12 +285,12 @@ export class BmpEncoder implements Encoder {
 
     // Write image data
     if (bpp === 1 || bpp === 2 || bpp === 4 || bpp === 8) {
-      let offset = img.byteLength - imageStride;
-      const h = img.height;
+      let offset = image.byteLength - imageStride;
+      const h = image.height;
       for (let y = 0; y < h; ++y) {
         const bytes =
-          img.buffer !== undefined
-            ? new Uint8Array(img.buffer, offset, imageStride)
+          image.buffer !== undefined
+            ? new Uint8Array(image.buffer, offset, imageStride)
             : new Uint8Array();
 
         if (bpp === 1) {
@@ -326,13 +327,13 @@ export class BmpEncoder implements Encoder {
       return out.getBytes();
     }
 
-    const hasAlpha = img.numChannels === 4;
-    const h = img.height;
-    const w = img.width;
+    const hasAlpha = image.numChannels === 4;
+    const h = image.height;
+    const w = image.width;
     if (bpp === 16) {
       for (let y = h - 1; y >= 0; --y) {
         for (let x = 0; x < w; ++x) {
-          const p = img.getPixel(x, y);
+          const p = image.getPixel(x, y);
           out.writeByte((Math.trunc(p.g) << 4) | Math.trunc(p.b));
           out.writeByte((Math.trunc(p.a) << 4) | Math.trunc(p.r));
         }
@@ -343,7 +344,7 @@ export class BmpEncoder implements Encoder {
     } else {
       for (let y = h - 1; y >= 0; --y) {
         for (let x = 0; x < w; ++x) {
-          const p = img.getPixel(x, y);
+          const p = image.getPixel(x, y);
           out.writeByte(Math.trunc(p.b));
           out.writeByte(Math.trunc(p.g));
           out.writeByte(Math.trunc(p.r));

@@ -5,7 +5,7 @@ import { Crc32 } from '../common/crc32';
 import { OutputBuffer } from '../common/output-buffer';
 import { StringUtils } from '../common/string-utils';
 import { CompressionLevel } from '../common/typings';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 import { Quantizer } from '../image/quantizer';
 import { PngFilterType } from './png/png-filter-type';
 import { MemoryImage } from '../image/image';
@@ -498,7 +498,10 @@ export class PngEncoder implements Encoder {
   /**
    * Encode **image** to the PNG format.
    */
-  public encode(image: MemoryImage, singleFrame = false): Uint8Array {
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    const image = opt.image;
+    const singleFrame = opt.singleFrame ?? false;
+
     if (!image.hasAnimation || singleFrame) {
       this._isAnimated = false;
       this.addFrame(image);

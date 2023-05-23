@@ -237,9 +237,9 @@ export {
 export { BmpDecoder } from './formats/bmp-decoder';
 export { BmpEncoder } from './formats/bmp-encoder';
 export { DecodeInfo } from './formats/decode-info';
-export { Decoder } from './formats/decoder';
+export { Decoder, DecoderDecodeOptions } from './formats/decoder';
 export { DibDecoder } from './formats/dib-decoder';
-export { Encoder } from './formats/encoder';
+export { Encoder, EncoderEncodeOptions } from './formats/encoder';
 export { GifDecoder } from './formats/gif-decoder';
 export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder';
 export { IcoDecoder } from './formats/ico-decoder';
@@ -336,7 +336,7 @@ export interface DecodeOptions {
 }
 
 export interface DecodeImageOptions extends DecodeOptions {
-  frame?: number;
+  frameIndex?: number;
 }
 
 export interface DecodeNamedImageOptions extends DecodeImageOptions {
@@ -506,7 +506,10 @@ export function decodeImage(opt: DecodeImageOptions): MemoryImage | undefined {
     return undefined;
   }
   const dataUint8 = new Uint8Array(opt.data);
-  return decoder.decode(dataUint8, opt.frame);
+  return decoder.decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
 }
 
 /**
@@ -519,7 +522,10 @@ export function decodeNamedImage(
   const decoder = findDecoderForNamedImage(opt.name);
   if (decoder !== undefined) {
     const dataUint8 = new Uint8Array(opt.data);
-    return decoder.decode(dataUint8, opt.frame);
+    return decoder.decode({
+      bytes: dataUint8,
+      frameIndex: opt.frameIndex,
+    });
   }
   return decodeImage(opt);
 }
@@ -536,7 +542,9 @@ export function encodeNamedImage(
   if (encoder === undefined) {
     return undefined;
   }
-  return encoder.encode(opt.image);
+  return encoder.encode({
+    image: opt.image,
+  });
 }
 
 /**
@@ -544,7 +552,9 @@ export function encodeNamedImage(
  */
 export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new JpegDecoder().decode(dataUint8);
+  return new JpegDecoder().decode({
+    bytes: dataUint8,
+  });
 }
 
 /**
@@ -552,7 +562,9 @@ export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
  */
 export function encodeJpg(opt: EncodeJpgOptions): Uint8Array {
   const quality = opt.quality ?? 100;
-  return new JpegEncoder(quality).encode(opt.image);
+  return new JpegEncoder(quality).encode({
+    image: opt.image,
+  });
 }
 
 /**
@@ -581,7 +593,10 @@ export function injectJpgExif(
  */
 export function decodePng(opt: DecodeImageOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new PngDecoder().decode(dataUint8, opt.frame);
+  return new PngDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
 }
 
 /**
@@ -594,7 +609,10 @@ export function encodePng(opt: EncodePngOptions): Uint8Array {
   return new PngEncoder({
     filter: filter,
     level: level,
-  }).encode(opt.image, singleFrame);
+  }).encode({
+    image: opt.image,
+    singleFrame: singleFrame,
+  });
 }
 
 /**
@@ -602,14 +620,19 @@ export function encodePng(opt: EncodePngOptions): Uint8Array {
  */
 export function decodeTga(opt: DecodeImageOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new TgaDecoder().decode(dataUint8, opt.frame);
+  return new TgaDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
 }
 
 /**
  * Encode an image to the Targa format.
  */
 export function encodeTga(opt: EncodeOptions): Uint8Array {
-  return new TgaEncoder().encode(opt.image);
+  return new TgaEncoder().encode({
+    image: opt.image,
+  });
 }
 
 /**
@@ -617,7 +640,10 @@ export function encodeTga(opt: EncodeOptions): Uint8Array {
  */
 export function decodeGif(opt: DecodeImageOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new GifDecoder().decode(dataUint8, opt.frame);
+  return new GifDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
 }
 
 /**
@@ -643,7 +669,10 @@ export function encodeGif(opt: EncodeGifOptions): Uint8Array {
     samplingFactor: samplingFactor,
     dither: dither,
     ditherSerpentine: ditherSerpentine,
-  }).encode(opt.image, singleFrame);
+  }).encode({
+    image: opt.image,
+    singleFrame: singleFrame,
+  });
 }
 
 /**
@@ -651,7 +680,10 @@ export function encodeGif(opt: EncodeGifOptions): Uint8Array {
  */
 export function decodeTiff(opt: DecodeImageOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new TiffDecoder().decode(dataUint8, opt.frame);
+  return new TiffDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
 }
 
 /**
@@ -659,7 +691,10 @@ export function decodeTiff(opt: DecodeImageOptions): MemoryImage | undefined {
  */
 export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
-  return new TiffEncoder().encode(opt.image, singleFrame);
+  return new TiffEncoder().encode({
+    image: opt.image,
+    singleFrame: singleFrame,
+  });
 }
 
 /**
@@ -667,14 +702,18 @@ export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {
  */
 export function decodeBmp(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new BmpDecoder().decode(dataUint8);
+  return new BmpDecoder().decode({
+    bytes: dataUint8,
+  });
 }
 
 /**
  * Encode an image to the BMP format.
  */
 export function encodeBmp(opt: EncodeOptions): Uint8Array {
-  return new BmpEncoder().encode(opt.image);
+  return new BmpEncoder().encode({
+    image: opt.image,
+  });
 }
 
 /**
@@ -682,7 +721,10 @@ export function encodeBmp(opt: EncodeOptions): Uint8Array {
  */
 export function decodeIco(opt: DecodeImageOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new IcoDecoder().decode(dataUint8, opt.frame);
+  return new IcoDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
 }
 
 /**
@@ -690,7 +732,10 @@ export function decodeIco(opt: DecodeImageOptions): MemoryImage | undefined {
  */
 export function encodeIco(opt: EncodeAnimatedOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
-  return new IcoEncoder().encode(opt.image, singleFrame);
+  return new IcoEncoder().encode({
+    image: opt.image,
+    singleFrame: singleFrame,
+  });
 }
 
 /**

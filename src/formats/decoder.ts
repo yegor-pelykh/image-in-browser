@@ -4,6 +4,14 @@ import { MemoryImage } from '../image/image';
 import { DecodeInfo } from './decode-info';
 
 /**
+ * Object interface for specifying Decoder.decode parameters.
+ */
+export interface DecoderDecodeOptions {
+  bytes: Uint8Array;
+  frameIndex?: number;
+}
+
+/**
  * Base class for image format decoders.
  *
  * Image pixels are stored as 32-bit unsigned ints, so all formats, regardless
@@ -41,19 +49,19 @@ export interface Decoder {
 
   /**
    * Decode the file and extract a single image from it. If the file is
-   * animated, and **frame** is specified, that particular frame will be decoded.
-   * Otherwise if the image is animated and **frame** is undefined, the returned
+   * animated, and **frameIndex** is specified, that particular frame will be decoded.
+   * Otherwise if the image is animated and **frameIndex** is undefined, the returned
    * MemoryImage will include all frames. If there was a problem decoding the
    * MemoryImage, undefined will be returned.
    */
-  decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined;
+  decode(opt: DecoderDecodeOptions): MemoryImage | undefined;
 
   /**
    * Decode a single frame from the data that was set with **startDecode**.
-   * If **frame** is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have **frame** 0. A MemoryImage
+   * If **frameIndex** is out of the range of available frames, undefined is returned.
+   * Non animated image files will only have **frameIndex** 0. A MemoryImage
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
    */
-  decodeFrame(frame: number): MemoryImage | undefined;
+  decodeFrame(frameIndex: number): MemoryImage | undefined;
 }

@@ -3,7 +3,7 @@
 import { InputBuffer } from '../common/input-buffer';
 import { LibError } from '../error/lib-error';
 import { MemoryImage } from '../image/image';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 import { JpegData } from './jpeg/jpeg-data';
 import { JpegInfo } from './jpeg/jpeg-info';
 
@@ -48,7 +48,9 @@ export class JpegDecoder implements Decoder {
     return jpeg.getImage();
   }
 
-  public decode(bytes: Uint8Array, _frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+
     const jpeg = new JpegData();
     jpeg.read(bytes);
 

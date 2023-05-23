@@ -7,7 +7,7 @@ import { ArrayUtils } from '../common/array-utils';
 import { StringUtils } from '../common/string-utils';
 import { LibError } from '../error/lib-error';
 import { DecodeInfo } from './decode-info';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 import { PngFrame } from './png/png-frame';
 import { PngInfo } from './png/png-info';
 import { PngColorType } from './png/png-color-type';
@@ -687,7 +687,7 @@ export class PngDecoder implements Decoder {
   /**
    * Decode the frame (assuming **startDecode** has already been called).
    */
-  public decodeFrame(frame: number): MemoryImage | undefined {
+  public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined) {
       return undefined;
     }
@@ -696,7 +696,7 @@ export class PngDecoder implements Decoder {
     let width: number | undefined = this._info.width;
     let height: number | undefined = this._info.height;
 
-    if (!this._info.isAnimated || frame === 0) {
+    if (!this._info.isAnimated || frameIndex === 0) {
       let totalSize = 0;
       const len = this._info.idat.length;
       const dataBlocks: Uint8Array[] = new Array<Uint8Array>();
@@ -720,11 +720,11 @@ export class PngDecoder implements Decoder {
         offset += data.length;
       }
     } else {
-      if (frame < 0 || frame >= this._info.frames.length) {
-        throw new LibError(`Invalid Frame Number: ${frame}`);
+      if (frameIndex < 0 || frameIndex >= this._info.frames.length) {
+        throw new LibError(`Invalid Frame Number: ${frameIndex}`);
       }
 
-      const f = this._info.frames[frame];
+      const f = this._info.frames[frameIndex];
       width = f.width;
       height = f.height;
       let totalSize = 0;
@@ -906,13 +906,15 @@ export class PngDecoder implements Decoder {
     return image;
   }
 
-  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+
     if (this.startDecode(bytes) === undefined) {
       return undefined;
     }
 
-    if (!this._info.isAnimated || frame !== undefined) {
-      return this.decodeFrame(frame ?? 0);
+    if (!this._info.isAnimated || opt.frameIndex !== undefined) {
+      return this.decodeFrame(opt.frameIndex ?? 0);
     }
 
     let firstImage: MemoryImage | undefined = undefined;

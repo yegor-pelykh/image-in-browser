@@ -3,7 +3,7 @@
 import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../image/image';
 import { Palette } from '../image/palette';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 import { TgaImageType } from './tga/tga-image-type';
 import { TgaInfo } from './tga/tga-info';
 
@@ -284,15 +284,17 @@ export class TgaDecoder implements Decoder {
     return this._info;
   }
 
-  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+
     if (this.startDecode(bytes) === undefined) {
       return undefined;
     }
 
-    return this.decodeFrame(frame ?? 0);
+    return this.decodeFrame(opt.frameIndex ?? 0);
   }
 
-  public decodeFrame(_frame: number): MemoryImage | undefined {
+  public decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined || this._input === undefined) {
       return undefined;
     }

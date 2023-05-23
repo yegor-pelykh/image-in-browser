@@ -4,7 +4,7 @@ import { InputBuffer } from '../common/input-buffer';
 import { ExifData } from '../exif/exif-data';
 import { FrameType } from '../image/frame-type';
 import { MemoryImage } from '../image/image';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 import { TiffImage } from './tiff/tiff-image';
 import { TiffInfo } from './tiff/tiff-info';
 
@@ -125,15 +125,15 @@ export class TiffDecoder implements Decoder {
 
   /**
    * Decode a single frame from the data stat was set with **startDecode**.
-   * If **frame** is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have **frame** 0.
+   * If **frameIndex** is out of the range of available frames, undefined is returned.
+   * Non animated image files will only have **frameIndex** 0.
    */
-  public decodeFrame(frame: number): MemoryImage | undefined {
+  public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined) {
       return undefined;
     }
 
-    const image = this._info.images[frame].decode(this._input);
+    const image = this._info.images[frameIndex].decode(this._input);
     if (this._exifData !== undefined) {
       image.exifData = this._exifData;
     }
@@ -142,10 +142,12 @@ export class TiffDecoder implements Decoder {
 
   /**
    * Decode the file and extract a single image from it. If the file is
-   * animated, the specified **frame** will be decoded. If there was a problem
+   * animated, the specified **frameIndex** will be decoded. If there was a problem
    * decoding the file, undefined is returned.
    */
-  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+
     this._input = new InputBuffer({
       buffer: bytes,
     });
@@ -156,8 +158,8 @@ export class TiffDecoder implements Decoder {
     }
 
     const len = this.numFrames;
-    if (len === 1 || frame !== undefined) {
-      return this.decodeFrame(frame ?? 0);
+    if (len === 1 || opt.frameIndex !== undefined) {
+      return this.decodeFrame(opt.frameIndex ?? 0);
     }
 
     const image = this.decodeFrame(0);

@@ -2,7 +2,7 @@
 
 import { InputBuffer } from '../common/input-buffer';
 import { ArrayUtils } from '../common/array-utils';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 import { GifColorMap } from './gif/gif-color-map';
 import { GifImageDesc } from './gif/gif-image-desc';
 import { GifInfo } from './gif/gif-info';
@@ -661,13 +661,15 @@ export class GifDecoder implements Decoder {
     return this._info;
   }
 
-  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+
     if (this.startDecode(bytes) === undefined || this._info === undefined) {
       return undefined;
     }
 
-    if (this._info.numFrames === 1) {
-      return this.decodeFrame(frame ?? 0);
+    if (this._info.numFrames === 1 || opt.frameIndex !== undefined) {
+      return this.decodeFrame(opt.frameIndex ?? 0);
     }
 
     let firstImage: MemoryImage | undefined = undefined;
@@ -732,19 +734,19 @@ export class GifDecoder implements Decoder {
     return firstImage;
   }
 
-  public decodeFrame(frame: number): MemoryImage | undefined {
+  public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;
     }
 
-    if (frame >= this._info.frames.length || frame < 0) {
+    if (frameIndex >= this._info.frames.length || frameIndex < 0) {
       return undefined;
     }
 
     // this._frame = frame;
-    const gifImage = this._info.frames[frame];
+    const gifImage = this._info.frames[frameIndex];
     this._input.offset = gifImage.inputPosition;
 
-    return this.decodeImage(this._info.frames[frame]);
+    return this.decodeImage(this._info.frames[frameIndex]);
   }
 }

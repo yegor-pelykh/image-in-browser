@@ -3,7 +3,7 @@
 import { OutputBuffer } from '../common/output-buffer';
 import { LibError } from '../error/lib-error';
 import { MemoryImage } from '../image/image';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 import { PngEncoder } from './png-encoder';
 
 export abstract class WinEncoder implements Encoder {
@@ -25,7 +25,10 @@ export abstract class WinEncoder implements Encoder {
     return 0;
   }
 
-  public encode(image: MemoryImage, singleFrame = false): Uint8Array {
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    const image = opt.image;
+    const singleFrame = opt.singleFrame ?? false;
+
     if (image.hasAnimation && !singleFrame) {
       return this.encodeImages(image.frames);
     } else {
@@ -67,7 +70,9 @@ export abstract class WinEncoder implements Encoder {
       out.writeUint16(this.bitsPerPixelOrYHotSpot(i));
 
       // Use png instead of bmp encoded data, it's supported since Windows Vista
-      const data: Uint8Array = new PngEncoder().encode(img);
+      const data: Uint8Array = new PngEncoder().encode({
+        image: img,
+      });
 
       // size of the image's data in bytes
       out.writeUint32(data.length);

@@ -3,7 +3,7 @@
 import { NeuralQuantizer } from '../image/neural-quantizer';
 import { OutputBuffer } from '../common/output-buffer';
 import { StringUtils } from '../common/string-utils';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 import { QuantizerType } from '../image/quantizer-type';
 import { MemoryImage } from '../image/image';
 import { OctreeQuantizer } from '../image/octree-quantizer';
@@ -517,7 +517,10 @@ export class GifEncoder implements Encoder {
   /**
    * Encode a single frame image.
    */
-  public encode(image: MemoryImage, singleFrame = false): Uint8Array {
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    const image = opt.image;
+    const singleFrame = opt.singleFrame ?? false;
+
     if (!image.hasAnimation || singleFrame) {
       this.addFrame(image);
       return this.finish()!;

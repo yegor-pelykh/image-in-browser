@@ -2,7 +2,7 @@
 
 import { OutputBuffer } from '../common/output-buffer';
 import { MemoryImage } from '../image/image';
-import { Encoder } from './encoder';
+import { Encoder, EncoderEncodeOptions } from './encoder';
 
 /**
  * Encode a TGA image. This only supports the 24-bit uncompressed format.
@@ -13,7 +13,9 @@ export class TgaEncoder implements Encoder {
     return this._supportsAnimation;
   }
 
-  public encode(image: MemoryImage, _singleFrame = false): Uint8Array {
+  public encode(opt: EncoderEncodeOptions): Uint8Array {
+    const image = opt.image;
+
     const out = new OutputBuffer({
       bigEndian: true,
     });

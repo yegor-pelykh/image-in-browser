@@ -3,7 +3,7 @@
 import { InputBuffer } from '../common/input-buffer';
 import { OutputBuffer } from '../common/output-buffer';
 import { BmpFileHeader } from './bmp/bmp-file-header';
-import { Decoder } from './decoder';
+import { Decoder, DecoderDecodeOptions } from './decoder';
 import { DibDecoder } from './dib-decoder';
 import { IcoBmpInfo } from './ico/ico-bmp-info';
 import { IcoInfo } from './ico/ico-info';
@@ -35,14 +35,16 @@ export class IcoDecoder implements Decoder {
     return this._info;
   }
 
-  public decode(bytes: Uint8Array, frame?: number): MemoryImage | undefined {
+  public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    const bytes = opt.bytes;
+
     const info = this.startDecode(bytes);
     if (info === undefined) {
       return undefined;
     }
 
-    if (info.images.length === 1 || frame !== undefined) {
-      return this.decodeFrame(frame ?? 0);
+    if (info.images.length === 1 || opt.frameIndex !== undefined) {
+      return this.decodeFrame(opt.frameIndex ?? 0);
     }
 
     let firstImage: MemoryImage | undefined = undefined;
@@ -62,16 +64,16 @@ export class IcoDecoder implements Decoder {
     return firstImage;
   }
 
-  public decodeFrame(frame: number): MemoryImage | undefined {
+  public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (
       this._input === undefined ||
       this._info === undefined ||
-      frame >= this._info.numFrames
+      frameIndex >= this._info.numFrames
     ) {
       return undefined;
     }
 
-    const imageInfo = this._info.images[frame];
+    const imageInfo = this._info.images[frameIndex];
     const imageBuffer = this._input.buffer.subarray(
       this._input.start + imageInfo.bytesOffset,
       this._input.start + imageInfo.bytesOffset + imageInfo.bytesSize
@@ -79,7 +81,9 @@ export class IcoDecoder implements Decoder {
 
     const png = new PngDecoder();
     if (png.isValidFile(imageBuffer)) {
-      return png.decode(imageBuffer);
+      return png.decode({
+        bytes: imageBuffer,
+      });
     }
 
     // should be bmp.

@@ -633,7 +633,9 @@ export class TiffImage {
         });
       } else if (this._compression === TiffCompression.oldJpeg) {
         const data = p.toUint8Array(0, byteCount);
-        const tile = new JpegDecoder().decode(data);
+        const tile = new JpegDecoder().decode({
+          bytes: data,
+        });
         if (tile !== undefined) {
           this.jpegToImage(
             tile,
