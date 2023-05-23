@@ -18,6 +18,32 @@ import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 
 describe('Format: GIF', () => {
+  test('hand_anim', () => {
+    const input1 = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'hand_anim.gif'
+    );
+    const g1 = decodeGif({
+      data: input1,
+    });
+
+    expect(g1).toBeDefined();
+    if (g1 === undefined) {
+      return;
+    }
+
+    const output = encodeGif({
+      image: g1,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.gif,
+      'hand_anim.gif',
+      output
+    );
+  });
+
   test('transparencyAnim', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,

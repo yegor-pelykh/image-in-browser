@@ -77,6 +77,14 @@ export class GifDecoder implements Decoder {
 
   private _clearCode = 0;
 
+  private _transparentFlag: number = 0;
+
+  private _disposalMethod: number = 0;
+
+  private _transparent: number = 0;
+
+  private _duration: number = 0;
+
   /**
    * How many frames are available to decode?
    *
@@ -228,13 +236,13 @@ export class GifDecoder implements Decoder {
     /* const blockSize: number = */
     input.readByte();
     const b = input.readByte();
-    const duration = input.readUint16();
-    const transparent = input.readByte();
+    this._duration = input.readUint16();
+    this._transparent = input.readByte();
     /* const endBlock: number = */
     input.readByte();
-    const disposalMethod = (b >> 2) & 0x7;
+    this._disposalMethod = (b >> 2) & 0x7;
     // const userInput: number = (b >> 1) & 0x1;
-    const transparentFlag = b & 0x1;
+    this._transparentFlag = b & 0x1;
 
     const recordType = input.peekBytes(1).getByte(0);
     if (recordType === GifDecoder._imageDescRecordType) {
@@ -244,10 +252,10 @@ export class GifDecoder implements Decoder {
         return;
       }
 
-      gifImage.duration = duration;
-      gifImage.clearFrame = disposalMethod === 2;
+      gifImage.duration = this._duration;
+      gifImage.clearFrame = this._disposalMethod === 2;
 
-      if (transparentFlag !== 0) {
+      if (this._transparentFlag !== 0) {
         if (
           gifImage.colorMap === undefined &&
           this._info!.globalColorMap !== undefined
@@ -255,7 +263,7 @@ export class GifDecoder implements Decoder {
           gifImage.colorMap = GifColorMap.from(this._info!.globalColorMap);
         }
         if (gifImage.colorMap !== undefined) {
-          gifImage.colorMap.transparent = transparent;
+          gifImage.colorMap.transparent = this._transparent;
         }
       }
 
@@ -609,6 +617,21 @@ export class GifDecoder implements Decoder {
             const gifImage = this.skipImage();
             if (gifImage === undefined) {
               return this._info;
+            }
+            gifImage.duration = this._duration;
+            gifImage.clearFrame = this._disposalMethod == 2;
+            if (this._transparentFlag !== 0) {
+              if (
+                gifImage.colorMap === undefined &&
+                this._info!.globalColorMap !== undefined
+              ) {
+                gifImage.colorMap = GifColorMap.from(
+                  this._info!.globalColorMap!
+                );
+              }
+              if (gifImage.colorMap !== undefined) {
+                gifImage.colorMap.transparent = this._transparent;
+              }
             }
             this._info!.frames.push(gifImage);
             break;
