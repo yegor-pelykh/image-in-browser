@@ -11,6 +11,21 @@ import { Encoder, EncoderEncodeOptions } from './encoder';
 import { JpegMarker } from './jpeg/jpeg-marker';
 
 /**
+ * Object interface for specifying JpegEncoder.encode parameters.
+ */
+export interface JpegEncoderEncodeOptions extends EncoderEncodeOptions {
+  chroma?: JpegChroma;
+}
+
+/**
+ * JPEG Chroma (sub)sampling format.
+ */
+export enum JpegChroma {
+  yuv444,
+  yuv420,
+}
+
+/**
  * Encode an image to the JPEG format.
  */
 export class JpegEncoder implements Encoder {
@@ -98,9 +113,6 @@ export class JpegEncoder implements Encoder {
   );
   private readonly _du = ArrayUtils.fill<number | undefined>(64, undefined);
 
-  private readonly _ydu: Float32Array = new Float32Array(64);
-  private readonly _udu: Float32Array = new Float32Array(64);
-  private readonly _vdu: Float32Array = new Float32Array(64);
   private readonly _tableRgbYuv: Int32Array = new Int32Array(2048);
 
   private _ydcHuffman: Array<Array<number> | undefined> | undefined;
@@ -145,6 +157,31 @@ export class JpegEncoder implements Encoder {
       codeValue *= 2;
     }
     return ht;
+  }
+
+  /**
+   * Downsamples from four input lists, storing average values into **duOut**.
+   */
+  private static downsampleDU(
+    duOut: Float32Array,
+    duIn1: Float32Array,
+    duIn2: Float32Array,
+    duIn3: Float32Array,
+    duIn4: Float32Array
+  ): void {
+    for (let posOut = 0; posOut < 64; posOut++) {
+      const du: Float32Array =
+        posOut < 32
+          ? posOut % 8 < 4
+            ? duIn1
+            : duIn2
+          : posOut % 8 < 4
+          ? duIn3
+          : duIn4;
+      const pos: number =
+        (Math.trunc((posOut % 32) / 8) << 4) + (posOut % 4 << 1);
+      duOut[posOut] = (du[pos] + du[pos + 1] + du[pos + 8] + du[pos + 9]) / 4;
+    }
   }
 
   private static writeMarker(fp: OutputBuffer, marker: number): void {
@@ -203,7 +240,8 @@ export class JpegEncoder implements Encoder {
   private static writeSOF0(
     out: OutputBuffer,
     width: number,
-    height: number
+    height: number,
+    chroma: JpegChroma
   ): void {
     JpegEncoder.writeMarker(out, JpegMarker.sof0);
     // Length, truecolor YUV JPG
@@ -217,7 +255,7 @@ export class JpegEncoder implements Encoder {
     // IdY
     out.writeByte(1);
     // HVY
-    out.writeByte(0x11);
+    out.writeByte(chroma === JpegChroma.yuv444 ? 0x11 : 0x22);
     // QTY
     out.writeByte(0);
     // IdU
@@ -299,6 +337,66 @@ export class JpegEncoder implements Encoder {
     }
     for (let p = 0; p <= 161; p++) {
       out.writeByte(JpegEncoder._stdAcChrominanceValues[p]);
+    }
+  }
+
+  private calculateYUV(
+    image: MemoryImage,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    ydu: Float32Array,
+    udu: Float32Array,
+    vdu: Float32Array
+  ): void {
+    for (let pos = 0; pos < 64; pos++) {
+      const row = pos >> 3; // / 8
+      const col = pos & 7; // % 8
+
+      var yy = y + row;
+      var xx = x + col;
+
+      if (yy >= height) {
+        // padding bottom
+        yy -= y + 1 + row - height;
+      }
+
+      if (xx >= width) {
+        // padding right
+        xx -= x + col - width + 1;
+      }
+
+      let p: Color = image.getPixel(xx, yy);
+      if (p.format !== Format.uint8) {
+        p = p.convert({
+          format: Format.uint8,
+        });
+      }
+
+      const r = Math.trunc(p.r);
+      const g = Math.trunc(p.g);
+      const b = Math.trunc(p.b);
+
+      // calculate YUV values
+      ydu[pos] =
+        ((this._tableRgbYuv[r] +
+          this._tableRgbYuv[g + 256] +
+          this._tableRgbYuv[b + 512]) >>
+          16) -
+        128.0;
+      udu[pos] =
+        ((this._tableRgbYuv[r + 768] +
+          this._tableRgbYuv[g + 1024] +
+          this._tableRgbYuv[b + 1280]) >>
+          16) -
+        128.0;
+      vdu[pos] =
+        ((this._tableRgbYuv[r + 1280] +
+          this._tableRgbYuv[g + 1536] +
+          this._tableRgbYuv[b + 1792]) >>
+          16) -
+        128.0;
     }
   }
 
@@ -627,7 +725,7 @@ export class JpegEncoder implements Encoder {
     dc: number,
     htac: Array<number[] | undefined>,
     htdc?: Array<number[] | undefined>
-  ): number | undefined {
+  ): number {
     const eob = htac[0x00];
     const m16Zeroes = htac[0xf0];
     const I16 = 16;
@@ -691,8 +789,9 @@ export class JpegEncoder implements Encoder {
     return _dc;
   }
 
-  public encode(opt: EncoderEncodeOptions): Uint8Array {
+  public encode(opt: JpegEncoderEncodeOptions): Uint8Array {
     const image = opt.image;
+    const chroma = opt.chroma ?? JpegChroma.yuv444;
 
     const fp = new OutputBuffer({
       bigEndian: true,
@@ -703,105 +802,155 @@ export class JpegEncoder implements Encoder {
     JpegEncoder.writeAPP0(fp);
     JpegEncoder.writeAPP1(fp, image.exifData);
     this.writeDQT(fp);
-    JpegEncoder.writeSOF0(fp, image.width, image.height);
+    JpegEncoder.writeSOF0(fp, image.width, image.height, chroma);
     JpegEncoder.writeDHT(fp);
     JpegEncoder.writeSOS(fp);
-
-    // Encode 8x8 macroblocks
-    let dcy: number | undefined = 0;
-    let dcu: number | undefined = 0;
-    let dcv: number | undefined = 0;
 
     this.resetBits();
 
     const width = image.width;
     const height = image.height;
 
-    let y = 0;
-    while (y < height) {
-      let x = 0;
-      while (x < width) {
-        for (let pos = 0; pos < 64; pos++) {
-          // / 8
-          const row = pos >> 3;
-          // % 8
-          const col = pos & 7;
+    let dcy: number = 0;
+    let dcu: number = 0;
+    let dcv: number = 0;
+    if (chroma === JpegChroma.yuv444) {
+      // 4:4:4 chroma: process 8x8 blocks.
+      const ydu = new Float32Array(64);
+      const udu = new Float32Array(64);
+      const vdu = new Float32Array(64);
 
-          let yy = y + row;
-          let xx = x + col;
-
-          if (yy >= height) {
-            // padding bottom
-            yy -= y + 1 + row - height;
-          }
-
-          if (xx >= width) {
-            // padding right
-            xx -= x + col - width + 1;
-          }
-
-          let p: Color = image.getPixel(xx, yy);
-          if (p.format !== Format.uint8) {
-            p = p.convert({
-              format: Format.uint8,
-            });
-          }
-          const r = Math.trunc(p.r);
-          const g = Math.trunc(p.g);
-          const b = Math.trunc(p.b);
-
-          // calculate YUV values
-          this._ydu[pos] =
-            ((this._tableRgbYuv[r] +
-              this._tableRgbYuv[g + 256] +
-              this._tableRgbYuv[b + 512]) >>
-              16) -
-            128.0;
-
-          this._udu[pos] =
-            ((this._tableRgbYuv[r + 768] +
-              this._tableRgbYuv[g + 1024] +
-              this._tableRgbYuv[b + 1280]) >>
-              16) -
-            128.0;
-
-          this._vdu[pos] =
-            ((this._tableRgbYuv[r + 1280] +
-              this._tableRgbYuv[g + 1536] +
-              this._tableRgbYuv[b + 1792]) >>
-              16) -
-            128.0;
+      for (let y = 0; y < height; y += 8) {
+        for (let x = 0; x < width; x += 8) {
+          this.calculateYUV(image, x, y, width, height, ydu, udu, vdu);
+          dcy = this.processDU(
+            fp,
+            ydu,
+            this._fdTableY,
+            dcy,
+            this._yacHuffman,
+            this._ydcHuffman
+          );
+          dcu = this.processDU(
+            fp,
+            udu,
+            this._fdTableUv,
+            dcu,
+            this._uvacHuffman,
+            this._uvdcHuffman
+          );
+          dcv = this.processDU(
+            fp,
+            vdu,
+            this._fdTableUv,
+            dcv,
+            this._uvacHuffman,
+            this._uvdcHuffman
+          );
         }
-
-        dcy = this.processDU(
-          fp,
-          this._ydu,
-          this._fdTableY,
-          dcy!,
-          this._yacHuffman,
-          this._ydcHuffman
-        );
-        dcu = this.processDU(
-          fp,
-          this._udu,
-          this._fdTableUv,
-          dcu!,
-          this._uvacHuffman,
-          this._uvdcHuffman
-        );
-        dcv = this.processDU(
-          fp,
-          this._vdu,
-          this._fdTableUv,
-          dcv!,
-          this._uvacHuffman,
-          this._uvdcHuffman
-        );
-
-        x += 8;
       }
+    } else {
+      // 4:2:0 chroma: process 8x8 blocks and prepare subsampled U and V.
+      const ydu = ArrayUtils.generate<Float32Array>(
+        4,
+        (_) => new Float32Array(64)
+      );
+      const udu = ArrayUtils.generate<Float32Array>(
+        4,
+        (_) => new Float32Array(64)
+      );
+      const vdu = ArrayUtils.generate<Float32Array>(
+        4,
+        (_) => new Float32Array(64)
+      );
+      const sudu = new Float32Array(64);
+      const svdu = new Float32Array(64);
 
-      y += 8;
+      for (let y = 0; y < height; y += 16) {
+        for (let x = 0; x < width; x += 16) {
+          this.calculateYUV(image, x, y, width, height, ydu[0], udu[0], vdu[0]);
+          this.calculateYUV(
+            image,
+            x + 8,
+            y,
+            width,
+            height,
+            ydu[1],
+            udu[1],
+            vdu[1]
+          );
+          this.calculateYUV(
+            image,
+            x,
+            y + 8,
+            width,
+            height,
+            ydu[2],
+            udu[2],
+            vdu[2]
+          );
+          this.calculateYUV(
+            image,
+            x + 8,
+            y + 8,
+            width,
+            height,
+            ydu[3],
+            udu[3],
+            vdu[3]
+          );
+          JpegEncoder.downsampleDU(sudu, udu[0], udu[1], udu[2], udu[3]);
+          JpegEncoder.downsampleDU(svdu, vdu[0], vdu[1], vdu[2], vdu[3]);
+          dcy = this.processDU(
+            fp,
+            ydu[0],
+            this._fdTableY,
+            dcy,
+            this._yacHuffman,
+            this._ydcHuffman
+          );
+          dcy = this.processDU(
+            fp,
+            ydu[1],
+            this._fdTableY,
+            dcy,
+            this._yacHuffman,
+            this._ydcHuffman
+          );
+          dcy = this.processDU(
+            fp,
+            ydu[2],
+            this._fdTableY,
+            dcy,
+            this._yacHuffman,
+            this._ydcHuffman
+          );
+          dcy = this.processDU(
+            fp,
+            ydu[3],
+            this._fdTableY,
+            dcy,
+            this._yacHuffman,
+            this._ydcHuffman
+          );
+          dcu = this.processDU(
+            fp,
+            sudu,
+            this._fdTableUv,
+            dcu,
+            this._uvacHuffman,
+            this._uvdcHuffman
+          );
+          dcv = this.processDU(
+            fp,
+            svdu,
+            this._fdTableUv,
+            dcv,
+            this._uvacHuffman,
+            this._uvdcHuffman
+          );
+        }
+      }
     }
 
     // Do the bit alignment of the EOI marker

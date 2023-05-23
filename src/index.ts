@@ -10,7 +10,7 @@ import { GifEncoder } from './formats/gif-encoder';
 import { IcoDecoder } from './formats/ico-decoder';
 import { IcoEncoder } from './formats/ico-encoder';
 import { JpegDecoder } from './formats/jpeg-decoder';
-import { JpegEncoder } from './formats/jpeg-encoder';
+import { JpegChroma, JpegEncoder } from './formats/jpeg-encoder';
 import { PngDecoder } from './formats/png-decoder';
 import { PngEncoder } from './formats/png-encoder';
 import { TgaDecoder } from './formats/tga-decoder';
@@ -245,7 +245,11 @@ export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder';
 export { IcoDecoder } from './formats/ico-decoder';
 export { IcoEncoder } from './formats/ico-encoder';
 export { JpegDecoder } from './formats/jpeg-decoder';
-export { JpegEncoder } from './formats/jpeg-encoder';
+export {
+  JpegChroma,
+  JpegEncoder,
+  JpegEncoderEncodeOptions,
+} from './formats/jpeg-encoder';
 export { PngDecoder } from './formats/png-decoder';
 export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder';
 export { TgaDecoder } from './formats/tga-decoder';
@@ -353,6 +357,7 @@ export interface EncodeNamedImageOptions extends EncodeOptions {
 
 export interface EncodeJpgOptions extends EncodeOptions {
   quality?: number;
+  chroma?: JpegChroma;
 }
 
 export interface InjectJpgExifOptions extends DecodeOptions {
@@ -562,8 +567,10 @@ export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
  */
 export function encodeJpg(opt: EncodeJpgOptions): Uint8Array {
   const quality = opt.quality ?? 100;
+  const chroma = opt.chroma ?? JpegChroma.yuv444;
   return new JpegEncoder(quality).encode({
     image: opt.image,
+    chroma: chroma,
   });
 }
 

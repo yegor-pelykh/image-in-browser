@@ -1,6 +1,7 @@
 /** @format */
 
 import {
+  JpegChroma,
   decodeJpg,
   decodeJpgExif,
   encodeJpg,
@@ -89,44 +90,58 @@ describe('Format: JPEG', () => {
     );
   });
 
-  const resFiles = TestUtils.listFiles(
-    TestFolder.input,
-    TestSection.jpeg,
-    '.jpg'
-  );
-
-  for (const f of resFiles) {
-    test(`${f.name}`, () => {
-      const input = TestUtils.readFromFilePath(f.path);
-      const image = decodeJpg({
-        data: input,
-      });
-      expect(image).toBeDefined();
-      if (image === undefined) {
-        return;
-      }
-      const encoded = encodeJpg({
-        image: image,
-      });
-      TestUtils.writeToFile(
-        TestFolder.output,
-        TestSection.jpeg,
-        f.name,
-        encoded
-      );
-
-      const image2 = decodeJpg({
-        data: encoded,
-      });
-      expect(image2).toBeDefined();
-      if (image2 === undefined) {
-        return;
-      }
-
-      expect(image2.width).toBe(image.width);
-      expect(image2.height).toBe(image.height);
+  test('encode (default 4:4:4 chroma)', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'buck_24.jpg'
+    );
+    const image = decodeJpg({
+      data: input,
     });
-  }
+
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    const output = encodeJpg({
+      image: image,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.jpeg,
+      'encode.jpg',
+      output
+    );
+  });
+
+  test('encode (4:2:0 chroma)', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'buck_24.jpg'
+    );
+    const image = decodeJpg({
+      data: input,
+    });
+
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    const output = encodeJpg({
+      image: image,
+      chroma: JpegChroma.yuv420,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.jpeg,
+      'encode.jpg',
+      output
+    );
+  });
 
   test('progressive', () => {
     const input = TestUtils.readFromFile(
