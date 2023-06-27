@@ -4,6 +4,7 @@ import { Format } from '../color/format';
 import { OutputBuffer } from '../common/output-buffer';
 import { MemoryImage } from '../image/image';
 import { PaletteUint8 } from '../image/palette-uint8';
+import { Pixel } from '../image/pixel';
 import { BmpCompressionMode } from './bmp/bmp-compression-mode';
 import { BmpFileHeader } from './bmp/bmp-file-header';
 import { Encoder, EncoderEncodeOptions } from './encoder';
@@ -331,26 +332,30 @@ export class BmpEncoder implements Encoder {
     const h = image.height;
     const w = image.width;
     if (bpp === 16) {
+      let p: Pixel | undefined = undefined;
       for (let y = h - 1; y >= 0; --y) {
+        p = image.getPixel(0, y, p);
         for (let x = 0; x < w; ++x) {
-          const p = image.getPixel(x, y);
           out.writeByte((Math.trunc(p.g) << 4) | Math.trunc(p.b));
           out.writeByte((Math.trunc(p.a) << 4) | Math.trunc(p.r));
+          p.next();
         }
         if (rowPadding !== undefined) {
           out.writeBytes(rowPadding);
         }
       }
     } else {
+      let p: Pixel | undefined = undefined;
       for (let y = h - 1; y >= 0; --y) {
+        p = image.getPixel(0, y, p);
         for (let x = 0; x < w; ++x) {
-          const p = image.getPixel(x, y);
           out.writeByte(Math.trunc(p.b));
           out.writeByte(Math.trunc(p.g));
           out.writeByte(Math.trunc(p.r));
           if (hasAlpha) {
             out.writeByte(Math.trunc(p.a));
           }
+          p.next();
         }
         if (rowPadding !== undefined) {
           out.writeBytes(rowPadding);
