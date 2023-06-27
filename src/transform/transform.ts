@@ -547,12 +547,12 @@ export abstract class Transform {
     // this block sets [width] and [height] if null or negative.
     const height =
       opt.height === undefined || opt.height <= 0
-        ? Math.trunc(opt.width! * (src.height / src.width))
+        ? Math.round(opt.width! * (src.height / src.width))
         : opt.height;
 
     const width =
       opt.width === undefined || opt.width <= 0
-        ? Math.trunc(opt.height! * (src.width / src.height))
+        ? Math.round(opt.height! * (src.width / src.height))
         : opt.width;
 
     if (width === src.width && height === src.height) {

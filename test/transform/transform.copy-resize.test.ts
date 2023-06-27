@@ -26,7 +26,7 @@ describe('Transform', () => {
     });
 
     expect(i0.width).toBe(64);
-    expect(i0.height).toBe(39);
+    expect(i0.height).toBe(40);
 
     const output = encodePng({
       image: i0,
