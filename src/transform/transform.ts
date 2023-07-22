@@ -14,6 +14,8 @@ import { Rectangle } from '../common/rectangle';
 import { Draw } from '../draw/draw';
 import { BlendMode } from '../draw/blend-mode';
 import { TrimMode } from './trim-mode';
+import { ExpandCanvasPosition } from './expand-canvas-position';
+import { Color } from '../color/color';
 
 export interface TransformOptions {
   image: MemoryImage;
@@ -29,6 +31,15 @@ export interface CopyCropOptions extends TransformOptions {
   rect: Rectangle;
   radius?: number;
   antialias?: boolean;
+}
+
+export interface CopyExpandCanvasOptions extends TransformOptions {
+  newWidth?: number;
+  newHeight?: number;
+  padding?: number;
+  position?: ExpandCanvasPosition;
+  backgroundColor?: Color;
+  toImage?: MemoryImage;
 }
 
 export interface CopyRectifyOptions extends TransformOptions {
@@ -441,6 +452,141 @@ export abstract class Transform {
     }
 
     return firstFrame!;
+  }
+
+  /**
+   * Returns a copy of the **image**, where the original image has been placed
+   * on a new canvas of specified size at a specified location, and the rest of
+   * the canvas is filled with the specified color or transparent if
+   * no color is provided.
+   */
+  public static copyExpandCanvas(opt: CopyExpandCanvasOptions): MemoryImage {
+    const position = opt.position ?? ExpandCanvasPosition.center;
+    let newWidth = opt.newWidth;
+    let newHeight = opt.newHeight;
+    let padding = opt.padding;
+
+    // Ensure either newWidth and newHeight or padding are provided
+    if (
+      (newWidth === undefined || newHeight === undefined) &&
+      padding === undefined
+    ) {
+      throw new LibError('Either new dimensions or padding must be provided.');
+    } else if (
+      newWidth !== undefined &&
+      newHeight !== undefined &&
+      padding !== undefined
+    ) {
+      throw new LibError('Cannot provide both new dimensions and padding.');
+    }
+
+    // If padding is provided, calculate the new dimensions
+    if (padding !== undefined) {
+      newWidth = opt.image.width + padding * 2;
+      newHeight = opt.image.height + padding * 2;
+    }
+
+    // Convert the image if it has a palette
+    const srcConverted: MemoryImage = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
+
+    // Check if new dimensions are larger or equal to the original image
+    if (newWidth! < srcConverted.width || newHeight! < srcConverted.height) {
+      throw new LibError(
+        'New dimensions must be larger or equal to the original image.'
+      );
+    }
+
+    // Check if the provided image has the correct dimensions
+    if (
+      opt.toImage !== undefined &&
+      (opt.toImage.width !== newWidth || opt.toImage.height !== newHeight)
+    ) {
+      throw new LibError('Provided image does not match the new dimensions.');
+    }
+
+    // Create a new MemoryImage with the specified dimensions or use the provided image
+    const expandedCanvas: MemoryImage =
+      opt.toImage ??
+      new MemoryImage({
+        width: newWidth!,
+        height: newHeight!,
+      });
+
+    // If a background color is provided, set all pixels to that color
+    // If not, leave them transparent (default behavior)
+    if (opt.backgroundColor !== undefined) {
+      expandedCanvas.clear(opt.backgroundColor);
+    }
+
+    // Define the position where the original image will be put on the new canvas
+    let xPos: number = 0;
+    let yPos: number = 0;
+
+    switch (position) {
+      case ExpandCanvasPosition.topLeft:
+        xPos = 0;
+        yPos = 0;
+        break;
+      case ExpandCanvasPosition.topCenter:
+        xPos = Math.trunc((newWidth! - srcConverted.width) / 2);
+        yPos = 0;
+        break;
+      case ExpandCanvasPosition.topRight:
+        xPos = newWidth! - srcConverted.width;
+        yPos = 0;
+        break;
+      case ExpandCanvasPosition.centerLeft:
+        xPos = 0;
+        yPos = Math.trunc((newHeight! - srcConverted.height) / 2);
+        break;
+      case ExpandCanvasPosition.center:
+        xPos = Math.trunc((newWidth! - srcConverted.width) / 2);
+        yPos = Math.trunc((newHeight! - srcConverted.height) / 2);
+        break;
+      case ExpandCanvasPosition.centerRight:
+        xPos = newWidth! - srcConverted.width;
+        yPos = Math.trunc((newHeight! - srcConverted.height) / 2);
+        break;
+      case ExpandCanvasPosition.bottomLeft:
+        xPos = 0;
+        yPos = newHeight! - srcConverted.height;
+        break;
+      case ExpandCanvasPosition.bottomCenter:
+        xPos = Math.trunc((newWidth! - srcConverted.width) / 2);
+        yPos = newHeight! - srcConverted.height;
+        break;
+      case ExpandCanvasPosition.bottomRight:
+        xPos = newWidth! - srcConverted.width;
+        yPos = newHeight! - srcConverted.height;
+        break;
+      default:
+        throw new LibError('Invalid position provided.');
+    }
+
+    // Copy the original image to the new frames/canvas
+    for (let i = 0; i < srcConverted.numFrames; ++i) {
+      // Ensure the frame exists in the expanded canvas
+      if (i >= expandedCanvas.numFrames) {
+        expandedCanvas.addFrame();
+      }
+
+      const frame = srcConverted.frames[i];
+      const expandedCanvasFrame = expandedCanvas.frames[i];
+
+      for (const p of frame) {
+        // Skip if the pixel position is outside the bounds of the new canvas
+        if (xPos + p.x >= newWidth! || yPos + p.y >= newHeight!) {
+          continue;
+        }
+        expandedCanvasFrame.setPixel(xPos + p.x, yPos + p.y, p);
+      }
+    }
+
+    return expandedCanvas;
   }
 
   /**

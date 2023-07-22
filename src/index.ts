@@ -317,11 +317,13 @@ export { QuantizerType } from './image/quantizer-type';
 export { Quantizer } from './image/quantizer';
 
 // Export types from 'transform' directory
+export { ExpandCanvasPosition } from './transform/expand-canvas-position';
 export { FlipDirection } from './transform/flip-direction';
 export {
   Transform,
   CopyCropCircleOptions,
   CopyCropOptions,
+  CopyExpandCanvasOptions,
   CopyRectifyOptions,
   CopyResizeCropSquareOptions,
   CopyResizeOptionsUsingHeight,
