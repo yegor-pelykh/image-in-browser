@@ -388,7 +388,7 @@ export abstract class Filter {
         : undefined;
     const brightness =
       opt.brightness !== undefined
-        ? MathUtils.clamp(opt.brightness, 0, 1)
+        ? opt.brightness
         : undefined;
     const gamma =
       opt.gamma !== undefined ? MathUtils.clamp(opt.gamma, 0, 1000) : undefined;
