@@ -387,9 +387,7 @@ export abstract class Filter {
         ? MathUtils.clamp(opt.saturation, 0, 1)
         : undefined;
     const brightness =
-      opt.brightness !== undefined
-        ? opt.brightness
-        : undefined;
+      opt.brightness !== undefined ? opt.brightness : undefined;
     const gamma =
       opt.gamma !== undefined ? MathUtils.clamp(opt.gamma, 0, 1000) : undefined;
     let exposure =
