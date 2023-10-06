@@ -1873,9 +1873,21 @@ export abstract class Filter {
       switch (type) {
         case NoiseType.gaussian:
           for (const p of frame) {
-            const r = p.r + nSigma * RandomUtils.grand();
-            const g = p.g + nSigma * RandomUtils.grand();
-            const b = p.b + nSigma * RandomUtils.grand();
+            const r = MathUtils.clamp(
+              p.r + nSigma * RandomUtils.grand(),
+              0,
+              p.maxChannelValue
+            );
+            const g = MathUtils.clamp(
+              p.g + nSigma * RandomUtils.grand(),
+              0,
+              p.maxChannelValue
+            );
+            const b = MathUtils.clamp(
+              p.b + nSigma * RandomUtils.grand(),
+              0,
+              p.maxChannelValue
+            );
             const a = p.a;
             const msk = opt.mask
               ?.getPixel(p.x, p.y)
@@ -1892,9 +1904,21 @@ export abstract class Filter {
           break;
         case NoiseType.uniform:
           for (const p of frame) {
-            const r = p.r + nSigma * RandomUtils.crand();
-            const g = p.g + nSigma * RandomUtils.crand();
-            const b = p.b + nSigma * RandomUtils.crand();
+            const r = MathUtils.clamp(
+              p.r + nSigma * RandomUtils.crand(),
+              0,
+              p.maxChannelValue
+            );
+            const g = MathUtils.clamp(
+              p.g + nSigma * RandomUtils.crand(),
+              0,
+              p.maxChannelValue
+            );
+            const b = MathUtils.clamp(
+              p.b + nSigma * RandomUtils.crand(),
+              0,
+              p.maxChannelValue
+            );
             const a = p.a;
             const msk = opt.mask
               ?.getPixel(p.x, p.y)
@@ -1919,9 +1943,21 @@ export abstract class Filter {
           }
           for (const p of frame) {
             if (Math.random() * 100 < nSigma) {
-              const r = Math.random() < 0.5 ? max : min;
-              const g = Math.random() < 0.5 ? max : min;
-              const b = Math.random() < 0.5 ? max : min;
+              const r = MathUtils.clamp(
+                Math.random() < 0.5 ? max : min,
+                0,
+                p.maxChannelValue
+              );
+              const g = MathUtils.clamp(
+                Math.random() < 0.5 ? max : min,
+                0,
+                p.maxChannelValue
+              );
+              const b = MathUtils.clamp(
+                Math.random() < 0.5 ? max : min,
+                0,
+                p.maxChannelValue
+              );
               const a = p.a;
               const msk = opt.mask
                 ?.getPixel(p.x, p.y)
@@ -1939,9 +1975,21 @@ export abstract class Filter {
           break;
         case NoiseType.poisson:
           for (const p of frame) {
-            const r = RandomUtils.prand(p.r);
-            const g = RandomUtils.prand(p.g);
-            const b = RandomUtils.prand(p.b);
+            const r = MathUtils.clamp(
+              RandomUtils.prand(p.r),
+              0,
+              p.maxChannelValue
+            );
+            const g = MathUtils.clamp(
+              RandomUtils.prand(p.g),
+              0,
+              p.maxChannelValue
+            );
+            const b = MathUtils.clamp(
+              RandomUtils.prand(p.b),
+              0,
+              p.maxChannelValue
+            );
             const a = p.a;
             const msk = opt.mask
               ?.getPixel(p.x, p.y)
@@ -1963,19 +2011,19 @@ export abstract class Filter {
             let re = val0 + nSigma * RandomUtils.grand();
             let im = val0 + nSigma * RandomUtils.grand();
             let val = Math.sqrt(re * re + im * im);
-            const r = Math.trunc(val);
+            const r = MathUtils.clamp(Math.trunc(val), 0, p.maxChannelValue);
 
             val0 = p.g / sqrt2;
             re = val0 + nSigma * RandomUtils.grand();
             im = val0 + nSigma * RandomUtils.grand();
             val = Math.sqrt(re * re + im * im);
-            const g = Math.trunc(val);
+            const g = MathUtils.clamp(Math.trunc(val), 0, p.maxChannelValue);
 
             val0 = p.b / sqrt2;
             re = val0 + nSigma * RandomUtils.grand();
             im = val0 + nSigma * RandomUtils.grand();
             val = Math.sqrt(re * re + im * im);
-            const b = Math.trunc(val);
+            const b = MathUtils.clamp(Math.trunc(val), 0, p.maxChannelValue);
 
             const a = p.a;
 
