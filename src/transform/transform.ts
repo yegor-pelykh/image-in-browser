@@ -62,12 +62,16 @@ export interface CopyResizeOptionsUsingWidth extends TransformOptions {
   width: number;
   height?: number;
   interpolation?: Interpolation;
+  maintainAspect?: boolean;
+  backgroundColor?: Color;
 }
 
 export interface CopyResizeOptionsUsingHeight extends TransformOptions {
   height: number;
   width?: number;
   interpolation?: Interpolation;
+  maintainAspect?: boolean;
+  backgroundColor?: Color;
 }
 
 export interface CopyRotateOptions extends TransformOptions {
@@ -671,6 +675,7 @@ export abstract class Transform {
   ): MemoryImage {
     let src = opt.image;
     let interpolation = opt.interpolation ?? Interpolation.nearest;
+    let maintainAspect = opt.maintainAspect ?? false;
 
     if (opt.width === undefined && opt.height === undefined) {
       throw new LibError('Invalid size. Please specify the width or height.');
@@ -690,7 +695,37 @@ export abstract class Transform {
       });
     }
 
+    let x1 = 0;
+    let y1 = 0;
+    let x2 = 0;
+    let y2 = 0;
+
     // this block sets [width] and [height] if null or negative.
+    if (
+      opt.width !== undefined &&
+      opt.height !== undefined &&
+      maintainAspect === true
+    ) {
+      x1 = 0;
+      x2 = opt.width;
+      const srcAspect = src.height / src.width;
+      const h = Math.trunc(opt.width * srcAspect);
+      const dy = Math.trunc((opt.height - h) / 2);
+      y1 = dy;
+      y2 = y1 + h;
+      if (y1 < 0 || y2 > opt.height) {
+        y1 = 0;
+        y2 = opt.height;
+        const srcAspect = src.width / src.height;
+        const w = Math.trunc(opt.height * srcAspect);
+        const dx = Math.trunc((opt.width - w) / 2);
+        x1 = dx;
+        x2 = x1 + w;
+      }
+    } else {
+      maintainAspect = false;
+    }
+
     const height =
       opt.height === undefined || opt.height <= 0
         ? Math.round(opt.width! * (src.height / src.width))
@@ -701,13 +736,23 @@ export abstract class Transform {
         ? Math.round(opt.height! * (src.width / src.height))
         : opt.width;
 
+    const w = maintainAspect! ? x2 - x1 : width;
+    const h = maintainAspect ? y2 - y1 : height;
+
+    if (!maintainAspect) {
+      x1 = 0;
+      x2 = width;
+      y1 = 0;
+      y2 = height;
+    }
+
     if (width === src.width && height === src.height) {
       return src.clone();
     }
 
-    const scaleX = new Int32Array(width);
-    const dx = src.width / width;
-    for (let x = 0; x < width; ++x) {
+    const scaleX = new Int32Array(w);
+    const dx = src.width / w;
+    for (let x = 0; x < w; ++x) {
       scaleX[x] = Math.trunc(x * dx);
     }
 
@@ -719,22 +764,26 @@ export abstract class Transform {
       firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
-      const dy = frame.height / height;
-      const dx = frame.width / width;
+      const dy = frame.height / h;
+      const dx = frame.width / w;
+
+      if (maintainAspect && opt.backgroundColor !== undefined) {
+        dst.clear(opt.backgroundColor);
+      }
 
       if (interpolation === Interpolation.average) {
-        for (let y = 0; y < height; ++y) {
-          const y1 = Math.trunc(y * dy);
-          let y2 = Math.trunc((y + 1) * dy);
-          if (y2 === y1) {
-            y2++;
+        for (let y = 0; y < h; ++y) {
+          const ay1 = Math.trunc(y * dy);
+          var ay2 = Math.trunc((y + 1) * dy);
+          if (ay2 === ay1) {
+            ay2++;
           }
 
-          for (let x = 0; x < width; ++x) {
-            const x1 = Math.trunc(x * dx);
-            let x2 = Math.trunc((x + 1) * dx);
-            if (x2 === x1) {
-              x2++;
+          for (let x = 0; x < w; ++x) {
+            const ax1 = Math.trunc(x * dx);
+            let ax2 = Math.trunc((x + 1) * dx);
+            if (ax2 === ax1) {
+              ax2++;
             }
 
             let r = 0;
@@ -742,8 +791,8 @@ export abstract class Transform {
             let b = 0;
             let a = 0;
             let np = 0;
-            for (let sy = y1; sy < y2; ++sy) {
-              for (let sx = x1; sx < x2; ++sx, ++np) {
+            for (let sy = ay1; sy < ay2; ++sy) {
+              for (let sx = ax1; sx < ax2; ++sx, ++np) {
                 const s = frame.getPixel(sx, sy);
                 r += s.r;
                 g += s.g;
@@ -751,35 +800,43 @@ export abstract class Transform {
                 a += s.a;
               }
             }
-            dst.setPixel(x, y, dst.getColor(r / np, g / np, b / np, a / np));
+            dst.setPixel(
+              x1 + x,
+              y1 + y,
+              dst.getColor(r / np, g / np, b / np, a / np)
+            );
           }
         }
       } else if (interpolation === Interpolation.nearest) {
         if (frame.hasPalette) {
-          for (let y = 0; y < height; ++y) {
+          for (let y = 0; y < h; ++y) {
             const y2 = Math.trunc(y * dy);
-            for (let x = 0; x < width; ++x) {
-              dst.setPixelIndex(x, y, frame.getPixelIndex(scaleX[x], y2));
+            for (let x = 0; x < w; ++x) {
+              dst.setPixelIndex(
+                x1 + x,
+                y1 + y,
+                frame.getPixelIndex(scaleX[x], y2)
+              );
             }
           }
         } else {
-          for (let y = 0; y < height; ++y) {
+          for (let y = 0; y < h; ++y) {
             const y2 = Math.trunc(y * dy);
-            for (let x = 0; x < width; ++x) {
-              dst.setPixel(x, y, frame.getPixel(scaleX[x], y2));
+            for (let x = 0; x < w; ++x) {
+              dst.setPixel(x1 + x, y1 + y, frame.getPixel(scaleX[x], y2));
             }
           }
         }
       } else {
         // Copy the pixels from this image to the new image.
-        for (let y = 0; y < height; ++y) {
-          const y2 = y * dy;
-          for (let x = 0; x < width; ++x) {
-            const x2 = x * dx;
+        for (let y = 0; y < h; ++y) {
+          const sy2 = y * dy;
+          for (let x = 0; x < w; ++x) {
+            const sx2 = x * dx;
             dst.setPixel(
               x,
               y,
-              frame.getPixelInterpolate(x2, y2, interpolation)
+              frame.getPixelInterpolate(x1 + sx2, y1 + sy2, interpolation)
             );
           }
         }
