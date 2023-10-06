@@ -483,7 +483,7 @@ export class PngEncoder implements Encoder {
   /**
    * Start encoding a PNG.
    *
-   * Call this method once before calling addFrame.
+   * Call this method once before calling **addFrame**.
    */
   public start(frameCount: number): void {
     this._frames = frameCount;
