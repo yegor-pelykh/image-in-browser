@@ -480,6 +480,21 @@ export class PngEncoder implements Encoder {
     }
   }
 
+  /**
+   * Start encoding a PNG.
+   *
+   * Call this method once before calling addFrame.
+   */
+  public start(frameCount: number): void {
+    this._frames = frameCount;
+    this._isAnimated = frameCount > 1;
+  }
+
+  /**
+   * Finish encoding a PNG, and return the resulting bytes.
+   *
+   * Call this method to finalize the encoding, after all **addFrame** calls.
+   */
   public finish(): Uint8Array | undefined {
     let bytes: Uint8Array | undefined = undefined;
     if (this._output === undefined) {
@@ -503,11 +518,10 @@ export class PngEncoder implements Encoder {
     const singleFrame = opt.singleFrame ?? false;
 
     if (!image.hasAnimation || singleFrame) {
-      this._isAnimated = false;
+      this.start(1);
       this.addFrame(image);
     } else {
-      this._isAnimated = true;
-      this._frames = image.frames.length;
+      this.start(image.frames.length);
       this._repeat = image.loopCount;
 
       if (image.hasPalette) {

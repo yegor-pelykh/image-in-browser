@@ -11,6 +11,7 @@ import {
   LibError,
   MemoryImage,
   PaletteUint8,
+  PngEncoder,
   PngFilterType,
   Point,
   Transform,
@@ -770,6 +771,34 @@ describe('Format: PNG', () => {
     const png = encodePng({
       image: anim,
     });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.png,
+      'encodeAnimation.png',
+      png
+    );
+  });
+
+  test('encodeAnimation with mulitple single frame Images', () => {
+    const encoder = new PngEncoder();
+    encoder.start(10);
+
+    for (let i = 0; i < 10; i++) {
+      const frame = new MemoryImage({
+        width: 480,
+        height: 120,
+      });
+      frame.loopCount = 10;
+      Draw.drawCircle({
+        image: frame,
+        center: new Point(120, 60),
+        radius: (i + 1) * 10,
+        color: new ColorRgb8(0, 255, 0),
+      });
+      encoder.addFrame(frame);
+    }
+
+    const png = encoder.finish()!;
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.png,
