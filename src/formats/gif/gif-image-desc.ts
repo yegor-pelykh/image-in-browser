@@ -45,12 +45,12 @@ export class GifImageDesc {
     return this._duration;
   }
 
-  private _clearFrame = true;
-  public set clearFrame(v: boolean) {
-    this._clearFrame = v;
+  private _disposal: number = 0;
+  public set disposal(v: number) {
+    this._disposal = v;
   }
-  public get clearFrame(): boolean {
-    return this._clearFrame;
+  public get disposal(): number {
+    return this._disposal;
   }
 
   /**

@@ -65,6 +65,7 @@ export interface MemoryImageData extends Iterable<Pixel> {
    * The **Palette** of the image, or undefined if the image does not have one.
    */
   get palette(): Palette | undefined;
+  set palette(p: Palette | undefined);
 
   /**
    * The size of the image data in bytes.

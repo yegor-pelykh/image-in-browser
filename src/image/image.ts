@@ -131,6 +131,11 @@ export class MemoryImage implements Iterable<Pixel> {
   public get palette(): Palette | undefined {
     return this._data?.palette;
   }
+  public set palette(p: Palette | undefined) {
+    if (this._data !== undefined) {
+      this._data.palette = p;
+    }
+  }
 
   /**
    * The number of color channels for the image.

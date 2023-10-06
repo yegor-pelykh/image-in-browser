@@ -253,7 +253,7 @@ export class GifDecoder implements Decoder {
       }
 
       gifImage.duration = this._duration;
-      gifImage.clearFrame = this._disposalMethod === 2;
+      gifImage.disposal = this._disposalMethod;
 
       if (this._transparentFlag !== 0) {
         if (
@@ -619,7 +619,7 @@ export class GifDecoder implements Decoder {
               return this._info;
             }
             gifImage.duration = this._duration;
-            gifImage.clearFrame = this._disposalMethod === 2;
+            gifImage.disposal = this._disposalMethod;
             if (this._transparentFlag !== 0) {
               if (
                 gifImage.colorMap === undefined &&
@@ -696,39 +696,55 @@ export class GifDecoder implements Decoder {
         image.height === lastImage.height &&
         frame.x === 0 &&
         frame.y === 0 &&
-        frame.clearFrame
+        frame.disposal === 2
       ) {
         lastImage = image;
         firstImage.addFrame(lastImage);
         continue;
       }
 
-      if (frame.clearFrame) {
-        const colorMap =
-          frame.colorMap !== undefined
-            ? frame.colorMap
-            : this._info.globalColorMap!;
+      const colorMap =
+        frame.colorMap !== undefined
+          ? frame.colorMap
+          : this._info.globalColorMap!;
 
-        lastImage = new MemoryImage({
-          width: lastImage.width,
-          height: lastImage.height,
-          numChannels: 1,
-          palette: colorMap.getPalette(),
-        });
-        lastImage.clear(colorMap.getColor(this._info.backgroundColor!.r));
-      } else {
-        lastImage = MemoryImage.from(lastImage);
-      }
+      const nextImage: MemoryImage = new MemoryImage({
+        width: lastImage.width,
+        height: lastImage.height,
+        numChannels: 1,
+        palette: colorMap.getPalette(),
+      });
 
-      lastImage.frameDuration = image.frameDuration;
-
-      for (const p of image) {
-        if (p.a !== 0) {
-          lastImage.setPixel(p.x + frame.x, p.y + frame.y, p);
+      if (frame.disposal === 2) {
+        nextImage.clear(colorMap.getColor(this._info.backgroundColor!.r));
+      } else if (frame.disposal !== 3) {
+        const nextBytes = nextImage.toUint8Array();
+        const lastBytes = lastImage.toUint8Array();
+        const lp = lastImage.palette!;
+        for (let i = 0, l = nextBytes.length; i < l; ++i) {
+          const lc = lastBytes[i];
+          const nc = colorMap.findColor(
+            lp.getRed(lc),
+            lp.getGreen(lc),
+            lp.getBlue(lc),
+            lp.getAlpha(lc)
+          );
+          if (nc !== -1) {
+            nextBytes[i] = nc;
+          }
         }
       }
 
-      firstImage.addFrame(lastImage);
+      nextImage.frameDuration = image.frameDuration;
+
+      for (const p of image) {
+        if (p.a !== 0) {
+          nextImage.setPixel(p.x + frame.x, p.y + frame.y, p);
+        }
+      }
+
+      firstImage.addFrame(nextImage);
+      lastImage = nextImage;
     }
 
     return firstImage;

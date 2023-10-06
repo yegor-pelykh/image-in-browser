@@ -77,6 +77,9 @@ export class MemoryImageDataUint8 implements MemoryImageData, Iterable<Pixel> {
   public get palette(): Palette | undefined {
     return this._palette;
   }
+  public set palette(p: Palette | undefined) {
+    this._palette = p;
+  }
 
   public get isHdrFormat(): boolean {
     return false;

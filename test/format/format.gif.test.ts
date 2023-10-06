@@ -18,6 +18,32 @@ import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 
 describe('Format: GIF', () => {
+  test('anim_palette', () => {
+    const input1 = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'anim_palette.gif'
+    );
+    const g1 = decodeGif({
+      data: input1,
+    });
+
+    expect(g1).toBeDefined();
+    if (g1 === undefined) {
+      return;
+    }
+
+    const output = encodeGif({
+      image: g1,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.gif,
+      'anim_palette.gif',
+      output
+    );
+  });
+
   test('hand_anim', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,
