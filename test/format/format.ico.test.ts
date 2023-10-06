@@ -74,7 +74,7 @@ describe('Format: ICO', () => {
   );
 
   for (const f of inputFiles) {
-    test(`decode ${f.name}`, () => {
+    test(`decode ${f.fileName}`, () => {
       const input = TestUtils.readFromFilePath(f.path);
       const image = decodeIco({
         data: input,
@@ -94,7 +94,7 @@ describe('Format: ICO', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.ico,
-        TestUtils.replaceFileName(f.name, (_) => 'png'),
+        `${f.name}.png`,
         output
       );
     });

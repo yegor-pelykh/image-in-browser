@@ -14,7 +14,7 @@ describe('Format: BMP', () => {
   );
 
   for (const f of inputFiles) {
-    test(f.name, () => {
+    test(f.fileName, () => {
       const input1 = TestUtils.readFromFilePath(f.path);
       const image1 = decodeBmp({
         data: input1,
@@ -31,14 +31,14 @@ describe('Format: BMP', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.bmp,
-        f.name,
+        f.fileName,
         output1
       );
 
       const input2 = TestUtils.readFromFile(
         TestFolder.output,
         TestSection.bmp,
-        f.name
+        f.fileName
       );
       const image2 = decodeBmp({
         data: input2,

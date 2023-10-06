@@ -722,7 +722,7 @@ describe('Format: PNG', () => {
       '.png'
     );
     for (const file of resFiles.filter((f) =>
-      testInfo.some((ti) => ti.fileName === f.name)
+      testInfo.some((ti) => ti.fileName === f.fileName)
     )) {
       const input = TestUtils.readFromFilePath(file.path);
       const anim = decodePng({
@@ -732,7 +732,7 @@ describe('Format: PNG', () => {
       if (anim === undefined) {
         return;
       }
-      const info = testInfo.find((ti) => ti.fileName === file.name);
+      const info = testInfo.find((ti) => ti.fileName === file.fileName);
       if (info === undefined) {
         return;
       }
@@ -745,7 +745,7 @@ describe('Format: PNG', () => {
         TestUtils.writeToFile(
           TestFolder.output,
           TestSection.png,
-          TestUtils.replaceFileName(file.name, undefined, (n) => `${n}-${i}`),
+          `${file.name}-${i}.${file.ext}`,
           frame
         );
       }
@@ -896,14 +896,14 @@ describe('Format: PNG', () => {
   );
 
   for (const file of resFiles) {
-    test(`PNG ${file.name}`, () => {
+    test(`PNG ${file.fileName}`, () => {
       const input = TestUtils.readFromFile(
         TestFolder.input,
         TestSection.png,
-        file.name
+        file.fileName
       );
       // X* png's are corrupted and are supposed to crash.
-      if (file.name.toLowerCase().startsWith('x')) {
+      if (file.fileName.toLowerCase().startsWith('x')) {
         expect(() => {
           const image = decodePng({
             data: input,
@@ -927,7 +927,7 @@ describe('Format: PNG', () => {
           TestUtils.writeToFile(
             TestFolder.output,
             TestSection.png,
-            file.name,
+            file.fileName,
             output
           );
         } else {

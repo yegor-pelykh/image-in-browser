@@ -7,7 +7,7 @@ import {
   readdirSync,
   writeFileSync,
 } from 'fs';
-import { join, resolve } from 'path';
+import { join, parse, resolve } from 'path';
 import { FileInfo } from './file-info';
 import { TestFolder } from './test-folder';
 import { TestSection } from './test-section';
@@ -57,25 +57,6 @@ export abstract class TestUtils {
     throw new Error('Unknown test section specified');
   }
 
-  public static replaceFileName(
-    fileName: string,
-    toExtCallback?: (ext: string) => string,
-    toNameCallback?: (name: string) => string
-  ): string {
-    const dotPos = fileName.lastIndexOf('.');
-    const currentName = fileName.substring(
-      0,
-      dotPos < 0 ? fileName.length : dotPos
-    );
-    const currentExt = fileName.substring(
-      dotPos < 0 ? fileName.length : dotPos + 1,
-      fileName.length
-    );
-    return `${
-      toNameCallback !== undefined ? toNameCallback(currentName) : currentName
-    }.${toExtCallback !== undefined ? toExtCallback(currentExt) : currentExt}`;
-  }
-
   public static preparePath(
     folder: TestFolder,
     section: TestSection,
@@ -109,10 +90,8 @@ export abstract class TestUtils {
         }
       })
       .map((fileName) => {
-        return {
-          name: fileName,
-          path: join(dirPath, fileName),
-        };
+        const pp = parse(fileName);
+        return new FileInfo(join(dirPath, fileName), pp.name, pp.ext);
       });
   }
 

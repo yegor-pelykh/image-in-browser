@@ -192,14 +192,14 @@ describe('Format: TIFF', () => {
   );
 
   for (const file of resFiles) {
-    test(`get info ${file.name}`, () => {
+    test(`get info ${file.fileName}`, () => {
       const bytes = TestUtils.readFromFilePath(file.path);
       const info = new TiffDecoder().startDecode(bytes);
       expect(info).toBeDefined();
       if (info === undefined) {
         return;
       }
-      const expectedInfo = _expectedInfo.get(file.name);
+      const expectedInfo = _expectedInfo.get(file.fileName);
       if (info !== undefined && expectedInfo !== undefined) {
         expect(info.width).toBe(expectedInfo.width);
         expect(info.height).toBe(expectedInfo.height);
@@ -226,7 +226,7 @@ describe('Format: TIFF', () => {
   }
 
   for (const file of resFiles) {
-    test(`decode ${file.name}`, () => {
+    test(`decode ${file.fileName}`, () => {
       const bytes = TestUtils.readFromFilePath(file.path);
       const image = decodeTiff({
         data: bytes,
@@ -249,7 +249,7 @@ describe('Format: TIFF', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tiff,
-        TestUtils.replaceFileName(file.name, (_) => 'png'),
+        `${file.name}.png`,
         output
       );
 
@@ -259,7 +259,7 @@ describe('Format: TIFF', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tiff,
-        file.name,
+        file.fileName,
         tif
       );
 
@@ -286,11 +286,7 @@ describe('Format: TIFF', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tiff,
-        TestUtils.replaceFileName(
-          file.name,
-          (_) => 'png',
-          (n) => `${n}-2`
-        ),
+        `${file.name}-2.png`,
         png
       );
     });

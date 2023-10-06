@@ -13,7 +13,7 @@ describe('Format: TGA', () => {
   );
 
   for (const f of resFiles) {
-    test(f.name, () => {
+    test(f.fileName, () => {
       const input = TestUtils.readFromFilePath(f.path);
       const image = decodeTga({
         data: input,
@@ -30,10 +30,15 @@ describe('Format: TGA', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tga,
-        TestUtils.replaceFileName(f.name, (_) => 'png'),
+        `${f.name}.png`,
         output
       );
-      TestUtils.writeToFile(TestFolder.output, TestSection.tga, f.name, output);
+      TestUtils.writeToFile(
+        TestFolder.output,
+        TestSection.tga,
+        f.fileName,
+        output
+      );
     });
   }
 });
