@@ -37,6 +37,7 @@ The following formats are currently supported for encoding / decoding:
 - PNG / Animated APNG,
 - TGA,
 - TIFF
+- WEBP (only decoding)
 
 Documentation
 ============
