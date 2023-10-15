@@ -222,7 +222,7 @@ export class ColorUint4 implements Color {
     return true;
   }
 
-  public convert(opt?: ColorConvertOptions) {
+  public convert(opt?: ColorConvertOptions): Color {
     return ColorUtils.convertColor({
       from: this,
       format: opt?.format,
