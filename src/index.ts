@@ -22,6 +22,7 @@ import { PngFilterType } from './formats/png/png-filter-type';
 import { DitherKernel } from './filter/dither-kernel';
 import { ExifData } from './exif/exif-data';
 import { JpegUtils } from './formats/jpeg/jpeg-utils';
+import { WebPDecoder } from './formats/webp-decoder';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order';
@@ -234,6 +235,37 @@ export {
   TiffPhotometricTypeLength,
 } from './formats/tiff/tiff-photometric-type';
 
+export { VP8BandProbas } from './formats/webp/vp8-band-probas';
+export { VP8BitReader } from './formats/webp/vp8-bit-reader';
+export { VP8FInfo } from './formats/webp/vp8-f-info';
+export { VP8FilterHeader } from './formats/webp/vp8-filter-header';
+export { VP8Filter } from './formats/webp/vp8-filter';
+export { VP8FrameHeader } from './formats/webp/vp8-frame-header';
+export { VP8MBData } from './formats/webp/vp8-mb-data';
+export { VP8MB } from './formats/webp/vp8-mb';
+export { VP8PictureHeader } from './formats/webp/vp8-picture-header';
+export { VP8Proba } from './formats/webp/vp8-proba';
+export { VP8QuantMatrix } from './formats/webp/vp8-quant-matrix';
+export { VP8Random } from './formats/webp/vp8-random';
+export { VP8SegmentHeader } from './formats/webp/vp8-segment-header';
+export { VP8TopSamples } from './formats/webp/vp8-top-samples';
+export { VP8 } from './formats/webp/vp8';
+export { VP8LBitReader } from './formats/webp/vp8l-bit-reader';
+export { VP8LColorCache } from './formats/webp/vp8l-color-cache';
+export { VP8LImageTransformType } from './formats/webp/vp8l-image-transform-type';
+export { VP8LInternal } from './formats/webp/vp8l-internal';
+export { VP8LMultipliers } from './formats/webp/vp8l-multipliers';
+export { VP8LTransform } from './formats/webp/vp8l-transform';
+export { VP8L } from './formats/webp/vp8l';
+export { WebPAlpha } from './formats/webp/webp-alpha';
+export { WebPFilters } from './formats/webp/webp-filters';
+export { WebPFormat } from './formats/webp/webp-format';
+export { WebPFrame } from './formats/webp/webp-frame';
+export { HuffmanTreeGroup } from './formats/webp/webp-huffman-tree-group';
+export { HuffmanTree } from './formats/webp/webp-huffman-tree';
+export { WebPInfoInternal } from './formats/webp/webp-info-internal';
+export { WebPInfo } from './formats/webp/webp-info';
+
 export { BmpDecoder } from './formats/bmp-decoder';
 export { BmpEncoder } from './formats/bmp-encoder';
 export { DecodeInfo } from './formats/decode-info';
@@ -256,6 +288,7 @@ export { TgaDecoder } from './formats/tga-decoder';
 export { TgaEncoder } from './formats/tga-encoder';
 export { TiffDecoder } from './formats/tiff-decoder';
 export { TiffEncoder } from './formats/tiff-encoder';
+export { WebPDecoder } from './formats/webp-decoder';
 export { WinEncoder } from './formats/win-encoder';
 
 // Export types from 'image' directory
@@ -401,6 +434,9 @@ export function findDecoderForNamedImage(name: string): Decoder | undefined {
   if (n.endsWith('.tga')) {
     return new TgaDecoder();
   }
+  if (n.endsWith('.webp')) {
+    return new WebPDecoder();
+  }
   if (n.endsWith('.gif')) {
     return new GifDecoder();
   }
@@ -475,6 +511,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
   const gif = new GifDecoder();
   if (gif.isValidFile(bytes)) {
     return gif;
+  }
+
+  const webp = new WebPDecoder();
+  if (webp.isValidFile(bytes)) {
+    return webp;
   }
 
   const tiff = new TiffDecoder();
@@ -641,6 +682,17 @@ export function decodeTga(opt: DecodeImageOptions): MemoryImage | undefined {
 export function encodeTga(opt: EncodeOptions): Uint8Array {
   return new TgaEncoder().encode({
     image: opt.image,
+  });
+}
+
+/**
+ * Decode a WebP formatted image
+ */
+export function decodeWebP(opt: DecodeImageOptions): MemoryImage | undefined {
+  const dataUint8 = new Uint8Array(opt.data);
+  return new WebPDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
   });
 }
 
