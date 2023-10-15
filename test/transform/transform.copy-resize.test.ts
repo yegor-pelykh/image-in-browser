@@ -389,7 +389,7 @@ describe('Transform', () => {
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.transform,
-      'copyResize_maintainAspect_6.png',
+      'copyResize_maintainAspect_7.png',
       output
     );
   });
