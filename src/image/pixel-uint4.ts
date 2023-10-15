@@ -63,7 +63,7 @@ export class PixelUint4 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get height(): number {
-    return this._image.width;
+    return this._image.height;
   }
 
   public get length(): number {
