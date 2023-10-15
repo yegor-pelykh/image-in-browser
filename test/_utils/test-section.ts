@@ -15,4 +15,5 @@ export enum TestSection {
   tiff,
   tga,
   transform,
+  webp,
 }

@@ -53,6 +53,8 @@ export abstract class TestUtils {
         return 'tga';
       case TestSection.transform:
         return 'transform';
+      case TestSection.webp:
+        return 'webp';
     }
     throw new Error('Unknown test section specified');
   }
