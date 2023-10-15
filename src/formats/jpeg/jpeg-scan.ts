@@ -146,7 +146,7 @@ export class JpegScan {
   private readBit(): number | undefined {
     if (this.bitsCount > 0) {
       this._bitsCount--;
-      return (this._bitsData >> this._bitsCount) & 1;
+      return (this._bitsData >>> this._bitsCount) & 1;
     }
 
     if (this._input.isEOS) {
@@ -163,7 +163,7 @@ export class JpegScan {
     }
 
     this._bitsCount = 7;
-    return (this._bitsData >> 7) & 1;
+    return (this._bitsData >>> 7) & 1;
   }
 
   private decodeHuffman(
@@ -217,7 +217,7 @@ export class JpegScan {
     while (k < 64) {
       const rs = this.decodeHuffman(component.huffmanTableAC)!;
       let s = rs & 15;
-      const r = rs >> 4;
+      const r = rs >>> 4;
       if (s === 0) {
         if (r < 15) {
           break;
@@ -257,7 +257,7 @@ export class JpegScan {
     while (k <= e) {
       const rs = this.decodeHuffman(component.huffmanTableAC)!;
       const s = rs & 15;
-      const r = rs >> 4;
+      const r = rs >>> 4;
       if (s === 0) {
         if (r < 15) {
           this._eobrun = this.receive(r)! + (1 << r) - 1;
@@ -288,7 +288,7 @@ export class JpegScan {
             throw new LibError('Invalid progressive encoding');
           }
           s = rs & 15;
-          r = rs >> 4;
+          r = rs >>> 4;
           if (s === 0) {
             if (r < 15) {
               this._eobrun = this.receive(r)! + (1 << r);

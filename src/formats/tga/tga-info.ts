@@ -147,7 +147,7 @@ export class TgaInfo implements DecodeInfo {
     this._pixelDepth = header.readByte();
     // 17
     this._flags = header.readByte();
-    this._screenOrigin = (this._flags & 0x30) >> 4;
+    this._screenOrigin = (this._flags & 0x30) >>> 4;
   }
 
   public isValid(): boolean {

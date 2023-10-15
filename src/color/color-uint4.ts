@@ -159,8 +159,8 @@ export class ColorUint4 implements Color {
     return channel < 0 || channel >= this.length
       ? 0
       : channel < 2
-      ? (this._data[0] >> (4 - (channel << 2))) & 0xf
-      : (this._data[1] >> (4 - ((channel & 0x1) << 2))) & 0xf;
+      ? (this._data[0] >>> (4 - (channel << 2))) & 0xf
+      : (this._data[1] >>> (4 - ((channel & 0x1) << 2))) & 0xf;
   }
 
   public getChannelNormalized(channel: number | Channel): number {

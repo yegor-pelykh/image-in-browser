@@ -35,8 +35,8 @@ export class Float16 {
     // resulting half number.
     // Adjust e, accounting for the different exponent bias
     // of float and half (127 versus 15).
-    const s = (i >> 16) & 0x00008000;
-    let e = ((i >> 23) & 0x000000ff) - (127 - 15);
+    const s = (i >>> 16) & 0x00008000;
+    let e = ((i >>> 23) & 0x000000ff) - (127 - 15);
     let m = i & 0x007fffff;
 
     // Now reassemble s, e and m into a half:
@@ -69,9 +69,9 @@ export class Float16 {
 
       const t = 14 - e;
       const a = (1 << (t - 1)) - 1;
-      const b = (m >> t) & 1;
+      const b = (m >>> t) & 1;
 
-      m = (m + a + b) >> t;
+      m = (m + a + b) >>> t;
 
       // Assemble the half from s, e (zero) and m.
       return s | m;
@@ -88,7 +88,7 @@ export class Float16 {
         // into an infinity, so we have to set at least one
         // bit in the significand.
 
-        m >>= 13;
+        m >>>= 13;
         return s | 0x7c00 | m | (m === 0 ? 1 : 0);
       }
     } else {
@@ -97,7 +97,7 @@ export class Float16 {
 
       // Round to m to the nearest 10-bit value. In case of
       // a tie, round to the nearest even value.
-      m = m + 0x00000fff + ((m >> 13) & 1);
+      m = m + 0x00000fff + ((m >>> 13) & 1);
 
       if ((m & 0x00800000) !== 0) {
         // overflow in significand
@@ -115,7 +115,7 @@ export class Float16 {
       }
 
       // Assemble the half from s, e and m.
-      return s | (e << 10) | (m >> 13);
+      return s | (e << 10) | (m >>> 13);
     }
   }
 
@@ -153,8 +153,8 @@ export class Float16 {
   }
 
   private static halfToFloat(y: number): number {
-    const s = (y >> 15) & 0x00000001;
-    let e = (y >> 10) & 0x0000001f;
+    const s = (y >>> 15) & 0x00000001;
+    let e = (y >>> 10) & 0x0000001f;
     let m = y & 0x000003ff;
 
     if (e === 0) {
@@ -211,7 +211,7 @@ export class Float16 {
     if (f === 0) {
       // Common special case - zero.
       // Preserve the zero's sign bit.
-      return xI >> 16;
+      return xI >>> 16;
     }
 
     if (this._toFloatFloat32Data === undefined) {
@@ -231,7 +231,7 @@ export class Float16 {
     // resulting from underflow, infinities and NANs), the table
     // lookup returns zero, and we call a longer, non-inline function
     // to do the float-to-half conversion.
-    let e = (xI >> 23) & 0x000001ff;
+    let e = (xI >>> 23) & 0x000001ff;
 
     e = this._eLut[e];
 
@@ -239,7 +239,7 @@ export class Float16 {
       // Simple case - round the significand, m, to 10
       // bits and combine it with the sign and exponent.
       const m = xI & 0x007fffff;
-      return e + ((m + 0x00000fff + ((m >> 13) & 1)) >> 13);
+      return e + ((m + 0x00000fff + ((m >>> 13) & 1)) >>> 13);
     }
 
     // Difficult case - call a function.
@@ -341,7 +341,7 @@ export class Float16 {
     // Note that the exponent adjusts automatically if rounding
     // up causes the significand to overflow.
 
-    e >>= 9 - n;
+    e >>>= 9 - n;
     e += e & 1;
     e <<= 9 - n;
 
@@ -349,7 +349,7 @@ export class Float16 {
     if (e >= 0x7c00) {
       // Overflow occurred - truncate instead of rounding.
       e = this.bits;
-      e >>= 10 - n;
+      e >>>= 10 - n;
       e <<= 10 - n;
     }
 
@@ -362,7 +362,7 @@ export class Float16 {
    * Returns true if h is a normalized number, a denormalized number or zero.
    */
   public isFinite(): boolean {
-    const e = (this.bits >> 10) & 0x001f;
+    const e = (this.bits >>> 10) & 0x001f;
     return e < 31;
   }
 
@@ -370,7 +370,7 @@ export class Float16 {
    * Returns true if h is a normalized number.
    */
   public isNormalized(): boolean {
-    const e = (this.bits >> 10) & 0x001f;
+    const e = (this.bits >>> 10) & 0x001f;
     return e > 0 && e < 31;
   }
 
@@ -378,7 +378,7 @@ export class Float16 {
    * Returns true if h is a denormalized number.
    */
   public isDenormalized(): boolean {
-    const e = (this.bits >> 10) & 0x001f;
+    const e = (this.bits >>> 10) & 0x001f;
     const m = this.bits & 0x3ff;
     return e === 0 && m !== 0;
   }
@@ -394,7 +394,7 @@ export class Float16 {
    * Returns true if h is a NaN.
    */
   public isNaN(): boolean {
-    const e = (this.bits >> 10) & 0x001f;
+    const e = (this.bits >>> 10) & 0x001f;
     const m = this.bits & 0x3ff;
     return e === 31 && m !== 0;
   }
@@ -403,7 +403,7 @@ export class Float16 {
    * Returns true if h is a positive or a negative infinity.
    */
   public isInfinity(): boolean {
-    const e = (this.bits >> 10) & 0x001f;
+    const e = (this.bits >>> 10) & 0x001f;
     const m = this.bits & 0x3ff;
     return e === 31 && m === 0;
   }

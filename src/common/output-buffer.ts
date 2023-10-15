@@ -119,12 +119,12 @@ export class OutputBuffer {
    */
   public writeUint16(value: number): void {
     if (this._bigEndian) {
-      this.writeByte((value >> 8) & 0xff);
+      this.writeByte((value >>> 8) & 0xff);
       this.writeByte(value & 0xff);
       return;
     }
     this.writeByte(value & 0xff);
-    this.writeByte((value >> 8) & 0xff);
+    this.writeByte((value >>> 8) & 0xff);
   }
 
   /**
@@ -132,16 +132,16 @@ export class OutputBuffer {
    */
   public writeUint32(value: number): void {
     if (this._bigEndian) {
-      this.writeByte((value >> 24) & 0xff);
-      this.writeByte((value >> 16) & 0xff);
-      this.writeByte((value >> 8) & 0xff);
+      this.writeByte((value >>> 24) & 0xff);
+      this.writeByte((value >>> 16) & 0xff);
+      this.writeByte((value >>> 8) & 0xff);
       this.writeByte(value & 0xff);
       return;
     }
     this.writeByte(value & 0xff);
-    this.writeByte((value >> 8) & 0xff);
-    this.writeByte((value >> 16) & 0xff);
-    this.writeByte((value >> 24) & 0xff);
+    this.writeByte((value >>> 8) & 0xff);
+    this.writeByte((value >>> 16) & 0xff);
+    this.writeByte((value >>> 24) & 0xff);
   }
 
   /**

@@ -154,7 +154,7 @@ export class PngEncoder implements Encoder {
         const p1 = x2 < bpp ? 0 : row[x2 - bpp];
         const p2 = prevRow === undefined ? 0 : prevRow[x2];
         const p3 = row[x2];
-        out[_oi++] = p3 - ((p1 + p2) >> 1);
+        out[_oi++] = p3 - ((p1 + p2) >>> 1);
       }
     }
     return _oi;
@@ -366,8 +366,8 @@ export class PngEncoder implements Encoder {
     const buffer = image.buffer;
     const rowStride = image.data!.rowStride;
     const nc = PngEncoder.numChannels(image);
-    const bpp = (nc * image.bitsPerChannel + 7) >> 3;
-    const bpc = (image.bitsPerChannel + 7) >> 3;
+    const bpp = (nc * image.bitsPerChannel + 7) >>> 3;
+    const bpc = (image.bitsPerChannel + 7) >>> 3;
 
     let rowOffset = 0;
     let prevRow: Uint8Array | undefined = undefined;

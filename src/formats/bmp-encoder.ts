@@ -300,7 +300,7 @@ export class BmpEncoder implements Encoder {
           const l = bytes.length;
           for (let xi = 0; xi < l; ++xi) {
             const b = bytes[xi];
-            const left = b >> 4;
+            const left = b >>> 4;
             const right = b & 0x0f;
             const rb = (right << 4) | left;
             out.writeByte(rb);
@@ -309,7 +309,7 @@ export class BmpEncoder implements Encoder {
           const l = bytes.length;
           for (let xi = 0; xi < l; ++xi) {
             const b = bytes[xi];
-            const b1 = b >> 4;
+            const b1 = b >>> 4;
             const b2 = b & 0x0f;
             const rb = (b1 << 4) | b2;
             out.writeByte(rb);

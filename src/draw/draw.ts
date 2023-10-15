@@ -1179,7 +1179,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(x, w),
             color: opt.color,
-            alpha: ((frac >> 8) & 0xff) / 255,
+            alpha: ((frac >>> 8) & 0xff) / 255,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1188,7 +1188,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(x, w + 1),
             color: opt.color,
-            alpha: ((xor(frac) >> 8) & 0xff) / 255,
+            alpha: ((xor(frac) >>> 8) & 0xff) / 255,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1220,7 +1220,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(w, y),
             color: opt.color,
-            alpha: ((frac >> 8) & 0xff) / 255,
+            alpha: ((frac >>> 8) & 0xff) / 255,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1229,7 +1229,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(w + 1, y),
             color: opt.color,
-            alpha: ((xor(frac) >> 8) & 0xff) / 255,
+            alpha: ((xor(frac) >>> 8) & 0xff) / 255,
             maskChannel: maskChannel,
             mask: opt.mask,
           });

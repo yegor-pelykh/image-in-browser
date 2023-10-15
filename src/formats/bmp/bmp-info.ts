@@ -154,17 +154,17 @@ export class BmpInfo implements DecodeInfo {
     ) {
       this._redMask = p.readUint32();
       this._redShift = BitUtils.countTrailingZeroBits(this._redMask);
-      const redDepth = this._redMask >> this._redShift;
+      const redDepth = this._redMask >>> this._redShift;
       this._redScale = redDepth > 0 ? maxChannelValue / redDepth : 0;
 
       this._greenMask = p.readUint32();
       this._greenShift = BitUtils.countTrailingZeroBits(this._greenMask);
-      const greenDepth = this._greenMask >> this._greenShift;
+      const greenDepth = this._greenMask >>> this._greenShift;
       this._greenScale = redDepth > 0 ? maxChannelValue / greenDepth : 0;
 
       this._blueMask = p.readUint32();
       this._blueShift = BitUtils.countTrailingZeroBits(this._blueMask);
-      const blueDepth = this._blueMask >> this._blueShift;
+      const blueDepth = this._blueMask >>> this._blueShift;
       this._blueScale = redDepth > 0 ? maxChannelValue / blueDepth : 0;
 
       if (
@@ -190,17 +190,17 @@ export class BmpInfo implements DecodeInfo {
       if (this._bitsPerPixel === 16) {
         this._redMask = 0x7c00;
         this._redShift = 10;
-        const redDepth = this._redMask >> this._redShift;
+        const redDepth = this._redMask >>> this._redShift;
         this._redScale = redDepth > 0 ? maxChannelValue / redDepth : 0;
 
         this._greenMask = 0x03e0;
         this._greenShift = 5;
-        const greenDepth = this._greenMask >> this._greenShift;
+        const greenDepth = this._greenMask >>> this._greenShift;
         this._greenScale = redDepth > 0 ? maxChannelValue / greenDepth : 0;
 
         this._blueMask = 0x001f;
         this._blueShift = 0;
-        const blueDepth = this._blueMask >> this._blueShift;
+        const blueDepth = this._blueMask >>> this._blueShift;
         this._blueScale = redDepth > 0 ? maxChannelValue / blueDepth : 0;
 
         this._alphaMask = 0x00000000;
@@ -258,19 +258,19 @@ export class BmpInfo implements DecodeInfo {
       if (this._bitsPerPixel === 1) {
         const bi = input.readByte();
         for (let i = 7; i >= 0; --i) {
-          const b = (bi >> i) & 0x1;
+          const b = (bi >>> i) & 0x1;
           pixel(b, 0, 0, 0);
         }
         return;
       } else if (this._bitsPerPixel === 2) {
         const bi = input.readByte();
         for (let i = 6; i >= 0; i -= 2) {
-          const b = (bi >> i) & 0x2;
+          const b = (bi >>> i) & 0x2;
           pixel(b, 0, 0, 0);
         }
       } else if (this._bitsPerPixel === 4) {
         const bi = input.readByte();
-        const b1 = (bi >> 4) & 0xf;
+        const b1 = (bi >>> 4) & 0xf;
         pixel(b1, 0, 0, 0);
         const b2 = bi & 0xf;
         pixel(b2, 0, 0, 0);
@@ -288,18 +288,18 @@ export class BmpInfo implements DecodeInfo {
     ) {
       const p = input.readUint32();
       const r = Math.trunc(
-        ((p & this._redMask) >> this._redShift) * this._redScale
+        ((p & this._redMask) >>> this._redShift) * this._redScale
       );
       const g = Math.trunc(
-        ((p & this._greenMask) >> this._greenShift) * this._greenScale
+        ((p & this._greenMask) >>> this._greenShift) * this._greenScale
       );
       const b = Math.trunc(
-        ((p & this._blueMask) >> this._blueShift) * this._blueScale
+        ((p & this._blueMask) >>> this._blueShift) * this._blueScale
       );
       const a = this.ignoreAlphaChannel
         ? 255
         : Math.trunc(
-            ((p & this._alphaMask) >> this._alphaShift) * this._alphaScale
+            ((p & this._alphaMask) >>> this._alphaShift) * this._alphaScale
           );
       pixel(r, g, b, a);
       return;
@@ -322,18 +322,18 @@ export class BmpInfo implements DecodeInfo {
     } else if (this._bitsPerPixel === 16) {
       const p = input.readUint16();
       const r = Math.trunc(
-        ((p & this._redMask) >> this._redShift) * this._redScale
+        ((p & this._redMask) >>> this._redShift) * this._redScale
       );
       const g = Math.trunc(
-        ((p & this._greenMask) >> this._greenShift) * this._greenScale
+        ((p & this._greenMask) >>> this._greenShift) * this._greenScale
       );
       const b = Math.trunc(
-        ((p & this._blueMask) >> this._blueShift) * this._blueScale
+        ((p & this._blueMask) >>> this._blueShift) * this._blueScale
       );
       const a = this.ignoreAlphaChannel
         ? 255
         : Math.trunc(
-            ((p & this._alphaMask) >> this._alphaShift) * this._alphaScale
+            ((p & this._alphaMask) >>> this._alphaShift) * this._alphaScale
           );
       pixel(r, g, b, a);
       return;

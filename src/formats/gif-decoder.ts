@@ -151,7 +151,7 @@ export class GifDecoder implements Decoder {
     const height = this._input.readUint16();
 
     const b = this._input.readByte();
-    const colorResolution = (((b & 0x70) + 1) >> 4) + 1;
+    const colorResolution = (((b & 0x70) + 1) >>> 4) + 1;
 
     const bitsPerPixel = (b & 0x07) + 1;
     const backgroundColor = new ColorUint8(
@@ -240,8 +240,8 @@ export class GifDecoder implements Decoder {
     this._transparent = input.readByte();
     /* const endBlock: number = */
     input.readByte();
-    this._disposalMethod = (b >> 2) & 0x7;
-    // const userInput: number = (b >> 1) & 0x1;
+    this._disposalMethod = (b >>> 2) & 0x7;
+    // const userInput: number = (b >>> 1) & 0x1;
     this._transparentFlag = b & 0x1;
 
     const recordType = input.peekBytes(1).getByte(0);
@@ -451,7 +451,7 @@ export class GifDecoder implements Decoder {
     const code: number =
       this._currentShiftDWord & GifDecoder._codeMasks[this._runningBits];
 
-    this._currentShiftDWord >>= this._runningBits;
+    this._currentShiftDWord >>>= this._runningBits;
     this._currentShiftState -= this._runningBits;
 
     // If code cannot fit into RunningBits bits, must raise its size. Note

@@ -85,16 +85,20 @@ export abstract class BitUtils {
     return this._reverseByteTable[x];
   }
 
-  public static signed(bits: number, value: number) {
-    return value & (1 << (bits - 1)) ? value - (1 << bits) : value;
+  public static sshR(v: number, n: number): number {
+    return v >> n;
   }
 
-  public static shiftR(v: number, n: number): number {
-    return BitUtils.signed(32, v >> n);
+  public static ushR(v: number, n: number): number {
+    return v >>> n;
   }
 
-  public static shiftL(v: number, n: number): number {
-    return BitUtils.signed(32, v << n);
+  public static sshL(v: number, n: number): number {
+    return v << n;
+  }
+
+  public static ushL(v: number, n: number): number {
+    return (v << n) >>> 0;
   }
 
   /**

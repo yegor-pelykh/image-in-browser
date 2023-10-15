@@ -151,7 +151,7 @@ export class ColorUint1 implements Color {
   }
 
   public getChannel(channel: number | Channel): number {
-    return channel < this.length ? (this._data >> (7 - channel)) & 0x1 : 0;
+    return channel < this.length ? (this._data >>> (7 - channel)) & 0x1 : 0;
   }
 
   public getChannelNormalized(channel: number | Channel): number {

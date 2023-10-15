@@ -138,7 +138,7 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return Math.trunc(value) >> 1;
+          return Math.trunc(value) >>> 1;
         case Format.uint4:
           return value;
         case Format.uint8:
@@ -164,9 +164,9 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return Math.trunc(value) >> 6;
+          return Math.trunc(value) >>> 6;
         case Format.uint4:
-          return Math.trunc(value) >> 4;
+          return Math.trunc(value) >>> 4;
         case Format.uint8:
           return value;
         case Format.uint16:
@@ -174,7 +174,7 @@ export function convertFormatValue(
         case Format.uint32:
           return value * 16843009;
         case Format.int8:
-          return Math.trunc(value) >> 1;
+          return Math.trunc(value) >>> 1;
         case Format.int16:
           return value * 128;
         case Format.int32:
@@ -190,19 +190,19 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return Math.trunc(value) >> 14;
+          return Math.trunc(value) >>> 14;
         case Format.uint4:
-          return Math.trunc(value) >> 12;
+          return Math.trunc(value) >>> 12;
         case Format.uint8:
-          return Math.trunc(value) >> 8;
+          return Math.trunc(value) >>> 8;
         case Format.uint16:
           return value;
         case Format.uint32:
           return Math.trunc(value) << 8;
         case Format.int8:
-          return Math.trunc(value) >> 9;
+          return Math.trunc(value) >>> 9;
         case Format.int16:
-          return Math.trunc(value) >> 1;
+          return Math.trunc(value) >>> 1;
         case Format.int32:
           return value * 524296;
         case Format.float16:
@@ -216,21 +216,21 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return Math.trunc(value) >> 30;
+          return Math.trunc(value) >>> 30;
         case Format.uint4:
-          return Math.trunc(value) >> 28;
+          return Math.trunc(value) >>> 28;
         case Format.uint8:
-          return Math.trunc(value) >> 24;
+          return Math.trunc(value) >>> 24;
         case Format.uint16:
-          return Math.trunc(value) >> 16;
+          return Math.trunc(value) >>> 16;
         case Format.uint32:
           return value;
         case Format.int8:
-          return Math.trunc(value) >> 25;
+          return Math.trunc(value) >>> 25;
         case Format.int16:
-          return Math.trunc(value) >> 17;
+          return Math.trunc(value) >>> 17;
         case Format.int32:
-          return Math.trunc(value) >> 1;
+          return Math.trunc(value) >>> 1;
         case Format.float16:
         case Format.float32:
         case Format.float64:
@@ -242,9 +242,9 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return value <= 0 ? 0 : Math.trunc(value) >> 5;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 5;
         case Format.uint4:
-          return value <= 0 ? 0 : Math.trunc(value) >> 3;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 3;
         case Format.uint8:
           return value <= 0 ? 0 : Math.trunc(value) << 1;
         case Format.uint16:
@@ -268,17 +268,17 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return value <= 0 ? 0 : Math.trunc(value) >> 15;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 15;
         case Format.uint4:
-          return value <= 0 ? 0 : Math.trunc(value) >> 11;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 11;
         case Format.uint8:
-          return value <= 0 ? 0 : Math.trunc(value) >> 7;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 7;
         case Format.uint16:
           return value <= 0 ? 0 : Math.trunc(value) << 1;
         case Format.uint32:
           return value <= 0 ? 0 : Math.trunc(value) * 131076;
         case Format.int8:
-          return Math.trunc(value) >> 8;
+          return Math.trunc(value) >>> 8;
         case Format.int16:
           return value;
         case Format.int32:
@@ -294,19 +294,19 @@ export function convertFormatValue(
         case Format.uint1:
           return value === 0 ? 0 : 1;
         case Format.uint2:
-          return value <= 0 ? 0 : Math.trunc(value) >> 29;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 29;
         case Format.uint4:
-          return value <= 0 ? 0 : Math.trunc(value) >> 27;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 27;
         case Format.uint8:
-          return value <= 0 ? 0 : Math.trunc(value) >> 23;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 23;
         case Format.uint16:
-          return value <= 0 ? 0 : Math.trunc(value) >> 16;
+          return value <= 0 ? 0 : Math.trunc(value) >>> 16;
         case Format.uint32:
           return value <= 0 ? 0 : Math.trunc(value) << 1;
         case Format.int8:
-          return Math.trunc(value) >> 24;
+          return Math.trunc(value) >>> 24;
         case Format.int16:
-          return Math.trunc(value) >> 16;
+          return Math.trunc(value) >>> 16;
         case Format.int32:
           return value;
         case Format.float16:

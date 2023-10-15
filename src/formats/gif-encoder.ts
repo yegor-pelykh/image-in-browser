@@ -285,7 +285,7 @@ export class GifEncoder implements Encoder {
 
     while (this._curBits >= 8) {
       this.addToBlock(this._curAccum & 0xff);
-      this._curAccum >>= 8;
+      this._curAccum >>>= 8;
       this._curBits -= 8;
     }
 
@@ -310,7 +310,7 @@ export class GifEncoder implements Encoder {
       // At EOF, write the rest of the buffer.
       while (this._curBits > 0) {
         this.addToBlock(this._curAccum & 0xff);
-        this._curAccum >>= 8;
+        this._curAccum >>>= 8;
         this._curBits -= 8;
       }
       this.writeBlock();

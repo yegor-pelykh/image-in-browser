@@ -1,5 +1,6 @@
 /** @format */
 
+import { BitUtils } from '../../common/bit-utils';
 import { MathUtils } from '../../common/math-utils';
 import { LibError } from '../../error/lib-error';
 import { ExifData } from '../../exif/exif-data';
@@ -77,7 +78,7 @@ export abstract class JpegQuantize {
         p[6 + row] === 0 &&
         p[7 + row] === 0
       ) {
-        const t = (sqrt2 * p[0 + row] + 512) >> 10;
+        const t = BitUtils.sshR(sqrt2 * p[0 + row] + 512, 10);
         p[row + 0] = t;
         p[row + 1] = t;
         p[row + 2] = t;
@@ -90,41 +91,41 @@ export abstract class JpegQuantize {
       }
 
       // stage 4
-      let v0 = (sqrt2 * p[0 + row] + 128) >> 8;
-      let v1 = (sqrt2 * p[4 + row] + 128) >> 8;
+      let v0 = BitUtils.sshR(sqrt2 * p[0 + row] + 128, 8);
+      let v1 = BitUtils.sshR(sqrt2 * p[4 + row] + 128, 8);
       let v2 = p[2 + row];
       let v3 = p[6 + row];
-      let v4 = (sqrt102 * (p[1 + row] - p[7 + row]) + 128) >> 8;
-      let v7 = (sqrt102 * (p[1 + row] + p[7 + row]) + 128) >> 8;
+      let v4 = BitUtils.sshR(sqrt102 * (p[1 + row] - p[7 + row]) + 128, 8);
+      let v7 = BitUtils.sshR(sqrt102 * (p[1 + row] + p[7 + row]) + 128, 8);
       let v5 = p[3 + row] << 4;
       let v6 = p[5 + row] << 4;
 
       // stage 3
-      let t = (v0 - v1 + 1) >> 1;
-      v0 = (v0 + v1 + 1) >> 1;
+      let t = BitUtils.sshR(v0 - v1 + 1, 1);
+      v0 = BitUtils.sshR(v0 + v1 + 1, 1);
       v1 = t;
-      t = (v2 * sin6 + v3 * cos6 + 128) >> 8;
-      v2 = (v2 * cos6 - v3 * sin6 + 128) >> 8;
+      t = BitUtils.sshR(v2 * sin6 + v3 * cos6 + 128, 8);
+      v2 = BitUtils.sshR(v2 * cos6 - v3 * sin6 + 128, 8);
       v3 = t;
-      t = (v4 - v6 + 1) >> 1;
-      v4 = (v4 + v6 + 1) >> 1;
+      t = BitUtils.sshR(v4 - v6 + 1, 1);
+      v4 = BitUtils.sshR(v4 + v6 + 1, 1);
       v6 = t;
-      t = (v7 + v5 + 1) >> 1;
-      v5 = (v7 - v5 + 1) >> 1;
+      t = BitUtils.sshR(v7 + v5 + 1, 1);
+      v5 = BitUtils.sshR(v7 - v5 + 1, 1);
       v7 = t;
 
       // stage 2
-      t = (v0 - v3 + 1) >> 1;
-      v0 = (v0 + v3 + 1) >> 1;
+      t = BitUtils.sshR(v0 - v3 + 1, 1);
+      v0 = BitUtils.sshR(v0 + v3 + 1, 1);
       v3 = t;
-      t = (v1 - v2 + 1) >> 1;
-      v1 = (v1 + v2 + 1) >> 1;
+      t = BitUtils.sshR(v1 - v2 + 1, 1);
+      v1 = BitUtils.sshR(v1 + v2 + 1, 1);
       v2 = t;
-      t = (v4 * sin3 + v7 * cos3 + 2048) >> 12;
-      v4 = (v4 * cos3 - v7 * sin3 + 2048) >> 12;
+      t = BitUtils.sshR(v4 * sin3 + v7 * cos3 + 2048, 12);
+      v4 = BitUtils.sshR(v4 * cos3 - v7 * sin3 + 2048, 12);
       v7 = t;
-      t = (v5 * sin1 + v6 * cos1 + 2048) >> 12;
-      v5 = (v5 * cos1 - v6 * sin1 + 2048) >> 12;
+      t = BitUtils.sshR(v5 * sin1 + v6 * cos1 + 2048, 12);
+      v5 = BitUtils.sshR(v5 * cos1 - v6 * sin1 + 2048, 12);
       v6 = t;
 
       // stage 1
@@ -152,7 +153,7 @@ export abstract class JpegQuantize {
         p[6 * 8 + col] === 0 &&
         p[7 * 8 + col] === 0
       ) {
-        const t = (sqrt2 * dataIn[i] + 8192) >> 14;
+        const t = BitUtils.sshR(sqrt2 * dataIn[i] + 8192, 14);
         p[0 * 8 + col] = t;
         p[1 * 8 + col] = t;
         p[2 * 8 + col] = t;
@@ -165,41 +166,47 @@ export abstract class JpegQuantize {
       }
 
       // stage 4
-      let v0 = (sqrt2 * p[0 * 8 + col] + 2048) >> 12;
-      let v1 = (sqrt2 * p[4 * 8 + col] + 2048) >> 12;
+      let v0 = BitUtils.sshR(sqrt2 * p[0 * 8 + col] + 2048, 12);
+      let v1 = BitUtils.sshR(sqrt2 * p[4 * 8 + col] + 2048, 12);
       let v2 = p[2 * 8 + col];
       let v3 = p[6 * 8 + col];
-      let v4 = (sqrt102 * (p[1 * 8 + col] - p[7 * 8 + col]) + 2048) >> 12;
-      let v7 = (sqrt102 * (p[1 * 8 + col] + p[7 * 8 + col]) + 2048) >> 12;
+      let v4 = BitUtils.sshR(
+        sqrt102 * (p[1 * 8 + col] - p[7 * 8 + col]) + 2048,
+        12
+      );
+      let v7 = BitUtils.sshR(
+        sqrt102 * (p[1 * 8 + col] + p[7 * 8 + col]) + 2048,
+        12
+      );
       let v5 = p[3 * 8 + col];
       let v6 = p[5 * 8 + col];
 
       // stage 3
-      let t = (v0 - v1 + 1) >> 1;
-      v0 = (v0 + v1 + 1) >> 1;
+      let t = BitUtils.sshR(v0 - v1 + 1, 1);
+      v0 = BitUtils.sshR(v0 + v1 + 1, 1);
       v1 = t;
-      t = (v2 * sin6 + v3 * cos6 + 2048) >> 12;
-      v2 = (v2 * cos6 - v3 * sin6 + 2048) >> 12;
+      t = BitUtils.sshR(v2 * sin6 + v3 * cos6 + 2048, 12);
+      v2 = BitUtils.sshR(v2 * cos6 - v3 * sin6 + 2048, 12);
       v3 = t;
-      t = (v4 - v6 + 1) >> 1;
-      v4 = (v4 + v6 + 1) >> 1;
+      t = BitUtils.sshR(v4 - v6 + 1, 1);
+      v4 = BitUtils.sshR(v4 + v6 + 1, 1);
       v6 = t;
-      t = (v7 + v5 + 1) >> 1;
-      v5 = (v7 - v5 + 1) >> 1;
+      t = BitUtils.sshR(v7 + v5 + 1, 1);
+      v5 = BitUtils.sshR(v7 - v5 + 1, 1);
       v7 = t;
 
       // stage 2
-      t = (v0 - v3 + 1) >> 1;
-      v0 = (v0 + v3 + 1) >> 1;
+      t = BitUtils.sshR(v0 - v3 + 1, 1);
+      v0 = BitUtils.sshR(v0 + v3 + 1, 1);
       v3 = t;
-      t = (v1 - v2 + 1) >> 1;
-      v1 = (v1 + v2 + 1) >> 1;
+      t = BitUtils.sshR(v1 - v2 + 1, 1);
+      v1 = BitUtils.sshR(v1 + v2 + 1, 1);
       v2 = t;
-      t = (v4 * sin3 + v7 * cos3 + 2048) >> 12;
-      v4 = (v4 * cos3 - v7 * sin3 + 2048) >> 12;
+      t = BitUtils.sshR(v4 * sin3 + v7 * cos3 + 2048, 12);
+      v4 = BitUtils.sshR(v4 * cos3 - v7 * sin3 + 2048, 12);
       v7 = t;
-      t = (v5 * sin1 + v6 * cos1 + 2048) >> 12;
-      v5 = (v5 * cos1 - v6 * sin1 + 2048) >> 12;
+      t = BitUtils.sshR(v5 * sin1 + v6 * cos1 + 2048, 12);
+      v5 = BitUtils.sshR(v5 * cos1 - v6 * sin1 + 2048, 12);
       v6 = t;
 
       // stage 1
@@ -217,7 +224,7 @@ export abstract class JpegQuantize {
     for (let i = 0; i < 64; ++i) {
       dataOut[i] =
         JpegQuantize._dctClip[
-          JpegQuantize._dctClipOffset + 128 + ((p[i] + 8) >> 4)
+          JpegQuantize._dctClipOffset + 128 + BitUtils.sshR(p[i] + 8, 4)
         ];
     }
   }
@@ -263,10 +270,10 @@ export abstract class JpegQuantize {
           const hShift1 = component1.hScaleShift;
           const vShift1 = component1.vScaleShift;
           for (let y = 0; y < h; y++) {
-            const y1 = y >> vShift1;
+            const y1 = y >>> vShift1;
             component1Line = lines[y1];
             for (let x = 0; x < w; x++) {
-              const x1 = x >> hShift1;
+              const x1 = x >>> hShift1;
               const cy = component1Line![x1];
 
               if (orientation === 2) {
@@ -301,14 +308,14 @@ export abstract class JpegQuantize {
         //   const vShift2 = component2.vScaleShift;
 
         //   for (let y = 0; y < h; ++y) {
-        //     const y1 = y >> vShift1;
-        //     const y2 = y >> vShift2;
+        //     const y1 = y >>> vShift1;
+        //     const y2 = y >>> vShift2;
         //     component1Line = component1.lines[y1];
         //     component2Line = component2.lines[y2];
 
         //     for (let x = 0; x < w; ++x) {
-        //       const x1 = x >> hShift1;
-        //       const x2 = x >> hShift2;
+        //       const x1 = x >>> hShift1;
+        //       const x2 = x >>> hShift2;
 
         //       let cy = component1Line![x1];
         //       // data[offset++] = cy;
@@ -340,18 +347,18 @@ export abstract class JpegQuantize {
           const vShift3 = component3.vScaleShift;
 
           for (let y = 0; y < h; y++) {
-            const y1 = y >> vShift1;
-            const y2 = y >> vShift2;
-            const y3 = y >> vShift3;
+            const y1 = y >>> vShift1;
+            const y2 = y >>> vShift2;
+            const y3 = y >>> vShift3;
 
             component1Line = lines1[y1];
             component2Line = lines2[y2];
             component3Line = lines3[y3];
 
             for (let x = 0; x < w; x++) {
-              const x1 = x >> hShift1;
-              const x2 = x >> hShift2;
-              const x3 = x >> hShift3;
+              const x1 = x >>> hShift1;
+              const x2 = x >>> hShift2;
+              const x3 = x >>> hShift3;
 
               const cy = component1Line![x1] << 8;
               const cb = component2Line![x2] - 128;
@@ -360,9 +367,9 @@ export abstract class JpegQuantize {
               let r = cy + 359 * cr + 128;
               let g = cy - 88 * cb - 183 * cr + 128;
               let b = cy + 454 * cb + 128;
-              r = MathUtils.clampInt255(r >> 8);
-              g = MathUtils.clampInt255(g >> 8);
-              b = MathUtils.clampInt255(b >> 8);
+              r = MathUtils.clampInt255(BitUtils.sshR(r, 8));
+              g = MathUtils.clampInt255(BitUtils.sshR(g, 8));
+              b = MathUtils.clampInt255(BitUtils.sshR(b, 8));
 
               if (orientation === 2) {
                 image.setPixelRgb(w1 - x, y, r, g, b);
@@ -417,19 +424,19 @@ export abstract class JpegQuantize {
           const vShift4 = component4.vScaleShift;
 
           for (let y = 0; y < jpeg.height!; y++) {
-            const y1 = y >> vShift1;
-            const y2 = y >> vShift2;
-            const y3 = y >> vShift3;
-            const y4 = y >> vShift4;
+            const y1 = y >>> vShift1;
+            const y2 = y >>> vShift2;
+            const y3 = y >>> vShift3;
+            const y4 = y >>> vShift4;
             component1Line = lines1[y1];
             component2Line = lines2[y2];
             component3Line = lines3[y3];
             component4Line = lines4[y4];
             for (let x = 0; x < jpeg.width!; x++) {
-              const x1 = x >> hShift1;
-              const x2 = x >> hShift2;
-              const x3 = x >> hShift3;
-              const x4 = x >> hShift4;
+              const x1 = x >>> hShift1;
+              const x2 = x >>> hShift2;
+              const x3 = x >>> hShift3;
+              const x4 = x >>> hShift4;
               let cc = 0;
               let cm = 0;
               let cy = 0;
@@ -453,9 +460,9 @@ export abstract class JpegQuantize {
                   );
                 cy = 255 - MathUtils.clampInt255(cy + 1.772 * (cb - 128));
               }
-              const r = (cc * ck) >> 8;
-              const g = (cm * ck) >> 8;
-              const b = (cy * ck) >> 8;
+              const r = BitUtils.sshR(cc * ck, 8);
+              const g = BitUtils.sshR(cm * ck, 8);
+              const b = BitUtils.sshR(cy * ck, 8);
 
               if (orientation === 2) {
                 image.setPixelRgb(w1 - x, y, r, g, b);

@@ -351,7 +351,7 @@ export class JpegEncoder implements Encoder {
     vdu: Float32Array
   ): void {
     for (let pos = 0; pos < 64; pos++) {
-      const row = pos >> 3; // / 8
+      const row = pos >>> 3; // / 8
       const col = pos & 7; // % 8
 
       var yy = y + row;
@@ -382,19 +382,19 @@ export class JpegEncoder implements Encoder {
       ydu[pos] =
         ((this._tableRgbYuv[r] +
           this._tableRgbYuv[g + 256] +
-          this._tableRgbYuv[b + 512]) >>
+          this._tableRgbYuv[b + 512]) >>>
           16) -
         128.0;
       udu[pos] =
         ((this._tableRgbYuv[r + 768] +
           this._tableRgbYuv[g + 1024] +
-          this._tableRgbYuv[b + 1280]) >>
+          this._tableRgbYuv[b + 1280]) >>>
           16) -
         128.0;
       vdu[pos] =
         ((this._tableRgbYuv[r + 1280] +
           this._tableRgbYuv[g + 1536] +
-          this._tableRgbYuv[b + 1792]) >>
+          this._tableRgbYuv[b + 1792]) >>>
           16) -
         128.0;
     }
@@ -770,7 +770,7 @@ export class JpegEncoder implements Encoder {
 
       let nrzeroes = i - startpos;
       if (nrzeroes >= I16) {
-        const lng = nrzeroes >> 4;
+        const lng = nrzeroes >>> 4;
         for (let nrmarker = 1; nrmarker <= lng; ++nrmarker) {
           this.writeBits(out, m16Zeroes!);
         }

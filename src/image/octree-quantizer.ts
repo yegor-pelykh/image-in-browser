@@ -67,7 +67,7 @@ export class OctreeQuantizer implements Quantizer {
     let _root = root;
 
     let depth = 0;
-    for (let bit = 1 << 7; ++depth < 8; bit >>= 1) {
+    for (let bit = 1 << 7; ++depth < 8; bit >>>= 1) {
       const i =
         ((g & bit) !== 0 ? 1 : 0) * 4 +
         ((r & bit) !== 0 ? 1 : 0) * 2 +
@@ -176,8 +176,8 @@ export class OctreeQuantizer implements Quantizer {
       return 1;
     }
 
-    const ac = a.count >> a.depth;
-    const bc = b.count >> b.depth;
+    const ac = a.count >>> a.depth;
+    const bc = b.count >>> b.depth;
     return ac < bc ? -1 : ac > bc ? 1 : 0;
   }
 
@@ -203,7 +203,7 @@ export class OctreeQuantizer implements Quantizer {
 
   public getColorIndexRgb(r: number, g: number, b: number): number {
     let root: OctreeNode | undefined = this._root;
-    for (let bit = 1 << 7; bit !== 0; bit >>= 1) {
+    for (let bit = 1 << 7; bit !== 0; bit >>>= 1) {
       const i =
         ((g & bit) !== 0 ? 1 : 0) * 4 +
         ((r & bit) !== 0 ? 1 : 0) * 2 +
@@ -225,7 +225,7 @@ export class OctreeQuantizer implements Quantizer {
     let b = Math.trunc(c.b);
     let root: OctreeNode | undefined = this._root;
 
-    for (let bit = 1 << 7; bit !== 0; bit >>= 1) {
+    for (let bit = 1 << 7; bit !== 0; bit >>>= 1) {
       const i =
         ((g & bit) !== 0 ? 1 : 0) * 4 +
         ((r & bit) !== 0 ? 1 : 0) * 2 +

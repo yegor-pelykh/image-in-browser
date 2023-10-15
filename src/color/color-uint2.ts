@@ -152,7 +152,7 @@ export class ColorUint2 implements Color {
 
   public getChannel(channel: number | Channel): number {
     return channel < this.length
-      ? (this._data >> (6 - (channel << 1))) & 0x3
+      ? (this._data >>> (6 - (channel << 1))) & 0x3
       : 0;
   }
 

@@ -29,8 +29,8 @@ export class TgaDecoder implements Decoder {
 
     if (this._info.colorMapDepth === 16) {
       const color = this._input.readUint16();
-      const r = (color & 0x7c00) >> 7;
-      const g = (color & 0x3e0) >> 2;
+      const r = (color & 0x7c00) >>> 7;
+      const g = (color & 0x3e0) >>> 2;
       const b = (color & 0x1f) << 3;
       const a = (color & 0x8000) !== 0 ? 0 : 255;
       for (let i = 0; i < this._info.colorMapLength; ++i) {
@@ -98,8 +98,8 @@ export class TgaDecoder implements Decoder {
           }
         } else if (bpp === 16) {
           const color = this._input.readUint16();
-          const r = (color & 0x7c00) >> 7;
-          const g = (color & 0x3e0) >> 2;
+          const r = (color & 0x7c00) >>> 7;
+          const g = (color & 0x3e0) >>> 2;
           const b = (color & 0x1f) << 3;
           const a = (color & 0x8000) !== 0 ? 0 : 255;
           for (let i = 0; i < count; ++i) {
@@ -144,8 +144,8 @@ export class TgaDecoder implements Decoder {
         } else if (bpp === 16) {
           for (let i = 0; i < count; ++i) {
             const color = this._input.readUint16();
-            const r = (color & 0x7c00) >> 7;
-            const g = (color & 0x3e0) >> 2;
+            const r = (color & 0x7c00) >>> 7;
+            const g = (color & 0x3e0) >>> 2;
             const b = (color & 0x1f) << 3;
             const a = (color & 0x8000) !== 0 ? 0 : 255;
             image.setPixelRgba(x++, y, r, g, b, a);
@@ -226,8 +226,8 @@ export class TgaDecoder implements Decoder {
       for (let y = image.height - 1; y >= 0; --y) {
         for (let x = 0; x < image.width; ++x) {
           const color = this._input.readUint16();
-          const r = (color & 0x7c00) >> 7;
-          const g = (color & 0x3e0) >> 2;
+          const r = (color & 0x7c00) >>> 7;
+          const g = (color & 0x3e0) >>> 2;
           const b = (color & 0x1f) << 3;
           const a = (color & 0x8000) !== 0 ? 0 : 255;
           image.setPixelRgba(x, y, r, g, b, a);

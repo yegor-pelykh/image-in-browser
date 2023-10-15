@@ -259,7 +259,7 @@ export class TiffImage {
       const cm = this._colorMap;
       const len = cm.length;
       for (let i = 0; i < len; ++i) {
-        cm[i] >>= 8;
+        cm[i] >>>= 8;
       }
     }
 

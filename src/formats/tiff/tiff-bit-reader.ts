@@ -48,7 +48,7 @@ export class TiffBitReader {
 
       value =
         (value << nBits) +
-        ((this._bitBuffer >> (this._bitPosition - nBits)) &
+        ((this._bitBuffer >>> (this._bitPosition - nBits)) &
           TiffBitReader._bitMask[nBits]);
 
       this._bitPosition -= nBits;

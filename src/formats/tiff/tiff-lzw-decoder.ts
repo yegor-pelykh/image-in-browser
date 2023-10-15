@@ -67,7 +67,7 @@ export class LzwDecoder {
 
     this._nextBits -= this._bitsToGet;
     const code =
-      (this._nextData >> this._nextBits) &
+      (this._nextData >>> this._nextBits) &
       LzwDecoder._andTable[this._bitsToGet - 9];
 
     return code;

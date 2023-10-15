@@ -61,15 +61,15 @@ export abstract class ColorUtils {
   }
 
   public static uint32ToGreen(c: number): number {
-    return (c >> 8) & 0xff;
+    return (c >>> 8) & 0xff;
   }
 
   public static uint32ToBlue(c: number): number {
-    return (c >> 16) & 0xff;
+    return (c >>> 16) & 0xff;
   }
 
   public static uint32ToAlpha(c: number): number {
-    return (c >> 24) & 0xff;
+    return (c >>> 24) & 0xff;
   }
 
   public static rgbaToUint32(

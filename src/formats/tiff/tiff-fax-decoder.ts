@@ -618,14 +618,14 @@ export class TiffFaxDecoder {
 
     const i1 = (b & TiffFaxDecoder._table1[bitsLeft]) << (bitsToGet - bitsLeft);
     let i2 =
-      (next & TiffFaxDecoder._table2[bitsFromNextByte]) >>
+      (next & TiffFaxDecoder._table2[bitsFromNextByte]) >>>
       (8 - bitsFromNextByte);
 
     let i3 = 0;
     if (bitsFromNext2NextByte !== 0) {
       i2 <<= bitsFromNext2NextByte;
       i3 =
-        (next2next & TiffFaxDecoder._table2[bitsFromNext2NextByte]) >>
+        (next2next & TiffFaxDecoder._table2[bitsFromNext2NextByte]) >>>
         (8 - bitsFromNext2NextByte);
       i2 |= i3;
       this._bytePointer += 1;
@@ -673,7 +673,7 @@ export class TiffFaxDecoder {
     let i1 = 0;
     let i2 = 0;
     if (shift >= 0) {
-      i1 = (b & TiffFaxDecoder._table1[bitsLeft]) >> shift;
+      i1 = (b & TiffFaxDecoder._table1[bitsLeft]) >>> shift;
       this._bitPointer += bitsToGet;
       if (this._bitPointer === 8) {
         this._bitPointer = 0;
@@ -682,7 +682,7 @@ export class TiffFaxDecoder {
     } else {
       i1 = (b & TiffFaxDecoder._table1[bitsLeft]) << -shift;
       i2 =
-        (next & TiffFaxDecoder._table2[bitsFromNextByte]) >>
+        (next & TiffFaxDecoder._table2[bitsFromNextByte]) >>>
         (8 - bitsFromNextByte);
 
       i1 |= i2;
@@ -728,7 +728,7 @@ export class TiffFaxDecoder {
     let bitNum = 8 * lineOffset + bitOffset;
     const lastBit = bitNum + numBits;
 
-    let byteNum = bitNum >> 3;
+    let byteNum = bitNum >>> 3;
 
     // Handle bits in first byte
     const shift = bitNum & 0x7;
@@ -737,14 +737,14 @@ export class TiffFaxDecoder {
       let val = buffer.getByte(byteNum);
       while (maskVal > 0 && bitNum < lastBit) {
         val |= maskVal;
-        maskVal >>= 1;
+        maskVal >>>= 1;
         ++bitNum;
       }
       buffer.setByte(byteNum, val);
     }
 
     // Fill in 8 bits at a time
-    byteNum = bitNum >> 3;
+    byteNum = bitNum >>> 3;
     while (bitNum < lastBit - 7) {
       buffer.setByte(byteNum++, 255);
       bitNum += 8;
@@ -787,7 +787,7 @@ export class TiffFaxDecoder {
 
         // Get the 3 fields from the entry
         isT = entry & 0x0001;
-        bits = (entry >> 1) & 0x0f;
+        bits = (entry >>> 1) & 0x0f;
 
         if (bits === 12) {
           // Additional Make up code
@@ -797,9 +797,9 @@ export class TiffFaxDecoder {
           current = ((current << 2) & 0x000c) | twoBits;
           entry = TiffFaxDecoder._additionalMakeup[current];
           // 3 bits 0000 0111
-          bits = (entry >> 1) & 0x07;
+          bits = (entry >>> 1) & 0x07;
           // 12 bits
-          code = (entry >> 4) & 0x0fff;
+          code = (entry >>> 4) & 0x0fff;
           // Skip white run
           offset += code;
 
@@ -812,7 +812,7 @@ export class TiffFaxDecoder {
           throw new LibError('TIFFFaxDecoder1');
         } else {
           // 11 bits - 0000 0111 1111 1111 = 0x07ff
-          code = (entry >> 5) & 0x07ff;
+          code = (entry >>> 5) & 0x07ff;
           offset += code;
 
           this.updatePointer(10 - bits);
@@ -839,8 +839,8 @@ export class TiffFaxDecoder {
 
         // Get the 3 fields from the entry
         isT = entry & 0x0001;
-        bits = (entry >> 1) & 0x000f;
-        code = (entry >> 5) & 0x07ff;
+        bits = (entry >>> 1) & 0x000f;
+        code = (entry >>> 5) & 0x07ff;
 
         if (code === 100) {
           current = this.nextNBits(9);
@@ -848,8 +848,8 @@ export class TiffFaxDecoder {
 
           // Get the 3 fields from the entry
           isT = entry & 0x0001;
-          bits = (entry >> 1) & 0x000f;
-          code = (entry >> 5) & 0x07ff;
+          bits = (entry >>> 1) & 0x000f;
+          code = (entry >>> 5) & 0x07ff;
 
           if (bits === 12) {
             // Additional makeup codes
@@ -857,9 +857,9 @@ export class TiffFaxDecoder {
             current = this.nextLesserThan8Bits(4);
             entry = TiffFaxDecoder._additionalMakeup[current];
             // 3 bits 0000 0111
-            bits = (entry >> 1) & 0x07;
+            bits = (entry >>> 1) & 0x07;
             // 12 bits
-            code = (entry >> 4) & 0x0fff;
+            code = (entry >>> 4) & 0x0fff;
 
             this.setToBlack(buffer, lineOffset, offset, code);
             offset += code;
@@ -882,8 +882,8 @@ export class TiffFaxDecoder {
           // Is a Terminating code
           current = this.nextLesserThan8Bits(2);
           entry = TiffFaxDecoder._twoBitBlack[current];
-          code = (entry >> 5) & 0x07ff;
-          bits = (entry >> 1) & 0x0f;
+          code = (entry >>> 5) & 0x07ff;
+          bits = (entry >>> 1) & 0x0f;
 
           this.setToBlack(buffer, lineOffset, offset, code);
           offset += code;
@@ -1017,7 +1017,7 @@ export class TiffFaxDecoder {
 
       // Get the 3 fields from the entry
       isT = entry & 0x0001;
-      bits = (entry >> 1) & 0x0f;
+      bits = (entry >>> 1) & 0x0f;
 
       if (bits === 12) {
         // Additional Make up code
@@ -1027,9 +1027,9 @@ export class TiffFaxDecoder {
         current = ((current << 2) & 0x000c) | twoBits;
         entry = TiffFaxDecoder._additionalMakeup[current];
         // 3 bits 0000 0111
-        bits = (entry >> 1) & 0x07;
+        bits = (entry >>> 1) & 0x07;
         // 12 bits
-        code = (entry >> 4) & 0x0fff;
+        code = (entry >>> 4) & 0x0fff;
         runLength += code;
         this.updatePointer(4 - bits);
       } else if (bits === 0) {
@@ -1040,7 +1040,7 @@ export class TiffFaxDecoder {
         throw new LibError('TIFFFaxDecoder1');
       } else {
         // 11 bits - 0000 0111 1111 1111 = 0x07ff
-        code = (entry >> 5) & 0x07ff;
+        code = (entry >>> 5) & 0x07ff;
         runLength += code;
         this.updatePointer(10 - bits);
         if (isT === 0) {
@@ -1070,8 +1070,8 @@ export class TiffFaxDecoder {
 
       // Get the 3 fields from the entry
       isT = entry & 0x0001;
-      bits = (entry >> 1) & 0x000f;
-      code = (entry >> 5) & 0x07ff;
+      bits = (entry >>> 1) & 0x000f;
+      code = (entry >>> 5) & 0x07ff;
 
       if (code === 100) {
         current = this.nextNBits(9);
@@ -1079,8 +1079,8 @@ export class TiffFaxDecoder {
 
         // Get the 3 fields from the entry
         isT = entry & 0x0001;
-        bits = (entry >> 1) & 0x000f;
-        code = (entry >> 5) & 0x07ff;
+        bits = (entry >>> 1) & 0x000f;
+        code = (entry >>> 5) & 0x07ff;
 
         if (bits === 12) {
           // Additional makeup codes
@@ -1088,9 +1088,9 @@ export class TiffFaxDecoder {
           current = this.nextLesserThan8Bits(4);
           entry = TiffFaxDecoder._additionalMakeup[current];
           // 3 bits 0000 0111
-          bits = (entry >> 1) & 0x07;
+          bits = (entry >>> 1) & 0x07;
           // 12 bits
-          code = (entry >> 4) & 0x0fff;
+          code = (entry >>> 4) & 0x0fff;
           runLength += code;
 
           this.updatePointer(4 - bits);
@@ -1108,9 +1108,9 @@ export class TiffFaxDecoder {
         // Is a Terminating code
         current = this.nextLesserThan8Bits(2);
         entry = TiffFaxDecoder._twoBitBlack[current];
-        code = (entry >> 5) & 0x07ff;
+        code = (entry >>> 5) & 0x07ff;
         runLength += code;
-        bits = (entry >> 1) & 0x0f;
+        bits = (entry >>> 1) & 0x0f;
         this.updatePointer(2 - bits);
         isWhite = true;
       } else {
@@ -1181,8 +1181,8 @@ export class TiffFaxDecoder {
 
     // uncompressedMode - haven't dealt with this yet.
     this._oneD = tiffT4Options & 0x01;
-    this._uncompressedMode = (tiffT4Options & 0x02) >> 1;
-    this._fillBits = (tiffT4Options & 0x04) >> 2;
+    this._uncompressedMode = (tiffT4Options & 0x02) >>> 1;
+    this._fillBits = (tiffT4Options & 0x04) >>> 2;
 
     // The data must start with an EOL code
     if (this.readEOL() !== 1) {
@@ -1231,7 +1231,7 @@ export class TiffFaxDecoder {
           entry = TiffFaxDecoder._twoDCodes[entry] & 0xff;
 
           // Get the code and the number of bits used up
-          code = (entry & 0x78) >> 3;
+          code = (entry & 0x78) >>> 3;
           bits = entry & 0x07;
 
           if (code === 0) {
@@ -1334,7 +1334,7 @@ export class TiffFaxDecoder {
     const b = new Array<number>(2);
     b.fill(0);
 
-    this._uncompressedMode = (tiffT6Options & 0x02) >> 1;
+    this._uncompressedMode = (tiffT6Options & 0x02) >>> 1;
 
     // Local cached reference
     let cce = this._currChangingElements!;
@@ -1381,7 +1381,7 @@ export class TiffFaxDecoder {
         entry = TiffFaxDecoder._twoDCodes[entry] & 0xff;
 
         // Get the code and the number of bits used up
-        code = (entry & 0x78) >> 3;
+        code = (entry & 0x78) >>> 3;
         bits = entry & 0x07;
 
         if (code === 0) {

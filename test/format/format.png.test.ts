@@ -242,7 +242,7 @@ describe('Format: PNG', () => {
       image.palette!.setRgb(i, i * 85, i * 85, i * 85);
     }
     for (const p of image) {
-      p.r = p.x >> 3;
+      p.r = p.x >>> 3;
     }
 
     for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
@@ -322,7 +322,7 @@ describe('Format: PNG', () => {
       image.palette!.setRgb(i, i * 17, i * 17, i * 17);
     }
     for (const p of image) {
-      p.r = p.x >> 1;
+      p.r = p.x >>> 1;
     }
 
     for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {

@@ -222,7 +222,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       bi += 8;
       i++;
     }
-    return (this._image.data[i] >> bi) & 0x3;
+    return (this._image.data[i] >>> bi) & 0x3;
   }
 
   public next(): IteratorResult<Pixel> {
@@ -249,7 +249,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     } else {
       const bpp = this.bitsPerPixel;
       this._bitIndex = (this._x * bpp) & 0x7;
-      this._index = this._rowOffset + ((this._x * bpp) >> 3);
+      this._index = this._rowOffset + ((this._x * bpp) >>> 3);
     }
     return <IteratorResult<Pixel>>{
       done: this._index >= this.image.data.length,
@@ -262,7 +262,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     this._y = y;
     const bpp = this.bitsPerPixel;
     this._rowOffset = this._y * this._image.rowStride;
-    this._index = this._rowOffset + ((this._x * bpp) >> 3);
+    this._index = this._rowOffset + ((this._x * bpp) >>> 3);
     this._bitIndex = (this._x * bpp) & 0x7;
   }
 
@@ -307,7 +307,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
 
     const vi = MathUtils.clampInt(value, 0, 3);
     const msk = [0xfc, 0xf3, 0xcf, 0x3f];
-    const mask = msk[bi >> 1];
+    const mask = msk[bi >>> 1];
     v = (v & mask) | (vi << bi);
     this.data[i] = v;
   }

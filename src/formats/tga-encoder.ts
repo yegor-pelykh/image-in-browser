@@ -25,9 +25,9 @@ export class TgaEncoder implements Encoder {
 
     header[2] = 2;
     header[12] = image.width & 0xff;
-    header[13] = (image.width >> 8) & 0xff;
+    header[13] = (image.width >>> 8) & 0xff;
     header[14] = image.height & 0xff;
-    header[15] = (image.height >> 8) & 0xff;
+    header[15] = (image.height >>> 8) & 0xff;
     const nc = image.palette?.numChannels ?? image.numChannels;
     header[16] = nc === 3 ? 24 : 32;
 

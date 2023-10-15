@@ -225,7 +225,7 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     if (i >= this._image.data.length) {
       return 0;
     }
-    return (this._image.data[i] >> bi) & 0x1;
+    return (this._image.data[i] >>> bi) & 0x1;
   }
 
   public next(): IteratorResult<Pixel> {
@@ -252,7 +252,7 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     } else {
       const bpp = this.image.numChannels;
       this._bitIndex = (this._x * bpp) & 0x7;
-      this._index = this._rowOffset + ((this._x * bpp) >> 3);
+      this._index = this._rowOffset + ((this._x * bpp) >>> 3);
     }
     return <IteratorResult<Pixel>>{
       done: this._index >= this.imageLength,
@@ -265,7 +265,7 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     this._y = y;
     const bpp = this._image.numChannels;
     this._rowOffset = this._y * this._image.rowStride;
-    this._index = this._rowOffset + ((this._x * bpp) >> 3);
+    this._index = this._rowOffset + ((this._x * bpp) >>> 3);
     this._bitIndex = (this._x * bpp) & 0x7;
   }
 

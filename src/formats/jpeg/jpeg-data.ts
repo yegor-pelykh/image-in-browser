@@ -595,8 +595,8 @@ export class JpegData {
 
   private readDQT(block: InputBuffer): void {
     while (!block.isEOS) {
-      let n = block.readByte();
-      const prec = n >> 4;
+      let n = block.read();
+      const prec = n >>> 4;
       n &= 0x0f;
 
       if (n >= JpegData.numQuantizationTables) {
@@ -639,7 +639,7 @@ export class JpegData {
     for (let i = 0; i < numComponents; i++) {
       const componentId = block.readByte();
       const x = block.readByte();
-      const h = (x >> 4) & 15;
+      const h = (x >>> 4) & 15;
       const v = x & 15;
       const qId = block.readByte();
       componentsOrder.push(componentId);
@@ -713,7 +713,7 @@ export class JpegData {
       }
       const component = this._frame!.components.get(id);
       if (component !== undefined) {
-        const dcTableNumber = (c >> 4) & 15;
+        const dcTableNumber = (c >>> 4) & 15;
         const acTableNumber = c & 15;
         if (dcTableNumber < this._huffmanTablesDC.length) {
           component.huffmanTableDC = this._huffmanTablesDC[dcTableNumber]!;
@@ -729,7 +729,7 @@ export class JpegData {
     const spectralEnd = block.readByte();
     const successiveApproximation = block.readByte();
 
-    const ah = (successiveApproximation >> 4) & 15;
+    const ah = (successiveApproximation >>> 4) & 15;
     const al = successiveApproximation & 15;
 
     const scan = new JpegScan(

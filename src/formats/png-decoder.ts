@@ -87,7 +87,7 @@ export class PngDecoder implements Decoder {
         for (let x = 0; x < rowBytes; ++x) {
           const a = x < bpp ? 0 : row[x - bpp];
           const b = prevRow !== undefined ? prevRow[x] : 0;
-          row[x] = (row[x] + ((a + b) >> 1)) & 0xff;
+          row[x] = (row[x] + ((a + b) >>> 1)) & 0xff;
         }
         break;
       case PngFilterType.paeth:
@@ -156,8 +156,8 @@ export class PngDecoder implements Decoder {
     }
 
     const pixelDepth = channels * this._info.bits;
-    const bpp = (pixelDepth + 7) >> 3;
-    const rowBytes = (pixelDepth * passWidth + 7) >> 3;
+    const bpp = (pixelDepth + 7) >>> 3;
+    const rowBytes = (pixelDepth * passWidth + 7) >>> 3;
 
     const inData: Array<Uint8Array | undefined> = [undefined, undefined];
 
@@ -227,8 +227,8 @@ export class PngDecoder implements Decoder {
     const w = this._info.width;
     const h = this._info.height;
 
-    const rowBytes = (w * pixelDepth + 7) >> 3;
-    const bpp = (pixelDepth + 7) >> 3;
+    const rowBytes = (w * pixelDepth + 7) >>> 3;
+    const bpp = (pixelDepth + 7) >>> 3;
 
     const line = new Uint8Array(rowBytes);
     const inData = [line, line];
@@ -323,7 +323,7 @@ export class PngDecoder implements Decoder {
         break;
     }
 
-    const octet = (this._bitBuffer >> (this._bitBufferLen - numBits)) & mask;
+    const octet = (this._bitBuffer >>> (this._bitBufferLen - numBits)) & mask;
 
     this._bitBufferLen -= numBits;
 
@@ -889,13 +889,13 @@ export class PngDecoder implements Decoder {
     const h = height;
     this._progressY = 0;
     if (this._info.interlaceMethod !== 0) {
-      this.processPass(input, image, 0, 0, 8, 8, (w + 7) >> 3, (h + 7) >> 3);
-      this.processPass(input, image, 4, 0, 8, 8, (w + 3) >> 3, (h + 7) >> 3);
-      this.processPass(input, image, 0, 4, 4, 8, (w + 3) >> 2, (h + 3) >> 3);
-      this.processPass(input, image, 2, 0, 4, 4, (w + 1) >> 2, (h + 3) >> 2);
-      this.processPass(input, image, 0, 2, 2, 4, (w + 1) >> 1, (h + 1) >> 2);
-      this.processPass(input, image, 1, 0, 2, 2, w >> 1, (h + 1) >> 1);
-      this.processPass(input, image, 0, 1, 1, 2, w, h >> 1);
+      this.processPass(input, image, 0, 0, 8, 8, (w + 7) >>> 3, (h + 7) >>> 3);
+      this.processPass(input, image, 4, 0, 8, 8, (w + 3) >>> 3, (h + 7) >>> 3);
+      this.processPass(input, image, 0, 4, 4, 8, (w + 3) >>> 2, (h + 3) >>> 3);
+      this.processPass(input, image, 2, 0, 4, 4, (w + 1) >>> 2, (h + 3) >>> 2);
+      this.processPass(input, image, 0, 2, 2, 4, (w + 1) >>> 1, (h + 1) >>> 2);
+      this.processPass(input, image, 1, 0, 2, 2, w >>> 1, (h + 1) >>> 1);
+      this.processPass(input, image, 0, 1, 1, 2, w, h >>> 1);
     } else {
       this.process(input, image);
     }

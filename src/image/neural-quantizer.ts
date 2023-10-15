@@ -133,7 +133,7 @@ export class NeuralQuantizer implements Quantizer {
     // Number of reserved colors used
     this._specials = 3;
     this._bgColor = this._specials - 1;
-    this._radiusPower = new Int32Array(this._netSize >> 3);
+    this._radiusPower = new Int32Array(this._netSize >>> 3);
 
     this._network = new Array<number>(this._netSize * 3).fill(0);
     this._bias = new Array<number>(this._netSize).fill(0);
@@ -320,7 +320,7 @@ export class NeuralQuantizer implements Quantizer {
       delta = 1;
     }
 
-    let rad = biasRadius >> NeuralQuantizer._radiusBiasShift;
+    let rad = biasRadius >>> NeuralQuantizer._radiusBiasShift;
     if (rad <= 1) {
       rad = 0;
     }
@@ -394,7 +394,7 @@ export class NeuralQuantizer implements Quantizer {
       if (i % delta === 0) {
         alpha -= Math.floor(alpha / alphaDec);
         biasRadius -= Math.floor(biasRadius / NeuralQuantizer._radiusDec);
-        rad = biasRadius >> NeuralQuantizer._radiusBiasShift;
+        rad = biasRadius >>> NeuralQuantizer._radiusBiasShift;
         if (rad <= 1) {
           rad = 0;
         }
@@ -458,7 +458,7 @@ export class NeuralQuantizer implements Quantizer {
 
       // smallVal entry is now in position i
       if (smallVal !== previousColor) {
-        this._netIndex[previousColor] = (startPos + i) >> 1;
+        this._netIndex[previousColor] = (startPos + i) >>> 1;
         for (let j = previousColor + 1; j < smallVal; j++) {
           this._netIndex[j] = i;
         }
@@ -467,7 +467,7 @@ export class NeuralQuantizer implements Quantizer {
       }
     }
 
-    this._netIndex[previousColor] = (startPos + this._maxNetPos) >> 1;
+    this._netIndex[previousColor] = (startPos + this._maxNetPos) >>> 1;
     for (let j = previousColor + 1; j < 256; j++) {
       // really 256
       this._netIndex[j] = this._maxNetPos;
