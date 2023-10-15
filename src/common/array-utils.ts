@@ -97,11 +97,11 @@ export abstract class ArrayUtils {
   public static copyRange<T extends TypedArray>(
     from: T,
     fromStart: number,
-    fromEnd: number,
     to: T,
-    toStart: number
+    toStart: number,
+    length: number
   ): void {
-    const viewFrom = from.subarray(fromStart, fromEnd);
+    const viewFrom = from.subarray(fromStart, fromStart + length);
     to.set(viewFrom, toStart);
   }
 

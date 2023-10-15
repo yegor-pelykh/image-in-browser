@@ -53,7 +53,7 @@ export class OutputBuffer {
       blockSize = this._buffer.length * 2;
     }
     const newBuffer = new Uint8Array(this._buffer.length + blockSize);
-    ArrayUtils.copyRange(this._buffer, 0, this._buffer.length, newBuffer, 0);
+    ArrayUtils.copyRange(this._buffer, 0, newBuffer, 0, this._buffer.length);
     this._buffer = newBuffer;
   }
 
@@ -94,11 +94,11 @@ export class OutputBuffer {
     while (this._length + bytesLength > this._buffer.length) {
       this.expandBuffer(this._length + bytesLength - this._buffer.length);
     }
-    ArrayUtils.copyRange(bytes, 0, bytesLength, this._buffer, this._length);
+    ArrayUtils.copyRange(bytes, 0, this._buffer, this._length, bytesLength);
     this._length += bytesLength;
   }
 
-  public writeBuffer(bytes: InputBuffer): void {
+  public writeBuffer(bytes: InputBuffer<Uint8Array>): void {
     const bytesLength = bytes.length;
     const requiredLength = this._length + bytesLength;
     while (requiredLength > this._buffer.length) {
@@ -107,9 +107,9 @@ export class OutputBuffer {
     ArrayUtils.copyRange(
       bytes.buffer,
       bytes.offset,
-      bytesLength,
       this._buffer,
-      this._length
+      this._length,
+      bytesLength
     );
     this._length += bytesLength;
   }

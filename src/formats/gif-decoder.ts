@@ -491,7 +491,7 @@ export class GifDecoder implements Decoder {
 
       const from = this._input!.readBytes(this._buffer![0]).toUint8Array();
 
-      ArrayUtils.copyRange(from, 0, this._buffer![0], this._buffer!, 1);
+      ArrayUtils.copyRange(from, 0, this._buffer!, 1, this._buffer![0]);
 
       nextByte = this._buffer![1];
       // We use now the second place as last char read!

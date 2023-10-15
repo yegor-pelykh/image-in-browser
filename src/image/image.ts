@@ -590,7 +590,7 @@ export class MemoryImage implements Iterable<Pixel> {
         y < opt.height;
         ++y, bOff += rowStride, dOff += dataStride
       ) {
-        ArrayUtils.copyRange(fromBytes, bOff, bOff + stride, toBytes, dOff);
+        ArrayUtils.copyRange(fromBytes, bOff, toBytes, dOff, stride);
       }
 
       if (numChannels === 3 && channelOrder === ChannelOrder.bgr) {
