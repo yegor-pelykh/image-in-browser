@@ -10,7 +10,6 @@ import {
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
-import { ImageTestUtils } from '../_utils/image-test-utils';
 
 describe('Transform', () => {
   test('copyRectify', () => {
@@ -22,8 +21,6 @@ describe('Transform', () => {
     const img = decodeJpg({
       data: input,
     });
-
-    ImageTestUtils.dumpData(img!.toUint8Array(), 'dump.txt');
 
     expect(img).toBeDefined();
     if (img === undefined) {
@@ -38,8 +35,6 @@ describe('Transform', () => {
       bottomRight: new Point(108, 141),
       interpolation: Interpolation.cubic,
     });
-
-    ImageTestUtils.dumpData(i0!.toUint8Array(), 'dump.txt');
 
     const output = encodePng({
       image: i0,
