@@ -6,7 +6,7 @@ export class FileInfo {
   public ext: string;
 
   public get fileName(): string {
-    return `${this.name}.${this.ext}`;
+    return `${this.name}${this.ext}`;
   }
 
   constructor(path: string, name: string, ext: string) {

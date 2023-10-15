@@ -745,7 +745,7 @@ describe('Format: PNG', () => {
         TestUtils.writeToFile(
           TestFolder.output,
           TestSection.png,
-          `${file.name}-${i}.${file.ext}`,
+          `${file.name}-${i}${file.ext}`,
           frame
         );
       }
