@@ -90,7 +90,7 @@ export class LzwDecoder {
     this._tableIndex = 258;
   }
 
-  public decode(p: InputBuffer, out: Uint8Array): void {
+  public decode(p: InputBuffer<Uint8Array>, out: Uint8Array): void {
     this._out = out;
     const outLen = out.length;
     this._outPointer = 0;

@@ -12,7 +12,7 @@ import { MemoryImage } from '../image/image';
 import { FrameType } from '../image/frame-type';
 
 export class IcoDecoder implements Decoder {
-  private _input?: InputBuffer;
+  private _input?: InputBuffer<Uint8Array>;
   private _info?: IcoInfo;
 
   public get numFrames(): number {
@@ -20,7 +20,7 @@ export class IcoDecoder implements Decoder {
   }
 
   public isValidFile(bytes: Uint8Array): boolean {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
     this._info = IcoInfo.read(this._input);
@@ -28,7 +28,7 @@ export class IcoDecoder implements Decoder {
   }
 
   public startDecode(bytes: Uint8Array): IcoInfo | undefined {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
     this._info = IcoInfo.read(this._input);
@@ -77,7 +77,7 @@ export class IcoDecoder implements Decoder {
     const imageBuffer = this._input.buffer.subarray(
       this._input.start + imageInfo.bytesOffset,
       this._input.start + imageInfo.bytesOffset + imageInfo.bytesSize
-    );
+    ) as Uint8Array;
 
     const png = new PngDecoder();
     if (png.isValidFile(imageBuffer)) {
@@ -96,11 +96,11 @@ export class IcoDecoder implements Decoder {
     dummyBmpHeader.writeUint32(0);
 
     const bmpInfo = new IcoBmpInfo(
-      new InputBuffer({
+      new InputBuffer<Uint8Array>({
         buffer: imageBuffer,
       }),
       new BmpFileHeader(
-        new InputBuffer({
+        new InputBuffer<Uint8Array>({
           buffer: dummyBmpHeader.getBytes(),
         })
       )
@@ -121,7 +121,7 @@ export class IcoDecoder implements Decoder {
     bmpInfo.header.imageOffset = offset;
     dummyBmpHeader.length -= 4;
     dummyBmpHeader.writeUint32(offset);
-    const inp = new InputBuffer({
+    const inp = new InputBuffer<Uint8Array>({
       buffer: imageBuffer,
     });
     const bmp = new DibDecoder(inp, bmpInfo, true);
@@ -139,10 +139,10 @@ export class IcoDecoder implements Decoder {
     // AND bitmask
     for (let y = 0; y < bmpInfo.height; y++) {
       const line = bmpInfo.readBottomUp ? y : image.height - 1 - y;
-      const row = inp.readBytes(rowLength);
+      const row = inp.readRange(rowLength);
       const p = image.getPixel(0, line);
       for (let x = 0; x < bmpInfo.width; ) {
-        const b = row.readByte();
+        const b = row.read();
         for (let j = 7; j > -1 && x < bmpInfo.width; j--) {
           if ((b & (1 << j)) !== 0) {
             // set the pixel to completely transparent.

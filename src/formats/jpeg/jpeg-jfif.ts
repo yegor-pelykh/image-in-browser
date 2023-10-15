@@ -38,8 +38,8 @@ export class JpegJfif {
     return this._yDensity;
   }
 
-  private _thumbData: InputBuffer;
-  public get thumbData(): InputBuffer {
+  private _thumbData: InputBuffer<Uint8Array>;
+  public get thumbData(): InputBuffer<Uint8Array> {
     return this._thumbData;
   }
 
@@ -51,7 +51,7 @@ export class JpegJfif {
     densityUnits: number,
     xDensity: number,
     yDensity: number,
-    thumbData: InputBuffer
+    thumbData: InputBuffer<Uint8Array>
   ) {
     this._thumbWidth = thumbWidth;
     this._thumbHeight = thumbHeight;

@@ -13,7 +13,7 @@ export class TiffDecoder implements Decoder {
   private static readonly _tiffLittleEndian = 0x4949;
   private static readonly _tiffBigEndian = 0x4d4d;
 
-  private _input!: InputBuffer;
+  private _input!: InputBuffer<Uint8Array>;
 
   private _info: TiffInfo | undefined = undefined;
   public get info(): TiffInfo | undefined {
@@ -36,7 +36,7 @@ export class TiffDecoder implements Decoder {
   /**
    * Read the TIFF header and IFD blocks.
    */
-  private readHeader(p: InputBuffer): TiffInfo | undefined {
+  private readHeader(p: InputBuffer<Uint8Array>): TiffInfo | undefined {
     const byteOrder = p.readUint16();
     if (
       byteOrder !== TiffDecoder._tiffLittleEndian &&
@@ -99,7 +99,7 @@ export class TiffDecoder implements Decoder {
    * Is the given file a valid TIFF image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    const buffer = new InputBuffer({
+    const buffer = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
     return this.readHeader(buffer) !== undefined;
@@ -110,12 +110,12 @@ export class TiffDecoder implements Decoder {
    * If the file is not a valid TIFF image, undefined is returned.
    */
   public startDecode(bytes: Uint8Array): TiffInfo | undefined {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
     this._info = this.readHeader(this._input);
     if (this.info !== undefined) {
-      const buffer = new InputBuffer({
+      const buffer = new InputBuffer<Uint8Array>({
         buffer: bytes,
       });
       this._exifData = ExifData.fromInputBuffer(buffer);
@@ -148,7 +148,7 @@ export class TiffDecoder implements Decoder {
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
 
@@ -167,7 +167,7 @@ export class TiffDecoder implements Decoder {
       return undefined;
     }
     image.exifData = ExifData.fromInputBuffer(
-      new InputBuffer({
+      new InputBuffer<Uint8Array>({
         buffer: bytes,
       })
     );

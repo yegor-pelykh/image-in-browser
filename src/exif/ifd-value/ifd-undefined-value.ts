@@ -27,7 +27,11 @@ export class IfdUndefinedValue extends IfdValue {
     }
   }
 
-  public static data(data: InputBuffer, offset?: number, length?: number) {
+  public static data(
+    data: InputBuffer<Uint8Array>,
+    offset?: number,
+    length?: number
+  ) {
     const array = new Uint8Array(data.toUint8Array(offset, length));
     return new IfdUndefinedValue(array);
   }

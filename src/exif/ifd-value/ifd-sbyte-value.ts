@@ -27,7 +27,11 @@ export class IfdSByteValue extends IfdValue {
     }
   }
 
-  public static data(data: InputBuffer, offset?: number, length?: number) {
+  public static data(
+    data: InputBuffer<Uint8Array>,
+    offset?: number,
+    length?: number
+  ) {
     const array = new Int8Array(
       new Int8Array(data.toUint8Array(offset, length).buffer)
     );

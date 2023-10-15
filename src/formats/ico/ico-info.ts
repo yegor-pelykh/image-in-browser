@@ -44,7 +44,7 @@ export class IcoInfo implements DecodeInfo {
     this._images = images;
   }
 
-  public static read(input: InputBuffer): IcoInfo | undefined {
+  public static read(input: InputBuffer<Uint8Array>): IcoInfo | undefined {
     if (input.readUint16() !== 0) {
       return undefined;
     }
@@ -64,9 +64,9 @@ export class IcoInfo implements DecodeInfo {
       imageCount,
       (_) =>
         new IcoInfoImage({
-          width: input.readByte(),
-          height: input.readByte(),
-          colorPalette: input.readByte(),
+          width: input.read(),
+          height: input.read(),
+          colorPalette: input.read(),
           // ignore 1 byte
           colorPlanes: (input.skip(1), input).readUint16(),
           bitsPerPixel: input.readUint16(),

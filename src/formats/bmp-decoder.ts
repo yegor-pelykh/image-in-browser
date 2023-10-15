@@ -8,7 +8,7 @@ import { BmpInfo } from './bmp/bmp-info';
 import { Decoder, DecoderDecodeOptions } from './decoder';
 
 export class BmpDecoder implements Decoder {
-  protected _input?: InputBuffer;
+  protected _input?: InputBuffer<Uint8Array>;
   protected _info?: BmpInfo;
   protected _forceRgba: boolean;
 
@@ -25,7 +25,7 @@ export class BmpDecoder implements Decoder {
    */
   public isValidFile(bytes: Uint8Array): boolean {
     return BmpFileHeader.isValidFile(
-      new InputBuffer({
+      new InputBuffer<Uint8Array>({
         buffer: bytes,
       })
     );
@@ -35,7 +35,7 @@ export class BmpDecoder implements Decoder {
     if (!this.isValidFile(bytes)) {
       return undefined;
     }
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
     this._info = new BmpInfo(this._input);
@@ -91,7 +91,7 @@ export class BmpDecoder implements Decoder {
 
     for (let y = image.height - 1; y >= 0; --y) {
       const line = inf.readBottomUp ? y : image.height - 1 - y;
-      const row = this._input.readBytes(rowStride);
+      const row = this._input.readRange(rowStride);
       const w = image.width;
       let x = 0;
       const p = image.getPixel(0, line);

@@ -61,13 +61,13 @@ export class GifImageDesc {
     return this._inputPosition;
   }
 
-  constructor(input: InputBuffer) {
+  constructor(input: InputBuffer<Uint8Array>) {
     this._x = input.readUint16();
     this._y = input.readUint16();
     this._width = input.readUint16();
     this._height = input.readUint16();
 
-    const b = input.readByte();
+    const b = input.read();
     const bitsPerPixel = (b & 0x07) + 1;
 
     this._interlaced = (b & 0x40) !== 0;
@@ -75,12 +75,7 @@ export class GifImageDesc {
     if ((b & 0x80) !== 0) {
       this._colorMap = new GifColorMap(1 << bitsPerPixel);
       for (let i = 0; i < this._colorMap.numColors; ++i) {
-        this._colorMap.setColor(
-          i,
-          input.readByte(),
-          input.readByte(),
-          input.readByte()
-        );
+        this._colorMap.setColor(i, input.read(), input.read(), input.read());
       }
     }
 

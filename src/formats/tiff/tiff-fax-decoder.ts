@@ -545,7 +545,7 @@ export class TiffFaxDecoder {
   private _changingElemSize = 0;
   private _prevChangingElements?: Array<number>;
   private _currChangingElements?: Array<number>;
-  private _data!: InputBuffer;
+  private _data!: InputBuffer<Uint8Array>;
   private _bitPointer = 0;
   private _bytePointer = 0;
 
@@ -576,31 +576,30 @@ export class TiffFaxDecoder {
     const bp = this._bytePointer;
 
     if (this._fillOrder === 1) {
-      b = this._data.getByte(bp);
+      b = this._data.get(bp);
 
       if (bp === l) {
         next = 0x00;
         next2next = 0x00;
       } else if (bp + 1 === l) {
-        next = this._data.getByte(bp + 1);
+        next = this._data.get(bp + 1);
         next2next = 0x00;
       } else {
-        next = this._data.getByte(bp + 1);
-        next2next = this._data.getByte(bp + 2);
+        next = this._data.get(bp + 1);
+        next2next = this._data.get(bp + 2);
       }
     } else if (this._fillOrder === 2) {
-      b = TiffFaxDecoder._flipTable[this._data.getByte(bp) & 0xff];
+      b = TiffFaxDecoder._flipTable[this._data.get(bp) & 0xff];
 
       if (bp === l) {
         next = 0x00;
         next2next = 0x00;
       } else if (bp + 1 === l) {
-        next = TiffFaxDecoder._flipTable[this._data.getByte(bp + 1) & 0xff];
+        next = TiffFaxDecoder._flipTable[this._data.get(bp + 1) & 0xff];
         next2next = 0x00;
       } else {
-        next = TiffFaxDecoder._flipTable[this._data.getByte(bp + 1) & 0xff];
-        next2next =
-          TiffFaxDecoder._flipTable[this._data.getByte(bp + 2) & 0xff];
+        next = TiffFaxDecoder._flipTable[this._data.get(bp + 1) & 0xff];
+        next2next = TiffFaxDecoder._flipTable[this._data.get(bp + 2) & 0xff];
       }
     } else {
       throw new LibError('TIFFFaxDecoder7');
@@ -649,18 +648,18 @@ export class TiffFaxDecoder {
     const bp = this._bytePointer;
 
     if (this._fillOrder === 1) {
-      b = this._data.getByte(bp);
+      b = this._data.get(bp);
       if (bp === l) {
         next = 0x00;
       } else {
-        next = this._data.getByte(bp + 1);
+        next = this._data.get(bp + 1);
       }
     } else if (this._fillOrder === 2) {
-      b = TiffFaxDecoder._flipTable[this._data.getByte(bp) & 0xff];
+      b = TiffFaxDecoder._flipTable[this._data.get(bp) & 0xff];
       if (bp === l) {
         next = 0x00;
       } else {
-        next = TiffFaxDecoder._flipTable[this._data.getByte(bp + 1) & 0xff];
+        next = TiffFaxDecoder._flipTable[this._data.get(bp + 1) & 0xff];
       }
     } else {
       throw new LibError('TIFFFaxDecoder7');
@@ -720,7 +719,7 @@ export class TiffFaxDecoder {
   }
 
   private setToBlack(
-    buffer: InputBuffer,
+    buffer: InputBuffer<Uint8Array>,
     lineOffset: number,
     bitOffset: number,
     numBits: number
@@ -734,35 +733,32 @@ export class TiffFaxDecoder {
     const shift = bitNum & 0x7;
     if (shift > 0) {
       let maskVal = 1 << (7 - shift);
-      let val = buffer.getByte(byteNum);
+      let val = buffer.get(byteNum);
       while (maskVal > 0 && bitNum < lastBit) {
         val |= maskVal;
         maskVal >>>= 1;
         ++bitNum;
       }
-      buffer.setByte(byteNum, val);
+      buffer.set(byteNum, val);
     }
 
     // Fill in 8 bits at a time
     byteNum = bitNum >>> 3;
     while (bitNum < lastBit - 7) {
-      buffer.setByte(byteNum++, 255);
+      buffer.set(byteNum++, 255);
       bitNum += 8;
     }
 
     // Fill in remaining bits
     while (bitNum < lastBit) {
-      byteNum = bitNum >> 3;
-      buffer.setByte(
-        byteNum,
-        buffer.getByte(byteNum) | (1 << (7 - (bitNum & 0x7)))
-      );
+      byteNum = bitNum >>> 3;
+      buffer.set(byteNum, buffer.get(byteNum) | (1 << (7 - (bitNum & 0x7))));
       ++bitNum;
     }
   }
 
   private decodeNextScanline(
-    buffer: InputBuffer,
+    buffer: InputBuffer<Uint8Array>,
     lineOffset: number,
     bitOffset: number
   ): void {
@@ -1128,8 +1124,8 @@ export class TiffFaxDecoder {
    * One-dimensional decoding methods
    */
   public decode1D(
-    out: InputBuffer,
-    compData: InputBuffer,
+    out: InputBuffer<Uint8Array>,
+    compData: InputBuffer<Uint8Array>,
     startX: number,
     height: number
   ): void {
@@ -1150,8 +1146,8 @@ export class TiffFaxDecoder {
    * Two-dimensional decoding methods
    */
   public decode2D(
-    out: InputBuffer,
-    compData: InputBuffer,
+    out: InputBuffer<Uint8Array>,
+    compData: InputBuffer<Uint8Array>,
     startX: number,
     height: number,
     tiffT4Options: number
@@ -1305,8 +1301,8 @@ export class TiffFaxDecoder {
   }
 
   public decodeT6(
-    out: InputBuffer,
-    compData: InputBuffer,
+    out: InputBuffer<Uint8Array>,
+    compData: InputBuffer<Uint8Array>,
     startX: number,
     height: number,
     tiffT6Options: number

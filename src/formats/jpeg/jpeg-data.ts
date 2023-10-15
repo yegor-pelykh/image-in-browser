@@ -44,8 +44,8 @@ export class JpegData {
   // JPEG limit on sampling factors
   public static readonly maxSamplingFactor = 4;
 
-  private _input!: InputBuffer;
-  public get input(): InputBuffer {
+  private _input!: InputBuffer<Uint8Array>;
+  public get input(): InputBuffer<Uint8Array> {
     return this._input;
   }
 
@@ -199,16 +199,16 @@ export class JpegData {
 
         // Fill bytes
         case 0xff:
-          if (this._input.getByte(0) !== 0xff) {
+          if (this._input.get(0) !== 0xff) {
             this._input.skip(-1);
           }
           break;
 
         default:
           if (
-            this._input.getByte(-3) === 0xff &&
-            this._input.getByte(-2) >= 0xc0 &&
-            this._input.getByte(-2) <= 0xfe
+            this._input.get(-3) === 0xff &&
+            this._input.get(-2) >= 0xc0 &&
+            this._input.get(-2) <= 0xfe
           ) {
             // Could be incorrect encoding -- last 0xFF byte of the previous
             // block was eaten by the encoder
@@ -235,15 +235,15 @@ export class JpegData {
   }
 
   public validate(bytes: Uint8Array): boolean {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
     });
 
     // Some other formats have embedded jpeg, or jpeg-like data.
     // Only validate if the image starts with the StartOfImage tag.
-    const soiCheck = this._input.peekBytes(2);
-    if (soiCheck.getByte(0) !== 0xff || soiCheck.getByte(1) !== 0xd8) {
+    const soiCheck = this._input.peek(2);
+    if (soiCheck.get(0) !== 0xff || soiCheck.get(1) !== 0xd8) {
       return false;
     }
 
@@ -292,7 +292,7 @@ export class JpegData {
   }
 
   public readInfo(bytes: Uint8Array): JpegInfo | undefined {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
     });
@@ -346,7 +346,7 @@ export class JpegData {
   }
 
   public read(bytes: Uint8Array): void {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
     });
@@ -483,12 +483,12 @@ export class JpegData {
     return Math.trunc(val * one) & 0xffffffff;
   }
 
-  private readBlock(): InputBuffer {
+  private readBlock(): InputBuffer<Uint8Array> {
     const length = this._input.readUint16();
     if (length < 2) {
       throw new LibError('Invalid Block');
     }
-    return this._input.readBytes(length - 2);
+    return this._input.readRange(length - 2);
   }
 
   private nextMarker(): number {
@@ -499,7 +499,7 @@ export class JpegData {
 
     do {
       do {
-        c = this._input.readByte();
+        c = this._input.read();
       } while (c !== 0xff && !this._input.isEOS);
 
       if (this._input.isEOS) {
@@ -507,14 +507,14 @@ export class JpegData {
       }
 
       do {
-        c = this._input.readByte();
+        c = this._input.read();
       } while (c === 0xff && !this._input.isEOS);
     } while (c === 0 && !this._input.isEOS);
 
     return c;
   }
 
-  private readExifData(block: InputBuffer): void {
+  private readExifData(block: InputBuffer<Uint8Array>): void {
     // Exif Header
     // Exif\0\0
     const exifSignature = 0x45786966;
@@ -529,25 +529,25 @@ export class JpegData {
     this.exifData.read(block);
   }
 
-  private readAppData(marker: number, block: InputBuffer): void {
+  private readAppData(marker: number, block: InputBuffer<Uint8Array>): void {
     const appData = block;
 
     if (marker === JpegMarker.app0) {
       // 'JFIF\0'
       if (
-        appData.getByte(0) === 0x4a &&
-        appData.getByte(1) === 0x46 &&
-        appData.getByte(2) === 0x49 &&
-        appData.getByte(3) === 0x46 &&
-        appData.getByte(4) === 0
+        appData.get(0) === 0x4a &&
+        appData.get(1) === 0x46 &&
+        appData.get(2) === 0x49 &&
+        appData.get(3) === 0x46 &&
+        appData.get(4) === 0
       ) {
-        const majorVersion = appData.getByte(5);
-        const minorVersion = appData.getByte(6);
-        const densityUnits = appData.getByte(7);
-        const xDensity = (appData.getByte(8) << 8) | appData.getByte(9);
-        const yDensity = (appData.getByte(10) << 8) | appData.getByte(11);
-        const thumbWidth = appData.getByte(12);
-        const thumbHeight = appData.getByte(13);
+        const majorVersion = appData.get(5);
+        const minorVersion = appData.get(6);
+        const densityUnits = appData.get(7);
+        const xDensity = (appData.get(8) << 8) | appData.get(9);
+        const yDensity = (appData.get(10) << 8) | appData.get(11);
+        const thumbWidth = appData.get(12);
+        const thumbHeight = appData.get(13);
 
         const thumbSize = 3 * thumbWidth * thumbHeight;
         const thumbData = appData.subarray(14 + thumbSize, undefined, 14);
@@ -569,17 +569,17 @@ export class JpegData {
     } else if (marker === JpegMarker.app14) {
       // 'Adobe\0'
       if (
-        appData.getByte(0) === 0x41 &&
-        appData.getByte(1) === 0x64 &&
-        appData.getByte(2) === 0x6f &&
-        appData.getByte(3) === 0x62 &&
-        appData.getByte(4) === 0x65 &&
-        appData.getByte(5) === 0
+        appData.get(0) === 0x41 &&
+        appData.get(1) === 0x64 &&
+        appData.get(2) === 0x6f &&
+        appData.get(3) === 0x62 &&
+        appData.get(4) === 0x65 &&
+        appData.get(5) === 0
       ) {
-        const version = appData.getByte(6);
-        const flags0 = (appData.getByte(7) << 8) | appData.getByte(8);
-        const flags1 = (appData.getByte(9) << 8) | appData.getByte(10);
-        const transformCode = appData.getByte(11);
+        const version = appData.get(6);
+        const flags0 = (appData.get(7) << 8) | appData.get(8);
+        const flags1 = (appData.get(9) << 8) | appData.get(10);
+        const transformCode = appData.get(11);
         this._adobe = new JpegAdobe(version, flags0, flags1, transformCode);
       }
     } else if (marker === JpegMarker.com) {
@@ -593,7 +593,7 @@ export class JpegData {
     }
   }
 
-  private readDQT(block: InputBuffer): void {
+  private readDQT(block: InputBuffer<Uint8Array>): void {
     while (!block.isEOS) {
       let n = block.read();
       const prec = n >>> 4;
@@ -610,8 +610,7 @@ export class JpegData {
       const tableData = this._quantizationTables[n];
       if (tableData !== undefined) {
         for (let i = 0; i < JpegData.dctSize2; i++) {
-          const tmp: number =
-            prec !== 0 ? block.readUint16() : block.readByte();
+          const tmp: number = prec !== 0 ? block.readUint16() : block.read();
           tableData[JpegData.dctZigZag[i]] = tmp;
         }
       }
@@ -622,26 +621,26 @@ export class JpegData {
     }
   }
 
-  private readFrame(marker: number, block: InputBuffer): void {
+  private readFrame(marker: number, block: InputBuffer<Uint8Array>): void {
     if (this._frame !== undefined) {
       throw new LibError('Duplicate JPG frame data found.');
     }
 
     const extended = marker === JpegMarker.sof1;
     const progressive = marker === JpegMarker.sof2;
-    const precision = block.readByte();
+    const precision = block.read();
     const scanLines = block.readUint16();
     const samplesPerLine = block.readUint16();
 
-    const numComponents = block.readByte();
+    const numComponents = block.read();
     const components = new Map<number, JpegComponent>();
     const componentsOrder = new Array<number>();
     for (let i = 0; i < numComponents; i++) {
-      const componentId = block.readByte();
-      const x = block.readByte();
+      const componentId = block.read();
+      const x = block.read();
       const h = (x >>> 4) & 15;
       const v = x & 15;
-      const qId = block.readByte();
+      const qId = block.read();
       componentsOrder.push(componentId);
       const component = new JpegComponent(h, v, this._quantizationTables, qId);
       components.set(componentId, component);
@@ -662,18 +661,18 @@ export class JpegData {
     this.frames.push(this._frame);
   }
 
-  private readDHT(block: InputBuffer): void {
+  private readDHT(block: InputBuffer<Uint8Array>): void {
     while (!block.isEOS) {
-      let index = block.readByte();
+      let index = block.read();
 
       const bits = new Uint8Array(16);
       let count = 0;
       for (let j = 0; j < 16; j++) {
-        bits[j] = block.readByte();
+        bits[j] = block.read();
         count += bits[j];
       }
 
-      const huffmanValues = block.readBytes(count).toUint8Array();
+      const huffmanValues = block.readRange(count).toUint8Array();
 
       let ht: Array<Array<HuffmanNode | undefined> | undefined> = [];
       if ((index & 0x10) !== 0) {
@@ -693,20 +692,20 @@ export class JpegData {
     }
   }
 
-  private readDRI(block: InputBuffer): void {
+  private readDRI(block: InputBuffer<Uint8Array>): void {
     this._resetInterval = block.readUint16();
   }
 
-  private readSOS(block: InputBuffer): void {
-    const n = block.readByte();
+  private readSOS(block: InputBuffer<Uint8Array>): void {
+    const n = block.read();
     if (n < 1 || n > JpegData.maxCompsInScan) {
       throw new LibError('Invalid SOS block');
     }
 
     const components = new Array<JpegComponent>();
     for (let i = 0; i < n; i++) {
-      const id = block.readByte();
-      const c = block.readByte();
+      const id = block.read();
+      const c = block.read();
 
       if (!this._frame!.components.has(id)) {
         throw new LibError('Invalid Component in SOS block');
@@ -725,9 +724,9 @@ export class JpegData {
       }
     }
 
-    const spectralStart = block.readByte();
-    const spectralEnd = block.readByte();
-    const successiveApproximation = block.readByte();
+    const spectralStart = block.read();
+    const spectralEnd = block.read();
+    const successiveApproximation = block.read();
 
     const ah = (successiveApproximation >>> 4) & 15;
     const al = successiveApproximation & 15;

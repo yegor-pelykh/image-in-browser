@@ -20,7 +20,7 @@ export class BmpFileHeader {
     return this._imageOffset;
   }
 
-  constructor(b: InputBuffer) {
+  constructor(b: InputBuffer<Uint8Array>) {
     if (!BmpFileHeader.isValidFile(b)) {
       throw new LibError('Not a bitmap file.');
     }
@@ -31,7 +31,7 @@ export class BmpFileHeader {
     this._imageOffset = b.readInt32();
   }
 
-  public static isValidFile(b: InputBuffer): boolean {
+  public static isValidFile(b: InputBuffer<Uint8Array>): boolean {
     if (b.length < 2) {
       return false;
     }

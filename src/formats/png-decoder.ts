@@ -29,8 +29,8 @@ import { Pixel } from '../image/pixel';
  * Decode a PNG encoded image.
  */
 export class PngDecoder implements Decoder {
-  private _input?: InputBuffer;
-  public get input(): InputBuffer | undefined {
+  private _input?: InputBuffer<Uint8Array>;
+  public get input(): InputBuffer<Uint8Array> | undefined {
     return this._input;
   }
 
@@ -137,7 +137,7 @@ export class PngDecoder implements Decoder {
    * Process a pass of an interlaced image.
    */
   private processPass(
-    input: InputBuffer,
+    input: InputBuffer<Uint8Array>,
     image: MemoryImage,
     xOffset: number,
     yOffset: number,
@@ -169,8 +169,8 @@ export class PngDecoder implements Decoder {
       srcY < passHeight;
       ++srcY, dstY += yStep, ri = 1 - ri, this._progressY++
     ) {
-      const filterType = input.readByte() as PngFilterType;
-      inData[ri] = input.readBytes(rowBytes).toUint8Array();
+      const filterType = input.read() as PngFilterType;
+      inData[ri] = input.readRange(rowBytes).toUint8Array();
 
       const row = inData[ri]!;
       const prevRow = inData[1 - ri];
@@ -183,7 +183,7 @@ export class PngDecoder implements Decoder {
       // reset the bit stream counter.
       this.resetBits();
 
-      const rowInput = new InputBuffer({
+      const rowInput = new InputBuffer<Uint8Array>({
         buffer: row,
         bigEndian: true,
       });
@@ -212,7 +212,7 @@ export class PngDecoder implements Decoder {
     }
   }
 
-  private process(input: InputBuffer, image: MemoryImage): void {
+  private process(input: InputBuffer<Uint8Array>, image: MemoryImage): void {
     let channels = 1;
     if (this._info.colorType === PngColorType.grayscaleAlpha) {
       channels = 2;
@@ -238,8 +238,8 @@ export class PngDecoder implements Decoder {
     const pIter = image[Symbol.iterator]();
     let pIterRes = pIter.next();
     for (let y = 0, ri = 0; y < h; ++y, ri = 1 - ri) {
-      const filterType = input.readByte() as PngFilterType;
-      inData[ri] = input.readBytes(rowBytes).toUint8Array();
+      const filterType = input.read() as PngFilterType;
+      inData[ri] = input.readRange(rowBytes).toUint8Array();
 
       const row = inData[ri];
       const prevRow = inData[1 - ri];
@@ -252,7 +252,7 @@ export class PngDecoder implements Decoder {
       // reset the bit stream counter.
       this.resetBits();
 
-      const rowInput = new InputBuffer({
+      const rowInput = new InputBuffer<Uint8Array>({
         buffer: inData[ri],
         bigEndian: true,
       });
@@ -273,13 +273,13 @@ export class PngDecoder implements Decoder {
   /**
    * Read a number of bits from the input stream.
    */
-  private readBits(input: InputBuffer, numBits: number): number {
+  private readBits(input: InputBuffer<Uint8Array>, numBits: number): number {
     if (numBits === 0) {
       return 0;
     }
 
     if (numBits === 8) {
-      return input.readByte();
+      return input.read();
     }
 
     if (numBits === 16) {
@@ -293,7 +293,7 @@ export class PngDecoder implements Decoder {
       }
 
       // Input byte
-      const octet = input.readByte();
+      const octet = input.read();
 
       // Concat octet
       this._bitBuffer = octet << this._bitBufferLen;
@@ -333,7 +333,7 @@ export class PngDecoder implements Decoder {
   /**
    * Read the next pixel from the input stream.
    */
-  private readPixel(input: InputBuffer, pixel: number[]): void {
+  private readPixel(input: InputBuffer<Uint8Array>, pixel: number[]): void {
     switch (this._info.colorType) {
       case PngColorType.grayscale:
         pixel[0] = this.readBits(input, this._info.bits!);
@@ -411,14 +411,14 @@ export class PngDecoder implements Decoder {
    * Is the given file a valid PNG image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
     });
-    const headerBytes = this._input.readBytes(8);
+    const headerBytes = this._input.readRange(8);
     const expectedHeaderBytes = [137, 80, 78, 71, 13, 10, 26, 10];
     for (let i = 0; i < 8; ++i) {
-      if (headerBytes.getByte(i) !== expectedHeaderBytes[i]) {
+      if (headerBytes.get(i) !== expectedHeaderBytes[i]) {
         return false;
       }
     }
@@ -441,7 +441,7 @@ export class PngDecoder implements Decoder {
       switch (chunkType) {
         case 'tEXt':
           {
-            const txtData = this._input.readBytes(chunkSize).toUint8Array();
+            const txtData = this._input.readRange(chunkSize).toUint8Array();
             const l = txtData.length;
             for (let i = 0; i < l; ++i) {
               if (txtData[i] === 0) {
@@ -460,15 +460,15 @@ export class PngDecoder implements Decoder {
           }
           break;
         case 'IHDR': {
-          const hdr = InputBuffer.from(this._input.readBytes(chunkSize));
+          const hdr = InputBuffer.from(this._input.readRange(chunkSize));
           const hdrBytes: Uint8Array = hdr.toUint8Array();
           this._info.width = hdr.readUint32();
           this._info.height = hdr.readUint32();
-          this._info.bits = hdr.readByte();
-          this._info.colorType = hdr.readByte();
-          this._info.compressionMethod = hdr.readByte();
-          this._info.filterMethod = hdr.readByte();
-          this._info.interlaceMethod = hdr.readByte();
+          this._info.bits = hdr.read();
+          this._info.colorType = hdr.read();
+          this._info.compressionMethod = hdr.read();
+          this._info.filterMethod = hdr.read();
+          this._info.interlaceMethod = hdr.read();
 
           if (this._info.filterMethod !== 0) {
             return undefined;
@@ -513,7 +513,7 @@ export class PngDecoder implements Decoder {
           break;
         }
         case 'PLTE': {
-          this._info.palette = this._input.readBytes(chunkSize).toUint8Array();
+          this._info.palette = this._input.readRange(chunkSize).toUint8Array();
           const crc = this._input.readUint32();
           const computedCrc = PngDecoder.crc(chunkType, this._info.palette);
           if (crc !== computedCrc) {
@@ -523,7 +523,7 @@ export class PngDecoder implements Decoder {
         }
         case 'tRNS': {
           this._info.transparency = this._input
-            .readBytes(chunkSize)
+            .readRange(chunkSize)
             .toUint8Array();
           const crc = this._input.readUint32();
           const computedCrc = PngDecoder.crc(
@@ -579,8 +579,8 @@ export class PngDecoder implements Decoder {
           const yOffset = this._input.readUint32();
           const delayNum = this._input.readUint16();
           const delayDen = this._input.readUint16();
-          const dispose = this._input.readByte() as PngDisposeMode;
-          const blend = this._input.readByte() as PngBlendMode;
+          const dispose = this._input.read() as PngDisposeMode;
+          const blend = this._input.read() as PngBlendMode;
           // CRC
           this._input.skip(4);
 
@@ -609,7 +609,7 @@ export class PngDecoder implements Decoder {
         }
         case 'bKGD': {
           if (this._info.colorType === PngColorType.indexed) {
-            const paletteIndex = this._input.readByte();
+            const paletteIndex = this._input.read();
             chunkSize--;
             const p3 = paletteIndex * 3;
             const r = this._info.palette![p3]!;
@@ -656,9 +656,9 @@ export class PngDecoder implements Decoder {
         case 'iCCP': {
           this._info.iccpName = this._input.readString();
           // 0: deflate
-          this._info.iccpCompression = this._input.readByte();
+          this._info.iccpCompression = this._input.read();
           chunkSize -= this._info.iccpName.length + 2;
-          const profile = this._input.readBytes(chunkSize);
+          const profile = this._input.readRange(chunkSize);
           this._info.iccpData = profile.toUint8Array();
           // CRC
           this._input.skip(4);
@@ -704,7 +704,7 @@ export class PngDecoder implements Decoder {
         this._input.offset = this._info.idat[i];
         const chunkSize = this._input.readUint32();
         const chunkType = this._input.readString(4);
-        const data = this._input.readBytes(chunkSize).toUint8Array();
+        const data = this._input.readRange(chunkSize).toUint8Array();
         totalSize += data.length;
         dataBlocks.push(data);
         const crc = this._input.readUint32();
@@ -736,7 +736,7 @@ export class PngDecoder implements Decoder {
         this._input.readString(4);
         // Sequence number
         this._input.skip(4);
-        const data = this._input.readBytes(chunkSize - 4).toUint8Array();
+        const data = this._input.readRange(chunkSize - 4).toUint8Array();
         totalSize += data.length;
         dataBlocks.push(data);
       }
@@ -769,7 +769,7 @@ export class PngDecoder implements Decoder {
     }
 
     // Input is the decompressed data.
-    const input = new InputBuffer({
+    const input = new InputBuffer<Uint8Array>({
       buffer: uncompressed,
       bigEndian: true,
     });

@@ -99,7 +99,10 @@ export class ExifData extends IfdContainer {
     }
   }
 
-  private readEntry(block: InputBuffer, blockOffset: number): ExifEntry {
+  private readEntry(
+    block: InputBuffer<Uint8Array>,
+    blockOffset: number
+  ): ExifEntry {
     const tag = block.readUint16();
     const format = block.readUint16();
     const count = block.readUint32();
@@ -123,7 +126,7 @@ export class ExifData extends IfdContainer {
       return entry;
     }
 
-    const data = block.readBytes(size);
+    const data = block.readRange(size);
 
     switch (f) {
       case IfdValueType.none:
@@ -176,7 +179,7 @@ export class ExifData extends IfdContainer {
     return new ExifData(dirs);
   }
 
-  public static fromInputBuffer(input: InputBuffer) {
+  public static fromInputBuffer(input: InputBuffer<Uint8Array>) {
     const data = new ExifData();
     data.read(input);
     return data;
@@ -309,7 +312,7 @@ export class ExifData extends IfdContainer {
     out.bigEndian = saveEndian;
   }
 
-  public read(block: InputBuffer): boolean {
+  public read(block: InputBuffer<Uint8Array>): boolean {
     const saveEndian = block.bigEndian;
     block.bigEndian = true;
 

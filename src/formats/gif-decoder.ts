@@ -39,7 +39,7 @@ export class GifDecoder implements Decoder {
   private static readonly _interlacedOffset: number[] = [0, 4, 2, 1];
   private static readonly _interlacedJump: number[] = [8, 8, 4, 2];
 
-  private _input?: InputBuffer;
+  private _input?: InputBuffer<Uint8Array>;
 
   private _info?: GifInfo;
 
@@ -150,12 +150,12 @@ export class GifDecoder implements Decoder {
     const width = this._input.readUint16();
     const height = this._input.readUint16();
 
-    const b = this._input.readByte();
+    const b = this._input.read();
     const colorResolution = (((b & 0x70) + 1) >>> 4) + 1;
 
     const bitsPerPixel = (b & 0x07) + 1;
     const backgroundColor = new ColorUint8(
-      new Uint8Array([this._input.readByte()])
+      new Uint8Array([this._input.read()])
     );
 
     this._input.skip(1);
@@ -167,9 +167,9 @@ export class GifDecoder implements Decoder {
 
       // Get the global color map:
       for (let i = 0; i < globalColorMap.numColors; ++i) {
-        const r = this._input.readByte();
-        const g = this._input.readByte();
-        const b = this._input.readByte();
+        const r = this._input.read();
+        const g = this._input.read();
+        const b = this._input.read();
         globalColorMap.setColor(i, r, g, b);
       }
     }
@@ -207,23 +207,23 @@ export class GifDecoder implements Decoder {
     if (this._input === undefined || this._input.isEOS) {
       return true;
     }
-    let b = this._input.readByte();
+    let b = this._input.read();
     while (b !== 0 && !this._input.isEOS) {
       this._input.skip(b);
       if (this._input.isEOS) {
         return true;
       }
-      b = this._input.readByte();
+      b = this._input.read();
     }
     return true;
   }
 
-  private readApplicationExt(input: InputBuffer): void {
-    const blockSize = input.readByte();
+  private readApplicationExt(input: InputBuffer<Uint8Array>): void {
+    const blockSize = input.read();
     const tag = input.readString(blockSize);
     if (tag === 'NETSCAPE2.0') {
-      const b1 = input.readByte();
-      const b2 = input.readByte();
+      const b1 = input.read();
+      const b2 = input.read();
       if (b1 === 0x03 && b2 === 0x01) {
         this._repeat = input.readUint16();
       }
@@ -232,19 +232,19 @@ export class GifDecoder implements Decoder {
     }
   }
 
-  private readGraphicsControlExt(input: InputBuffer): void {
+  private readGraphicsControlExt(input: InputBuffer<Uint8Array>): void {
     /* const blockSize: number = */
-    input.readByte();
-    const b = input.readByte();
+    input.read();
+    const b = input.read();
     this._duration = input.readUint16();
-    this._transparent = input.readByte();
+    this._transparent = input.read();
     /* const endBlock: number = */
-    input.readByte();
+    input.read();
     this._disposalMethod = (b >>> 2) & 0x7;
     // const userInput: number = (b >>> 1) & 0x1;
     this._transparentFlag = b & 0x1;
 
-    const recordType = input.peekBytes(1).getByte(0);
+    const recordType = input.peek(1).get(0);
     if (recordType === GifDecoder._imageDescRecordType) {
       input.skip(1);
       const gifImage = this.skipImage();
@@ -480,7 +480,7 @@ export class GifDecoder implements Decoder {
     let nextByte = 0;
     if (this._buffer![0] === 0) {
       // Needs to read the next buffer - this one is empty:
-      this._buffer![0] = this._input!.readByte();
+      this._buffer![0] = this._input!.read();
 
       // There shouldn't be any empty data blocks here as the LZW spec
       // says the LZW termination code should come first. Therefore we
@@ -489,7 +489,7 @@ export class GifDecoder implements Decoder {
         return undefined;
       }
 
-      const from = this._input!.readBytes(this._buffer![0]).toUint8Array();
+      const from = this._input!.readRange(this._buffer![0]).toUint8Array();
 
       ArrayUtils.copyRange(from, 0, this._buffer!, 1, this._buffer![0]);
 
@@ -521,7 +521,7 @@ export class GifDecoder implements Decoder {
       this.initDecode();
     }
 
-    this._bitsPerPixel = this._input.readByte();
+    this._bitsPerPixel = this._input.read();
     this._clearCode = 1 << this._bitsPerPixel;
     this._eofCode = this._clearCode + 1;
     this._runningCode = this._eofCode + 1;
@@ -590,7 +590,7 @@ export class GifDecoder implements Decoder {
    * Is the given file a valid Gif image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
     return this.getInfo();
@@ -601,7 +601,7 @@ export class GifDecoder implements Decoder {
    * If the file is not a valid Gif image, undefined is returned.
    */
   public startDecode(bytes: Uint8Array): GifInfo | undefined {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
 
@@ -611,7 +611,7 @@ export class GifDecoder implements Decoder {
 
     try {
       while (!this._input.isEOS) {
-        const recordType = this._input.readByte();
+        const recordType = this._input.read();
         switch (recordType) {
           case GifDecoder._imageDescRecordType: {
             const gifImage = this.skipImage();
@@ -637,7 +637,7 @@ export class GifDecoder implements Decoder {
             break;
           }
           case GifDecoder._extensionRecordType: {
-            const extCode = this._input.readByte();
+            const extCode = this._input.read();
             if (extCode === GifDecoder._applicationExt) {
               this.readApplicationExt(this._input);
             } else if (extCode === GifDecoder._graphicControlExt) {

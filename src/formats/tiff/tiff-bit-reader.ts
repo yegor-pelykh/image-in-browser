@@ -9,9 +9,9 @@ export class TiffBitReader {
 
   private _bitPosition = 0;
 
-  private _input: InputBuffer;
+  private _input: InputBuffer<Uint8Array>;
 
-  constructor(input: InputBuffer) {
+  constructor(input: InputBuffer<Uint8Array>) {
     this._input = input;
   }
 
@@ -26,7 +26,7 @@ export class TiffBitReader {
 
     if (this._bitPosition === 0) {
       this._bitPosition = 8;
-      this._bitBuffer = this._input.readByte();
+      this._bitBuffer = this._input.read();
     }
 
     let value = 0;
@@ -37,13 +37,13 @@ export class TiffBitReader {
         (this._bitBuffer & TiffBitReader._bitMask[this._bitPosition]);
       nBits -= this._bitPosition;
       this._bitPosition = 8;
-      this._bitBuffer = this._input.readByte();
+      this._bitBuffer = this._input.read();
     }
 
     if (nBits > 0) {
       if (this._bitPosition === 0) {
         this._bitPosition = 8;
-        this._bitBuffer = this._input.readByte();
+        this._bitBuffer = this._input.read();
       }
 
       value =

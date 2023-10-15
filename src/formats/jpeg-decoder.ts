@@ -11,7 +11,7 @@ import { JpegInfo } from './jpeg/jpeg-info';
  * Decode a jpeg encoded image.
  */
 export class JpegDecoder implements Decoder {
-  private _input?: InputBuffer;
+  private _input?: InputBuffer<Uint8Array>;
   private _info?: JpegInfo;
 
   public get numFrames(): number {
@@ -26,7 +26,7 @@ export class JpegDecoder implements Decoder {
   }
 
   public startDecode(bytes: Uint8Array): JpegInfo | undefined {
-    this._input = new InputBuffer({
+    this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
     });
@@ -40,7 +40,7 @@ export class JpegDecoder implements Decoder {
     }
 
     const jpeg = new JpegData();
-    jpeg.read(this._input.buffer);
+    jpeg.read(this._input.buffer as Uint8Array);
     if (jpeg.frames.length !== 1) {
       throw new LibError('Only single frame JPEGs supported.');
     }

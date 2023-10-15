@@ -63,7 +63,7 @@ describe('Exif', () => {
     exif.write(out);
 
     const exif1 = new ExifData();
-    const input = new InputBuffer({
+    const input = new InputBuffer<Uint8Array>({
       buffer: out.getBytes(),
     });
     exif1.read(input);

@@ -21,7 +21,7 @@ export interface TiffEntryInitOptions {
   tag: number;
   type: number;
   count: number;
-  p: InputBuffer;
+  p: InputBuffer<Uint8Array>;
   valueOffset: number;
 }
 
@@ -51,8 +51,8 @@ export class TiffEntry {
     return this._value;
   }
 
-  private _p: InputBuffer;
-  public get p(): InputBuffer {
+  private _p: InputBuffer<Uint8Array>;
+  public get p(): InputBuffer<Uint8Array> {
     return this._p;
   }
 
@@ -82,7 +82,7 @@ export class TiffEntry {
     }
 
     this._p.offset = this._valueOffset;
-    const data = this.p.readBytes(this._count * this.typeSize);
+    const data = this.p.readRange(this._count * this.typeSize);
     switch (this._type) {
       case IfdValueType.byte:
         return (this._value = IfdByteValue.data(data, this._count));

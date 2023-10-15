@@ -117,15 +117,15 @@ export class TgaInfo implements DecodeInfo {
     );
   }
 
-  public read(header: InputBuffer): void {
+  public read(header: InputBuffer<Uint8Array>): void {
     if (header.length < 18) {
       return;
     }
     // 0
-    this._idLength = header.readByte();
+    this._idLength = header.read();
     // 1
-    this._colorMapType = header.readByte();
-    const it = header.readByte();
+    this._colorMapType = header.read();
+    const it = header.read();
     // 2
     this._imageType =
       it < TgaImageTypeLength ? (it as TgaImageType) : TgaImageType.none;
@@ -134,7 +134,7 @@ export class TgaInfo implements DecodeInfo {
     // 5
     this._colorMapLength = header.readUint16();
     // 7
-    this._colorMapDepth = header.readByte();
+    this._colorMapDepth = header.read();
     // 8
     this._offsetX = header.readUint16();
     // 10
@@ -144,9 +144,9 @@ export class TgaInfo implements DecodeInfo {
     // 14
     this._height = header.readUint16();
     // 16
-    this._pixelDepth = header.readByte();
+    this._pixelDepth = header.read();
     // 17
-    this._flags = header.readByte();
+    this._flags = header.read();
     this._screenOrigin = (this._flags & 0x30) >>> 4;
   }
 

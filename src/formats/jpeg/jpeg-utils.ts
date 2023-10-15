@@ -9,7 +9,9 @@ export class JpegUtils {
   // Exif\0\0
   private static readonly _exifSignature = 0x45786966;
 
-  private readExifData(block: InputBuffer | undefined): ExifData | undefined {
+  private readExifData(
+    block: InputBuffer<Uint8Array> | undefined
+  ): ExifData | undefined {
     if (block === undefined) {
       return undefined;
     }
@@ -41,29 +43,37 @@ export class JpegUtils {
     out.writeBytes(exifBytes);
   }
 
-  private readBlock(input: InputBuffer): InputBuffer | undefined {
+  private readBlock(
+    input: InputBuffer<Uint8Array>
+  ): InputBuffer<Uint8Array> | undefined {
     const length = input.readUint16();
     if (length < 2) {
       return undefined;
     }
-    return input.readBytes(length - 2);
+    return input.readRange(length - 2);
   }
 
-  private skipBlock(input: InputBuffer, output?: OutputBuffer): boolean {
+  private skipBlock(
+    input: InputBuffer<Uint8Array>,
+    output?: OutputBuffer
+  ): boolean {
     const length = input.readUint16();
     output?.writeUint16(length);
     if (length < 2) {
       return false;
     }
     if (output !== undefined) {
-      output.writeBuffer(input.readBytes(length - 2));
+      output.writeBuffer(input.readRange(length - 2));
     } else {
       input.skip(length - 2);
     }
     return true;
   }
 
-  private nextMarker(input: InputBuffer, output?: OutputBuffer): number {
+  private nextMarker(
+    input: InputBuffer<Uint8Array>,
+    output?: OutputBuffer
+  ): number {
     let c = 0;
     if (input.isEOS) {
       return c;
@@ -71,7 +81,7 @@ export class JpegUtils {
 
     do {
       do {
-        c = input.readByte();
+        c = input.read();
         output?.writeByte(c);
       } while (c !== 0xff && !input.isEOS);
 
@@ -80,7 +90,7 @@ export class JpegUtils {
       }
 
       do {
-        c = input.readByte();
+        c = input.read();
         output?.writeByte(c);
       } while (c === 0xff && !input.isEOS);
     } while (c === 0 && !input.isEOS);
@@ -89,15 +99,15 @@ export class JpegUtils {
   }
 
   public decodeExif(data: Uint8Array): ExifData | undefined {
-    const input = new InputBuffer({
+    const input = new InputBuffer<Uint8Array>({
       buffer: data,
       bigEndian: true,
     });
 
     // Some other formats have embedded jpeg, or jpeg-like data.
     // Only validate if the image starts with the StartOfImage tag.
-    const soiCheck = input.peekBytes(2);
-    if (soiCheck.getByte(0) !== 0xff || soiCheck.getByte(1) !== 0xd8) {
+    const soiCheck = input.peek(2);
+    if (soiCheck.get(0) !== 0xff || soiCheck.get(1) !== 0xd8) {
       return undefined;
     }
 
@@ -127,15 +137,15 @@ export class JpegUtils {
   }
 
   public injectExif(exif: ExifData, data: Uint8Array): Uint8Array | undefined {
-    const input = new InputBuffer({
+    const input = new InputBuffer<Uint8Array>({
       buffer: data,
       bigEndian: true,
     });
 
     // Some other formats have embedded jpeg, or jpeg-like data.
     // Only validate if the image starts with the StartOfImage tag.
-    const soiCheck = input.peekBytes(2);
-    if (soiCheck.getByte(0) !== 0xff || soiCheck.getByte(1) !== 0xd8) {
+    const soiCheck = input.peek(2);
+    if (soiCheck.get(0) !== 0xff || soiCheck.get(1) !== 0xd8) {
       return undefined;
     }
 
@@ -174,7 +184,7 @@ export class JpegUtils {
       this.writeAPP1(output, exif);
       // No need to parse the remaining individual blocks, just write out
       // the remainder of the file.
-      output.writeBuffer(input.readBytes(input.length));
+      output.writeBuffer(input.readRange(input.length));
       return output.getBytes();
     }
 
@@ -191,7 +201,7 @@ export class JpegUtils {
           this.writeAPP1(output, exif);
           // No need to parse the remaining individual blocks, just write out
           // the remainder of the file.
-          output.writeBuffer(input.readBytes(input.length));
+          output.writeBuffer(input.readRange(input.length));
           return output.getBytes();
         }
       }

@@ -11,7 +11,7 @@ import { TgaInfo } from './tga/tga-info';
  * Decode a TGA image. This only supports the 24-bit and 32-bit uncompressed format.
  */
 export class TgaDecoder implements Decoder {
-  private _input: InputBuffer | undefined = undefined;
+  private _input: InputBuffer<Uint8Array> | undefined = undefined;
   private _info: TgaInfo | undefined = undefined;
 
   public get numFrames(): number {
@@ -23,7 +23,7 @@ export class TgaDecoder implements Decoder {
       return;
     }
 
-    const cm = new InputBuffer({
+    const cm = new InputBuffer<Uint8Array>({
       buffer: colorMap,
     });
 
@@ -42,10 +42,10 @@ export class TgaDecoder implements Decoder {
     } else {
       const hasAlpha = this._info.colorMapDepth === 32;
       for (let i = 0; i < this._info.colorMapLength; ++i) {
-        const b = cm.readByte();
-        const g = cm.readByte();
-        const r = cm.readByte();
-        const a = hasAlpha ? cm.readByte() : 255;
+        const b = cm.read();
+        const g = cm.read();
+        const r = cm.read();
+        const a = hasAlpha ? cm.read() : 255;
         palette.setRed(i, r);
         palette.setGreen(i, g);
         palette.setBlue(i, b);
@@ -80,12 +80,12 @@ export class TgaDecoder implements Decoder {
     let y = h - 1;
     let x = 0;
     while (!this._input.isEOS && y >= 0) {
-      const c = this._input.readByte();
+      const c = this._input.read();
       const count = (c & rleMask) + 1;
 
       if ((c & rleBit) !== 0) {
         if (bpp === 8) {
-          const r = this._input.readByte();
+          const r = this._input.read();
           for (let i = 0; i < count; ++i) {
             image.setPixelR(x++, y, r);
             if (x >= w) {
@@ -113,10 +113,10 @@ export class TgaDecoder implements Decoder {
             }
           }
         } else {
-          const b = this._input.readByte();
-          const g = this._input.readByte();
-          const r = this._input.readByte();
-          const a = hasAlpha ? this._input.readByte() : 255;
+          const b = this._input.read();
+          const g = this._input.read();
+          const r = this._input.read();
+          const a = hasAlpha ? this._input.read() : 255;
           for (let i = 0; i < count; ++i) {
             image.setPixelRgba(x++, y, r, g, b, a);
             if (x >= w) {
@@ -131,7 +131,7 @@ export class TgaDecoder implements Decoder {
       } else {
         if (bpp === 8) {
           for (let i = 0; i < count; ++i) {
-            const r = this._input.readByte();
+            const r = this._input.read();
             image.setPixelR(x++, y, r);
             if (x >= w) {
               x = 0;
@@ -162,10 +162,10 @@ export class TgaDecoder implements Decoder {
           }
         } else {
           for (let i = 0; i < count; ++i) {
-            const b = this._input.readByte();
-            const g = this._input.readByte();
-            const r = this._input.readByte();
-            const a = hasAlpha ? this._input.readByte() : 255;
+            const b = this._input.read();
+            const g = this._input.read();
+            const r = this._input.read();
+            const a = hasAlpha ? this._input.read() : 255;
             image.setPixelRgba(x++, y, r, g, b, a);
             if (x >= w) {
               x = 0;
@@ -218,7 +218,7 @@ export class TgaDecoder implements Decoder {
     if (bpp === 8) {
       for (let y = image.height - 1; y >= 0; --y) {
         for (let x = 0; x < image.width; ++x) {
-          const index = this._input.readByte();
+          const index = this._input.read();
           image.setPixelR(x, y, index);
         }
       }
@@ -236,10 +236,10 @@ export class TgaDecoder implements Decoder {
     } else {
       for (let y = image.height - 1; y >= 0; --y) {
         for (let x = 0; x < image.width; ++x) {
-          const b = this._input.readByte();
-          const g = this._input.readByte();
-          const r = this._input.readByte();
-          const a = hasAlpha ? this._input.readByte() : 255;
+          const b = this._input.read();
+          const g = this._input.read();
+          const r = this._input.read();
+          const a = hasAlpha ? this._input.read() : 255;
           image.setPixelRgba(x, y, r, g, b, a);
         }
       }
@@ -252,7 +252,7 @@ export class TgaDecoder implements Decoder {
    * Is the given file a valid TGA image?
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    const input = new InputBuffer({
+    const input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
 
@@ -263,9 +263,9 @@ export class TgaDecoder implements Decoder {
 
   public startDecode(bytes: Uint8Array): TgaInfo | undefined {
     this._info = new TgaInfo();
-    this._input = new InputBuffer({ buffer: bytes });
+    this._input = new InputBuffer<Uint8Array>({ buffer: bytes });
 
-    const header = this._input.readBytes(18);
+    const header = this._input.readRange(18);
     this._info.read(header);
     if (!this._info.isValid()) {
       return undefined;
@@ -275,8 +275,8 @@ export class TgaDecoder implements Decoder {
 
     // Decode colormap
     if (this._info.hasColorMap) {
-      const size = this._info.colorMapLength * (this._info.colorMapDepth >> 3);
-      this._info.colorMap = this._input.readBytes(size).toUint8Array();
+      const size = this._info.colorMapLength * (this._info.colorMapDepth >>> 3);
+      this._info.colorMap = this._input.readRange(size).toUint8Array();
     }
 
     this._info.imageOffset = this._input.offset;

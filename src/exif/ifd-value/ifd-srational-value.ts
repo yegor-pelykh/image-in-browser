@@ -28,7 +28,7 @@ export class IfdSRationalValue extends IfdValue {
     }
   }
 
-  public static data(data: InputBuffer, length: number) {
+  public static data(data: InputBuffer<Uint8Array>, length: number) {
     const array = new Array<Rational>();
     for (let i = 0; i < length; i++) {
       const r = new Rational(data.readInt32(), data.readInt32());

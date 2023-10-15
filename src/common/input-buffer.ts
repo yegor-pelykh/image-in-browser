@@ -1,11 +1,13 @@
 /** @format */
 
 import { LibError } from '../error/lib-error';
+import { ArrayUtils } from './array-utils';
 import { BitUtils } from './bit-utils';
 import { StringUtils } from './string-utils';
+import { TypedArray } from './typings';
 
-export interface InputBufferInitOptions {
-  buffer: Uint8Array;
+export interface InputBufferInitOptions<T extends TypedArray> {
+  buffer: T;
   offset?: number;
   length?: number;
   bigEndian?: boolean;
@@ -14,9 +16,12 @@ export interface InputBufferInitOptions {
 /**
  * A buffer that can be read as a stream of bytes.
  */
-export class InputBuffer {
-  private readonly _buffer: Uint8Array;
-  public get buffer(): Uint8Array {
+export class InputBuffer<T extends TypedArray> {
+  private _buffer: T;
+  public set buffer(v: T) {
+    this._buffer = v;
+  }
+  public get buffer(): T {
     return this._buffer;
   }
 
@@ -70,7 +75,7 @@ export class InputBuffer {
   /**
    * Create a InputStream for reading from an Array<int>
    */
-  constructor(opt: InputBufferInitOptions) {
+  constructor(opt: InputBufferInitOptions<T>) {
     this._buffer = opt.buffer;
     this._bigEndian = opt.bigEndian ?? false;
     this._offset = opt.offset ?? 0;
@@ -82,9 +87,13 @@ export class InputBuffer {
   /**
    * Create a copy of **other**.
    */
-  public static from(other: InputBuffer, offset?: number, length?: number) {
+  public static from<T extends TypedArray>(
+    other: InputBuffer<T>,
+    offset?: number,
+    length?: number
+  ) {
     const offsetFromOther = offset ?? 0;
-    const result = new InputBuffer({
+    const result = new InputBuffer<T>({
       buffer: other._buffer,
       bigEndian: other._bigEndian,
       offset: other._offset + offsetFromOther,
@@ -108,15 +117,45 @@ export class InputBuffer {
   /**
    * Access the buffer relative from the current position.
    */
-  public getByte(index: number): number {
+  public get(index: number): number {
     return this._buffer[this._offset + index];
   }
 
   /**
    * Set a buffer element relative to the current position.
    */
-  public setByte(index: number, value: number) {
+  public set(index: number, value: number) {
     return (this._buffer[this._offset + index] = value);
+  }
+
+  /**
+   * Copy data from **other** to this buffer, at **start** offset from the
+   * current read position, and **length** number of bytes. **offset** is
+   * the offset in **other** to start reading.
+   */
+  public memcpy(
+    start: number,
+    length: number,
+    other: InputBuffer<T> | T,
+    offset: number = 0
+  ): void {
+    if (other instanceof InputBuffer) {
+      ArrayUtils.copyRange(
+        other.buffer,
+        other.offset + offset,
+        this._buffer,
+        this.offset + start,
+        length
+      );
+    } else {
+      ArrayUtils.copyRange(
+        other,
+        offset,
+        this._buffer,
+        this.offset + start,
+        length
+      );
+    }
   }
 
   /**
@@ -125,9 +164,9 @@ export class InputBuffer {
    */
   public memset(start: number, length: number, value: number): void {
     this._buffer.fill(
+      value,
       this._offset + start,
-      this._offset + start + length,
-      value
+      this._offset + start + length
     );
   }
 
@@ -138,10 +177,14 @@ export class InputBuffer {
    * read position is used. If **length** is not specified, the remainder of this
    * stream is used.
    */
-  public subarray(count: number, position?: number, offset = 0): InputBuffer {
+  public subarray(
+    count: number,
+    position?: number,
+    offset = 0
+  ): InputBuffer<T> {
     let pos = position !== undefined ? this._start + position : this._offset;
     pos += offset;
-    return new InputBuffer({
+    return new InputBuffer<T>({
       buffer: this._buffer,
       bigEndian: this._bigEndian,
       offset: pos,
@@ -169,7 +212,7 @@ export class InputBuffer {
    * Read **count** bytes from an **offset** of the current read position, without
    * moving the read position.
    */
-  public peekBytes(count: number, offset = 0): InputBuffer {
+  public peek(count: number, offset = 0): InputBuffer<T> {
     return this.subarray(count, undefined, offset);
   }
 
@@ -181,23 +224,26 @@ export class InputBuffer {
   }
 
   /**
-   * Read a single byte.
+   * Read a single value.
    */
-  public readByte(): number {
+  public read(): number {
     return this._buffer[this._offset++];
-  }
-
-  public readInt8(): number {
-    return BitUtils.uint8ToInt8(this.readByte());
   }
 
   /**
    * Read **count** bytes from the stream.
    */
-  public readBytes(count: number): InputBuffer {
+  public readRange(count: number): InputBuffer<T> {
     const bytes = this.subarray(count);
     this._offset += bytes.length;
     return bytes;
+  }
+
+  /**
+   * Read 8-bit integer from the stream.
+   */
+  public readInt8(): number {
+    return BitUtils.uint8ToInt8(this.read());
   }
 
   /**
@@ -208,7 +254,7 @@ export class InputBuffer {
     if (length === undefined) {
       const codes: number[] = [];
       while (!this.isEOS) {
-        const c = this.readByte();
+        const c = this.read();
         if (c === 0) {
           return String.fromCharCode(...codes);
         }
@@ -217,7 +263,7 @@ export class InputBuffer {
       throw new LibError('EOF reached without finding string terminator.');
     }
 
-    const s = this.readBytes(length);
+    const s = this.readRange(length);
     const bytes = s.toUint8Array();
     const result = String.fromCharCode(...bytes);
     return result;
@@ -229,7 +275,7 @@ export class InputBuffer {
   public readStringUtf8(): string {
     const codes: number[] = [];
     while (!this.isEOS) {
-      const c = this.readByte();
+      const c = this.read();
       if (c === 0) {
         const array = new Uint8Array(codes);
         return StringUtils.utf8Decoder.decode(array);
@@ -342,21 +388,31 @@ export class InputBuffer {
     );
   }
 
-  public toUint8Array(offset?: number, length?: number): Uint8Array {
-    const correctedOffset = offset ?? 0;
-    const correctedLength = length ?? this.length - correctedOffset;
-    return new Uint8Array(
-      this._buffer.buffer,
-      this._buffer.byteOffset + this._offset + correctedOffset,
-      correctedLength
+  public toUint8Array(offset: number = 0, length?: number): Uint8Array {
+    const correctedLength = length ?? this.length - offset;
+    if (this._buffer instanceof Uint8Array) {
+      return new Uint8Array(
+        this._buffer.buffer,
+        this._buffer.byteOffset + this._offset + offset,
+        correctedLength
+      );
+    }
+    return Uint8Array.from(
+      this._buffer.subarray(
+        this._offset + offset,
+        this._offset + offset + correctedLength
+      )
     );
   }
 
-  public toUint32Array(offset?: number): Uint32Array {
-    const correctedOffset = offset ?? 0;
-    return new Uint32Array(
-      this._buffer.buffer,
-      this._buffer.byteOffset + this._offset + correctedOffset
-    );
+  public toUint32Array(offset: number = 0): Uint32Array {
+    if (this._buffer instanceof Uint8Array) {
+      return new Uint32Array(
+        this._buffer.buffer,
+        this._buffer.byteOffset + this._offset + offset
+      );
+    }
+    const uint8array = this.toUint8Array();
+    return new Uint32Array(uint8array.buffer);
   }
 }

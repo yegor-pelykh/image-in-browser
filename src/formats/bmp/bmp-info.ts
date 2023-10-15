@@ -128,7 +128,7 @@ export class BmpInfo implements DecodeInfo {
     );
   }
 
-  constructor(p: InputBuffer, header?: BmpFileHeader) {
+  constructor(p: InputBuffer<Uint8Array>, header?: BmpFileHeader) {
     this._header = header ?? new BmpFileHeader(p);
     this._startPos = p.offset;
     this._headerSize = p.readUint32();
@@ -235,48 +235,48 @@ export class BmpInfo implements DecodeInfo {
     }
   }
 
-  private readPalette(input: InputBuffer): void {
+  private readPalette(input: InputBuffer<Uint8Array>): void {
     const numColors =
       this._totalColors === 0 ? 1 << this._bitsPerPixel : this._totalColors;
     const numChannels = 3;
     this._palette = new PaletteUint8(numColors, numChannels);
     for (let i = 0; i < numColors; ++i) {
-      const b = input.readByte();
-      const g = input.readByte();
-      const r = input.readByte();
+      const b = input.read();
+      const g = input.read();
+      const r = input.read();
       // ignored
-      const a = input.readByte();
+      const a = input.read();
       this._palette.setRgba(i, r, g, b, a);
     }
   }
 
   public decodePixel(
-    input: InputBuffer,
+    input: InputBuffer<Uint8Array>,
     pixel: (r: number, g: number, b: number, a: number) => void
   ): void {
     if (this._palette !== undefined) {
       if (this._bitsPerPixel === 1) {
-        const bi = input.readByte();
+        const bi = input.read();
         for (let i = 7; i >= 0; --i) {
           const b = (bi >>> i) & 0x1;
           pixel(b, 0, 0, 0);
         }
         return;
       } else if (this._bitsPerPixel === 2) {
-        const bi = input.readByte();
+        const bi = input.read();
         for (let i = 6; i >= 0; i -= 2) {
           const b = (bi >>> i) & 0x2;
           pixel(b, 0, 0, 0);
         }
       } else if (this._bitsPerPixel === 4) {
-        const bi = input.readByte();
+        const bi = input.read();
         const b1 = (bi >>> 4) & 0xf;
         pixel(b1, 0, 0, 0);
         const b2 = bi & 0xf;
         pixel(b2, 0, 0, 0);
         return;
       } else if (this._bitsPerPixel === 8) {
-        const b = input.readByte();
+        const b = input.read();
         pixel(b, 0, 0, 0);
         return;
       }
@@ -307,16 +307,16 @@ export class BmpInfo implements DecodeInfo {
       this._bitsPerPixel === 32 &&
       this._compression === BmpCompressionMode.none
     ) {
-      const b = input.readByte();
-      const g = input.readByte();
-      const r = input.readByte();
-      const a = input.readByte();
+      const b = input.read();
+      const g = input.read();
+      const r = input.read();
+      const a = input.read();
       pixel(r, g, b, this.ignoreAlphaChannel ? 255 : a);
       return;
     } else if (this._bitsPerPixel === 24) {
-      const b = input.readByte();
-      const g = input.readByte();
-      const r = input.readByte();
+      const b = input.read();
+      const g = input.read();
+      const r = input.read();
       pixel(r, g, b, 255);
       return;
     } else if (this._bitsPerPixel === 16) {

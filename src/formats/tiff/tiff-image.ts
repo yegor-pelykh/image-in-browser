@@ -173,7 +173,7 @@ export class TiffImage {
     return this._width !== 0 && this._height !== 0;
   }
 
-  constructor(p: InputBuffer) {
+  constructor(p: InputBuffer<Uint8Array>) {
     const p3 = InputBuffer.from(p);
 
     const numDirEntries = p.readUint16();
@@ -419,7 +419,7 @@ export class TiffImage {
   }
 
   private decodeBilevelTile(
-    p: InputBuffer,
+    p: InputBuffer<Uint8Array>,
     image: MemoryImage,
     tileX: number,
     tileY: number
@@ -432,7 +432,7 @@ export class TiffImage {
 
     const byteCount = this._tileByteCounts![tileIndex];
 
-    let byteData: InputBuffer | undefined = undefined;
+    let byteData: InputBuffer<Uint8Array> | undefined = undefined;
     if (this._compression === TiffCompression.packBits) {
       // Since the decompressed data will still be packed
       // 8 pixels into 1 byte, calculate bytesInThisTile
@@ -443,17 +443,20 @@ export class TiffImage {
         bytesInThisTile =
           (Math.trunc(this._tileWidth / 8) + 1) * this._tileHeight;
       }
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
-      this.decodePackBits(p, bytesInThisTile, byteData.buffer);
+      this.decodePackBits(p, bytesInThisTile, byteData.buffer as Uint8Array);
     } else if (this._compression === TiffCompression.lzw) {
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
 
       const decoder = new LzwDecoder();
-      decoder.decode(InputBuffer.from(p, 0, byteCount), byteData.buffer);
+      decoder.decode(
+        InputBuffer.from(p, 0, byteCount),
+        byteData.buffer as Uint8Array
+      );
 
       // Horizontal Differencing Predictor
       if (this._predictor === 2) {
@@ -466,15 +469,14 @@ export class TiffImage {
             i++
           ) {
             const b =
-              byteData.getByte(count) +
-              byteData.getByte(count - this._samplesPerPixel);
-            byteData.setByte(count, b);
+              byteData.get(count) + byteData.get(count - this._samplesPerPixel);
+            byteData.set(count, b);
             count++;
           }
         }
       }
     } else if (this._compression === TiffCompression.ccittRle) {
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       try {
@@ -488,7 +490,7 @@ export class TiffImage {
         // skip
       }
     } else if (this._compression === TiffCompression.ccittFax3) {
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       try {
@@ -502,7 +504,7 @@ export class TiffImage {
         // skip
       }
     } else if (this._compression === TiffCompression.ccittFax4) {
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       try {
@@ -518,13 +520,13 @@ export class TiffImage {
     } else if (this._compression === TiffCompression.zip) {
       const data = p.toUint8Array(0, byteCount);
       const outData = inflate(data);
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: outData,
       });
     } else if (this._compression === TiffCompression.deflate) {
       const data = p.toUint8Array(0, byteCount);
       const outData = inflate(data);
-      byteData = new InputBuffer({
+      byteData = new InputBuffer<Uint8Array>({
         buffer: outData,
       });
     } else if (this._compression === TiffCompression.none) {
@@ -552,7 +554,7 @@ export class TiffImage {
   }
 
   private decodeTile(
-    p: InputBuffer,
+    p: InputBuffer<Uint8Array>,
     image: MemoryImage,
     tileX: number,
     tileY: number
@@ -579,7 +581,7 @@ export class TiffImage {
       bytesInThisTile *= 4;
     }
 
-    let byteData: InputBuffer | undefined = undefined;
+    let byteData: InputBuffer<Uint8Array> | undefined = undefined;
     if (
       this._bitsPerSample === 8 ||
       this._bitsPerSample === 16 ||
@@ -589,7 +591,7 @@ export class TiffImage {
       if (this._compression === TiffCompression.none) {
         byteData = p;
       } else if (this._compression === TiffCompression.lzw) {
-        byteData = new InputBuffer({
+        byteData = new InputBuffer<Uint8Array>({
           buffer: new Uint8Array(bytesInThisTile),
         });
         const decoder = new LzwDecoder();
@@ -605,30 +607,30 @@ export class TiffImage {
             count = this._samplesPerPixel * (j * this._tileWidth + 1);
             const len = this._tileWidth * this._samplesPerPixel;
             for (let i = this._samplesPerPixel; i < len; i++) {
-              byteData.setByte(
+              byteData.set(
                 count,
-                byteData.getByte(count) +
-                  byteData.getByte(count - this._samplesPerPixel)
+                byteData.get(count) +
+                  byteData.get(count - this._samplesPerPixel)
               );
               count++;
             }
           }
         }
       } else if (this._compression === TiffCompression.packBits) {
-        byteData = new InputBuffer({
+        byteData = new InputBuffer<Uint8Array>({
           buffer: new Uint8Array(bytesInThisTile),
         });
         this.decodePackBits(p, bytesInThisTile, byteData.buffer);
       } else if (this._compression === TiffCompression.deflate) {
         const data = p.toUint8Array(0, byteCount);
         const outData = inflate(data);
-        byteData = new InputBuffer({
+        byteData = new InputBuffer<Uint8Array>({
           buffer: outData,
         });
       } else if (this._compression === TiffCompression.zip) {
         const data = p.toUint8Array(0, byteCount);
         const outData = inflate(data);
-        byteData = new InputBuffer({
+        byteData = new InputBuffer<Uint8Array>({
           buffer: outData,
         });
       } else if (this._compression === TiffCompression.oldJpeg) {
@@ -680,7 +682,7 @@ export class TiffImage {
                 sample =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
               } else if (this._bitsPerSample === 16) {
                 sample =
                   this._sampleFormat === TiffFormat.int
@@ -707,11 +709,11 @@ export class TiffImage {
               gray =
                 this._sampleFormat === TiffFormat.int
                   ? byteData.readInt8()
-                  : byteData.readByte();
+                  : byteData.read();
               alpha =
                 this._sampleFormat === TiffFormat.int
                   ? byteData.readInt8()
-                  : byteData.readByte();
+                  : byteData.read();
             } else if (this._bitsPerSample === 16) {
               gray =
                 this._sampleFormat === TiffFormat.int
@@ -760,15 +762,15 @@ export class TiffImage {
                 r =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
                 g =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
                 b =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
               } else if (this._bitsPerSample === 16) {
                 r =
                   this._sampleFormat === TiffFormat.int
@@ -831,19 +833,19 @@ export class TiffImage {
                 r =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
                 g =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
                 b =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
                 a =
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
-                    : byteData.readByte();
+                    : byteData.read();
               } else if (this._bitsPerSample === 16) {
                 r =
                   this._sampleFormat === TiffFormat.int
@@ -919,7 +921,7 @@ export class TiffImage {
    * Uncompress packbits compressed image data.
    */
   private decodePackBits(
-    data: InputBuffer,
+    data: InputBuffer<Uint8Array>,
     arraySize: number,
     dst: Uint8Array
   ): void {
@@ -927,15 +929,15 @@ export class TiffImage {
     let dstCount = 0;
 
     while (dstCount < arraySize) {
-      const b = BitUtils.uint8ToInt8(data.getByte(srcCount++));
+      const b = BitUtils.uint8ToInt8(data.get(srcCount++));
       if (b >= 0 && b <= 127) {
         // literal run packet
         for (let i = 0; i < b + 1; ++i) {
-          dst[dstCount++] = data.getByte(srcCount++);
+          dst[dstCount++] = data.get(srcCount++);
         }
       } else if (b <= -1 && b >= -127) {
         // 2 byte encoded run packet
-        const repeat = data.getByte(srcCount++);
+        const repeat = data.get(srcCount++);
         for (let i = 0; i < -b + 1; ++i) {
           dst[dstCount++] = repeat;
         }
@@ -946,7 +948,7 @@ export class TiffImage {
     }
   }
 
-  public decode(p: InputBuffer): MemoryImage {
+  public decode(p: InputBuffer<Uint8Array>): MemoryImage {
     const isFloat = this._sampleFormat === TiffFormat.float;
     const isInt = this._sampleFormat === TiffFormat.int;
     const format =

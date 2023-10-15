@@ -27,7 +27,7 @@ export class IfdAsciiValue extends IfdValue {
     }
   }
 
-  public static data(data: InputBuffer, length: number) {
+  public static data(data: InputBuffer<Uint8Array>, length: number) {
     // The final byte is a null terminator
     const value = length > 0 ? data.readString(length - 1) : '';
     return new IfdAsciiValue(value);

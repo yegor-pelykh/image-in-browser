@@ -16,8 +16,8 @@ export type DecodeFunction = (
 ) => void;
 
 export class JpegScan {
-  private _input: InputBuffer;
-  public get input(): InputBuffer {
+  private _input: InputBuffer<Uint8Array>;
+  public get input(): InputBuffer<Uint8Array> {
     return this._input;
   }
 
@@ -117,7 +117,7 @@ export class JpegScan {
   }
 
   constructor(
-    input: InputBuffer,
+    input: InputBuffer<Uint8Array>,
     frame: JpegFrame,
     components: Array<JpegComponent>,
     spectralStart: number,
@@ -153,9 +153,9 @@ export class JpegScan {
       return undefined;
     }
 
-    this._bitsData = this._input.readByte();
+    this._bitsData = this._input.read();
     if (this._bitsData === 0xff) {
-      const nextByte = this.input.readByte();
+      const nextByte = this.input.read();
       if (nextByte !== 0) {
         const marker = ((this._bitsData << 8) | nextByte).toString(16);
         throw new LibError(`unexpected marker: ${marker}`);
@@ -445,8 +445,8 @@ export class JpegScan {
 
       // Find marker
       this._bitsCount = 0;
-      const m1 = this._input.getByte(0);
-      const m2 = this._input.getByte(1);
+      const m1 = this._input.get(0);
+      const m2 = this._input.get(1);
       if (m1 === 0xff) {
         if (m2 >= JpegMarker.rst0 && m2 <= JpegMarker.rst7) {
           this._input.skip(2);
