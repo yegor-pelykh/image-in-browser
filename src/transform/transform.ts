@@ -468,7 +468,7 @@ export abstract class Transform {
     const position = opt.position ?? ExpandCanvasPosition.center;
     let newWidth = opt.newWidth;
     let newHeight = opt.newHeight;
-    let padding = opt.padding;
+    const padding = opt.padding;
 
     // Ensure either newWidth and newHeight or padding are provided
     if (
@@ -774,7 +774,7 @@ export abstract class Transform {
       if (interpolation === Interpolation.average) {
         for (let y = 0; y < h; ++y) {
           const ay1 = Math.trunc(y * dy);
-          var ay2 = Math.trunc((y + 1) * dy);
+          let ay2 = Math.trunc((y + 1) * dy);
           if (ay2 === ay1) {
             ay2++;
           }

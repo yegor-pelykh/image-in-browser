@@ -354,8 +354,8 @@ export class JpegEncoder implements Encoder {
       const row = pos >>> 3; // / 8
       const col = pos & 7; // % 8
 
-      var yy = y + row;
-      var xx = x + col;
+      let yy = y + row;
+      let xx = x + col;
 
       if (yy >= height) {
         // padding bottom
