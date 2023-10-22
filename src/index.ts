@@ -376,6 +376,7 @@ export interface DecodeOptions {
 
 export interface DecodeImageOptions extends DecodeOptions {
   frameIndex?: number;
+  largest?: boolean;
 }
 
 export interface DecodeImageByMimeTypeOptions extends DecodeImageOptions {
@@ -622,6 +623,9 @@ export function decodeImage(opt: DecodeImageOptions): MemoryImage | undefined {
     return undefined;
   }
   const dataUint8 = new Uint8Array(opt.data);
+  if (opt.largest === true && decoder instanceof IcoDecoder) {
+    return decoder.decodeImageLargest(dataUint8);
+  }
   return decoder.decode({
     bytes: dataUint8,
     frameIndex: opt.frameIndex,
@@ -638,6 +642,9 @@ export function decodeImageByMimeType(
   const decoder = findDecoderForMimeType(opt.mimeType);
   if (decoder !== undefined) {
     const dataUint8 = new Uint8Array(opt.data);
+    if (opt.largest === true && decoder instanceof IcoDecoder) {
+      return decoder.decodeImageLargest(dataUint8);
+    }
     return decoder.decode({
       bytes: dataUint8,
       frameIndex: opt.frameIndex,
@@ -656,6 +663,9 @@ export function decodeNamedImage(
   const decoder = findDecoderForNamedImage(opt.name);
   if (decoder !== undefined) {
     const dataUint8 = new Uint8Array(opt.data);
+    if (opt.largest === true && decoder instanceof IcoDecoder) {
+      return decoder.decodeImageLargest(dataUint8);
+    }
     return decoder.decode({
       bytes: dataUint8,
       frameIndex: opt.frameIndex,
