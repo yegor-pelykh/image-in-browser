@@ -378,12 +378,20 @@ export interface DecodeImageOptions extends DecodeOptions {
   frameIndex?: number;
 }
 
+export interface DecodeImageByMimeTypeOptions extends DecodeImageOptions {
+  mimeType: string;
+}
+
 export interface DecodeNamedImageOptions extends DecodeImageOptions {
   name: string;
 }
 
 export interface EncodeOptions {
   image: MemoryImage;
+}
+
+export interface EncodeImageByMimeTypeOptions extends EncodeOptions {
+  mimeType: string;
 }
 
 export interface EncodeNamedImageOptions extends EncodeOptions {
@@ -420,6 +428,37 @@ export interface EncodeIcoImagesOptions {
 }
 
 /**
+ * Return the Decoder that can decode image of the given **mimeType**.
+ */
+export function findDecoderForMimeType(mimeType: string): Decoder | undefined {
+  const type = mimeType.toLowerCase();
+  switch (type) {
+    case 'image/jpeg':
+      return new JpegDecoder();
+    case 'image/png':
+      return new PngDecoder();
+    case 'image/x-targa':
+    case 'image/x-tga':
+      return new TgaDecoder();
+    case 'image/webp':
+      return new WebPDecoder();
+    case 'image/gif':
+      return new GifDecoder();
+    case 'image/tiff':
+    case 'image/tiff-fx':
+      return new TiffDecoder();
+    case 'image/bmp':
+    case 'image/x-bmp':
+      return new BmpDecoder();
+    case 'image/x-icon':
+    case 'image/vnd.microsoft.icon':
+      return new IcoDecoder();
+    default:
+      return undefined;
+  }
+}
+
+/**
  * Return the Decoder that can decode image with the given **name**,
  * by looking at the file extension.
  */
@@ -453,7 +492,36 @@ export function findDecoderForNamedImage(name: string): Decoder | undefined {
 }
 
 /**
- * Return the Encoder that can decode image with the given **name**,
+ * Return the Encoder that can encode image with the given **mimeType**.
+ */
+export function findEncoderForMimeType(mimeType: string): Encoder | undefined {
+  const type = mimeType.toLowerCase();
+  switch (type) {
+    case 'image/jpeg':
+      return new JpegEncoder();
+    case 'image/png':
+      return new PngEncoder();
+    case 'image/x-targa':
+    case 'image/x-tga':
+      return new TgaEncoder();
+    case 'image/gif':
+      return new GifEncoder();
+    case 'image/tiff':
+    case 'image/tiff-fx':
+      return new TiffEncoder();
+    case 'image/bmp':
+    case 'image/x-bmp':
+      return new BmpEncoder();
+    case 'image/x-icon':
+    case 'image/vnd.microsoft.icon':
+      return new IcoEncoder();
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Return the Encoder that can encode image with the given **name**,
  * by looking at the file extension.
  */
 export function findEncoderForNamedImage(name: string): Encoder | undefined {
@@ -561,6 +629,24 @@ export function decodeImage(opt: DecodeImageOptions): MemoryImage | undefined {
 }
 
 /**
+ * Decodes the given image file bytes, using the MIME type to
+ * determine the decoder.
+ */
+export function decodeImageByMimeType(
+  opt: DecodeImageByMimeTypeOptions
+): MemoryImage | undefined {
+  const decoder = findDecoderForMimeType(opt.mimeType);
+  if (decoder !== undefined) {
+    const dataUint8 = new Uint8Array(opt.data);
+    return decoder.decode({
+      bytes: dataUint8,
+      frameIndex: opt.frameIndex,
+    });
+  }
+  return decodeImage(opt);
+}
+
+/**
  * Decodes the given image file bytes, using the filename extension to
  * determine the decoder.
  */
@@ -576,6 +662,23 @@ export function decodeNamedImage(
     });
   }
   return decodeImage(opt);
+}
+
+/**
+ * Encode the MemoryImage to the format determined by the MIME type.
+ * If a format wasn't able to be identified, undefined will be returned.
+ * Otherwise the encoded format bytes of the image will be returned.
+ */
+export function encodeImageByMimeType(
+  opt: EncodeImageByMimeTypeOptions
+): Uint8Array | undefined {
+  const encoder = findEncoderForMimeType(opt.mimeType);
+  if (encoder === undefined) {
+    return undefined;
+  }
+  return encoder.encode({
+    image: opt.image,
+  });
 }
 
 /**
