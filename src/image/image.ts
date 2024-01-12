@@ -484,20 +484,24 @@ export class MemoryImage implements Iterable<Pixel> {
   /**
    * Create an image from raw data in **bytes**.
    *
-   * **format** defines the order of color channels in **bytes**.
-   * An HTML canvas element stores colors in _Format.rgba_ format;
-   * a MemoryImage object stores colors in _Format.rgba_ format.
+   * **format** defines the data type of pixel channel values. _Format.uint8_
+   * is the most typical format for images, where each pixel value is an
+   * unsigned byte with values in the range [0, 255].
    *
    * **rowStride** is the row stride, in bytes, of the source data **bytes**.
    * This may be different than the rowStride of the MemoryImage, as some data
    * sources align rows to different byte alignments and include padding.
    *
+   * **byteOffset** can be specified to start reading the **bytes**
+   * data starting from that value.
+   *
+   * **numChannels** can be used to specify the number of pixel channels in the
+   * **bytes** data, defaulting to 3.
+   *
    * **order** can be used if the source **bytes** has a different channel order
    * than RGBA. _ChannelOrder.bgra_ will rearrange the color channels from
    * BGRA to what MemoryImage wants, RGBA.
    *
-   * If **numChannels** and **order** are not provided, a default of 3 for
-   * **numChannels** and _ChannelOrder.rgba_ for **order** will be assumed.
    */
   public static fromBytes(opt: MemoryImageFromBytesOptions): MemoryImage {
     const byteOffset = opt.byteOffset ?? 0;
