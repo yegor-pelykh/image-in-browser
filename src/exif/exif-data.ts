@@ -362,7 +362,12 @@ export class ExifData extends IfdContainer {
       this.directories.set(`ifd${index}`, directory);
       index++;
 
-      ifdOffset = block.readUint32();
+      const nextIfdOffset = block.readUint32();
+      if (nextIfdOffset === ifdOffset) {
+        break;
+      } else {
+        ifdOffset = nextIfdOffset;
+      }
     }
 
     const subTags = new Map<number, string>([
