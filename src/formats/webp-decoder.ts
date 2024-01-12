@@ -319,6 +319,7 @@ export class WebPDecoder implements Decoder {
           height: this._info.height,
           numChannels: image.numChannels,
           format: image.format,
+          frameDuration: image.frameDuration,
         });
         lastImage = firstImage;
       } else {
