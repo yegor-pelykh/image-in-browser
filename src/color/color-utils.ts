@@ -42,15 +42,30 @@ export abstract class ColorUtils {
         );
       }
     } else {
-      for (let ci = 0; ci < cl; ++ci) {
-        c2.setChannel(
-          ci,
-          convertFormatValue(c.getChannel(ci), fromFormat, format)
-        );
-      }
-      const v = cl === 1 ? c2.getChannel(0) : 0;
-      for (let ci = cl; ci < numChannels; ++ci) {
-        c2.setChannel(ci, ci === 3 ? a : v);
+      if (cl === 2) {
+        const l = convertFormatValue(c.getChannel(0), fromFormat, format);
+        if (numChannels === 3) {
+          c2.setChannel(0, l);
+          c2.setChannel(1, l);
+          c2.setChannel(2, l);
+        } else {
+          const a = convertFormatValue(c.getChannel(1), fromFormat, format);
+          c2.setChannel(0, l);
+          c2.setChannel(1, l);
+          c2.setChannel(2, l);
+          c2.setChannel(3, a);
+        }
+      } else {
+        for (let ci = 0; ci < cl; ++ci) {
+          c2.setChannel(
+            ci,
+            convertFormatValue(c.getChannel(ci), fromFormat, format)
+          );
+        }
+        const v = cl === 1 ? c2.getChannel(0) : 0;
+        for (let ci = cl; ci < numChannels; ++ci) {
+          c2.setChannel(ci, ci === 3 ? a : v);
+        }
       }
     }
     return c2;

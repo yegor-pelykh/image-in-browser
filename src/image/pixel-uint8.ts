@@ -116,39 +116,51 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
 
   public get g(): number {
     return this.palette === undefined
-      ? this.numChannels > 1
+      ? this.numChannels === 2
+        ? this.data[this._index]
+        : this.numChannels > 1
         ? this.data[this._index + 1]
         : 0
       : this.palette.getGreen(this.data[this._index]);
   }
   public set g(g: number) {
-    if (this.numChannels > 1) {
+    if (this.numChannels === 2) {
+      this.data[this._index] = MathUtils.clampInt255(g);
+    } else if (this.image.numChannels > 1) {
       this.data[this._index + 1] = MathUtils.clampInt255(g);
     }
   }
 
   public get b(): number {
     return this.palette === undefined
-      ? this.numChannels > 2
+      ? this.numChannels === 2
+        ? this.data[this._index]
+        : this.numChannels > 2
         ? this.data[this._index + 2]
         : 0
       : this.palette.getBlue(this.data[this._index]);
   }
   public set b(b: number) {
-    if (this.numChannels > 2) {
+    if (this.numChannels === 2) {
+      this.data[this._index] = MathUtils.clampInt255(b);
+    } else if (this.image.numChannels > 2) {
       this.data[this._index + 2] = MathUtils.clampInt255(b);
     }
   }
 
   public get a(): number {
     return this.palette === undefined
-      ? this.numChannels > 3
+      ? this.numChannels === 2
+        ? this.data[this._index + 1]
+        : this.numChannels > 3
         ? this.data[this._index + 3]
         : 255
       : this.palette.getAlpha(this.data[this._index]);
   }
   public set a(a: number) {
-    if (this.numChannels > 3) {
+    if (this.numChannels === 2) {
+      this.data[this._index + 1] = MathUtils.clampInt255(a);
+    } else if (this.image.numChannels > 3) {
       this.data[this._index + 3] = MathUtils.clampInt255(a);
     }
   }
@@ -182,11 +194,13 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this.numChannels === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this.numChannels === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   constructor(
