@@ -271,4 +271,22 @@ describe('Image', () => {
       output
     );
   });
+
+  test('GetBytes rgb -> argb', () => {
+    const i1 = new MemoryImage({
+      width: 1,
+      height: 1,
+    });
+    i1.setPixelRgb(0, 0, 32, 64, 128);
+
+    const b1 = i1.getBytes({
+      order: ChannelOrder.argb,
+    });
+
+    expect(b1.length).toBe(4);
+    expect(b1[0]).toBe(255);
+    expect(b1[1]).toBe(32);
+    expect(b1[2]).toBe(64);
+    expect(b1[3]).toBe(128);
+  });
 });
