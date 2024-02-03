@@ -25,6 +25,37 @@ describe('Format: PNG', () => {
   const buck24Hash = 817446904;
   let buck24Image: MemoryImage | undefined = undefined;
 
+  test('luminanceAlpha', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'png_LA.png'
+    );
+    const png = decodePng({
+      data: input,
+    });
+    expect(png).toBeDefined();
+    if (png === undefined) {
+      return;
+    }
+
+    expect(png.numChannels).toBe(2);
+
+    const rgba = png.convert({
+      numChannels: 4,
+    });
+
+    const output = encodePng({
+      image: rgba,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.png,
+      'png_LA_rgba.png',
+      output
+    );
+  });
+
   test('hungry_180', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
