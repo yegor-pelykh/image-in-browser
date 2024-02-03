@@ -20,10 +20,10 @@ describe('Image', () => {
     i1.setPixelRgb(0, 1, 7425, 0, 0);
     i1.setPixelRgb(1, 1, 5214245, 0, 0);
 
-    expect(i1.getPixel(0, 0).equals([32])).toBe(true);
-    expect(i1.getPixel(1, 0).equals([64])).toBe(true);
-    expect(i1.getPixel(0, 1).equals([7425])).toBe(true);
-    expect(i1.getPixel(1, 1).equals([5214245])).toBe(true);
+    expect(i1.getPixel(0, 0).equals([32])).toBeTruthy();
+    expect(i1.getPixel(1, 0).equals([64])).toBeTruthy();
+    expect(i1.getPixel(0, 1).equals([7425])).toBeTruthy();
+    expect(i1.getPixel(1, 1).equals([5214245])).toBeTruthy();
   });
 
   test('uint32 nc:2', () => {
@@ -68,10 +68,10 @@ describe('Image', () => {
     i3.setPixelRgb(0, 1, 58, 52, 5);
     i3.setPixelRgb(1, 1, 110, 84, 94);
 
-    expect(i3.getPixel(0, 0).equals([32, 64, 86])).toBe(true);
-    expect(i3.getPixel(1, 0).equals([64, 32, 14])).toBe(true);
-    expect(i3.getPixel(0, 1).equals([58, 52, 5])).toBe(true);
-    expect(i3.getPixel(1, 1).equals([110, 84, 94])).toBe(true);
+    expect(i3.getPixel(0, 0).equals([32, 64, 86])).toBeTruthy();
+    expect(i3.getPixel(1, 0).equals([64, 32, 14])).toBeTruthy();
+    expect(i3.getPixel(0, 1).equals([58, 52, 5])).toBeTruthy();
+    expect(i3.getPixel(1, 1).equals([110, 84, 94])).toBeTruthy();
   });
 
   test('uint32 nc:4', () => {
@@ -91,9 +91,9 @@ describe('Image', () => {
     i4.setPixelRgba(0, 1, 12, 52, 5, 52);
     i4.setPixelRgba(1, 1, 100, 84, 94, 82);
 
-    expect(i4.getPixel(0, 0).equals([32, 64, 86, 44])).toBe(true);
-    expect(i4.getPixel(1, 0).equals([64, 32, 14, 14])).toBe(true);
-    expect(i4.getPixel(0, 1).equals([12, 52, 5, 52])).toBe(true);
-    expect(i4.getPixel(1, 1).equals([100, 84, 94, 82])).toBe(true);
+    expect(i4.getPixel(0, 0).equals([32, 64, 86, 44])).toBeTruthy();
+    expect(i4.getPixel(1, 0).equals([64, 32, 14, 14])).toBeTruthy();
+    expect(i4.getPixel(0, 1).equals([12, 52, 5, 52])).toBeTruthy();
+    expect(i4.getPixel(1, 1).equals([100, 84, 94, 82])).toBeTruthy();
   });
 });

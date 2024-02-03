@@ -41,11 +41,11 @@ describe('Color', () => {
   test('ColorUint8.equality', () => {
     const ca = ColorUint8.rgba(5, 10, 123, 40);
     const cb = ColorUint8.rgba(3, 10, 123, 40);
-    expect(ca.equals(cb)).toBe(false);
-    expect(!ca.equals(cb)).toBe(true);
+    expect(ca.equals(cb)).toBeFalsy();
+    expect(!ca.equals(cb)).toBeTruthy();
 
     cb.r = 5;
-    expect(ca.equals(cb)).toBe(true);
-    expect(!ca.equals(cb)).toBe(false);
+    expect(ca.equals(cb)).toBeTruthy();
+    expect(!ca.equals(cb)).toBeFalsy();
   });
 });

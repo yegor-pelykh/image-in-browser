@@ -584,7 +584,7 @@ describe('Format: PNG', () => {
     expect(image.height).toBe(186);
     expect(image.numChannels).toBe(3);
     expect(image.format).toBe(Format.uint8);
-    expect(image.hasPalette).toBe(true);
+    expect(image.hasPalette).toBeTruthy();
 
     const png = encodePng({
       image: image,

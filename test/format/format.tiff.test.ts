@@ -121,7 +121,7 @@ describe('Format: TIFF', () => {
     expect(i3p2).toBeDefined();
     expect(i3p2.width).toBe(i3p.width);
     expect(i3p2.height).toBe(i3p.height);
-    expect(i3p2.hasPalette).toBe(true);
+    expect(i3p2.hasPalette).toBeTruthy();
 
     for (const p of i3p2) {
       expect(p.r).toBe(p.x);

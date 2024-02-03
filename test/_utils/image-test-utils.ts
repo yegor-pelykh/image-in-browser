@@ -57,7 +57,7 @@ export abstract class ImageTestUtils {
       return;
     }
 
-    expect(ArrayUtils.equals(imageData, image2Data)).toBe(true);
+    expect(ArrayUtils.equals(imageData, image2Data)).toBeTruthy();
   }
 
   public static dumpData(data: Uint8Array, fileName: string): void {

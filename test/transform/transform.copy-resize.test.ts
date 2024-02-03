@@ -170,8 +170,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i0.width).toEqual(640);
-    expect(i0.height).toEqual(640);
+    expect(i0.width).toBe(640);
+    expect(i0.height).toBe(640);
 
     const output = encodePng({
       image: i0,
@@ -206,8 +206,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i0.width).toEqual(640);
-    expect(i0.height).toEqual(640);
+    expect(i0.width).toBe(640);
+    expect(i0.height).toBe(640);
 
     const output = encodePng({
       image: i0,
@@ -235,8 +235,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i1.width).toEqual(200);
-    expect(i1.height).toEqual(200);
+    expect(i1.width).toBe(200);
+    expect(i1.height).toBe(200);
 
     const output = encodePng({
       image: i1,
@@ -264,8 +264,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i1.width).toEqual(200);
-    expect(i1.height).toEqual(200);
+    expect(i1.width).toBe(200);
+    expect(i1.height).toBe(200);
 
     const output = encodePng({
       image: i1,
@@ -293,8 +293,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i1.width).toEqual(50);
-    expect(i1.height).toEqual(100);
+    expect(i1.width).toBe(50);
+    expect(i1.height).toBe(100);
 
     const output = encodePng({
       image: i1,
@@ -322,8 +322,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i1.width).toEqual(100);
-    expect(i1.height).toEqual(50);
+    expect(i1.width).toBe(100);
+    expect(i1.height).toBe(50);
 
     const output = encodePng({
       image: i1,
@@ -351,8 +351,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i1.width).toEqual(100);
-    expect(i1.height).toEqual(500);
+    expect(i1.width).toBe(100);
+    expect(i1.height).toBe(500);
 
     const output = encodePng({
       image: i1,
@@ -380,8 +380,8 @@ describe('Transform', () => {
       backgroundColor: new ColorRgb8(0, 0, 255),
     });
 
-    expect(i1.width).toEqual(500);
-    expect(i1.height).toEqual(100);
+    expect(i1.width).toBe(500);
+    expect(i1.height).toBe(100);
 
     const output = encodePng({
       image: i1,

@@ -148,13 +148,13 @@ describe('Format: WEBP', () => {
 
       const test = webpTests.get(file.fileName);
       if (test !== undefined) {
-        expect(data.format).toEqual(test.format);
-        expect(data.width).toEqual(test.width);
-        expect(data.height).toEqual(test.height);
-        expect(data.hasAlpha).toEqual(test.hasAlpha);
-        expect(data.hasAnimation).toEqual(test.hasAnimation);
+        expect(data.format).toBe(test.format);
+        expect(data.width).toBe(test.width);
+        expect(data.height).toBe(test.height);
+        expect(data.hasAlpha).toBe(test.hasAlpha);
+        expect(data.hasAnimation).toBe(test.hasAnimation);
         if (data.hasAnimation) {
-          expect(webpDecoder.numFrames).toEqual(test.numFrames);
+          expect(webpDecoder.numFrames).toBe(test.numFrames);
         }
       }
     });
@@ -199,7 +199,7 @@ describe('Format: WEBP', () => {
       return;
     }
 
-    expect(anim.numFrames).toEqual(20);
+    expect(anim.numFrames).toBe(20);
 
     for (let i = 0; i < anim.numFrames; ++i) {
       const image = anim.getFrame(i);
@@ -213,7 +213,7 @@ describe('Format: WEBP', () => {
         output
       );
     }
-    expect(anim.getFrame(2).getPixel(0, 0).equals([0, 0, 0, 0])).toEqual(true);
+    expect(anim.getFrame(2).getPixel(0, 0).equals([0, 0, 0, 0])).toBeTruthy();
   });
 });
 

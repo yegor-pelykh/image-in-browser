@@ -76,9 +76,9 @@ describe('Exif', () => {
       const val2 = exif2.imageIfd.getValue(i);
       const eq = val2!.equals(val!);
       if (i === 7) {
-        expect(eq).toBe(false);
+        expect(eq).toBeFalsy();
       } else {
-        expect(eq).toBe(true);
+        expect(eq).toBeTruthy();
       }
     }
 
@@ -92,9 +92,9 @@ describe('Exif', () => {
       const val2 = ifd2.getValue(i);
       const eq = val2!.equals(val!);
       if (i === 7) {
-        expect(eq).toBe(false);
+        expect(eq).toBeFalsy();
       } else {
-        expect(eq).toBe(true);
+        expect(eq).toBeTruthy();
       }
     }
 
@@ -104,9 +104,9 @@ describe('Exif', () => {
       const val2 = exif2.thumbnailIfd.getValue(i);
       const eq = val2!.equals(val!);
       if (i === 7) {
-        expect(eq).toBe(false);
+        expect(eq).toBeFalsy();
       } else {
-        expect(eq).toBe(true);
+        expect(eq).toBeTruthy();
       }
     }
   });

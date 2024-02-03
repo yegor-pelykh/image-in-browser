@@ -95,7 +95,7 @@ describe('Format: GIF', () => {
       const p1 = g1.frames[f.frameIndex].getPixel(0, 0);
       const p2 = f.getPixel(0, 0);
       const equals = p1.equals(p2);
-      expect(equals).toBe(true);
+      expect(equals).toBeTruthy();
 
       const g3 = encodeGif({
         image: f,

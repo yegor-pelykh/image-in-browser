@@ -19,10 +19,10 @@ import { TestUtils } from '../_utils/test-utils';
 describe('Image', () => {
   test('empty', () => {
     const i0 = new MemoryImage();
-    expect(i0.isValid).toBe(false);
+    expect(i0.isValid).toBeFalsy();
 
     const i1 = new MemoryImage();
-    expect(i1.isValid).toBe(false);
+    expect(i1.isValid).toBeFalsy();
   });
 
   test('rowStride', () => {
