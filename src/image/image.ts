@@ -285,7 +285,7 @@ export class MemoryImage implements Iterable<Pixel> {
    * Indicates whether this MemoryImage has an alpha channel.
    */
   public get hasAlpha(): boolean {
-    return this.numChannels === 4;
+    return this.numChannels === 2 || this.numChannels === 4;
   }
 
   /**
