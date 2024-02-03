@@ -6,6 +6,11 @@ import { Format, FormatType } from '../color/format';
 import { Palette } from './palette';
 import { Pixel } from './pixel';
 
+export interface MemoryImageDataGetBytesOptions {
+  order?: ChannelOrder;
+  inPlace?: boolean;
+}
+
 export interface MemoryImageData extends Iterable<Pixel> {
   get width(): number;
 
@@ -180,5 +185,74 @@ export interface MemoryImageData extends Iterable<Pixel> {
    * to the given **order**. If that happens, the returned bytes will be a copy
    * and not a direct view of the image data.
    */
-  getBytes(order?: ChannelOrder): Uint8Array;
+  getBytes(opt?: MemoryImageDataGetBytesOptions): Uint8Array;
+}
+
+export function getImageDataBytes(
+  data: MemoryImageData,
+  opt?: MemoryImageDataGetBytesOptions
+): Uint8Array {
+  const order = opt?.order;
+  const inPlace = opt?.inPlace ?? false;
+
+  if (order === undefined) {
+    return data.toUint8Array();
+  }
+
+  if (data.numChannels === 4) {
+    if (
+      order === ChannelOrder.abgr ||
+      order === ChannelOrder.argb ||
+      order === ChannelOrder.bgra
+    ) {
+      const tempImage = inPlace ? data : data.clone();
+      if (order === ChannelOrder.abgr) {
+        for (const p of tempImage) {
+          const r = p.r;
+          const g = p.g;
+          const b = p.b;
+          const a = p.a;
+          p.r = a;
+          p.g = b;
+          p.b = g;
+          p.a = r;
+        }
+      } else if (order === ChannelOrder.argb) {
+        for (const p of tempImage) {
+          const r = p.r;
+          const g = p.g;
+          const b = p.b;
+          const a = p.a;
+          p.r = a;
+          p.g = r;
+          p.b = g;
+          p.a = b;
+        }
+      } else if (order === ChannelOrder.bgra) {
+        for (const p of tempImage) {
+          const r = p.r;
+          const g = p.g;
+          const b = p.b;
+          const a = p.a;
+          p.r = b;
+          p.g = g;
+          p.b = r;
+          p.a = a;
+        }
+      }
+      return tempImage.toUint8Array();
+    }
+  } else if (data.numChannels === 3) {
+    if (order === ChannelOrder.bgr) {
+      const tempImage = inPlace ? data : data.clone();
+      for (const p of tempImage) {
+        const r = p.r;
+        p.r = p.b;
+        p.b = r;
+      }
+      return tempImage.toUint8Array();
+    }
+  }
+
+  return data.toUint8Array();
 }

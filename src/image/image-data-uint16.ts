@@ -1,9 +1,12 @@
 /** @format */
 
-import { ChannelOrder } from '../color/channel-order';
 import { Color } from '../color/color';
 import { Format, FormatType } from '../color/format';
-import { MemoryImageData } from './image-data';
+import {
+  MemoryImageData,
+  MemoryImageDataGetBytesOptions,
+  getImageDataBytes,
+} from './image-data';
 import { Palette } from './palette';
 import { Pixel } from './pixel';
 import { PixelUint16 } from './pixel-uint16';
@@ -234,67 +237,8 @@ export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
     return new Uint8Array(this.buffer);
   }
 
-  public getBytes(order?: ChannelOrder | undefined): Uint8Array {
-    if (order === undefined) {
-      return this.toUint8Array();
-    }
-
-    if (this.numChannels === 4) {
-      if (
-        order === ChannelOrder.abgr ||
-        order === ChannelOrder.argb ||
-        order === ChannelOrder.bgra
-      ) {
-        const tempImage = this.clone();
-        if (order === ChannelOrder.abgr) {
-          for (const p of tempImage) {
-            const r = p.r;
-            const g = p.g;
-            const b = p.b;
-            const a = p.a;
-            p.r = a;
-            p.g = b;
-            p.b = g;
-            p.a = r;
-          }
-        } else if (order === ChannelOrder.argb) {
-          for (const p of tempImage) {
-            const r = p.r;
-            const g = p.g;
-            const b = p.b;
-            const a = p.a;
-            p.r = a;
-            p.g = r;
-            p.b = g;
-            p.a = b;
-          }
-        } else if (order === ChannelOrder.bgra) {
-          for (const p of tempImage) {
-            const r = p.r;
-            const g = p.g;
-            const b = p.b;
-            const a = p.a;
-            p.r = b;
-            p.g = g;
-            p.b = r;
-            p.a = a;
-          }
-        }
-        return tempImage.toUint8Array();
-      }
-    } else if (this.numChannels === 3) {
-      if (order === ChannelOrder.bgr) {
-        const tempImage = this.clone();
-        for (const p of tempImage) {
-          const r = p.r;
-          p.r = p.b;
-          p.b = r;
-        }
-        return tempImage.toUint8Array();
-      }
-    }
-
-    return this.toUint8Array();
+  public getBytes(opt?: MemoryImageDataGetBytesOptions): Uint8Array {
+    return getImageDataBytes(this, opt);
   }
 
   public toString(): string {

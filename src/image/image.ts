@@ -7,7 +7,6 @@ import { ColorUtils } from '../color/color-utils';
 import {
   Format,
   FormatMaxValue,
-  FormatSize,
   FormatType,
   getRowStride,
 } from '../color/format';
@@ -87,6 +86,11 @@ export interface MemoryImageConvertOptions {
 export interface MemoryImageColorExtremes {
   min: number;
   max: number;
+}
+
+export interface MemoryImageGetBytesOptions {
+  order?: ChannelOrder;
+  alpha?: number;
 }
 
 /**
@@ -850,10 +854,44 @@ export class MemoryImage implements Iterable<Pixel> {
   /**
    * Similar to **toUint8Array**, but will convert the channels of the image pixels
    * to the given **order**. If that happens, the returned bytes will be a copy
-   * and not a direct view of the image data.
+   * and not a direct view of the image data. If the number of channels needed
+   * by **order** differs from what the image has, the bytes will come from a
+   * converted image. If the converted image needs an alpha channel added,
+   * then you can use the **alpha** argument to specify the value of the
+   * added alpha channel.
    */
-  public getBytes(order?: ChannelOrder): Uint8Array {
-    return this._data?.getBytes(order) ?? this.toUint8Array();
+  public getBytes(opt?: MemoryImageGetBytesOptions): Uint8Array {
+    const order = opt?.order;
+    const alpha = opt?.alpha;
+
+    if (order !== undefined) {
+      const length = ChannelOrderLength.get(order);
+      if (length !== this.numChannels) {
+        const self = this.convert({
+          numChannels: length,
+          alpha: alpha,
+        });
+        return (
+          self.data?.getBytes({
+            order: order,
+            inPlace: true,
+          }) ?? this.toUint8Array()
+        );
+      } else {
+        return (
+          this.data?.getBytes({
+            order: order,
+            inPlace: false,
+          }) ?? this.toUint8Array()
+        );
+      }
+    } else {
+      return (
+        this.data?.getBytes({
+          order: order,
+        }) ?? this.toUint8Array()
+      );
+    }
   }
 
   /**
