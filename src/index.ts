@@ -308,7 +308,10 @@ export { MemoryImageDataUint4 } from './image/image-data-uint4';
 export { MemoryImageDataUint8 } from './image/image-data-uint8';
 export { MemoryImageDataUint16 } from './image/image-data-uint16';
 export { MemoryImageDataUint32 } from './image/image-data-uint32';
-export { MemoryImageData } from './image/image-data';
+export {
+  MemoryImageData,
+  MemoryImageDataGetBytesOptions,
+} from './image/image-data';
 export { ImageUtils } from './image/image-utils';
 export {
   MemoryImage,
