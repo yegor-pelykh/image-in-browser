@@ -157,8 +157,9 @@ export class JpegScan {
     if (this._bitsData === 0xff) {
       const nextByte = this.input.read();
       if (nextByte !== 0) {
-        const marker = ((this._bitsData << 8) | nextByte).toString(16);
-        throw new LibError(`unexpected marker: ${marker}`);
+        // const marker = ((this._bitsData << 8) | nextByte).toString(16);
+        // throw new LibError(`unexpected marker: ${marker}`);
+        return undefined;
       }
     }
 
@@ -197,10 +198,16 @@ export class JpegScan {
   }
 
   private receiveAndExtend(length: number | undefined): number {
+    if (length === undefined) {
+      return 0;
+    }
     if (length === 1) {
       return this.readBit() === 1 ? 1 : -1;
     }
-    const n = this.receive(length!)!;
+    const n = this.receive(length);
+    if (n === undefined) {
+      return 0;
+    }
     if (n >= 1 << ((length ?? 0) - 1)) {
       return n;
     }
@@ -215,7 +222,10 @@ export class JpegScan {
 
     let k = 1;
     while (k < 64) {
-      const rs = this.decodeHuffman(component.huffmanTableAC)!;
+      const rs = this.decodeHuffman(component.huffmanTableAC);
+      if (rs === undefined) {
+        break;
+      }
       let s = rs & 15;
       const r = rs >>> 4;
       if (s === 0) {

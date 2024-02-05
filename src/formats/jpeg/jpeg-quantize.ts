@@ -222,10 +222,12 @@ export abstract class JpegQuantize {
 
     // convert to 8-bit integers
     for (let i = 0; i < 64; ++i) {
-      dataOut[i] =
-        JpegQuantize._dctClip[
-          JpegQuantize._dctClipOffset + 128 + BitUtils.sshR(p[i] + 8, 4)
-        ];
+      const index =
+        JpegQuantize._dctClipOffset + 128 + BitUtils.sshR(p[i] + 8, 4);
+      if (index < 0) {
+        break;
+      }
+      dataOut[i] = JpegQuantize._dctClip[index];
     }
   }
 
