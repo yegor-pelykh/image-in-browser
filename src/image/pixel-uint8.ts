@@ -119,8 +119,8 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       ? this.numChannels === 2
         ? this.data[this._index]
         : this.numChannels > 1
-        ? this.data[this._index + 1]
-        : 0
+          ? this.data[this._index + 1]
+          : 0
       : this.palette.getGreen(this.data[this._index]);
   }
   public set g(g: number) {
@@ -136,8 +136,8 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       ? this.numChannels === 2
         ? this.data[this._index]
         : this.numChannels > 2
-        ? this.data[this._index + 2]
-        : 0
+          ? this.data[this._index + 2]
+          : 0
       : this.palette.getBlue(this.data[this._index]);
   }
   public set b(b: number) {
@@ -153,8 +153,8 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       ? this.numChannels === 2
         ? this.data[this._index + 1]
         : this.numChannels > 3
-        ? this.data[this._index + 3]
-        : 255
+          ? this.data[this._index + 3]
+          : 255
       : this.palette.getAlpha(this.data[this._index]);
   }
   public set a(a: number) {

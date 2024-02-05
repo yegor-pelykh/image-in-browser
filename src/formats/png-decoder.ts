@@ -753,12 +753,12 @@ export class PngDecoder implements Decoder {
       this._info.colorType === PngColorType.indexed
         ? 1
         : this._info.colorType === PngColorType.grayscale
-        ? 1
-        : this._info.colorType === PngColorType.grayscaleAlpha
-        ? 2
-        : this._info.colorType === PngColorType.rgba
-        ? 4
-        : 3;
+          ? 1
+          : this._info.colorType === PngColorType.grayscaleAlpha
+            ? 2
+            : this._info.colorType === PngColorType.rgba
+              ? 4
+              : 3;
 
     let uncompressed: Uint8Array | undefined = undefined;
     try {
@@ -816,10 +816,10 @@ export class PngDecoder implements Decoder {
         this._info.bits === 1
           ? 255
           : this._info.bits === 2
-          ? 85
-          : this._info.bits === 4
-          ? 17
-          : 1;
+            ? 85
+            : this._info.bits === 4
+              ? 17
+              : 1;
       for (let i = 0; i < numColors; ++i) {
         const g = i * to8bit;
         palette.setRgba(i, g, g, g, 255);
@@ -836,12 +836,12 @@ export class PngDecoder implements Decoder {
       this._info.bits === 1
         ? Format.uint1
         : this._info.bits === 2
-        ? Format.uint2
-        : this._info.bits === 4
-        ? Format.uint4
-        : this._info.bits === 16
-        ? Format.uint16
-        : Format.uint8;
+          ? Format.uint2
+          : this._info.bits === 4
+            ? Format.uint4
+            : this._info.bits === 16
+              ? Format.uint16
+              : Format.uint8;
 
     if (
       this._info.colorType === PngColorType.grayscale &&

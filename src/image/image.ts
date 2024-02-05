@@ -107,12 +107,12 @@ export class MemoryImage implements Iterable<Pixel> {
     return this.format === Format.uint1
       ? 2
       : this.format === Format.uint2
-      ? 4
-      : this.format === Format.uint4
-      ? 16
-      : this.format === Format.uint8
-      ? 256
-      : 0;
+        ? 4
+        : this.format === Format.uint4
+          ? 16
+          : this.format === Format.uint8
+            ? 256
+            : 0;
   }
 
   /**
@@ -537,10 +537,10 @@ export class MemoryImage implements Iterable<Pixel> {
       (numChannels === 3
         ? ChannelOrder.rgb
         : numChannels === 4
-        ? ChannelOrder.rgba
-        : numChannels === 1
-        ? ChannelOrder.red
-        : ChannelOrder.grayAlpha);
+          ? ChannelOrder.rgba
+          : numChannels === 1
+            ? ChannelOrder.red
+            : ChannelOrder.grayAlpha);
 
     if (numChannels === 1) {
       // There is only one channel order

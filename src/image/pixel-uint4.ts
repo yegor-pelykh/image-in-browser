@@ -260,10 +260,10 @@ export class PixelUint4 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       bpp === 4
         ? this._y * rowStride + (this._x >>> 1)
         : bpp === 8
-        ? this._y * w + this._x
-        : bpp === 16
-        ? this._y * rowStride + (this._x << 1)
-        : this._y * rowStride + ((this._x * bpp) >>> 3);
+          ? this._y * w + this._x
+          : bpp === 16
+            ? this._y * rowStride + (this._x << 1)
+            : this._y * rowStride + ((this._x * bpp) >>> 3);
     this._bitIndex = bpp > 7 ? (this._x * bpp) & 0x4 : (this._x * bpp) & 0x7;
   }
 

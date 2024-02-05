@@ -25,8 +25,8 @@ export class VP8Random {
       dithering < 0
         ? 0
         : dithering > 1
-        ? 1 << VP8Random.randomDitherFix
-        : Math.trunc((1 << VP8Random.randomDitherFix) * dithering);
+          ? 1 << VP8Random.randomDitherFix
+          : Math.trunc((1 << VP8Random.randomDitherFix) * dithering);
   }
 
   /**

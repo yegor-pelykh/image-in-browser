@@ -955,26 +955,26 @@ export class TiffImage {
       this._bitsPerSample === 1
         ? Format.uint1
         : this._bitsPerSample === 2
-        ? Format.uint2
-        : this._bitsPerSample === 4
-        ? Format.uint4
-        : isFloat && this._bitsPerSample === 16
-        ? Format.float16
-        : isFloat && this._bitsPerSample === 32
-        ? Format.float32
-        : isFloat && this._bitsPerSample === 64
-        ? Format.float64
-        : isInt && this._bitsPerSample === 8
-        ? Format.int8
-        : isInt && this._bitsPerSample === 16
-        ? Format.int16
-        : isInt && this._bitsPerSample === 32
-        ? Format.int32
-        : this._bitsPerSample === 16
-        ? Format.uint16
-        : this._bitsPerSample === 32
-        ? Format.uint32
-        : Format.uint8;
+          ? Format.uint2
+          : this._bitsPerSample === 4
+            ? Format.uint4
+            : isFloat && this._bitsPerSample === 16
+              ? Format.float16
+              : isFloat && this._bitsPerSample === 32
+                ? Format.float32
+                : isFloat && this._bitsPerSample === 64
+                  ? Format.float64
+                  : isInt && this._bitsPerSample === 8
+                    ? Format.int8
+                    : isInt && this._bitsPerSample === 16
+                      ? Format.int16
+                      : isInt && this._bitsPerSample === 32
+                        ? Format.int32
+                        : this._bitsPerSample === 16
+                          ? Format.uint16
+                          : this._bitsPerSample === 32
+                            ? Format.uint32
+                            : Format.uint8;
     const hasPalette =
       this._colorMap !== undefined &&
       this._photometricType === TiffPhotometricType.palette;

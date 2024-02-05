@@ -56,8 +56,8 @@ export class TiffEncoder implements Encoder {
       image.numChannels === 1
         ? TiffPhotometricType.blackIsZero
         : image.hasPalette
-        ? TiffPhotometricType.palette
-        : TiffPhotometricType.rgb;
+          ? TiffPhotometricType.palette
+          : TiffPhotometricType.rgb;
 
     const nc = image.numChannels;
 

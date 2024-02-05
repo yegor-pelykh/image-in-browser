@@ -86,10 +86,10 @@ export function getRowStride(
   return format === Format.uint1
     ? Math.ceil((width * numChannels) / 8)
     : format === Format.uint2
-    ? Math.ceil((width * numChannels) / 4)
-    : format === Format.uint4
-    ? Math.ceil((width * numChannels) / 2)
-    : width * numChannels * FormatSize.get(format)!;
+      ? Math.ceil((width * numChannels) / 4)
+      : format === Format.uint4
+        ? Math.ceil((width * numChannels) / 2)
+        : width * numChannels * FormatSize.get(format)!;
 }
 
 /**

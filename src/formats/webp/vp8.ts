@@ -1613,8 +1613,8 @@ export class VP8 {
             ? VP8.tmPred
             : VP8.hPred
           : this._br.getBit(163) !== 0
-          ? VP8.vPred
-          : VP8.dcPred;
+            ? VP8.vPred
+            : VP8.dcPred;
       block.imodes[0] = ymode;
 
       top!.fill(ymode, ti, ti + 4);
@@ -1651,10 +1651,10 @@ export class VP8 {
       this._br.getBit(142) === 0
         ? VP8.dcPred
         : this._br.getBit(114) === 0
-        ? VP8.vPred
-        : this._br.getBit(183) !== 0
-        ? VP8.tmPred
-        : VP8.hPred;
+          ? VP8.vPred
+          : this._br.getBit(183) !== 0
+            ? VP8.tmPred
+            : VP8.hPred;
   }
 
   public decodeHeader(): boolean {

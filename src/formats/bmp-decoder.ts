@@ -58,27 +58,27 @@ export class BmpDecoder implements Decoder {
     const nc = this._forceRgba
       ? 4
       : bpp === 1 || bpp === 4 || bpp === 8
-      ? 1
-      : bpp === 32
-      ? 4
-      : 3;
+        ? 1
+        : bpp === 32
+          ? 4
+          : 3;
     const format = this._forceRgba
       ? Format.uint8
       : bpp === 1
-      ? Format.uint1
-      : bpp === 2
-      ? Format.uint2
-      : bpp === 4
-      ? Format.uint4
-      : bpp === 8
-      ? Format.uint8
-      : bpp === 16
-      ? Format.uint8
-      : bpp === 24
-      ? Format.uint8
-      : bpp === 32
-      ? Format.uint8
-      : Format.uint8;
+        ? Format.uint1
+        : bpp === 2
+          ? Format.uint2
+          : bpp === 4
+            ? Format.uint4
+            : bpp === 8
+              ? Format.uint8
+              : bpp === 16
+                ? Format.uint8
+                : bpp === 24
+                  ? Format.uint8
+                  : bpp === 32
+                    ? Format.uint8
+                    : Format.uint8;
     const palette = this._forceRgba ? undefined : inf.palette;
 
     const image = new MemoryImage({

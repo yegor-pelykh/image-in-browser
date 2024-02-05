@@ -157,8 +157,8 @@ export abstract class Transform {
       mode === TrimMode.topLeftColor
         ? opt.image.getPixel(0, 0)
         : mode === TrimMode.bottomRightColor
-        ? opt.image.getPixel(w - 1, h - 1)
-        : undefined;
+          ? opt.image.getPixel(w - 1, h - 1)
+          : undefined;
 
     let xMin = w;
     let xMax = 0;

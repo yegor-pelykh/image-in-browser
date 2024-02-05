@@ -245,12 +245,12 @@ export class PngEncoder implements Encoder {
       image.hasPalette
         ? PngColorType.indexed
         : image.numChannels === 1
-        ? PngColorType.grayscale
-        : image.numChannels === 2
-        ? PngColorType.grayscaleAlpha
-        : image.numChannels === 3
-        ? PngColorType.rgb
-        : PngColorType.rgba
+          ? PngColorType.grayscale
+          : image.numChannels === 2
+            ? PngColorType.grayscaleAlpha
+            : image.numChannels === 3
+              ? PngColorType.rgb
+              : PngColorType.rgba
     );
     // compression method: 0:deflate
     chunk.writeByte(0);

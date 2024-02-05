@@ -110,10 +110,10 @@ export class MemoryImageDataUint4 implements MemoryImageData, Iterable<Pixel> {
       this._numChannels === 2
         ? this._width
         : this._numChannels === 4
-        ? this._width * 2
-        : this._numChannels === 3
-        ? Math.ceil(this._width * 1.5)
-        : Math.ceil(this._width / 2);
+          ? this._width * 2
+          : this._numChannels === 3
+            ? Math.ceil(this._width * 1.5)
+            : Math.ceil(this._width / 2);
     this._palette = undefined;
     this._data =
       data ?? new Uint8Array(Math.max(this._rowStride * this._height, 1));

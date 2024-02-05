@@ -135,9 +135,9 @@ export class WebPFilters {
     return (g & ~0xff) === 0
       ? g
       : g < 0
-      ? 0
-      : // clip to 8bit
-        255;
+        ? 0
+        : // clip to 8bit
+          255;
   }
 
   private static doGradientFilter(
