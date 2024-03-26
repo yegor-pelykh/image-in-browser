@@ -30,14 +30,20 @@ Supported Image Formats
 
 The following formats are currently supported for encoding / decoding:
 
+**Read / Write**
+
 - BMP,
-- GIF / Animated GIF,
+- GIF, animated GIF,
 - ICO,
-- JPEG,
-- PNG / Animated APNG,
+- JPG,
+- PNG, animated APNG,
 - TGA,
 - TIFF
-- WEBP (only decoding)
+
+**Read Only**
+
+- PNM, PBM, PGM, PPM
+- WEBP, animated WEBP
 
 Documentation
 ============
