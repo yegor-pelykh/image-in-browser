@@ -270,6 +270,22 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
+   * Read one line of null-terminated string (looking for _\n_ char),
+   * or if **length** is provided, that number of bytes returned as a string.
+   */
+  public readStringLine(length: number = 256): string {
+    const codes: number[] = [];
+    while (!this.isEOS) {
+      const c = this.read();
+      codes.push(c);
+      if (c === 10 || codes.length >= length) {
+        return String.fromCodePoint(...codes);
+      }
+    }
+    return String.fromCodePoint(...codes);
+  }
+
+  /**
    * Read a null-terminated UTF-8 string.
    */
   public readStringUtf8(): string {

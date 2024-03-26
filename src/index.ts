@@ -23,6 +23,7 @@ import { DitherKernel } from './filter/dither-kernel';
 import { ExifData } from './exif/exif-data';
 import { JpegUtils } from './formats/jpeg/jpeg-utils';
 import { WebPDecoder } from './formats/webp-decoder';
+import { PnmDecoder } from './formats/pnm-decoder';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order';
@@ -215,6 +216,9 @@ export { PngFilterType } from './formats/png/png-filter-type';
 export { PngFrame, PngFrameInitOptions } from './formats/png/png-frame';
 export { PngInfo, PngInfoInitOptions } from './formats/png/png-info';
 
+export { PnmFormat } from './formats/pnm/pnm-format';
+export { PnmInfo } from './formats/pnm/pnm-info';
+
 export { TgaImageType, TgaImageTypeLength } from './formats/tga/tga-image-type';
 export { TgaInfo, TgaInfoInitOptions } from './formats/tga/tga-info';
 
@@ -284,6 +288,7 @@ export {
 } from './formats/jpeg-encoder';
 export { PngDecoder } from './formats/png-decoder';
 export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder';
+export { PnmDecoder } from './formats/pnm-decoder';
 export { TgaDecoder } from './formats/tga-decoder';
 export { TgaEncoder } from './formats/tga-encoder';
 export { TiffDecoder } from './formats/tiff-decoder';
@@ -457,6 +462,10 @@ export function findDecoderForMimeType(mimeType: string): Decoder | undefined {
     case 'image/x-icon':
     case 'image/vnd.microsoft.icon':
       return new IcoDecoder();
+    case 'image/x-portable-bitmap':
+    case 'image/x-portable-pixmap':
+    case 'image/x-portable-anymap':
+      return new PnmDecoder();
     default:
       return undefined;
   }
@@ -491,6 +500,14 @@ export function findDecoderForNamedImage(name: string): Decoder | undefined {
   }
   if (n.endsWith('.ico')) {
     return new IcoDecoder();
+  }
+  if (
+    n.endsWith('.pnm') ||
+    n.endsWith('.pbm') ||
+    n.endsWith('.pgm') ||
+    n.endsWith('.ppm')
+  ) {
+    return new PnmDecoder();
   }
   return undefined;
 }
@@ -608,6 +625,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
   const ico = new IcoDecoder();
   if (ico.isValidFile(bytes)) {
     return ico;
+  }
+
+  const pnm = new PnmDecoder();
+  if (pnm.isValidFile(bytes)) {
+    return pnm;
   }
 
   return undefined;
@@ -778,6 +800,16 @@ export function encodePng(opt: EncodePngOptions): Uint8Array {
   }).encode({
     image: opt.image,
     singleFrame: singleFrame,
+  });
+}
+
+/**
+ * Decode a PNM formatted image.
+ */
+export function decodePnm(opt: DecodeOptions): MemoryImage | undefined {
+  const dataUint8 = new Uint8Array(opt.data);
+  return new PnmDecoder().decode({
+    bytes: dataUint8,
   });
 }
 
