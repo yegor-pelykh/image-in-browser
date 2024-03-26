@@ -23,7 +23,7 @@ export class IfdAsciiValue extends IfdValue {
     if (typeof value === 'string') {
       this._value = value;
     } else {
-      this._value = String.fromCharCode(...value);
+      this._value = String.fromCodePoint(...value);
     }
   }
 

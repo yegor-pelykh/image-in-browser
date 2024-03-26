@@ -256,7 +256,7 @@ export class InputBuffer<T extends TypedArray> {
       while (!this.isEOS) {
         const c = this.read();
         if (c === 0) {
-          return String.fromCharCode(...codes);
+          return String.fromCodePoint(...codes);
         }
         codes.push(c);
       }
@@ -265,7 +265,7 @@ export class InputBuffer<T extends TypedArray> {
 
     const s = this.readRange(length);
     const bytes = s.toUint8Array();
-    const result = String.fromCharCode(...bytes);
+    const result = String.fromCodePoint(...bytes);
     return result;
   }
 
