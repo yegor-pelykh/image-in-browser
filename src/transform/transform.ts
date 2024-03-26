@@ -518,6 +518,7 @@ export abstract class Transform {
       new MemoryImage({
         width: newWidth!,
         height: newHeight!,
+        format: opt.image.format,
       });
 
     // If a background color is provided, set all pixels to that color
