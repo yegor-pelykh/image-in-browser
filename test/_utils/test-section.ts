@@ -12,6 +12,7 @@ export enum TestSection {
   ico,
   jpeg,
   png,
+  pnm,
   tiff,
   tga,
   transform,
