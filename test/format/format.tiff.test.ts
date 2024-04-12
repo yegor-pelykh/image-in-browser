@@ -37,6 +37,35 @@ type TiffFileInfo = {
 };
 
 describe('Format: TIFF', () => {
+  test('16bit colormap', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.tiff,
+      'CNSW_crop.tif'
+    );
+    const tiff = decodeTiff({
+      data: input,
+    });
+    expect(tiff).toBeDefined();
+    if (tiff === undefined) {
+      return;
+    }
+
+    const conv = tiff.convert({
+      format: Format.uint8,
+    });
+
+    const output = encodePng({
+      image: conv,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.tiff,
+      'CNSW_crop.png',
+      output
+    );
+  });
+
   test('encode', () => {
     const i0 = new MemoryImage({
       width: 256,

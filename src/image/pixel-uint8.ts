@@ -275,7 +275,7 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       if (channel === Channel.luminance) {
         return this.luminance;
       } else {
-        return channel < this.data.length
+        return channel < this.numChannels
           ? this.data[this._index + channel]
           : 0;
       }

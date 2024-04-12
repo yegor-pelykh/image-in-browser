@@ -63,7 +63,7 @@ export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
   }
 
   public get maxChannelValue(): number {
-    return 0xffff;
+    return this._palette?.maxChannelValue ?? 0xffff;
   }
 
   public get maxIndexValue(): number {
@@ -74,8 +74,9 @@ export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
     return this.palette !== undefined;
   }
 
+  private _palette: Palette | undefined;
   public get palette(): Palette | undefined {
-    return undefined;
+    return this._palette;
   }
 
   public get isHdrFormat(): boolean {
@@ -103,6 +104,13 @@ export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
       data ?? new Uint16Array(this._width * this._height * this._numChannels);
   }
 
+  public static palette(width: number, height: number, palette?: Palette) {
+    const data = new Uint16Array(width * height);
+    const d = new MemoryImageDataUint16(width, height, 1, data);
+    d._palette = palette;
+    return d;
+  }
+
   public static from(
     other: MemoryImageDataUint16,
     skipPixels = false
@@ -110,12 +118,14 @@ export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
     const data = skipPixels
       ? new Uint16Array(other.data.length)
       : other.data.slice();
-    return new MemoryImageDataUint16(
+    const d = new MemoryImageDataUint16(
       other.width,
       other.height,
       other._numChannels,
       data
     );
+    d._palette = other.palette?.clone();
+    return d;
   }
 
   public getRange(

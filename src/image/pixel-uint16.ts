@@ -65,7 +65,7 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get length(): number {
-    return this._image.numChannels;
+    return this.palette?.numChannels ?? this._image.numChannels;
   }
 
   public get numChannels(): number {
@@ -97,11 +97,15 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get palette(): Palette | undefined {
-    return undefined;
+    return this._image.palette;
   }
 
   public get r(): number {
-    return this.numChannels > 0 ? this.data[this._index] : 0;
+    return this.palette === undefined
+      ? this.numChannels > 0
+        ? this.data[this._index]
+        : 0
+      : this.palette.getRed(this.data[this._index]);
   }
   public set r(r: number) {
     if (this.numChannels > 0) {
@@ -110,7 +114,11 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get g(): number {
-    return this.numChannels > 1 ? this.data[this._index + 1] : 0;
+    return this.palette === undefined
+      ? this.numChannels > 1
+        ? this.data[this._index + 1]
+        : 0
+      : this.palette.getGreen(this.data[this._index]);
   }
   public set g(g: number) {
     if (this.numChannels > 1) {
@@ -119,7 +127,11 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get b(): number {
-    return this.numChannels > 2 ? this.data[this._index + 2] : 0;
+    return this.palette === undefined
+      ? this.numChannels > 2
+        ? this.data[this._index + 2]
+        : 0
+      : this.palette.getBlue(this.data[this._index]);
   }
   public set b(b: number) {
     if (this.numChannels > 2) {
@@ -128,7 +140,11 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public get a(): number {
-    return this.numChannels > 3 ? this.data[this._index + 3] : 0;
+    return this.palette === undefined
+      ? this.numChannels > 3
+        ? this.data[this._index + 3]
+        : 0
+      : this.palette.getAlpha(this.data[this._index]);
   }
   public set a(a: number) {
     if (this.numChannels > 3) {
@@ -215,7 +231,7 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
         };
       }
     }
-    this._index += this.numChannels;
+    this._index += this.palette === undefined ? this.numChannels : 1;
     return <IteratorResult<Pixel>>{
       done: this._index >= this.image.data.length,
       value: this,
@@ -238,10 +254,16 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   }
 
   public getChannel(channel: number | Channel): number {
-    if (channel === Channel.luminance) {
-      return this.luminance;
+    if (this.palette !== undefined) {
+      return this.palette.get(this.data[this._index], channel);
     } else {
-      return channel < this.numChannels ? this.data[this._index + channel] : 0;
+      if (channel === Channel.luminance) {
+        return this.luminance;
+      } else {
+        return channel < this.numChannels
+          ? this.data[this._index + channel]
+          : 0;
+      }
     }
   }
 

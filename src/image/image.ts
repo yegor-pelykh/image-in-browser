@@ -103,18 +103,6 @@ export class MemoryImage implements Iterable<Pixel> {
     return this._data;
   }
 
-  private get numPixelColors(): number {
-    return this.format === Format.uint1
-      ? 2
-      : this.format === Format.uint2
-        ? 4
-        : this.format === Format.uint4
-          ? 16
-          : this.format === Format.uint8
-            ? 256
-            : 0;
-  }
-
   /**
    * The format of the image pixels.
    */
@@ -206,7 +194,8 @@ export class MemoryImage implements Iterable<Pixel> {
       this.format === Format.uint1 ||
       this.format === Format.uint2 ||
       this.format === Format.uint4 ||
-      this.format === Format.uint8
+      this.format === Format.uint8 ||
+      this.format === Format.uint16
     );
   }
 
@@ -403,6 +392,20 @@ export class MemoryImage implements Iterable<Pixel> {
       this._frameDuration = 0;
       this._frameIndex = 0;
     }
+  }
+
+  private static getNumPixelColors(format: Format): number {
+    return format === Format.uint1
+      ? 2
+      : format === Format.uint2
+        ? 4
+        : format === Format.uint4
+          ? 16
+          : format === Format.uint8
+            ? 256
+            : format === Format.uint16
+              ? 65536
+              : 0;
   }
 
   public static fromResized(
@@ -666,7 +669,7 @@ export class MemoryImage implements Iterable<Pixel> {
     const palette =
       opt.palette ??
       (withPalette && this.supportsPalette
-        ? this.createPalette(paletteFormat, numChannels)
+        ? this.createPalette(format, paletteFormat, numChannels)
         : undefined);
 
     this.createImageData(opt.width, opt.height, format, numChannels, palette);
@@ -709,7 +712,11 @@ export class MemoryImage implements Iterable<Pixel> {
         }
         break;
       case Format.uint16:
-        this._data = new MemoryImageDataUint16(width, height, numChannels);
+        if (palette === undefined) {
+          this._data = new MemoryImageDataUint16(width, height, numChannels);
+        } else {
+          this._data = MemoryImageDataUint16.palette(width, height, palette);
+        }
         break;
       case Format.uint32:
         this._data = new MemoryImageDataUint32(width, height, numChannels);
@@ -736,6 +743,7 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   private createPalette(
+    format: Format,
     paletteFormat: Format,
     numChannels: number
   ): Palette | undefined {
@@ -747,23 +755,50 @@ export class MemoryImage implements Iterable<Pixel> {
       case Format.uint4:
         return undefined;
       case Format.uint8:
-        return new PaletteUint8(this.numPixelColors, numChannels);
+        return new PaletteUint8(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.uint16:
-        return new PaletteUint16(this.numPixelColors, numChannels);
+        return new PaletteUint16(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.uint32:
-        return new PaletteUint32(this.numPixelColors, numChannels);
+        return new PaletteUint32(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.int8:
-        return new PaletteInt8(this.numPixelColors, numChannels);
+        return new PaletteInt8(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.int16:
-        return new PaletteInt16(this.numPixelColors, numChannels);
+        return new PaletteInt16(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.int32:
-        return new PaletteInt32(this.numPixelColors, numChannels);
+        return new PaletteInt32(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.float16:
-        return new PaletteFloat16(this.numPixelColors, numChannels);
+        return new PaletteFloat16(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.float32:
-        return new PaletteFloat32(this.numPixelColors, numChannels);
+        return new PaletteFloat32(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
       case Format.float64:
-        return new PaletteFloat64(this.numPixelColors, numChannels);
+        return new PaletteFloat64(
+          MemoryImage.getNumPixelColors(format),
+          numChannels
+        );
     }
     throw new LibError('Unknown palette format.');
   }

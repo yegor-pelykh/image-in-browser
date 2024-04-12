@@ -986,6 +986,7 @@ export class TiffImage {
       format: format,
       numChannels: numChannels,
       withPalette: hasPalette,
+      paletteFormat: format,
     });
 
     if (hasPalette) {
@@ -994,13 +995,15 @@ export class TiffImage {
       const numChannels = 3;
       // Only support RGB palettes
       const numColors = Math.trunc(cm.length / numChannels);
-      for (let i = 0; i < numColors; ++i) {
-        p.setRgb(
-          i,
-          cm[this._colorMapRed + i],
-          cm[this._colorMapGreen + i],
-          cm[this._colorMapBlue + i]
-        );
+      let ri = this._colorMapRed;
+      let gi = this._colorMapGreen;
+      let bi = this._colorMapBlue;
+      const colorMapSize = cm.length;
+      for (let i = 0; i < numColors; ++i, ++ri, ++gi, ++bi) {
+        if (bi >= colorMapSize) {
+          break;
+        }
+        p.setRgb(i, cm[ri], cm[gi], cm[bi]);
       }
     }
 
