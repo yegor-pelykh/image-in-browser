@@ -388,14 +388,19 @@ export interface DecodeOptions {
 
 export interface DecodeImageOptions extends DecodeOptions {
   frameIndex?: number;
+}
+
+export interface DecodeImageLargestOptions extends DecodeOptions {
+  frameIndex?: number;
   largest?: boolean;
 }
 
-export interface DecodeImageByMimeTypeOptions extends DecodeImageOptions {
+export interface DecodeImageByMimeTypeOptions
+  extends DecodeImageLargestOptions {
   mimeType: string;
 }
 
-export interface DecodeNamedImageOptions extends DecodeImageOptions {
+export interface DecodeNamedImageOptions extends DecodeImageLargestOptions {
   name: string;
 }
 
@@ -685,7 +690,9 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
  * **WARNING:** Since this will check the image data against all known decoders,
  * it is much slower than using an explicit decoder.
  */
-export function decodeImage(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodeImage(
+  opt: DecodeImageLargestOptions
+): MemoryImage | undefined {
   const decoder = findDecoderForData(opt.data);
   if (decoder === undefined) {
     return undefined;
@@ -971,9 +978,15 @@ export function encodeBmp(opt: EncodeOptions): Uint8Array {
 /**
  * Decode an ICO image.
  */
-export function decodeIco(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodeIco(
+  opt: DecodeImageLargestOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new IcoDecoder().decode({
+  const decoder = new IcoDecoder();
+  if (opt.largest === true) {
+    return decoder.decodeImageLargest(dataUint8);
+  }
+  return decoder.decode({
     bytes: dataUint8,
     frameIndex: opt.frameIndex,
   });
