@@ -723,19 +723,33 @@ export class GifDecoder implements Decoder {
       if (frame.disposal === 2) {
         nextImage.clear(colorMap.getColor(this._info.backgroundColor!.r));
       } else if (frame.disposal !== 3) {
-        const nextBytes = nextImage.toUint8Array();
-        const lastBytes = lastImage.toUint8Array();
-        const lp = lastImage.palette!;
-        for (let i = 0, l = nextBytes.length; i < l; ++i) {
-          const lc = lastBytes[i];
-          const nc = colorMap.findColor(
-            lp.getRed(lc),
-            lp.getGreen(lc),
-            lp.getBlue(lc),
-            lp.getAlpha(lc)
-          );
-          if (nc !== -1) {
-            nextBytes[i] = nc;
+        if (
+          frame.x !== 0 ||
+          frame.y !== 0 ||
+          frame.width !== lastImage.width ||
+          frame.height !== lastImage.height
+        ) {
+          if (frame.colorMap !== undefined) {
+            const lp = lastImage.palette!;
+            const remapColors = new Map<number, number | undefined>();
+            for (let ci = 0; ci < colorMap.numColors; ++ci) {
+              const nc = colorMap.findColor(
+                lp.getRed(ci),
+                lp.getGreen(ci),
+                lp.getBlue(ci),
+                lp.getAlpha(ci)
+              );
+              remapColors.set(ci, nc);
+            }
+            const nextBytes = nextImage.toUint8Array();
+            const lastBytes = lastImage.toUint8Array();
+            for (let i = 0, l = nextBytes.length; i < l; ++i) {
+              const lc = lastBytes[i];
+              const nc = remapColors.get(lc);
+              if (nc !== undefined) {
+                nextBytes[i] = nc;
+              }
+            }
           }
         }
       }
