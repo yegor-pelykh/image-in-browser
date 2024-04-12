@@ -5,6 +5,7 @@ import { ExifData } from '../exif/exif-data';
 import { FrameType } from '../image/frame-type';
 import { MemoryImage } from '../image/image';
 import { Decoder, DecoderDecodeOptions } from './decoder';
+import { ImageFormat } from './image-format';
 import { TiffImage } from './tiff/tiff-image';
 import { TiffInfo } from './tiff/tiff-info';
 
@@ -23,6 +24,10 @@ export class TiffDecoder implements Decoder {
   private _exifData: ExifData | undefined = undefined;
   public get exifData(): ExifData | undefined {
     return this._exifData;
+  }
+
+  get format(): ImageFormat {
+    return ImageFormat.tiff;
   }
 
   /**

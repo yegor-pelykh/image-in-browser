@@ -6,11 +6,16 @@ import { MemoryImage } from '../image/image';
 import { BmpFileHeader } from './bmp/bmp-file-header';
 import { BmpInfo } from './bmp/bmp-info';
 import { Decoder, DecoderDecodeOptions } from './decoder';
+import { ImageFormat } from './image-format';
 
 export class BmpDecoder implements Decoder {
   protected _input?: InputBuffer<Uint8Array>;
   protected _info?: BmpInfo;
   protected _forceRgba: boolean;
+
+  get format(): ImageFormat {
+    return ImageFormat.bmp;
+  }
 
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;

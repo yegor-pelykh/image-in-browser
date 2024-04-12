@@ -4,6 +4,7 @@ import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../image/image';
 import { Palette } from '../image/palette';
 import { Decoder, DecoderDecodeOptions } from './decoder';
+import { ImageFormat } from './image-format';
 import { TgaImageType } from './tga/tga-image-type';
 import { TgaInfo } from './tga/tga-info';
 
@@ -13,6 +14,10 @@ import { TgaInfo } from './tga/tga-info';
 export class TgaDecoder implements Decoder {
   private _input: InputBuffer<Uint8Array> | undefined = undefined;
   private _info: TgaInfo | undefined = undefined;
+
+  get format(): ImageFormat {
+    return ImageFormat.tga;
+  }
 
   public get numFrames(): number {
     return this._info !== undefined ? 1 : 0;

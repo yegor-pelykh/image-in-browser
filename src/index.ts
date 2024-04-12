@@ -24,6 +24,7 @@ import { ExifData } from './exif/exif-data';
 import { JpegUtils } from './formats/jpeg/jpeg-utils';
 import { WebPDecoder } from './formats/webp-decoder';
 import { PnmDecoder } from './formats/pnm-decoder';
+import { ImageFormat } from './formats/image-format';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order';
@@ -282,6 +283,7 @@ export { GifDecoder } from './formats/gif-decoder';
 export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder';
 export { IcoDecoder } from './formats/ico-decoder';
 export { IcoEncoder } from './formats/ico-encoder';
+export { ImageFormat } from './formats/image-format';
 export { JpegDecoder } from './formats/jpeg-decoder';
 export {
   JpegChroma,
@@ -574,6 +576,45 @@ export function findEncoderForNamedImage(name: string): Encoder | undefined {
     return new IcoEncoder();
   }
   return undefined;
+}
+
+/**
+ * Find the ImageFormat for the given file data.
+ */
+export function findFormatForData(data: TypedArray): ImageFormat {
+  const decoder = findDecoderForData(data);
+  if (decoder === undefined) {
+    return ImageFormat.invalid;
+  }
+  return decoder.format;
+}
+
+/**
+ * Find a Decoder for the given **format** type.
+ */
+export function findDecoderForFormat(format: ImageFormat): Decoder | undefined {
+  switch (format) {
+    case ImageFormat.bmp:
+      return new BmpDecoder();
+    case ImageFormat.gif:
+      return new GifDecoder();
+    case ImageFormat.ico:
+      return new IcoDecoder();
+    case ImageFormat.jpg:
+      return new JpegDecoder();
+    case ImageFormat.png:
+      return new PngDecoder();
+    case ImageFormat.pnm:
+      return new PnmDecoder();
+    case ImageFormat.tga:
+      return new TgaDecoder();
+    case ImageFormat.tiff:
+      return new TiffDecoder();
+    case ImageFormat.webp:
+      return new WebPDecoder();
+    default:
+      return undefined;
+  }
 }
 
 /**

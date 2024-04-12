@@ -4,6 +4,7 @@ import { InputBuffer } from '../common/input-buffer';
 import { LibError } from '../error/lib-error';
 import { MemoryImage } from '../image/image';
 import { Decoder, DecoderDecodeOptions } from './decoder';
+import { ImageFormat } from './image-format';
 import { JpegData } from './jpeg/jpeg-data';
 import { JpegInfo } from './jpeg/jpeg-info';
 
@@ -13,6 +14,10 @@ import { JpegInfo } from './jpeg/jpeg-info';
 export class JpegDecoder implements Decoder {
   private _input?: InputBuffer<Uint8Array>;
   private _info?: JpegInfo;
+
+  get format(): ImageFormat {
+    return ImageFormat.jpg;
+  }
 
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;

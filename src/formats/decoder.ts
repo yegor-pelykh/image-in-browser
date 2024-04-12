@@ -2,6 +2,7 @@
 
 import { MemoryImage } from '../image/image';
 import { DecodeInfo } from './decode-info';
+import { ImageFormat } from './image-format';
 
 /**
  * Object interface for specifying Decoder.decode parameters.
@@ -29,6 +30,11 @@ export interface DecoderDecodeOptions {
  * this case.
  */
 export interface Decoder {
+  /**
+   * Image format.
+   */
+  get format(): ImageFormat;
+
   /**
    * How many frames are available to be decoded. **startDecode** should have
    * been called first. Non animated image files will have a single frame.

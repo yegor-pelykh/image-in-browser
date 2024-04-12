@@ -5,6 +5,7 @@ import { InputBuffer } from '../common/input-buffer';
 import { MemoryImage } from '../image/image';
 import { DecodeInfo } from './decode-info';
 import { Decoder, DecoderDecodeOptions } from './decoder';
+import { ImageFormat } from './image-format';
 import { PnmFormat } from './pnm/pnm-format';
 import { PnmInfo } from './pnm/pnm-info';
 
@@ -20,6 +21,10 @@ export class PnmDecoder implements Decoder {
   private _info?: PnmInfo;
   public get info(): PnmInfo | undefined {
     return this._info;
+  }
+
+  get format(): ImageFormat {
+    return ImageFormat.pnm;
   }
 
   public get numFrames(): number {

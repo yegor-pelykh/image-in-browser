@@ -6,6 +6,7 @@ import { Draw } from '../draw/draw';
 import { LibError } from '../error/lib-error';
 import { MemoryImage } from '../image/image';
 import { Decoder, DecoderDecodeOptions } from './decoder';
+import { ImageFormat } from './image-format';
 import { VP8 } from './webp/vp8';
 import { VP8L } from './webp/vp8l';
 import { WebPFormat } from './webp/webp-format';
@@ -23,6 +24,10 @@ export class WebPDecoder implements Decoder {
   private _info!: WebPInfoInternal;
   public get info(): WebPInfo | undefined {
     return this._info;
+  }
+
+  get format(): ImageFormat {
+    return ImageFormat.webp;
   }
 
   /**

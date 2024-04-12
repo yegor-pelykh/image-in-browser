@@ -10,10 +10,15 @@ import { IcoInfo } from './ico/ico-info';
 import { PngDecoder } from './png-decoder';
 import { MemoryImage } from '../image/image';
 import { FrameType } from '../image/frame-type';
+import { ImageFormat } from './image-format';
 
 export class IcoDecoder implements Decoder {
   private _input?: InputBuffer<Uint8Array>;
   private _info?: IcoInfo;
+
+  get format(): ImageFormat {
+    return ImageFormat.ico;
+  }
 
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;

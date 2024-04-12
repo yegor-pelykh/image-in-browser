@@ -24,6 +24,7 @@ import { Draw } from '../draw/draw';
 import { BlendMode } from '../draw/blend-mode';
 import { PngFilterType } from './png/png-filter-type';
 import { Pixel } from '../image/pixel';
+import { ImageFormat } from './image-format';
 
 /**
  * Decode a PNG encoded image.
@@ -52,6 +53,10 @@ export class PngDecoder implements Decoder {
   private _bitBufferLen = 0;
   public get bitBufferLen(): number {
     return this._bitBufferLen;
+  }
+
+  get format(): ImageFormat {
+    return ImageFormat.png;
   }
 
   /**

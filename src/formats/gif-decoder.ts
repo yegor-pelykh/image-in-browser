@@ -8,6 +8,7 @@ import { GifImageDesc } from './gif/gif-image-desc';
 import { GifInfo } from './gif/gif-info';
 import { MemoryImage } from '../image/image';
 import { ColorUint8 } from '../color/color-uint8';
+import { ImageFormat } from './image-format';
 
 /**
  * A decoder for the GIF image format. This supports both single frame and
@@ -84,6 +85,10 @@ export class GifDecoder implements Decoder {
   private _transparent: number = 0;
 
   private _duration: number = 0;
+
+  get format(): ImageFormat {
+    return ImageFormat.gif;
+  }
 
   /**
    * How many frames are available to decode?
