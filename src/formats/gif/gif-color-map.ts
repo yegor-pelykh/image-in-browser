@@ -62,23 +62,28 @@ export class GifColorMap {
     this._palette.setRgb(index, r, g, b);
   }
 
-  public findColor(
-    r: number,
-    g: number,
-    b: number,
-    a: number
-  ): number | undefined {
+  public findColor(r: number, g: number, b: number, a: number): number {
+    let closestDistance: number = -1;
+    let closestIndex: number = -1;
     for (let i = 0; i < this._numColors; ++i) {
-      if (
-        this._palette.getRed(i) === r &&
-        this._palette.getGreen(i) === g &&
-        this._palette.getBlue(i) === b &&
-        this._palette.getAlpha(i) === a
-      ) {
+      const pr = this._palette.getRed(i);
+      const pg = this._palette.getGreen(i);
+      const pb = this._palette.getBlue(i);
+      const pa = this._palette.getAlpha(i);
+      if (pr === r && pg === g && pb === b && pa === a) {
         return i;
       }
+      const dr = r - pr;
+      const dg = g - pg;
+      const db = b - pb;
+      const da = a - pa;
+      const d2 = dr * dr + dg * dg + db * db + da * da;
+      if (closestIndex === -1 || d2 < closestDistance) {
+        closestIndex = i;
+        closestDistance = d2;
+      }
     }
-    return undefined;
+    return closestIndex;
   }
 
   public getRed(color: number): number {

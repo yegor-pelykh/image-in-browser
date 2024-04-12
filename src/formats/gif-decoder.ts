@@ -731,7 +731,7 @@ export class GifDecoder implements Decoder {
         ) {
           if (frame.colorMap !== undefined) {
             const lp = lastImage.palette!;
-            const remapColors = new Map<number, number | undefined>();
+            const remapColors = new Map<number, number>();
             for (let ci = 0; ci < colorMap.numColors; ++ci) {
               const nc = colorMap.findColor(
                 lp.getRed(ci),
@@ -745,8 +745,8 @@ export class GifDecoder implements Decoder {
             const lastBytes = lastImage.toUint8Array();
             for (let i = 0, l = nextBytes.length; i < l; ++i) {
               const lc = lastBytes[i];
-              const nc = remapColors.get(lc);
-              if (nc !== undefined) {
+              const nc = remapColors.get(lc)!;
+              if (nc !== -1) {
                 nextBytes[i] = nc;
               }
             }
