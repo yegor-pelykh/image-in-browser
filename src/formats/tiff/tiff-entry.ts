@@ -10,6 +10,7 @@ import { IfdDoubleValue } from '../../exif/ifd-value/ifd-double-value';
 import { IfdLongValue } from '../../exif/ifd-value/ifd-long-value';
 import { IfdRationalValue } from '../../exif/ifd-value/ifd-rational-value';
 import { IfdSByteValue } from '../../exif/ifd-value/ifd-sbyte-value';
+import { IfdShortValue } from '../../exif/ifd-value/ifd-short-value';
 import { IfdSingleValue } from '../../exif/ifd-value/ifd-single-value';
 import { IfdSLongValue } from '../../exif/ifd-value/ifd-slong-value';
 import { IfdSRationalValue } from '../../exif/ifd-value/ifd-srational-value';
@@ -91,7 +92,7 @@ export class TiffEntry {
       case IfdValueType.undefined:
         return (this._value = IfdByteValue.data(data, this._count));
       case IfdValueType.short:
-        return (this._value = IfdSShortValue.data(data, this._count));
+        return (this._value = IfdShortValue.data(data, this._count));
       case IfdValueType.long:
         return (this._value = IfdLongValue.data(data, this._count));
       case IfdValueType.rational:

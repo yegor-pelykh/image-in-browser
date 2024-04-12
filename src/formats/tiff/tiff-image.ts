@@ -655,16 +655,8 @@ export class TiffImage {
         );
       }
 
-      for (
-        let y = 0, py = outY;
-        y < this._tileHeight && py < this._height;
-        ++y, ++py
-      ) {
-        for (
-          let x = 0, px = outX;
-          x < this._tileWidth && px < this._width;
-          ++x, ++px
-        ) {
+      for (let y = 0, py = outY; y < this._tileHeight; ++y, ++py) {
+        for (let x = 0, px = outX; x < this._tileWidth; ++x, ++px) {
           if (this._samplesPerPixel === 1) {
             if (this._sampleFormat === TiffFormat.float) {
               let sample = 0;
@@ -675,7 +667,9 @@ export class TiffImage {
               } else if (this._bitsPerSample === 16) {
                 sample = Float16.float16ToDouble(byteData.readUint16());
               }
-              image.setPixelR(px, py, sample);
+              if (px < this._width && py < this._height) {
+                image.setPixelR(px, py, sample);
+              }
             } else {
               let sample = 0;
               if (this._bitsPerSample === 8) {
@@ -700,7 +694,9 @@ export class TiffImage {
                 sample = mx - sample;
               }
 
-              image.setPixelR(px, py, sample);
+              if (px < this._width && py < this._height) {
+                image.setPixelR(px, py, sample);
+              }
             }
           } else if (this._samplesPerPixel === 2) {
             let gray = 0;
@@ -734,7 +730,9 @@ export class TiffImage {
                   : byteData.readUint32();
             }
 
-            image.setPixelRgb(px, py, gray, alpha, 0);
+            if (px < this._width && py < this._height) {
+              image.setPixelRgb(px, py, gray, alpha, 0);
+            }
           } else if (this._samplesPerPixel === 3) {
             if (this._sampleFormat === TiffFormat.float) {
               let r = 0.0;
@@ -753,7 +751,9 @@ export class TiffImage {
                 g = Float16.float16ToDouble(byteData.readUint16());
                 b = Float16.float16ToDouble(byteData.readUint16());
               }
-              image.setPixelRgb(px, py, r, g, b);
+              if (px < this._width && py < this._height) {
+                image.setPixelRgb(px, py, r, g, b);
+              }
             } else {
               let r = 0;
               let g = 0;
@@ -799,7 +799,9 @@ export class TiffImage {
                     : byteData.readUint32();
               }
 
-              image.setPixelRgb(px, py, r, g, b);
+              if (px < this._width && py < this._height) {
+                image.setPixelRgb(px, py, r, g, b);
+              }
             }
           } else if (this._samplesPerPixel >= 4) {
             if (this._sampleFormat === TiffFormat.float) {
@@ -823,7 +825,9 @@ export class TiffImage {
                 b = Float16.float16ToDouble(byteData.readUint16());
                 a = Float16.float16ToDouble(byteData.readUint16());
               }
-              image.setPixelRgba(px, py, r, g, b, a);
+              if (px < this._width && py < this._height) {
+                image.setPixelRgba(px, py, r, g, b, a);
+              }
             } else {
               let r = 0;
               let g = 0;
@@ -890,7 +894,9 @@ export class TiffImage {
                 a = Math.trunc(image.maxChannelValue);
               }
 
-              image.setPixelRgba(px, py, r, g, b, a);
+              if (px < this._width && py < this._height) {
+                image.setPixelRgba(px, py, r, g, b, a);
+              }
             }
           }
         }
