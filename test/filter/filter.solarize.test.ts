@@ -1,0 +1,71 @@
+/** @format */
+
+import { decodePng, encodePng, Filter, SolarizeMode } from '../../src';
+import { TestFolder } from '../_utils/test-folder';
+import { TestSection } from '../_utils/test-section';
+import { TestUtils } from '../_utils/test-utils';
+
+describe('Filter', () => {
+  test('solarize highlights', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'buck_24.png'
+    );
+
+    const i0 = decodePng({
+      data: input,
+    });
+    expect(i0).toBeDefined();
+    if (i0 === undefined) {
+      return;
+    }
+
+    Filter.solarize({
+      image: i0,
+      threshold: 100,
+    });
+
+    const output = encodePng({
+      image: i0,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'solarize_highlights.png',
+      output
+    );
+  });
+
+  test('solarize shadows', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'buck_24.png'
+    );
+
+    const i0 = decodePng({
+      data: input,
+    });
+    expect(i0).toBeDefined();
+    if (i0 === undefined) {
+      return;
+    }
+
+    Filter.solarize({
+      image: i0,
+      threshold: 100,
+      mode: SolarizeMode.shadows,
+    });
+
+    const output = encodePng({
+      image: i0,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'solarize_shadows.png',
+      output
+    );
+  });
+});
