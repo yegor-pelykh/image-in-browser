@@ -723,7 +723,6 @@ export class GifDecoder implements Decoder {
       if (frame.disposal === 2) {
         nextImage.clear(colorMap.getColor(this._info.backgroundColor!.r));
       } else if (frame.disposal !== 3) {
-        /*
         const nextBytes = nextImage.toUint8Array();
         const lastBytes = lastImage.toUint8Array();
         const lp = lastImage.palette!;
@@ -739,7 +738,6 @@ export class GifDecoder implements Decoder {
             nextBytes[i] = nc;
           }
         }
-        */
       }
 
       nextImage.frameDuration = image.frameDuration;
