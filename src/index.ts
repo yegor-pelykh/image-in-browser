@@ -165,6 +165,7 @@ export {
   SketchOptions,
   SmoothOptions,
   SobelOptions,
+  SolarizeOptions,
   StretchDistortionOptions,
   VignetteOptions,
 } from './filter/filter';
@@ -175,6 +176,7 @@ export {
   SeparableKernel,
   SeparableKernelApplyOptions,
 } from './filter/separable-kernel';
+export { SolarizeMode } from './filter/solarize-mode';
 
 // Export types from 'formats' directory
 export { BmpCompressionMode } from './formats/bmp/bmp-compression-mode';

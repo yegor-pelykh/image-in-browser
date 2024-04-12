@@ -17,6 +17,7 @@ import { PixelateMode } from './pixelate-mode';
 import { QuantizeMethod } from './quantize-method';
 import { SeparableKernel } from './separable-kernel';
 import { ColorUtils } from '../color/color-utils';
+import { SolarizeMode } from './solarize-mode';
 
 interface ContrastCache {
   lastContrast: number;
@@ -313,6 +314,12 @@ export interface SobelOptions {
   amount?: number;
   maskChannel?: Channel;
   mask?: MemoryImage;
+}
+
+export interface SolarizeOptions {
+  image: MemoryImage;
+  threshold: number;
+  mode?: SolarizeMode;
 }
 
 export interface StretchDistortionOptions {
@@ -2522,6 +2529,107 @@ export abstract class Filter {
         p.r = mag * mx + p.r * invMx;
         p.g = mag * mx + p.g * invMx;
         p.b = mag * mx + p.b * invMx;
+      }
+    }
+
+    return opt.image;
+  }
+
+  /**
+   * Solarize the colors of the **image**.
+   * **threshold** should be an integer value from 1 to 254.
+   * If **mode** is _SolarizeMode.highlights_, bright objects become black,
+   * otherwise it will solarize shadows.
+   */
+  public static solarize(opt: SolarizeOptions): MemoryImage {
+    const mode = opt.mode ?? SolarizeMode.highlights;
+
+    const max = opt.image.maxChannelValue;
+    const thresholdRange = Math.trunc(max * (opt.threshold / 255));
+    for (const frame of opt.image.frames) {
+      if (opt.image.hasPalette) {
+        const p = frame.palette!;
+        const numColors = p.numColors;
+        for (let i = 0; i < numColors; ++i) {
+          if (mode === SolarizeMode.highlights) {
+            if (p.getGreen(i) > thresholdRange) {
+              const r = max - p.getRed(i);
+              const g = max - p.getGreen(i);
+              const b = max - p.getBlue(i);
+              p.setRgb(i, r, g, b);
+            } else {
+              const r = p.getRed(i);
+              const g = p.getGreen(i);
+              const b = p.getBlue(i);
+              p.setRgb(i, r, g, b);
+            }
+          } else {
+            if (p.getGreen(i) < thresholdRange) {
+              const r = max - p.getRed(i);
+              const g = max - p.getGreen(i);
+              const b = max - p.getBlue(i);
+              p.setRgb(i, r, g, b);
+            } else {
+              const r = p.getRed(i);
+              const g = p.getGreen(i);
+              const b = p.getBlue(i);
+              p.setRgb(i, r, g, b);
+            }
+          }
+        }
+      } else {
+        if (max !== 0) {
+          for (const p of frame) {
+            if (mode === SolarizeMode.highlights) {
+              if (p.g > thresholdRange) {
+                p.r = max - p.r;
+                p.g = max - p.g;
+                p.b = max - p.b;
+              } else {
+                // eslint-disable-next-line no-self-assign
+                p.r = p.r;
+                // eslint-disable-next-line no-self-assign
+                p.g = p.g;
+                // eslint-disable-next-line no-self-assign
+                p.b = p.b;
+              }
+            } else {
+              if (p.g < thresholdRange) {
+                p.r = max - p.r;
+                p.g = max - p.g;
+                p.b = max - p.b;
+              } else {
+                // eslint-disable-next-line no-self-assign
+                p.r = p.r;
+                // eslint-disable-next-line no-self-assign
+                p.g = p.g;
+                // eslint-disable-next-line no-self-assign
+                p.b = p.b;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // max value and zero are used to improve contrast
+    const a: number = 0;
+    const b: number = max;
+
+    const ext = opt.image.getColorExtremes();
+
+    if (ext.min === ext.max) {
+      return opt.image;
+    }
+
+    if (ext.min !== a || ext.max !== b) {
+      for (const frame of opt.image.frames) {
+        for (const p of frame) {
+          p.r = ((p.r - ext.min) / (ext.max - ext.min)) * (b - a) + a;
+          p.g = ((p.g - ext.min) / (ext.max - ext.min)) * (b - a) + a;
+          p.b = ((p.b - ext.min) / (ext.max - ext.min)) * (b - a) + a;
+          p.a = ((p.a - ext.min) / (ext.max - ext.min)) * (b - a) + a;
+        }
       }
     }
 
