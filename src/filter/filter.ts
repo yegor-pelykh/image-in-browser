@@ -353,7 +353,7 @@ export abstract class Filter {
    *
    * **whites** defines the white level of the image, as a color.
    *
-   * **mids** defines the mid level of hte image, as a color.
+   * **mids** defines the mid level of the image, as a color.
    *
    * **contrast** increases (> 1) / decreases (< 1) the contrast of the image by
    * pushing colors away/toward neutral gray, where at 0 the image is entirely
