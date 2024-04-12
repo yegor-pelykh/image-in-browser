@@ -387,11 +387,11 @@ export abstract class Filter {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     const contrast =
       opt.contrast !== undefined
-        ? MathUtils.clamp(opt.contrast, 0, 1)
+        ? MathUtils.clamp(opt.contrast, 0, 2)
         : undefined;
     const saturation =
       opt.saturation !== undefined
-        ? MathUtils.clamp(opt.saturation, 0, 1)
+        ? MathUtils.clamp(opt.saturation, 0, 2)
         : undefined;
     const brightness =
       opt.brightness !== undefined ? opt.brightness : undefined;
@@ -448,9 +448,9 @@ export abstract class Filter {
     }
 
     const invSaturation =
-      saturation !== undefined ? 1 - MathUtils.clamp(saturation, 0, 1) : 0;
+      saturation !== undefined ? 1 - MathUtils.clamp(saturation, 0, 2) : 0;
     const invContrast =
-      contrast !== undefined ? 1 - MathUtils.clamp(contrast, 0, 1) : 0;
+      contrast !== undefined ? 1 - MathUtils.clamp(contrast, 0, 2) : 0;
 
     if (exposure !== undefined) {
       exposure = Math.pow(2, exposure);
