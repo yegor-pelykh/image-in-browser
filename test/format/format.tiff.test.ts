@@ -37,6 +37,31 @@ type TiffFileInfo = {
 };
 
 describe('Format: TIFF', () => {
+  test('deflate', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.tiff,
+      'deflate.tif'
+    );
+    const tiff = decodeTiff({
+      data: input,
+    });
+    expect(tiff).toBeDefined();
+    if (tiff === undefined) {
+      return;
+    }
+
+    const output = encodePng({
+      image: tiff,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.tiff,
+      'deflate.png',
+      output
+    );
+  });
+
   test('16bit colormap', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
