@@ -739,12 +739,20 @@ describe('Format: PNG', () => {
         correctLength: 2,
       },
       {
+        fileName: 'test_apng1.png',
+        correctLength: 20,
+      },
+      {
         fileName: 'test_apng2.png',
         correctLength: 60,
       },
       {
         fileName: 'test_apng3.png',
         correctLength: 19,
+      },
+      {
+        fileName: 'test_apng4.png',
+        correctLength: 42,
       },
     ];
     const resFiles = TestUtils.listFiles(
