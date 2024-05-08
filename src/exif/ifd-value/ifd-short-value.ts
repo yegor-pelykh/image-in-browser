@@ -39,6 +39,10 @@ export class IfdShortValue extends IfdValue {
     return this._value[index];
   }
 
+  public toData(): Uint8Array {
+    return new Uint8Array(this._value.buffer);
+  }
+
   public write(out: OutputBuffer): void {
     for (let i = 0, l = this._value.length; i < l; ++i) {
       out.writeUint16(this._value[i]);
