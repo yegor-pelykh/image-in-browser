@@ -1289,8 +1289,13 @@ export abstract class Draw {
         ? opt.color.bNormalized * opt.filter.bNormalized
         : opt.color.bNormalized;
 
-    const overlayA =
-      (opt.alpha ?? (opt.color.length < 4 ? 1 : opt.color.aNormalized)) * msk;
+    const a =
+      (opt.color.length < 4 ? 1 : opt.color.aNormalized) *
+      (opt.filter === undefined || opt.filter.length < 4
+        ? 1
+        : opt.filter.aNormalized);
+
+    const overlayA = (opt.alpha ?? a) * msk;
 
     if (overlayA === 0) {
       return opt.image;
