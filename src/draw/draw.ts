@@ -124,6 +124,7 @@ export interface FillRectOptions {
   rect: Rectangle;
   color: Color;
   radius?: number;
+  alphaBlend?: boolean;
   mask?: MemoryImage;
   maskChannel?: Channel;
 }
@@ -2000,9 +2001,10 @@ export abstract class Draw {
    */
   public static fillRect(opt: FillRectOptions): MemoryImage {
     const radius = opt.radius ?? 0;
+    const alphaBlend = opt.alphaBlend ?? true;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    if (opt.color.a === 0) {
+    if (alphaBlend && opt.color.a === 0) {
       return opt.image;
     }
 
@@ -2070,7 +2072,10 @@ export abstract class Draw {
     }
 
     // If no blending is necessary, use a faster fill method.
-    if (opt.color.a === opt.color.maxChannelValue && opt.mask === undefined) {
+    if (
+      !alphaBlend ||
+      (opt.color.a === opt.color.maxChannelValue && opt.mask === undefined)
+    ) {
       const range = opt.image.getRange(xx0, yy0, ww, hh);
       let it: IteratorResult<Pixel> | undefined = undefined;
       while (((it = range.next()), !it.done)) {
@@ -2193,6 +2198,7 @@ export abstract class Draw {
    * if **center** is true, the **src** will be centered in **dst**.
    */
   public static compositeImage(opt: CompositeImageOptions): MemoryImage {
+    let dst = opt.dst;
     let dstX = opt.dstX ?? 0;
     let dstY = opt.dstY ?? 0;
     const srcX = opt.srcX ?? 0;
@@ -2200,11 +2206,9 @@ export abstract class Draw {
     const srcW = opt.srcW ?? opt.src.width;
     const srcH = opt.srcH ?? opt.src.height;
     const dstW =
-      opt.dstW ??
-      (opt.dst.width < opt.src.width ? opt.dst.width : opt.src.width);
+      opt.dstW ?? (dst.width < opt.src.width ? dst.width : opt.src.width);
     const dstH =
-      opt.dstH ??
-      (opt.dst.height < opt.src.height ? opt.dst.height : opt.src.height);
+      opt.dstH ?? (dst.height < opt.src.height ? dst.height : opt.src.height);
     const blend = opt.blend ?? BlendMode.alpha;
     const linearBlend = opt.linearBlend ?? false;
     const center = opt.center ?? false;
@@ -2212,18 +2216,18 @@ export abstract class Draw {
 
     if (center) {
       // if [src] is wider than [dst]
-      let wdt = opt.dst.width - opt.src.width;
+      let wdt = dst.width - opt.src.width;
       if (wdt < 0) wdt = 0;
       dstX = Math.trunc(wdt / 2);
       // if [src] is higher than [dst]
-      let height = opt.dst.height - opt.src.height;
+      let height = dst.height - opt.src.height;
       if (height < 0) height = 0;
       dstY = Math.trunc(height / 2);
     }
 
-    if (opt.dst.hasPalette) {
-      opt.dst.convert({
-        numChannels: opt.dst.numChannels,
+    if (dst.hasPalette) {
+      dst = dst.convert({
+        numChannels: dst.numChannels,
       });
     }
 
@@ -2241,7 +2245,7 @@ export abstract class Draw {
     if (blend === BlendMode.direct) {
       Draw.imgDirectComposite(
         opt.src,
-        opt.dst,
+        dst,
         dstX,
         dstY,
         dstW,
@@ -2254,7 +2258,7 @@ export abstract class Draw {
     } else {
       Draw.imgComposite(
         opt.src,
-        opt.dst,
+        dst,
         dstX,
         dstY,
         dstW,
@@ -2268,6 +2272,6 @@ export abstract class Draw {
       );
     }
 
-    return opt.dst;
+    return dst;
   }
 }

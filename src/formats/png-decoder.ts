@@ -25,6 +25,7 @@ import { BlendMode } from '../draw/blend-mode';
 import { PngFilterType } from './png/png-filter-type';
 import { Pixel } from '../image/pixel';
 import { ImageFormat } from './image-format';
+import { Rectangle } from '../common/rectangle';
 
 /**
  * Decode a PNG encoded image.
@@ -932,12 +933,16 @@ export class PngDecoder implements Decoder {
       }
 
       if (firstImage === undefined || lastImage === undefined) {
-        firstImage = image;
-        lastImage = image;
+        firstImage = image.convert({
+          numChannels: image.numChannels,
+        });
+        lastImage = firstImage;
         // Convert to MS
         lastImage.frameDuration = Math.trunc(frame.delay * 1000);
         continue;
       }
+
+      const prevFrame = this._info.frames[i - 1];
 
       if (
         image.width === lastImage.width &&
@@ -953,20 +958,41 @@ export class PngDecoder implements Decoder {
         continue;
       }
 
-      const dispose = frame.dispose;
+      lastImage = MemoryImage.from(firstImage.getFrame(i - 1));
+
+      const dispose = prevFrame.dispose;
       if (dispose === PngDisposeMode.background) {
-        lastImage = MemoryImage.from(lastImage);
-        lastImage.clear(this._info.backgroundColor);
-      } else if (dispose === PngDisposeMode.previous) {
-        lastImage = MemoryImage.from(lastImage);
-      } else {
-        lastImage = MemoryImage.from(lastImage);
+        Draw.fillRect({
+          image: lastImage,
+          rect: new Rectangle(
+            prevFrame.xOffset,
+            prevFrame.yOffset,
+            prevFrame.xOffset + prevFrame.width - 1,
+            prevFrame.yOffset + prevFrame.height - 1
+          ),
+          color: this._info.backgroundColor ?? new ColorRgba8(0, 0, 0, 0),
+          alphaBlend: false,
+        });
+      } else if (dispose === PngDisposeMode.previous && i > 1) {
+        const prevImage = firstImage.getFrame(i - 2);
+        lastImage = Draw.compositeImage({
+          dst: lastImage,
+          src: prevImage,
+          dstX: prevFrame.xOffset,
+          dstY: prevFrame.yOffset,
+          dstW: prevFrame.width,
+          dstH: prevFrame.height,
+          srcX: prevFrame.xOffset,
+          srcY: prevFrame.yOffset,
+          srcW: prevFrame.width,
+          srcH: prevFrame.height,
+        });
       }
 
       // Convert to MS
       lastImage.frameDuration = Math.trunc(frame.delay * 1000);
 
-      Draw.compositeImage({
+      lastImage = Draw.compositeImage({
         dst: lastImage,
         src: image,
         dstX: frame.xOffset,
