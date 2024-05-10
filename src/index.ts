@@ -449,12 +449,11 @@ export interface DecodeOptions {
   data: TypedArray;
 }
 
-export interface DecodeImageOptions extends DecodeOptions {
+export interface DecodeMultiframeOptions extends DecodeOptions {
   frameIndex?: number;
 }
 
-export interface DecodeImageLargestOptions extends DecodeOptions {
-  frameIndex?: number;
+export interface DecodeImageLargestOptions extends DecodeMultiframeOptions {
   largest?: boolean;
 }
 
@@ -925,7 +924,9 @@ export function injectJpgExif(
 /**
  * Decode a PNG formatted image.
  */
-export function decodePng(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodePng(
+  opt: DecodeMultiframeOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new PngDecoder().decode({
     bytes: dataUint8,
@@ -962,7 +963,9 @@ export function decodePnm(opt: DecodeOptions): MemoryImage | undefined {
 /**
  * Decode a Targa formatted image.
  */
-export function decodeTga(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodeTga(
+  opt: DecodeMultiframeOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new TgaDecoder().decode({
     bytes: dataUint8,
@@ -982,7 +985,9 @@ export function encodeTga(opt: EncodeOptions): Uint8Array {
 /**
  * Decode a WebP formatted image
  */
-export function decodeWebP(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodeWebP(
+  opt: DecodeMultiframeOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new WebPDecoder().decode({
     bytes: dataUint8,
@@ -993,7 +998,9 @@ export function decodeWebP(opt: DecodeImageOptions): MemoryImage | undefined {
 /**
  * Decode a GIF formatted image (first frame for animations).
  */
-export function decodeGif(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodeGif(
+  opt: DecodeMultiframeOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new GifDecoder().decode({
     bytes: dataUint8,
@@ -1033,7 +1040,9 @@ export function encodeGif(opt: EncodeGifOptions): Uint8Array {
 /**
  * Decode a TIFF formatted image.
  */
-export function decodeTiff(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodeTiff(
+  opt: DecodeMultiframeOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new TiffDecoder().decode({
     bytes: dataUint8,
@@ -1119,7 +1128,9 @@ export function encodeIcoImages(opt: EncodeIcoImagesOptions): Uint8Array {
 /**
  * Decode an PVR image.
  */
-export function decodePvr(opt: DecodeImageOptions): MemoryImage | undefined {
+export function decodePvr(
+  opt: DecodeMultiframeOptions
+): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new PvrDecoder().decode({
     bytes: dataUint8,
