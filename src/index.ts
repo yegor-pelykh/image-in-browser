@@ -26,6 +26,8 @@ import { WebPDecoder } from './formats/webp-decoder';
 import { PnmDecoder } from './formats/pnm-decoder';
 import { ImageFormat } from './formats/image-format';
 import { PsdDecoder } from './formats/psd-decoder';
+import { PvrEncoder } from './formats/pvr-encoder';
+import { PvrDecoder } from './formats/pvr-decoder';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order';
@@ -266,6 +268,20 @@ export { PsdImageResource } from './formats/psd/psd-image-resource';
 export { PsdLayer } from './formats/psd/psd-layer';
 export { PsdMask } from './formats/psd/psd-mask';
 
+export {
+  PvrAppleInfo,
+  PvrAppleInfoOptions,
+} from './formats/pvr/pvr-apple-info';
+export { PvrBitUtility } from './formats/pvr/pvr-bit-utility';
+export { PvrColorBoundingBox } from './formats/pvr/pvr-color-bounding-box';
+export { PvrColorRgb } from './formats/pvr/pvr-color-rgb';
+export { PvrColorRgbCore } from './formats/pvr/pvr-color-rgb-core';
+export { PvrColorRgba } from './formats/pvr/pvr-color-rgba';
+export { PvrFormat } from './formats/pvr/pvr-format';
+export { PvrPacket } from './formats/pvr/pvr-packet';
+export { Pvr2Info, Pvr2InfoOptions } from './formats/pvr/pvr2-info';
+export { Pvr3Info, Pvr3InfoOptions } from './formats/pvr/pvr3-info';
+
 export { TgaImageType, TgaImageTypeLength } from './formats/tga/tga-image-type';
 export { TgaInfo, TgaInfoInitOptions } from './formats/tga/tga-info';
 
@@ -338,6 +354,8 @@ export { PngDecoder } from './formats/png-decoder';
 export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder';
 export { PnmDecoder } from './formats/pnm-decoder';
 export { PsdDecoder } from './formats/psd-decoder';
+export { PvrDecoder } from './formats/pvr-decoder';
+export { PvrEncoder } from './formats/pvr-encoder';
 export { TgaDecoder } from './formats/tga-decoder';
 export { TgaEncoder } from './formats/tga-encoder';
 export { TiffDecoder } from './formats/tiff-decoder';
@@ -526,6 +544,8 @@ export function findDecoderForMimeType(mimeType: string): Decoder | undefined {
     case 'image/x-portable-pixmap':
     case 'image/x-portable-anymap':
       return new PnmDecoder();
+    case 'image/x-pvr':
+      return new PvrDecoder();
     default:
       return undefined;
   }
@@ -572,6 +592,9 @@ export function findDecoderForNamedImage(name: string): Decoder | undefined {
   ) {
     return new PnmDecoder();
   }
+  if (n.endsWith('.pvr')) {
+    return new PvrDecoder();
+  }
   return undefined;
 }
 
@@ -599,6 +622,8 @@ export function findEncoderForMimeType(mimeType: string): Encoder | undefined {
     case 'image/x-icon':
     case 'image/vnd.microsoft.icon':
       return new IcoEncoder();
+    case 'image/x-pvr':
+      return new PvrEncoder();
     default:
       return undefined;
   }
@@ -634,6 +659,9 @@ export function findEncoderForNamedImage(name: string): Encoder | undefined {
   if (n.endsWith('.cur')) {
     return new IcoEncoder();
   }
+  if (n.endsWith('.pvr')) {
+    return new PvrEncoder();
+  }
   return undefined;
 }
 
@@ -667,6 +695,8 @@ export function findDecoderForFormat(format: ImageFormat): Decoder | undefined {
       return new PnmDecoder();
     case ImageFormat.psd:
       return new PsdDecoder();
+    case ImageFormat.pvr:
+      return new PvrDecoder();
     case ImageFormat.tga:
       return new TgaDecoder();
     case ImageFormat.tiff:
@@ -734,6 +764,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
   const ico = new IcoDecoder();
   if (ico.isValidFile(bytes)) {
     return ico;
+  }
+
+  const pvr = new PvrDecoder();
+  if (pvr.isValidFile(bytes)) {
+    return pvr;
   }
 
   const pnm = new PnmDecoder();
@@ -1079,4 +1114,26 @@ export function encodeIco(opt: EncodeAnimatedOptions): Uint8Array {
  */
 export function encodeIcoImages(opt: EncodeIcoImagesOptions): Uint8Array {
   return new IcoEncoder().encodeImages(opt.images);
+}
+
+/**
+ * Decode an PVR image.
+ */
+export function decodePvr(opt: DecodeImageOptions): MemoryImage | undefined {
+  const dataUint8 = new Uint8Array(opt.data);
+  return new PvrDecoder().decode({
+    bytes: dataUint8,
+    frameIndex: opt.frameIndex,
+  });
+}
+
+/**
+ * Encode an image to the PVR format.
+ */
+export function encodePvr(opt: EncodeAnimatedOptions): Uint8Array {
+  const singleFrame = opt.singleFrame ?? false;
+  return new PvrEncoder().encode({
+    image: opt.image,
+    singleFrame: singleFrame,
+  });
 }
