@@ -7,6 +7,7 @@ export enum ImageFormat {
   jpg,
   png,
   pnm,
+  psd,
   tga,
   tiff,
   webp,

@@ -25,6 +25,7 @@ import { JpegUtils } from './formats/jpeg/jpeg-utils';
 import { WebPDecoder } from './formats/webp-decoder';
 import { PnmDecoder } from './formats/pnm-decoder';
 import { ImageFormat } from './formats/image-format';
+import { PsdDecoder } from './formats/psd-decoder';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order';
@@ -222,6 +223,49 @@ export { PngInfo, PngInfoInitOptions } from './formats/png/png-info';
 export { PnmFormat } from './formats/pnm/pnm-format';
 export { PnmInfo } from './formats/pnm/pnm-info';
 
+export {
+  PsdBevelEffect,
+  PsdBevelEffectOptions,
+} from './formats/psd/effect/psd-bevel-effect';
+export {
+  PsdDropShadowEffect,
+  PsdDropShadowEffectOptions,
+} from './formats/psd/effect/psd-drop-shadow-effect';
+export { PsdEffect, PsdEffectOptions } from './formats/psd/effect/psd-effect';
+export {
+  PsdInnerGlowEffect,
+  PsdInnerGlowEffectOptions,
+} from './formats/psd/effect/psd-inner-glow-effect';
+export {
+  PsdInnerShadowEffect,
+  PsdInnerShadowEffectOptions,
+} from './formats/psd/effect/psd-inner-shadow-effect';
+export {
+  PsdOuterGlowEffect,
+  PsdOuterGlowEffectOptions,
+} from './formats/psd/effect/psd-outer-glow-effect';
+export {
+  PsdSolidFillEffect,
+  PsdSolidFillEffectOptions,
+} from './formats/psd/effect/psd-solid-fill-effect';
+export { PsdLayerDataFactory } from './formats/psd/layer-data/psd-layer-data-factory';
+export { PsdLayerData } from './formats/psd/layer-data/psd-layer-data';
+export { PsdLayerAdditionalData } from './formats/psd/layer-data/psd-layer-additional-data';
+export { PsdLayerSectionDivider } from './formats/psd/layer-data/psd-layer-section-divider';
+export { PsdBlendMode } from './formats/psd/psd-blend-mode';
+export { PsdBlendingRanges } from './formats/psd/psd-blending-ranges';
+export {
+  PsdChannel,
+  ReadOptions,
+  ReadPlaneOptions,
+} from './formats/psd/psd-channel';
+export { PsdColorMode } from './formats/psd/psd-color-mode';
+export { PsdFlag } from './formats/psd/psd-flag';
+export { PsdImage } from './formats/psd/psd-image';
+export { PsdImageResource } from './formats/psd/psd-image-resource';
+export { PsdLayer } from './formats/psd/psd-layer';
+export { PsdMask } from './formats/psd/psd-mask';
+
 export { TgaImageType, TgaImageTypeLength } from './formats/tga/tga-image-type';
 export { TgaInfo, TgaInfoInitOptions } from './formats/tga/tga-info';
 
@@ -293,6 +337,7 @@ export {
 export { PngDecoder } from './formats/png-decoder';
 export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder';
 export { PnmDecoder } from './formats/pnm-decoder';
+export { PsdDecoder } from './formats/psd-decoder';
 export { TgaDecoder } from './formats/tga-decoder';
 export { TgaEncoder } from './formats/tga-encoder';
 export { TiffDecoder } from './formats/tiff-decoder';
@@ -465,6 +510,12 @@ export function findDecoderForMimeType(mimeType: string): Decoder | undefined {
     case 'image/tiff':
     case 'image/tiff-fx':
       return new TiffDecoder();
+    case 'application/photoshop':
+    case 'application/psd':
+    case 'application/x-photoshop':
+    case 'image/psd':
+    case 'image/vnd.adobe.photoshop':
+      return new PsdDecoder();
     case 'image/bmp':
     case 'image/x-bmp':
       return new BmpDecoder();
@@ -503,6 +554,9 @@ export function findDecoderForNamedImage(name: string): Decoder | undefined {
   }
   if (n.endsWith('.tif') || n.endsWith('.tiff')) {
     return new TiffDecoder();
+  }
+  if (n.endsWith('.psd')) {
+    return new PsdDecoder();
   }
   if (n.endsWith('.bmp')) {
     return new BmpDecoder();
@@ -611,6 +665,8 @@ export function findDecoderForFormat(format: ImageFormat): Decoder | undefined {
       return new PngDecoder();
     case ImageFormat.pnm:
       return new PnmDecoder();
+    case ImageFormat.psd:
+      return new PsdDecoder();
     case ImageFormat.tga:
       return new TgaDecoder();
     case ImageFormat.tiff:
@@ -658,6 +714,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
   const tiff = new TiffDecoder();
   if (tiff.isValidFile(bytes)) {
     return tiff;
+  }
+
+  const psd = new PsdDecoder();
+  if (psd.isValidFile(bytes)) {
+    return psd;
   }
 
   const bmp = new BmpDecoder();
@@ -953,6 +1014,16 @@ export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {
   return new TiffEncoder().encode({
     image: opt.image,
     singleFrame: singleFrame,
+  });
+}
+
+/**
+ * Decode a Photoshop PSD formatted image.
+ */
+export function decodePsd(opt: DecodeOptions): MemoryImage | undefined {
+  const dataUint8 = new Uint8Array(opt.data);
+  return new PsdDecoder().decode({
+    bytes: dataUint8,
   });
 }
 
