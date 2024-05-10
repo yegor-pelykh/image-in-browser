@@ -370,7 +370,7 @@ describe('Format: GIF', () => {
   );
 
   for (const f of inputFiles) {
-    test(f.fileName, () => {
+    test(f.nameExt, () => {
       const input = TestUtils.readFromFilePath(f.path);
       const anim = decodeGif({
         data: input,

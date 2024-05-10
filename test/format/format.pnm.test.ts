@@ -9,7 +9,7 @@ describe('Format: PNM', () => {
   const resFiles = TestUtils.listFiles(TestFolder.input, TestSection.pnm);
 
   for (const file of resFiles) {
-    test(`pnm ${file.fileName}`, () => {
+    test(`pnm ${file.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(file.path);
       const decoder = new PnmDecoder();
 
@@ -30,7 +30,7 @@ describe('Format: PNM', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.pnm,
-        `${file.fileName}.png`,
+        `${file.nameExt}.png`,
         output
       );
     });

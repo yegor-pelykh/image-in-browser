@@ -5,7 +5,7 @@ export class FileInfo {
   public name: string;
   public ext: string;
 
-  public get fileName(): string {
+  public get nameExt(): string {
     return `${this.name}${this.ext}`;
   }
 

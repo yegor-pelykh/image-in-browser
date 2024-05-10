@@ -246,14 +246,14 @@ describe('Format: TIFF', () => {
   );
 
   for (const file of resFiles) {
-    test(`get info ${file.fileName}`, () => {
+    test(`get info ${file.nameExt}`, () => {
       const bytes = TestUtils.readFromFilePath(file.path);
       const info = new TiffDecoder().startDecode(bytes);
       expect(info).toBeDefined();
       if (info === undefined) {
         return;
       }
-      const expectedInfo = _expectedInfo.get(file.fileName);
+      const expectedInfo = _expectedInfo.get(file.nameExt);
       if (info !== undefined && expectedInfo !== undefined) {
         expect(info.width).toBe(expectedInfo.width);
         expect(info.height).toBe(expectedInfo.height);
@@ -280,7 +280,7 @@ describe('Format: TIFF', () => {
   }
 
   for (const file of resFiles) {
-    test(`decode ${file.fileName}`, () => {
+    test(`decode ${file.nameExt}`, () => {
       const bytes = TestUtils.readFromFilePath(file.path);
       const image = decodeTiff({
         data: bytes,
@@ -313,7 +313,7 @@ describe('Format: TIFF', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tiff,
-        file.fileName,
+        file.nameExt,
         tif
       );
 

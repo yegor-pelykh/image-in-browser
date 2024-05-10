@@ -131,11 +131,11 @@ describe('Format: WEBP', () => {
   );
 
   for (const file of resFiles) {
-    test(`get info - ${file.fileName}`, () => {
+    test(`get info - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFile(
         TestFolder.input,
         TestSection.webp,
-        file.fileName
+        file.nameExt
       );
 
       const webpDecoder = new WebPDecoder(input);
@@ -146,7 +146,7 @@ describe('Format: WEBP', () => {
         return;
       }
 
-      const test = webpTests.get(file.fileName);
+      const test = webpTests.get(file.nameExt);
       if (test !== undefined) {
         expect(data.format).toBe(test.format);
         expect(data.width).toBe(test.width);
@@ -159,11 +159,11 @@ describe('Format: WEBP', () => {
       }
     });
 
-    test(`decode - ${file.fileName}`, () => {
+    test(`decode - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFile(
         TestFolder.input,
         TestSection.webp,
-        file.fileName
+        file.nameExt
       );
       const image = decodeWebP({
         data: input,
@@ -179,7 +179,7 @@ describe('Format: WEBP', () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.webp,
-        `${file.fileName}.png`,
+        `${file.nameExt}.png`,
         output
       );
     });

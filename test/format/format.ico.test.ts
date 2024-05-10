@@ -74,7 +74,7 @@ describe('Format: ICO', () => {
   );
 
   for (const f of inputFiles) {
-    test(`decode ${f.fileName}`, () => {
+    test(`decode ${f.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(f.path);
       const image = decodeIco({
         data: input,
