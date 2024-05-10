@@ -132,12 +132,7 @@ describe('Format: WEBP', () => {
 
   for (const file of resFiles) {
     test(`get info - ${file.nameExt}`, () => {
-      const input = TestUtils.readFromFile(
-        TestFolder.input,
-        TestSection.webp,
-        file.nameExt
-      );
-
+      const input = TestUtils.readFromFilePath(file.path);
       const webpDecoder = new WebPDecoder(input);
       const data = webpDecoder.info;
 

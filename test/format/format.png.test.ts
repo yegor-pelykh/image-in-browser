@@ -936,11 +936,7 @@ describe('Format: PNG', () => {
 
   for (const file of resFiles) {
     test(`PNG ${file.nameExt}`, () => {
-      const input = TestUtils.readFromFile(
-        TestFolder.input,
-        TestSection.png,
-        file.nameExt
-      );
+      const input = TestUtils.readFromFilePath(file.path);
       // X* png's are corrupted and are supposed to crash.
       if (file.nameExt.toLowerCase().startsWith('x')) {
         expect(() => {
