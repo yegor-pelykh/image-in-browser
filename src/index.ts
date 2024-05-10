@@ -1128,23 +1128,18 @@ export function encodeIcoImages(opt: EncodeIcoImagesOptions): Uint8Array {
 /**
  * Decode an PVR image.
  */
-export function decodePvr(
-  opt: DecodeMultiframeOptions
-): MemoryImage | undefined {
+export function decodePvr(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
   return new PvrDecoder().decode({
     bytes: dataUint8,
-    frameIndex: opt.frameIndex,
   });
 }
 
 /**
  * Encode an image to the PVR format.
  */
-export function encodePvr(opt: EncodeAnimatedOptions): Uint8Array {
-  const singleFrame = opt.singleFrame ?? false;
+export function encodePvr(opt: EncodeOptions): Uint8Array {
   return new PvrEncoder().encode({
     image: opt.image,
-    singleFrame: singleFrame,
   });
 }
