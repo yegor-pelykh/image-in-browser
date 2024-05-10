@@ -51,6 +51,8 @@ export abstract class TestUtils {
         return 'pnm';
       case TestSection.psd:
         return 'psd';
+      case TestSection.pvr:
+        return 'pvr';
       case TestSection.tiff:
         return 'tiff';
       case TestSection.tga:

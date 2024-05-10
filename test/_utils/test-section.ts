@@ -14,6 +14,7 @@ export enum TestSection {
   png,
   pnm,
   psd,
+  pvr,
   tiff,
   tga,
   transform,
