@@ -23,10 +23,25 @@ describe('Filter', () => {
 
     let id = Filter.ditherImage({
       image: i0,
-      kernel: DitherKernel.floydSteinberg,
+      kernel: DitherKernel.atkinson,
     });
 
     let output = encodePng({
+      image: id,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'dither_atkinson.png',
+      output
+    );
+
+    id = Filter.ditherImage({
+      image: i0,
+      kernel: DitherKernel.floydSteinberg,
+    });
+
+    output = encodePng({
       image: id,
     });
     TestUtils.writeToFile(
@@ -48,21 +63,6 @@ describe('Filter', () => {
       TestFolder.output,
       TestSection.filter,
       'dither_falseFloydSteinberg.png',
-      output
-    );
-
-    id = Filter.ditherImage({
-      image: i0,
-      kernel: DitherKernel.atkinson,
-    });
-
-    output = encodePng({
-      image: id,
-    });
-    TestUtils.writeToFile(
-      TestFolder.output,
-      TestSection.filter,
-      'dither_atkinson.png',
       output
     );
 

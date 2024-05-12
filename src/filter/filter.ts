@@ -1081,6 +1081,7 @@ export abstract class Filter {
   /**
    * Dither an image to reduce banding patterns when reducing the number of
    * colors.
+   * Derived from http://jsbin.com/iXofIji/2/edit
    */
   public static ditherImage(opt: DitherImageOptions): MemoryImage {
     const quantizer = opt.quantizer ?? new NeuralQuantizer(opt.image);
@@ -1105,20 +1106,18 @@ export abstract class Filter {
       palette: palette,
     });
 
+    const imageCopy = opt.image.clone();
+
     const pIter = opt.image[Symbol.iterator]();
     let itRes = pIter.next();
-
-    let index = 0;
     for (let y = 0; y < height; y++) {
-      if (serpentine) direction *= -1;
+      if (serpentine) {
+        direction *= -1;
+      }
 
       const x0 = direction === 1 ? 0 : width - 1;
       const x1 = direction === 1 ? width : 0;
-      for (
-        let x = x0;
-        x !== x1;
-        x += direction, ++index, itRes = pIter.next()
-      ) {
+      for (let x = x0; x !== x1; x += direction, itRes = pIter.next()) {
         // Get original color
         const pc = itRes.value;
         const r1 = Math.trunc(pc.getChannel(0));
@@ -1126,8 +1125,8 @@ export abstract class Filter {
         const b1 = Math.trunc(pc.getChannel(2));
 
         // Get converted color
-        let idx = quantizer.getColorIndexRgb(r1, g1, b1);
-        indexedImage.setPixelRgb(x, y, idx, 0, 0);
+        const idx = quantizer.getColorIndexRgb(r1, g1, b1);
+        indexedImage.setPixelIndex(x, y, idx);
 
         const r2 = palette.get(idx, 0);
         const g2 = palette.get(idx, 1);
@@ -1148,12 +1147,12 @@ export abstract class Filter {
           const y1 = Math.trunc(ds[i][2]);
           if (x1 + x >= 0 && x1 + x < width && y1 + y >= 0 && y1 + y < height) {
             const d = ds[i][0];
-            idx = index + x1 + y1 * width;
-            idx *= 4;
-            const p2 = opt.image.getPixel(x1, y1);
-            p2.r = Math.max(0, Math.min(255, Math.trunc(p2.r + er * d)));
-            p2.g = Math.max(0, Math.min(255, Math.trunc(p2.g + er * d)));
-            p2.b = Math.max(0, Math.min(255, Math.trunc(p2.b + er * d)));
+            const nx = x + x1;
+            const ny = y + y1;
+            const p2 = imageCopy.getPixel(nx, ny);
+            p2.r += er * d;
+            p2.g += eg * d;
+            p2.b += eb * d;
           }
         }
       }

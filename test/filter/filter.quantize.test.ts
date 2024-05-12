@@ -1,12 +1,18 @@
 /** @format */
 
-import { decodePng, encodePng, Filter, QuantizeMethod } from '../../src';
+import {
+  decodePng,
+  DitherKernel,
+  encodePng,
+  Filter,
+  QuantizeMethod,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 describe('Filter', () => {
-  test('pixelate', () => {
+  test('quantize', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
@@ -21,16 +27,14 @@ describe('Filter', () => {
       return;
     }
 
-    const i1 = i0.clone();
-
-    Filter.quantize({
+    const q0 = Filter.quantize({
       image: i0,
       numberOfColors: 32,
       method: QuantizeMethod.octree,
     });
 
     let output = encodePng({
-      image: i0,
+      image: q0,
     });
     TestUtils.writeToFile(
       TestFolder.output,
@@ -39,18 +43,57 @@ describe('Filter', () => {
       output
     );
 
-    Filter.quantize({
+    const i0_ = decodePng({
+      data: input,
+    })!;
+    const q0_ = Filter.quantize({
+      image: i0_,
+      numberOfColors: 32,
+      method: QuantizeMethod.octree,
+      dither: DitherKernel.floydSteinberg,
+    });
+    output = encodePng({
+      image: q0_,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'quantize_octree_dither.png',
+      output
+    );
+
+    const i1 = decodePng({
+      data: input,
+    })!;
+    const q1 = Filter.quantize({
       image: i1,
       numberOfColors: 32,
     });
-
     output = encodePng({
-      image: i1,
+      image: q1,
     });
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'quantize_neural.png',
+      output
+    );
+
+    const i1_ = decodePng({
+      data: input,
+    })!;
+    const q1_ = Filter.quantize({
+      image: i1_,
+      numberOfColors: 32,
+      dither: DitherKernel.floydSteinberg,
+    });
+    output = encodePng({
+      image: q1_,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'quantize_neural_dither.png',
       output
     );
   });
