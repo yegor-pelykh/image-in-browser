@@ -364,6 +364,7 @@ export { WebPDecoder } from './formats/webp-decoder';
 export { WinEncoder } from './formats/win-encoder';
 
 // Export types from 'image' directory
+export { BinaryQuantizer } from './image/binary-quantizer';
 export { FrameType } from './image/frame-type';
 export { HeapNode } from './image/heap-node';
 export { IccProfile } from './image/icc-profile';

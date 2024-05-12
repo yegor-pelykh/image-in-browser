@@ -18,6 +18,7 @@ import { QuantizeMethod } from './quantize-method';
 import { SeparableKernel } from './separable-kernel';
 import { ColorUtils } from '../color/color-utils';
 import { SolarizeMode } from './solarize-mode';
+import { BinaryQuantizer } from '../image/binary-quantizer';
 
 interface ContrastCache {
   lastContrast: number;
@@ -2211,8 +2212,10 @@ export abstract class Filter {
     let quantizer: Quantizer | undefined = undefined;
     if (method === QuantizeMethod.octree || numberOfColors < 4) {
       quantizer = new OctreeQuantizer(opt.image, numberOfColors);
-    } else {
+    } else if (method === QuantizeMethod.neuralNet) {
       quantizer = new NeuralQuantizer(opt.image, numberOfColors);
+    } else {
+      quantizer = new BinaryQuantizer();
     }
 
     return Filter.ditherImage({

@@ -11,6 +11,7 @@ import { Quantizer } from '../image/quantizer';
 import { Filter } from '../filter/filter';
 import { LibError } from '../error/lib-error';
 import { DitherKernel } from '../filter/dither-kernel';
+import { BinaryQuantizer } from '../image/binary-quantizer';
 
 export interface GifEncoderInitOptions {
   delay?: number;
@@ -459,8 +460,10 @@ export class GifEncoder implements Encoder {
             this._numColors,
             this._samplingFactor
           );
-        } else {
+        } else if (this._quantizerType === QuantizerType.octree) {
           this._lastColorMap = new OctreeQuantizer(image, this._numColors);
+        } else if (this._quantizerType === QuantizerType.binary) {
+          this._lastColorMap = new BinaryQuantizer();
         }
 
         this._lastImage = Filter.ditherImage({
@@ -497,8 +500,10 @@ export class GifEncoder implements Encoder {
           this._numColors,
           this._samplingFactor
         );
-      } else {
+      } else if (this._quantizerType === QuantizerType.octree) {
         this._lastColorMap = new OctreeQuantizer(image, this._numColors);
+      } else {
+        this._lastColorMap = new BinaryQuantizer();
       }
 
       this._lastImage = Filter.ditherImage({
