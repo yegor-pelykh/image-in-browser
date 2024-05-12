@@ -13,26 +13,23 @@ import { TestUtils } from '../_utils/test-utils';
 
 describe('Filter', () => {
   test('quantize', () => {
-    const input = TestUtils.readFromFile(
+    const input0 = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
-
     const i0 = decodePng({
-      data: input,
+      data: input0,
     });
     expect(i0).toBeDefined();
     if (i0 === undefined) {
       return;
     }
-
     const q0 = Filter.quantize({
       image: i0,
       numberOfColors: 32,
       method: QuantizeMethod.octree,
     });
-
     let output = encodePng({
       image: q0,
     });
@@ -44,7 +41,7 @@ describe('Filter', () => {
     );
 
     const i0_ = decodePng({
-      data: input,
+      data: input0,
     })!;
     const q0_ = Filter.quantize({
       image: i0_,
@@ -63,7 +60,7 @@ describe('Filter', () => {
     );
 
     const i1 = decodePng({
-      data: input,
+      data: input0,
     })!;
     const q1 = Filter.quantize({
       image: i1,
@@ -80,7 +77,7 @@ describe('Filter', () => {
     );
 
     const i1_ = decodePng({
-      data: input,
+      data: input0,
     })!;
     const q1_ = Filter.quantize({
       image: Filter.grayscale({
@@ -96,6 +93,33 @@ describe('Filter', () => {
       TestFolder.output,
       TestSection.filter,
       'quantize_neural_dither.png',
+      output
+    );
+
+    const input2 = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'david.png'
+    );
+    const i2 = decodePng({
+      data: input2,
+    });
+    expect(i2).toBeDefined();
+    if (i2 === undefined) {
+      return;
+    }
+    const q2 = Filter.quantize({
+      image: i2,
+      method: QuantizeMethod.binary,
+      dither: DitherKernel.floydSteinberg,
+    });
+    output = encodePng({
+      image: q2,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'quantize_binary.png',
       output
     );
   });
