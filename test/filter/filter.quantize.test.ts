@@ -83,8 +83,10 @@ describe('Filter', () => {
       data: input,
     })!;
     const q1_ = Filter.quantize({
-      image: i1_,
-      numberOfColors: 32,
+      image: Filter.grayscale({
+        image: i1_,
+      }),
+      numberOfColors: 2,
       dither: DitherKernel.floydSteinberg,
     });
     output = encodePng({

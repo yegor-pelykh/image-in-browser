@@ -1107,9 +1107,6 @@ export abstract class Filter {
     });
 
     const imageCopy = opt.image.clone();
-
-    const pIter = opt.image[Symbol.iterator]();
-    let itRes = pIter.next();
     for (let y = 0; y < height; y++) {
       if (serpentine) {
         direction *= -1;
@@ -1117,9 +1114,9 @@ export abstract class Filter {
 
       const x0 = direction === 1 ? 0 : width - 1;
       const x1 = direction === 1 ? width : 0;
-      for (let x = x0; x !== x1; x += direction, itRes = pIter.next()) {
+      for (let x = x0; x !== x1; x += direction) {
         // Get original color
-        const pc = itRes.value;
+        const pc = imageCopy.getPixel(x, y);
         const r1 = Math.trunc(pc.getChannel(0));
         const g1 = Math.trunc(pc.getChannel(1));
         const b1 = Math.trunc(pc.getChannel(2));
