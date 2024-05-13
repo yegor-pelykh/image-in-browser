@@ -462,7 +462,7 @@ export class GifEncoder implements Encoder {
           );
         } else if (this._quantizerType === QuantizerType.octree) {
           this._lastColorMap = new OctreeQuantizer(image, this._numColors);
-        } else if (this._quantizerType === QuantizerType.binary) {
+        } else {
           this._lastColorMap = new BinaryQuantizer();
         }
 
