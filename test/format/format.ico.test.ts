@@ -3,17 +3,54 @@
 import {
   ColorRgb8,
   decodeIco,
+  decodePng,
   encodeGif,
+  encodeIco,
   encodeIcoImages,
   encodePng,
+  Filter,
   Format,
   MemoryImage,
+  Transform,
 } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 describe('Format: ICO', () => {
+  test('encode palette', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'buck_8.png'
+    );
+    let image = decodePng({
+      data: input,
+    });
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    image = Transform.copyResize({
+      image: image,
+      width: 256,
+    });
+    image = Filter.vignette({
+      image: image,
+    });
+
+    const output = encodeIco({
+      image: image,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.ico,
+      `buck_8.ico`,
+      output
+    );
+  });
+
   test('encode', () => {
     const image = new MemoryImage({
       width: 64,
