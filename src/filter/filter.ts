@@ -385,6 +385,11 @@ export abstract class Filter {
    *
    */
   public static adjustColor(opt: AdjustColorOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     const contrast =
       opt.contrast !== undefined
@@ -470,7 +475,7 @@ export abstract class Filter {
       hueB = (Math.sqrt(3.0) * s - c + 1.0) / 3.0;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const or = p.rNormalized;
         const og = p.gNormalized;
@@ -543,13 +548,18 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
    * Apply the billboard filter to the image.
    */
   public static billboard(opt: BillboardOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const grid = opt.grid ?? 10;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -557,7 +567,7 @@ export abstract class Filter {
     // Math.pow(0.45, 2);
     const rs = 0.2025;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const w = frame.width;
       const h = frame.height;
       const aspect = w / h;
@@ -612,17 +622,22 @@ export abstract class Filter {
         p.b = MathUtils.mix(p.b, b * p.maxChannelValue, mx);
       }
     }
-    return opt.image;
+    return image;
   }
 
   public static bleachBypass(opt: BleachBypassOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const luminanceR = 0.2125;
     const luminanceG = 0.7154;
     const luminanceB = 0.0721;
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const r = p.rNormalized;
         const g = p.gNormalized;
@@ -661,15 +676,20 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   public static bulgeDistortion(opt: BulgeDistortionOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const scale = opt.scale ?? 0.5;
     const interpolation = opt.interpolation ?? Interpolation.nearest;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const orig = frame.clone({
         skipAnimation: true,
       });
@@ -711,7 +731,7 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -724,7 +744,11 @@ export abstract class Filter {
   public static bumpToNormal(opt: BumpToNormalOptions): MemoryImage {
     const strength = opt.strength ?? 2;
 
-    const dest = MemoryImage.from(opt.image);
+    const dest = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : MemoryImage.from(opt.image);
 
     const mx = opt.image.maxChannelValue;
     for (const frame of opt.image.frames) {
@@ -771,10 +795,15 @@ export abstract class Filter {
   public static chromaticAberration(
     opt: ChromaticAberrationOptions
   ): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const shift = opt.shift ?? 5;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const orig = frame.clone({
         skipAnimation: true,
       });
@@ -798,13 +827,18 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
    * Apply color halftone filter to the image.
    */
   public static colorHalftone(opt: ColorHalftone): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     let angle = opt.angle ?? 1;
     const size = opt.size ?? 5;
@@ -829,7 +863,7 @@ export abstract class Filter {
       return Math.sin(px) * Math.sin(py) * 4.0;
     };
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const w = frame.width;
       const h = frame.height;
       const cx = opt.centerX ?? Math.trunc(w / 2);
@@ -885,7 +919,7 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -893,12 +927,17 @@ export abstract class Filter {
    * colors, a per-channel brightness.
    */
   public static colorOffset(opt: ColorOffsetOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const red = opt.red ?? 0;
     const green = opt.green ?? 0;
     const blue = opt.blue ?? 0;
     const alpha = opt.alpha ?? 0;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const msk = opt.mask
           ?.getPixel(p.x, p.y)
@@ -916,7 +955,7 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -927,6 +966,11 @@ export abstract class Filter {
    * will have no affect.
    */
   public static contrast(opt: ContrastOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     if (opt.contrast === 100) {
@@ -950,7 +994,7 @@ export abstract class Filter {
       }
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const msk = opt.mask
           ?.getPixel(p.x, p.y)
@@ -970,7 +1014,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -981,22 +1025,27 @@ export abstract class Filter {
    * filters to normalize and offset the filtered pixel value.
    */
   public static convolution(opt: ConvolutionOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const div = opt.div ?? 1;
     const offset = opt.offset ?? 0;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const tmp = MemoryImage.from(opt.image);
-    for (const frame of opt.image.frames) {
+    const tmp = MemoryImage.from(image);
+    for (const frame of image.frames) {
       const tmpFrame = tmp.frames[frame.frameIndex];
       for (const c of tmpFrame) {
         let r = 0;
         let g = 0;
         let b = 0;
         for (let j = 0, fi = 0; j < 3; ++j) {
-          const yv = Math.min(Math.max(c.y - 1 + j, 0), opt.image.height - 1);
+          const yv = Math.min(Math.max(c.y - 1 + j, 0), image.height - 1);
           for (let i = 0; i < 3; ++i, ++fi) {
-            const xv = Math.min(Math.max(c.x - 1 + i, 0), opt.image.width - 1);
+            const xv = Math.min(Math.max(c.x - 1 + i, 0), image.width - 1);
             const c2 = tmpFrame.getPixel(xv, yv);
             r += c2.r * opt.filter[fi];
             g += c2.g * opt.filter[fi];
@@ -1021,7 +1070,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1029,13 +1078,18 @@ export abstract class Filter {
    * true, then the **from** image will be scaled to the **image** resolution.
    */
   public static copyImageChannels(opt: CopyImageChannelsOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const scaled = opt.scaled ?? false;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const dx = opt.from.width / opt.image.width;
-    const dy = opt.from.height / opt.image.height;
+    const dx = opt.from.width / image.width;
+    const dy = opt.from.height / image.height;
     const fromPixel = opt.from.getPixel(0, 0);
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         if (scaled) {
           fromPixel.setPosition(Math.floor(p.x * dx), Math.floor(p.y * dy));
@@ -1076,7 +1130,7 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1163,15 +1217,20 @@ export abstract class Filter {
    * Apply the dot screen filter to the image.
    */
   public static dotScreen(opt: DotScreenOptions): MemoryImage {
-    let angle = opt.angle ?? 180;
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const size = opt.size ?? 5.75;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
+    let angle = opt.angle ?? 180;
     angle *= 0.0174533;
     const s = Math.sin(angle);
     const c = Math.cos(angle);
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const w = frame.width - 1;
       const h = frame.height - 1;
       const cntX = (opt.centerX ?? Math.trunc(w / 2)) / w;
@@ -1204,7 +1263,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1290,6 +1349,11 @@ export abstract class Filter {
    * Apply the edge glow filter to the image.
    */
   public static edgeGlow(opt: EdgeGlowOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -1297,7 +1361,7 @@ export abstract class Filter {
       return opt.image;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const orig = MemoryImage.from(frame, true);
       const width = frame.width;
       const height = frame.height;
@@ -1380,7 +1444,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1405,8 +1469,13 @@ export abstract class Filter {
    * Apply gamma scaling
    */
   public static gamma(opt: GammaOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const msk = opt.mask
           ?.getPixel(p.x, p.y)
@@ -1434,7 +1503,7 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1486,10 +1555,15 @@ export abstract class Filter {
    * Convert the image to grayscale.
    */
   public static grayscale(opt: GrayscaleOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       if (frame.hasPalette) {
         const p = frame.palette!;
         const numColors = p.numColors;
@@ -1532,7 +1606,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1636,11 +1710,16 @@ export abstract class Filter {
    * Apply the hexagon pixelate filter to the image.
    */
   public static hexagonPixelate(opt: HexagonPixelateOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const size = opt.size ?? 5;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const w = frame.width - 1;
       const h = frame.height - 1;
       const cntX = (opt.centerX ?? Math.trunc(frame.width / 2)) / w;
@@ -1728,18 +1807,23 @@ export abstract class Filter {
         p.b = MathUtils.mix(p.b, newColor.b, mx);
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
    * Invert the colors of the **image**.
    */
   public static invert(opt: InvertOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const max = opt.image.maxChannelValue;
-    for (const frame of opt.image.frames) {
-      if (opt.image.hasPalette) {
+    const max = image.maxChannelValue;
+    for (const frame of image.frames) {
+      if (image.hasPalette) {
         const p = frame.palette!;
         const numColors = p.numColors;
         for (let i = 0; i < numColors; ++i) {
@@ -1768,18 +1852,23 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   public static luminanceThreshold(
     opt: LuminanceThresholdOptions
   ): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const threshold = opt.threshold ?? 0.5;
     const outputColor = opt.outputColor ?? false;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const y =
           0.3 * p.rNormalized + 0.59 * p.gNormalized + 0.11 * p.bNormalized;
@@ -1805,7 +1894,7 @@ export abstract class Filter {
         }
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1814,6 +1903,11 @@ export abstract class Filter {
    * **amount** controls the strength of the effect, in the range [0, 1].
    */
   public static monochrome(opt: MonochromeOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -1825,7 +1919,7 @@ export abstract class Filter {
     const ng = opt.color?.gNormalized ?? 0.6;
     const nb = opt.color?.bNormalized ?? 0.3;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const y = p.luminanceNormalized;
 
@@ -1842,7 +1936,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -1852,6 +1946,11 @@ export abstract class Filter {
    * or _NoiseType.rice_.
    */
   public static noise(opt: NoiseOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const type = opt.type ?? NoiseType.gaussian;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -1864,7 +1963,7 @@ export abstract class Filter {
     }
 
     if (nSigma < 0 || type === NoiseType.saltAndPepper) {
-      const extremes = opt.image.getColorExtremes();
+      const extremes = image.getColorExtremes();
       min = extremes.min;
       max = extremes.max;
     }
@@ -1873,7 +1972,7 @@ export abstract class Filter {
       nSigma = (-nSigma * (max - min)) / 100.0;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       switch (type) {
         case NoiseType.gaussian:
           for (const p of frame) {
@@ -2048,7 +2147,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2056,12 +2155,17 @@ export abstract class Filter {
    * to the range **min**, **max** inclusive.
    */
   public static normalize(opt: NormalizeOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const a = opt.min < opt.max ? opt.min : opt.max;
     const b = opt.min < opt.max ? opt.max : opt.min;
 
-    const extremes = opt.image.getColorExtremes();
+    const extremes = image.getColorExtremes();
     const mn = extremes.min;
     const mx = extremes.max;
 
@@ -2073,7 +2177,7 @@ export abstract class Filter {
     const fM = mx;
 
     if (mn !== a || mx !== b) {
-      for (const frame of opt.image.frames) {
+      for (const frame of image.frames) {
         for (const p of frame) {
           const msk = opt.mask
             ?.getPixel(p.x, p.y)
@@ -2097,7 +2201,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2110,6 +2214,11 @@ export abstract class Filter {
    * used for the block color.
    */
   public static pixelate(opt: PixelateOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const mode = opt.mode ?? PixelateMode.upperLeft;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -2118,7 +2227,7 @@ export abstract class Filter {
       return opt.image;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const w = frame.width;
       const h = frame.height;
       switch (mode) {
@@ -2197,7 +2306,7 @@ export abstract class Filter {
           break;
       }
     }
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2283,13 +2392,18 @@ export abstract class Filter {
    * _Channel.luminance_.
    */
   public static remapColors(opt: RemapColorsOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const red = opt.red ?? Channel.red;
     const green = opt.green ?? Channel.green;
     const blue = opt.blue ?? Channel.blue;
     const alpha = opt.alpha ?? Channel.alpha;
 
     const l: number[] = [0, 0, 0, 0, 0];
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         l[0] = p.r;
         l[1] = p.g;
@@ -2309,17 +2423,22 @@ export abstract class Filter {
         p.a = l[alpha];
       }
     }
-    return opt.image;
+    return image;
   }
 
   public static scaleRgba(opt: ScaleRgbaOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const dr = opt.scale.rNormalized;
     const dg = opt.scale.gNormalized;
     const db = opt.scale.bNormalized;
     const da = opt.scale.aNormalized;
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const msk = opt.mask
           ?.getPixel(p.x, p.y)
@@ -2335,7 +2454,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2347,13 +2466,18 @@ export abstract class Filter {
   public static separableConvolution(
     opt: SeparableConvolutionOptions
   ): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const tmp = MemoryImage.from(opt.image);
+    const tmp = MemoryImage.from(image);
 
     // Apply the filter horizontally
     opt.kernel.apply({
-      src: opt.image,
+      src: image,
       dst: tmp,
       maskChannel: maskChannel,
       mask: opt.mask,
@@ -2362,13 +2486,13 @@ export abstract class Filter {
     // Apply the filter vertically, applying back to the original image.
     opt.kernel.apply({
       src: tmp,
-      dst: opt.image,
+      dst: image,
       horizontal: false,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2377,6 +2501,11 @@ export abstract class Filter {
    * **amount** controls the strength of the effect, in the range [0, 1].
    */
   public static sepia(opt: SepiaOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -2384,7 +2513,7 @@ export abstract class Filter {
       return opt.image;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const r = p.rNormalized;
         const g = p.gNormalized;
@@ -2400,7 +2529,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2409,6 +2538,11 @@ export abstract class Filter {
    * **amount** controls the strength of the effect, in the range [0, 1].
    */
   public static sketch(opt: SketchOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -2416,7 +2550,7 @@ export abstract class Filter {
       return opt.image;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const width = frame.width;
       const height = frame.height;
       const orig = MemoryImage.from(frame, true);
@@ -2458,7 +2592,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2485,6 +2619,11 @@ export abstract class Filter {
    * Apply Sobel edge detection filtering to the **image**.
    */
   public static sobel(opt: SobelOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -2492,7 +2631,7 @@ export abstract class Filter {
       return opt.image;
     }
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const orig = MemoryImage.from(frame, true);
       const width = frame.width;
       const height = frame.height;
@@ -2531,7 +2670,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2541,12 +2680,17 @@ export abstract class Filter {
    * otherwise it will solarize shadows.
    */
   public static solarize(opt: SolarizeOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const mode = opt.mode ?? SolarizeMode.highlights;
 
-    const max = opt.image.maxChannelValue;
+    const max = image.maxChannelValue;
     const thresholdRange = Math.trunc(max * (opt.threshold / 255));
-    for (const frame of opt.image.frames) {
-      if (opt.image.hasPalette) {
+    for (const frame of image.frames) {
+      if (image.hasPalette) {
         const p = frame.palette!;
         const numColors = p.numColors;
         for (let i = 0; i < numColors; ++i) {
@@ -2615,14 +2759,14 @@ export abstract class Filter {
     const a: number = 0;
     const b: number = max;
 
-    const ext = opt.image.getColorExtremes();
+    const ext = image.getColorExtremes();
 
     if (ext.min === ext.max) {
-      return opt.image;
+      return image;
     }
 
     if (ext.min !== a || ext.max !== b) {
-      for (const frame of opt.image.frames) {
+      for (const frame of image.frames) {
         for (const p of frame) {
           p.r = ((p.r - ext.min) / (ext.max - ext.min)) * (b - a) + a;
           p.g = ((p.g - ext.min) / (ext.max - ext.min)) * (b - a) + a;
@@ -2632,14 +2776,19 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   public static stretchDistortion(opt: StretchDistortionOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const interpolation = opt.interpolation ?? Interpolation.nearest;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       const orig = frame.clone({
         skipAnimation: true,
       });
@@ -2686,7 +2835,7 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 
   /**
@@ -2699,19 +2848,24 @@ export abstract class Filter {
    * **amount** controls the blend of the effect with the original image.
    */
   public static vignette(opt: VignetteOptions): MemoryImage {
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
     const start = opt.start ?? 0.3;
     const end = opt.end ?? 0.85;
     const amount = opt.amount ?? 0.9;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const h = opt.image.height - 1;
-    const w = opt.image.width - 1;
+    const h = image.height - 1;
+    const w = image.width - 1;
     const cr = opt.color?.rNormalized ?? 0;
     const cg = opt.color?.gNormalized ?? 0;
     const cb = opt.color?.bNormalized ?? 0;
     const ca = opt.color?.aNormalized ?? 1;
     const aspect = w / h;
-    for (const frame of opt.image.frames) {
+    for (const frame of image.frames) {
       for (const p of frame) {
         const dx = (0.5 - p.x / w) * aspect;
         const dy = 0.5 - p.y / h;
@@ -2736,6 +2890,6 @@ export abstract class Filter {
       }
     }
 
-    return opt.image;
+    return image;
   }
 }
