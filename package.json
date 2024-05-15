@@ -14,10 +14,6 @@
     "lib/**/*.js",
     "lib/**/*d.ts"
   ],
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node"
-  },
   "keywords": [
     "convert",
     "converter",
@@ -99,14 +95,14 @@
     "trim"
   ],
   "scripts": {
-    "test:color": "jest ./test/color",
-    "test:draw": "jest ./test/draw",
-    "test:exif": "jest ./test/exif",
-    "test:filter": "jest ./test/filter",
-    "test:format": "jest ./test/format",
-    "test:image": "jest ./test/image",
-    "test:transform": "jest ./test/transform",
-    "test:all": "jest ./test/",
+    "test:color": "vitest run test/color",
+    "test:draw": "vitest run test/draw",
+    "test:exif": "vitest run test/exif",
+    "test:filter": "vitest run test/filter",
+    "test:format": "vitest run test/format",
+    "test:image": "vitest run test/image",
+    "test:transform": "vitest run test/transform",
+    "test:all": "vitest run test",
     "format:src": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" --no-error-on-unmatched-pattern",
     "format:test": "prettier --write \"test/**/*.ts\" \"test/**/*.js\" --no-error-on-unmatched-pattern",
     "format:eslint": "eslint --fix",
@@ -118,18 +114,16 @@
     "release": "release-it"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.12.11",
     "@types/uzip": "^0.20201231.2",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "jest": "^29.7.0",
     "prettier": "^3.2.5",
     "release-it": "^17.2.1",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
   },
   "dependencies": {
     "uzip": "^0.20201231.0"

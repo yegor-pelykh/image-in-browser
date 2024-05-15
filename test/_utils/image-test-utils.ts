@@ -1,5 +1,6 @@
 /** @format */
 
+import { expect } from 'vitest';
 import { ArrayUtils, Crc32, LibError, MemoryImage } from '../../src';
 import { TestFolder } from './test-folder';
 import { TestSection } from './test-section';

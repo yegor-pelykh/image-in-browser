@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, expect, test } from 'vitest';
 import { Channel, decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';

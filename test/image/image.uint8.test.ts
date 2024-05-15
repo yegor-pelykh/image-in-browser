@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, expect, test } from 'vitest';
 import { ColorRgba8, Format, MemoryImage } from '../../src';
 
 describe('Image', () => {

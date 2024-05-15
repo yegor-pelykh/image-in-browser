@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, test } from 'vitest';
 import {
   ColorRgb8,
   Draw,

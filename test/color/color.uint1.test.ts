@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, expect, test } from 'vitest';
 import { ColorUint1 } from '../../src';
 
 describe('Color', () => {

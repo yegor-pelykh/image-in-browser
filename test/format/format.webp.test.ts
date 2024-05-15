@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, expect, test } from 'vitest';
 import { decodePng, decodeWebP, encodePng } from '../../src';
 import { WebPDecoder } from '../../src/formats/webp-decoder';
 import { WebPFormat } from '../../src/formats/webp/webp-format';

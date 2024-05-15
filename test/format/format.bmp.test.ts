@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, expect, test } from 'vitest';
 import { decodeBmp, encodeBmp, Format, MemoryImage } from '../../src';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 import { TestFolder } from '../_utils/test-folder';

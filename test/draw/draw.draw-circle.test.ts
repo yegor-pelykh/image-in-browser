@@ -1,5 +1,6 @@
 /** @format */
 
+import { describe, test } from 'vitest';
 import { ColorRgba8, Draw, encodePng, MemoryImage, Point } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
