@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate, deflate } from 'uzip';
+import { inflate, deflate } from '../uzip/uzip';
 import { ArrayUtils } from '../common/array-utils';
 import { IccProfileCompression } from './icc-profile-compression';
 

@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate } from 'uzip';
+import { inflate } from '../../uzip/uzip';
 import { ColorUtils } from '../../color/color-utils';
 import { Format } from '../../color/format';
 import { ArrayUtils } from '../../common/array-utils';

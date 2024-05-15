@@ -1,6 +1,6 @@
 /** @format */
 
-import { deflate } from 'uzip';
+import { deflate } from '../uzip/uzip';
 import { Crc32 } from '../common/crc32';
 import { OutputBuffer } from '../common/output-buffer';
 import { StringUtils } from '../common/string-utils';
