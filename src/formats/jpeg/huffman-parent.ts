@@ -1,6 +1,6 @@
 /** @format */
 
-import { HuffmanNode } from './huffman-node';
+import { HuffmanNode } from './huffman-node.js';
 
 export class HuffmanParent extends HuffmanNode {
   private readonly _children: Array<HuffmanNode | undefined>;

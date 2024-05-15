@@ -1,21 +1,21 @@
 /** @format */
 
-import { LibError } from '../error/lib-error';
-import { Point } from '../common/point';
-import { Interpolation } from '../common/interpolation';
-import { MathUtils } from '../common/math-utils';
-import { ExifData } from '../exif/exif-data';
-import { MemoryImage } from '../image/image';
-import { ImageUtils } from '../image/image-utils';
-import { Pixel } from '../image/pixel';
-import { FlipDirection } from './flip-direction';
-import { TrimSide } from './trim-side';
-import { Rectangle } from '../common/rectangle';
-import { Draw } from '../draw/draw';
-import { BlendMode } from '../draw/blend-mode';
-import { TrimMode } from './trim-mode';
-import { ExpandCanvasPosition } from './expand-canvas-position';
-import { Color } from '../color/color';
+import { LibError } from '../error/lib-error.js';
+import { Point } from '../common/point.js';
+import { Interpolation } from '../common/interpolation.js';
+import { MathUtils } from '../common/math-utils.js';
+import { ExifData } from '../exif/exif-data.js';
+import { MemoryImage } from '../image/image.js';
+import { ImageUtils } from '../image/image-utils.js';
+import { Pixel } from '../image/pixel.js';
+import { FlipDirection } from './flip-direction.js';
+import { TrimSide } from './trim-side.js';
+import { Rectangle } from '../common/rectangle.js';
+import { Draw } from '../draw/draw.js';
+import { BlendMode } from '../draw/blend-mode.js';
+import { TrimMode } from './trim-mode.js';
+import { ExpandCanvasPosition } from './expand-canvas-position.js';
+import { Color } from '../color/color.js';
 
 export interface TransformOptions {
   image: MemoryImage;

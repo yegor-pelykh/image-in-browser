@@ -1,8 +1,8 @@
 /** @format */
 
-import { InputBuffer } from '../../../common/input-buffer';
-import { LibError } from '../../../error/lib-error';
-import { PsdLayerData } from './psd-layer-data';
+import { InputBuffer } from '../../../common/input-buffer.js';
+import { LibError } from '../../../error/lib-error.js';
+import { PsdLayerData } from './psd-layer-data.js';
 
 export class PsdLayerSectionDivider extends PsdLayerData {
   public static readonly tagName = 'lsct';

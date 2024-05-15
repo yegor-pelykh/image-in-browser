@@ -1,28 +1,28 @@
 /** @format */
 
-import { inflate } from '../../uzip/uzip';
-import { ColorUtils } from '../../color/color-utils';
-import { Format } from '../../color/format';
-import { ArrayUtils } from '../../common/array-utils';
-import { BitUtils } from '../../common/bit-utils';
-import { Float16 } from '../../common/float16';
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { ExifTagNameToID } from '../../exif/exif-tag';
-import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type';
-import { MemoryImage } from '../../image/image';
-import { JpegDecoder } from '../jpeg-decoder';
-import { TiffBitReader } from './tiff-bit-reader';
-import { TiffCompression } from './tiff-compression';
-import { TiffEntry } from './tiff-entry';
-import { TiffFaxDecoder } from './tiff-fax-decoder';
-import { TiffFormat } from './tiff-format';
-import { TiffImageType } from './tiff-image-type';
-import { LzwDecoder } from './tiff-lzw-decoder';
+import { inflate } from '../../uzip/uzip.js';
+import { ColorUtils } from '../../color/color-utils.js';
+import { Format } from '../../color/format.js';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { BitUtils } from '../../common/bit-utils.js';
+import { Float16 } from '../../common/float16.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { ExifTagNameToID } from '../../exif/exif-tag.js';
+import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type.js';
+import { MemoryImage } from '../../image/image.js';
+import { JpegDecoder } from '../jpeg-decoder.js';
+import { TiffBitReader } from './tiff-bit-reader.js';
+import { TiffCompression } from './tiff-compression.js';
+import { TiffEntry } from './tiff-entry.js';
+import { TiffFaxDecoder } from './tiff-fax-decoder.js';
+import { TiffFormat } from './tiff-format.js';
+import { TiffImageType } from './tiff-image-type.js';
+import { LzwDecoder } from './tiff-lzw-decoder.js';
 import {
   TiffPhotometricType,
   TiffPhotometricTypeLength,
-} from './tiff-photometric-type';
+} from './tiff-photometric-type.js';
 
 export class TiffImage {
   private readonly _tags: Map<number, TiffEntry> = new Map<number, TiffEntry>();

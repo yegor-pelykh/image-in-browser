@@ -1,16 +1,16 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { OutputBuffer } from '../common/output-buffer';
-import { BmpFileHeader } from './bmp/bmp-file-header';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { DibDecoder } from './dib-decoder';
-import { IcoBmpInfo } from './ico/ico-bmp-info';
-import { IcoInfo } from './ico/ico-info';
-import { PngDecoder } from './png-decoder';
-import { MemoryImage } from '../image/image';
-import { FrameType } from '../image/frame-type';
-import { ImageFormat } from './image-format';
+import { InputBuffer } from '../common/input-buffer.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { BmpFileHeader } from './bmp/bmp-file-header.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { DibDecoder } from './dib-decoder.js';
+import { IcoBmpInfo } from './ico/ico-bmp-info.js';
+import { IcoInfo } from './ico/ico-info.js';
+import { PngDecoder } from './png-decoder.js';
+import { MemoryImage } from '../image/image.js';
+import { FrameType } from '../image/frame-type.js';
+import { ImageFormat } from './image-format.js';
 
 export class IcoDecoder implements Decoder {
   private _input?: InputBuffer<Uint8Array>;

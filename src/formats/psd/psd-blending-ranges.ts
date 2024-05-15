@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
+import { InputBuffer } from '../../common/input-buffer.js';
 
 export class PsdBlendingRanges {
   private _grayBlackSrc: number = 0;

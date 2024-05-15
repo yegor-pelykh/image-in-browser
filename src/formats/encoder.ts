@@ -1,6 +1,6 @@
 /** @format */
 
-import { MemoryImage } from '../image/image';
+import { MemoryImage } from '../image/image.js';
 
 /**
  * Object interface for specifying Encoder.encode parameters.

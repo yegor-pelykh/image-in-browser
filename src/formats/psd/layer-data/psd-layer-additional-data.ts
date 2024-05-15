@@ -1,7 +1,7 @@
 /** @format */
 
-import { InputBuffer } from '../../../common/input-buffer';
-import { PsdLayerData } from './psd-layer-data';
+import { InputBuffer } from '../../../common/input-buffer.js';
+import { PsdLayerData } from './psd-layer-data.js';
 
 export class PsdLayerAdditionalData extends PsdLayerData {
   private _data: InputBuffer<Uint8Array>;

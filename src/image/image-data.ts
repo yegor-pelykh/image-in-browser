@@ -1,10 +1,10 @@
 /** @format */
 
-import { ChannelOrder } from '../color/channel-order';
-import { Color } from '../color/color';
-import { Format, FormatType } from '../color/format';
-import { Palette } from './palette';
-import { Pixel } from './pixel';
+import { ChannelOrder } from '../color/channel-order.js';
+import { Color } from '../color/color.js';
+import { Format, FormatType } from '../color/format.js';
+import { Palette } from './palette.js';
+import { Pixel } from './pixel.js';
 
 export interface MemoryImageDataGetBytesOptions {
   order?: ChannelOrder;

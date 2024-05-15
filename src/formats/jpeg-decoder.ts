@@ -1,12 +1,12 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { LibError } from '../error/lib-error';
-import { MemoryImage } from '../image/image';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { JpegData } from './jpeg/jpeg-data';
-import { JpegInfo } from './jpeg/jpeg-info';
+import { InputBuffer } from '../common/input-buffer.js';
+import { LibError } from '../error/lib-error.js';
+import { MemoryImage } from '../image/image.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { JpegData } from './jpeg/jpeg-data.js';
+import { JpegInfo } from './jpeg/jpeg-info.js';
 
 /**
  * Decode a jpeg encoded image.

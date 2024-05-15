@@ -1,31 +1,31 @@
 /** @format */
 
-import { inflate } from '../uzip/uzip';
-import { Crc32 } from '../common/crc32';
-import { InputBuffer } from '../common/input-buffer';
-import { ArrayUtils } from '../common/array-utils';
-import { StringUtils } from '../common/string-utils';
-import { LibError } from '../error/lib-error';
-import { DecodeInfo } from './decode-info';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { PngFrame } from './png/png-frame';
-import { PngInfo } from './png/png-info';
-import { PngColorType } from './png/png-color-type';
-import { PngDisposeMode } from './png/png-dispose-mode';
-import { PngBlendMode } from './png/png-blend-mode';
-import { ColorRgba8 } from '../color/color-rgba8';
-import { ColorRgb8 } from '../color/color-rgb8';
-import { MemoryImage, MemoryImageCreateOptions } from '../image/image';
-import { PaletteUint8 } from '../image/palette-uint8';
-import { Format } from '../color/format';
-import { IccProfile } from '../image/icc-profile';
-import { IccProfileCompression } from '../image/icc-profile-compression';
-import { Draw } from '../draw/draw';
-import { BlendMode } from '../draw/blend-mode';
-import { PngFilterType } from './png/png-filter-type';
-import { Pixel } from '../image/pixel';
-import { ImageFormat } from './image-format';
-import { Rectangle } from '../common/rectangle';
+import { inflate } from '../uzip/uzip.js';
+import { Crc32 } from '../common/crc32.js';
+import { InputBuffer } from '../common/input-buffer.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { StringUtils } from '../common/string-utils.js';
+import { LibError } from '../error/lib-error.js';
+import { DecodeInfo } from './decode-info.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { PngFrame } from './png/png-frame.js';
+import { PngInfo } from './png/png-info.js';
+import { PngColorType } from './png/png-color-type.js';
+import { PngDisposeMode } from './png/png-dispose-mode.js';
+import { PngBlendMode } from './png/png-blend-mode.js';
+import { ColorRgba8 } from '../color/color-rgba8.js';
+import { ColorRgb8 } from '../color/color-rgb8.js';
+import { MemoryImage, MemoryImageCreateOptions } from '../image/image.js';
+import { PaletteUint8 } from '../image/palette-uint8.js';
+import { Format } from '../color/format.js';
+import { IccProfile } from '../image/icc-profile.js';
+import { IccProfileCompression } from '../image/icc-profile-compression.js';
+import { Draw } from '../draw/draw.js';
+import { BlendMode } from '../draw/blend-mode.js';
+import { PngFilterType } from './png/png-filter-type.js';
+import { Pixel } from '../image/pixel.js';
+import { ImageFormat } from './image-format.js';
+import { Rectangle } from '../common/rectangle.js';
 
 /**
  * Decode a PNG encoded image.

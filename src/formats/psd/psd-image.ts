@@ -1,18 +1,18 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { ColorUtils } from '../../color/color-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { MathUtils } from '../../common/math-utils';
-import { LibError } from '../../error/lib-error';
-import { MemoryImage } from '../../image/image';
-import { Pixel } from '../../image/pixel';
-import { DecodeInfo } from '../decode-info';
-import { PsdBlendMode } from './psd-blend-mode';
-import { PsdChannel } from './psd-channel';
-import { PsdColorMode } from './psd-color-mode';
-import { PsdImageResource } from './psd-image-resource';
-import { PsdLayer } from './psd-layer';
+import { Color } from '../../color/color.js';
+import { ColorUtils } from '../../color/color-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { MathUtils } from '../../common/math-utils.js';
+import { LibError } from '../../error/lib-error.js';
+import { MemoryImage } from '../../image/image.js';
+import { Pixel } from '../../image/pixel.js';
+import { DecodeInfo } from '../decode-info.js';
+import { PsdBlendMode } from './psd-blend-mode.js';
+import { PsdChannel } from './psd-channel.js';
+import { PsdColorMode } from './psd-color-mode.js';
+import { PsdImageResource } from './psd-image-resource.js';
+import { PsdLayer } from './psd-layer.js';
 
 export class PsdImage implements DecodeInfo {
   // '8BPS'

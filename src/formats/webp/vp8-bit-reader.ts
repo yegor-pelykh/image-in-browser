@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
+import { InputBuffer } from '../../common/input-buffer.js';
 
 export class VP8BitReader {
   private _input: InputBuffer<Uint8Array>;

@@ -1,14 +1,14 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { ArrayUtils } from '../common/array-utils';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { GifColorMap } from './gif/gif-color-map';
-import { GifImageDesc } from './gif/gif-image-desc';
-import { GifInfo } from './gif/gif-info';
-import { MemoryImage } from '../image/image';
-import { ColorUint8 } from '../color/color-uint8';
-import { ImageFormat } from './image-format';
+import { InputBuffer } from '../common/input-buffer.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { GifColorMap } from './gif/gif-color-map.js';
+import { GifImageDesc } from './gif/gif-image-desc.js';
+import { GifInfo } from './gif/gif-info.js';
+import { MemoryImage } from '../image/image.js';
+import { ColorUint8 } from '../color/color-uint8.js';
+import { ImageFormat } from './image-format.js';
 
 /**
  * A decoder for the GIF image format. This supports both single frame and

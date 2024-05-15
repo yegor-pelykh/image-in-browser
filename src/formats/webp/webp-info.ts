@@ -1,9 +1,9 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { DecodeInfo } from '../decode-info';
-import { WebPFormat } from './webp-format';
-import { WebPFrame } from './webp-frame';
+import { Color } from '../../color/color.js';
+import { DecodeInfo } from '../decode-info.js';
+import { WebPFormat } from './webp-format.js';
+import { WebPFrame } from './webp-frame.js';
 
 /**
  * Features gathered from the bitstream

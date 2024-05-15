@@ -1,6 +1,6 @@
 /** @format */
 
-import { BmpInfo } from '../bmp/bmp-info';
+import { BmpInfo } from '../bmp/bmp-info.js';
 
 export class IcoBmpInfo extends BmpInfo {
   public get height(): number {

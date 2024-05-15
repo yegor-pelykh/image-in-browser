@@ -1,13 +1,13 @@
 /** @format */
 
-import { Format } from '../color/format';
-import { InputBuffer } from '../common/input-buffer';
-import { MemoryImage } from '../image/image';
-import { DecodeInfo } from './decode-info';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { PnmFormat } from './pnm/pnm-format';
-import { PnmInfo } from './pnm/pnm-info';
+import { Format } from '../color/format.js';
+import { InputBuffer } from '../common/input-buffer.js';
+import { MemoryImage } from '../image/image.js';
+import { DecodeInfo } from './decode-info.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { PnmFormat } from './pnm/pnm-format.js';
+import { PnmInfo } from './pnm/pnm-info.js';
 
 /**
  * Decode a PNM image.

@@ -1,6 +1,6 @@
 /** @format */
 
-import { LibError } from '../error/lib-error';
+import { LibError } from '../error/lib-error.js';
 
 export abstract class StringUtils {
   public static readonly utf8Decoder = new TextDecoder('utf8');

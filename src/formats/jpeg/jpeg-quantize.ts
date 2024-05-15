@@ -1,12 +1,12 @@
 /** @format */
 
-import { BitUtils } from '../../common/bit-utils';
-import { MathUtils } from '../../common/math-utils';
-import { LibError } from '../../error/lib-error';
-import { ExifData } from '../../exif/exif-data';
-import { MemoryImage } from '../../image/image';
-import { JpegComponentData } from './jpeg-component-data';
-import { JpegData } from './jpeg-data';
+import { BitUtils } from '../../common/bit-utils.js';
+import { MathUtils } from '../../common/math-utils.js';
+import { LibError } from '../../error/lib-error.js';
+import { ExifData } from '../../exif/exif-data.js';
+import { MemoryImage } from '../../image/image.js';
+import { JpegComponentData } from './jpeg-component-data.js';
+import { JpegData } from './jpeg-data.js';
 
 export abstract class JpegQuantize {
   private static readonly _dctClipOffset = 256;

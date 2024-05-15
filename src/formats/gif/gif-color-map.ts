@@ -1,7 +1,7 @@
 /** @format */
 
-import { ColorUint8 } from '../../color/color-uint8';
-import { PaletteUint8 } from '../../image/palette-uint8';
+import { ColorUint8 } from '../../color/color-uint8.js';
+import { PaletteUint8 } from '../../image/palette-uint8.js';
 
 export class GifColorMap {
   private readonly _numColors: number;

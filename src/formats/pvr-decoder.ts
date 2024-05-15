@@ -1,15 +1,15 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { TypedArray } from '../common/typings';
-import { MemoryImage } from '../image/image';
-import { DecodeInfo } from './decode-info';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { PvrAppleInfo } from './pvr/pvr-apple-info';
-import { PvrPacket } from './pvr/pvr-packet';
-import { Pvr2Info } from './pvr/pvr2-info';
-import { Pvr3Info } from './pvr/pvr3-info';
+import { InputBuffer } from '../common/input-buffer.js';
+import { TypedArray } from '../common/typings.js';
+import { MemoryImage } from '../image/image.js';
+import { DecodeInfo } from './decode-info.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { PvrAppleInfo } from './pvr/pvr-apple-info.js';
+import { PvrPacket } from './pvr/pvr-packet.js';
+import { Pvr2Info } from './pvr/pvr2-info.js';
+import { Pvr3Info } from './pvr/pvr3-info.js';
 
 /**
  * Ported from Jeffrey Lim's PVRTC encoder/decoder,

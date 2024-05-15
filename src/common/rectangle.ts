@@ -1,6 +1,6 @@
 /** @format */
 
-import { Point } from './point';
+import { Point } from './point.js';
 
 export class Rectangle {
   private readonly _left;

@@ -1,8 +1,8 @@
 /** @format */
 
-import { LibError } from '../error/lib-error';
-import { Rational } from './rational';
-import { TypedArray } from './typings';
+import { LibError } from '../error/lib-error.js';
+import { Rational } from './rational.js';
+import { TypedArray } from './typings.js';
 
 export abstract class ArrayUtils {
   public static copyInt8(

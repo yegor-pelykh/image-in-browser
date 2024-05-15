@@ -1,6 +1,6 @@
 /** @format */
 
-import { IfdValue } from './ifd-value/ifd-value';
+import { IfdValue } from './ifd-value/ifd-value.js';
 
 export class ExifEntry {
   private readonly _tag: number;

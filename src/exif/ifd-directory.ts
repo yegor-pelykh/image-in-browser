@@ -1,25 +1,25 @@
 /** @format */
 
-import { Rational } from '../common/rational';
-import { ExifImageTags, ExifTagNameToID } from './exif-tag';
-import { IfdValueType } from './ifd-value-type';
-import { IfdContainer } from './ifd-container';
-import { IfdValue } from './ifd-value/ifd-value';
-import { IfdAsciiValue } from './ifd-value/ifd-ascii-value';
-import { IfdShortValue } from './ifd-value/ifd-short-value';
-import { IfdRationalValue } from './ifd-value/ifd-rational-value';
-import { IfdByteValue } from './ifd-value/ifd-byte-value';
-import { IfdLongValue } from './ifd-value/ifd-long-value';
-import { IfdSByteValue } from './ifd-value/ifd-sbyte-value';
-import { IfdUndefinedValue } from './ifd-value/ifd-undefined-value';
-import { IfdSShortValue } from './ifd-value/ifd-sshort-value';
-import { IfdSLongValue } from './ifd-value/ifd-slong-value';
-import { IfdSRationalValue } from './ifd-value/ifd-srational-value';
-import { IfdSingleValue } from './ifd-value/ifd-single-value';
-import { IfdDoubleValue } from './ifd-value/ifd-double-value';
-import { TypedArray } from '../common/typings';
-import { StringUtils } from '../common/string-utils';
-import { ArrayUtils } from '../common/array-utils';
+import { Rational } from '../common/rational.js';
+import { ExifImageTags, ExifTagNameToID } from './exif-tag.js';
+import { IfdValueType } from './ifd-value-type.js';
+import { IfdContainer } from './ifd-container.js';
+import { IfdValue } from './ifd-value/ifd-value.js';
+import { IfdAsciiValue } from './ifd-value/ifd-ascii-value.js';
+import { IfdShortValue } from './ifd-value/ifd-short-value.js';
+import { IfdRationalValue } from './ifd-value/ifd-rational-value.js';
+import { IfdByteValue } from './ifd-value/ifd-byte-value.js';
+import { IfdLongValue } from './ifd-value/ifd-long-value.js';
+import { IfdSByteValue } from './ifd-value/ifd-sbyte-value.js';
+import { IfdUndefinedValue } from './ifd-value/ifd-undefined-value.js';
+import { IfdSShortValue } from './ifd-value/ifd-sshort-value.js';
+import { IfdSLongValue } from './ifd-value/ifd-slong-value.js';
+import { IfdSRationalValue } from './ifd-value/ifd-srational-value.js';
+import { IfdSingleValue } from './ifd-value/ifd-single-value.js';
+import { IfdDoubleValue } from './ifd-value/ifd-double-value.js';
+import { TypedArray } from '../common/typings.js';
+import { StringUtils } from '../common/string-utils.js';
+import { ArrayUtils } from '../common/array-utils.js';
 
 export class IfdDirectory {
   private readonly _data: Map<number, IfdValue>;

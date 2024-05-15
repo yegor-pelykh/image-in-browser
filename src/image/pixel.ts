@@ -1,8 +1,8 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { MemoryImageData } from './image-data';
-import { PixelUndefined } from './pixel-undefined';
+import { Color } from '../color/color.js';
+import { MemoryImageData } from './image-data.js';
+import { PixelUndefined } from './pixel-undefined.js';
 
 export interface Pixel extends Color, Iterator<Pixel> {
   /**

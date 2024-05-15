@@ -1,6 +1,6 @@
 /** @format */
 
-import { Color } from '../color/color';
+import { Color } from '../color/color.js';
 
 /**
  * Provides information about the image being decoded.

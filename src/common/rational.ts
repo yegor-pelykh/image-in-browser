@@ -1,7 +1,7 @@
 /** @format */
 
-import { MathUtils } from './math-utils';
-import { StringUtils } from './string-utils';
+import { MathUtils } from './math-utils.js';
+import { StringUtils } from './string-utils.js';
 
 export class Rational {
   private _numerator: number;

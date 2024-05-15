@@ -1,6 +1,6 @@
 /** @format */
 
-import { ColorUint8 } from './color-uint8';
+import { ColorUint8 } from './color-uint8.js';
 
 export class ColorRgb8 extends ColorUint8 {
   constructor(r: number, g: number, b: number) {

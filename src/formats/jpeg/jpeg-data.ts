@@ -1,23 +1,23 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { JpegComponentData } from './jpeg-component-data';
-import { JpegAdobe } from './jpeg-adobe';
-import { JpegComponent } from './jpeg-component';
-import { JpegFrame } from './jpeg-frame';
-import { JpegHuffman } from './jpeg-huffman';
-import { JpegInfo } from './jpeg-info';
-import { JpegJfif } from './jpeg-jfif';
-import { JpegQuantize } from './jpeg-quantize';
-import { JpegScan } from './jpeg-scan';
-import { ExifData } from '../../exif/exif-data';
-import { ArrayUtils } from '../../common/array-utils';
-import { JpegMarker } from './jpeg-marker';
-import { MemoryImage } from '../../image/image';
-import { HuffmanNode } from './huffman-node';
-import { HuffmanValue } from './huffman-value';
-import { HuffmanParent } from './huffman-parent';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { JpegComponentData } from './jpeg-component-data.js';
+import { JpegAdobe } from './jpeg-adobe.js';
+import { JpegComponent } from './jpeg-component.js';
+import { JpegFrame } from './jpeg-frame.js';
+import { JpegHuffman } from './jpeg-huffman.js';
+import { JpegInfo } from './jpeg-info.js';
+import { JpegJfif } from './jpeg-jfif.js';
+import { JpegQuantize } from './jpeg-quantize.js';
+import { JpegScan } from './jpeg-scan.js';
+import { ExifData } from '../../exif/exif-data.js';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { JpegMarker } from './jpeg-marker.js';
+import { MemoryImage } from '../../image/image.js';
+import { HuffmanNode } from './huffman-node.js';
+import { HuffmanValue } from './huffman-value.js';
+import { HuffmanParent } from './huffman-parent.js';
 
 export class JpegData {
   public static readonly dctZigZag = [

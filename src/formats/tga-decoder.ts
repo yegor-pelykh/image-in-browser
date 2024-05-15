@@ -1,12 +1,12 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { MemoryImage } from '../image/image';
-import { Palette } from '../image/palette';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { TgaImageType } from './tga/tga-image-type';
-import { TgaInfo } from './tga/tga-info';
+import { InputBuffer } from '../common/input-buffer.js';
+import { MemoryImage } from '../image/image.js';
+import { Palette } from '../image/palette.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { TgaImageType } from './tga/tga-image-type.js';
+import { TgaInfo } from './tga/tga-info.js';
 
 /**
  * Decode a TGA image. This only supports the 24-bit and 32-bit uncompressed format.

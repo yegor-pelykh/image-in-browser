@@ -1,9 +1,9 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { DecodeInfo } from '../decode-info';
-import { GifColorMap } from './gif-color-map';
-import { GifImageDesc } from './gif-image-desc';
+import { Color } from '../../color/color.js';
+import { DecodeInfo } from '../decode-info.js';
+import { GifColorMap } from './gif-color-map.js';
+import { GifImageDesc } from './gif-image-desc.js';
 
 export interface GifInfoInitOptions {
   width?: number;

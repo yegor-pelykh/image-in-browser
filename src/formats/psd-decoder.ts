@@ -1,10 +1,10 @@
 /** @format */
 
-import { FrameType } from '../image/frame-type';
-import { MemoryImage } from '../image/image';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { PsdImage } from './psd/psd-image';
+import { FrameType } from '../image/frame-type.js';
+import { MemoryImage } from '../image/image.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { PsdImage } from './psd/psd-image.js';
 
 /**
  * Decode a Photoshop PSD image.

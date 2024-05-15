@@ -1,18 +1,18 @@
 /** @format */
 
-import { ColorRgba8 } from '../color/color-rgba8';
-import { InputBuffer } from '../common/input-buffer';
-import { Draw } from '../draw/draw';
-import { LibError } from '../error/lib-error';
-import { MemoryImage } from '../image/image';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { VP8 } from './webp/vp8';
-import { VP8L } from './webp/vp8l';
-import { WebPFormat } from './webp/webp-format';
-import { WebPFrame } from './webp/webp-frame';
-import { WebPInfo } from './webp/webp-info';
-import { WebPInfoInternal } from './webp/webp-info-internal';
+import { ColorRgba8 } from '../color/color-rgba8.js';
+import { InputBuffer } from '../common/input-buffer.js';
+import { Draw } from '../draw/draw.js';
+import { LibError } from '../error/lib-error.js';
+import { MemoryImage } from '../image/image.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { VP8 } from './webp/vp8.js';
+import { VP8L } from './webp/vp8l.js';
+import { WebPFormat } from './webp/webp-format.js';
+import { WebPFrame } from './webp/webp-frame.js';
+import { WebPInfo } from './webp/webp-info.js';
+import { WebPInfoInternal } from './webp/webp-info-internal.js';
 
 /**
  * Decode a WebP formatted image. This supports lossless (vp8l), lossy (vp8),

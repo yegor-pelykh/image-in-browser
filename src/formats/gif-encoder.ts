@@ -1,17 +1,17 @@
 /** @format */
 
-import { NeuralQuantizer } from '../image/neural-quantizer';
-import { OutputBuffer } from '../common/output-buffer';
-import { StringUtils } from '../common/string-utils';
-import { Encoder, EncoderEncodeOptions } from './encoder';
-import { QuantizerType } from '../image/quantizer-type';
-import { MemoryImage } from '../image/image';
-import { OctreeQuantizer } from '../image/octree-quantizer';
-import { Quantizer } from '../image/quantizer';
-import { Filter } from '../filter/filter';
-import { LibError } from '../error/lib-error';
-import { DitherKernel } from '../filter/dither-kernel';
-import { BinaryQuantizer } from '../image/binary-quantizer';
+import { NeuralQuantizer } from '../image/neural-quantizer.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { StringUtils } from '../common/string-utils.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { QuantizerType } from '../image/quantizer-type.js';
+import { MemoryImage } from '../image/image.js';
+import { OctreeQuantizer } from '../image/octree-quantizer.js';
+import { Quantizer } from '../image/quantizer.js';
+import { Filter } from '../filter/filter.js';
+import { LibError } from '../error/lib-error.js';
+import { DitherKernel } from '../filter/dither-kernel.js';
+import { BinaryQuantizer } from '../image/binary-quantizer.js';
 
 export interface GifEncoderInitOptions {
   delay?: number;

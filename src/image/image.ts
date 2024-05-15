@@ -1,46 +1,46 @@
 /** @format */
 
-import { ChannelOrder, ChannelOrderLength } from '../color/channel-order';
-import { Color } from '../color/color';
-import { ColorUint8 } from '../color/color-uint8';
-import { ColorUtils } from '../color/color-utils';
+import { ChannelOrder, ChannelOrderLength } from '../color/channel-order.js';
+import { Color } from '../color/color.js';
+import { ColorUint8 } from '../color/color-uint8.js';
+import { ColorUtils } from '../color/color-utils.js';
 import {
   Format,
   FormatMaxValue,
   FormatType,
   getRowStride,
-} from '../color/format';
-import { ArrayUtils } from '../common/array-utils';
-import { Interpolation } from '../common/interpolation';
-import { MathUtils } from '../common/math-utils';
-import { LibError } from '../error/lib-error';
-import { ExifData } from '../exif/exif-data';
-import { FrameType } from './frame-type';
-import { IccProfile } from './icc-profile';
-import { MemoryImageData } from './image-data';
-import { MemoryImageDataFloat16 } from './image-data-float16';
-import { MemoryImageDataFloat32 } from './image-data-float32';
-import { MemoryImageDataFloat64 } from './image-data-float64';
-import { MemoryImageDataInt16 } from './image-data-int16';
-import { MemoryImageDataInt32 } from './image-data-int32';
-import { MemoryImageDataInt8 } from './image-data-int8';
-import { MemoryImageDataUint1 } from './image-data-uint1';
-import { MemoryImageDataUint16 } from './image-data-uint16';
-import { MemoryImageDataUint2 } from './image-data-uint2';
-import { MemoryImageDataUint32 } from './image-data-uint32';
-import { MemoryImageDataUint4 } from './image-data-uint4';
-import { MemoryImageDataUint8 } from './image-data-uint8';
-import { Palette } from './palette';
-import { PaletteFloat16 } from './palette-float16';
-import { PaletteFloat32 } from './palette-float32';
-import { PaletteFloat64 } from './palette-float64';
-import { PaletteInt16 } from './palette-int16';
-import { PaletteInt32 } from './palette-int32';
-import { PaletteInt8 } from './palette-int8';
-import { PaletteUint16 } from './palette-uint16';
-import { PaletteUint32 } from './palette-uint32';
-import { PaletteUint8 } from './palette-uint8';
-import { Pixel, UndefinedPixel } from './pixel';
+} from '../color/format.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { Interpolation } from '../common/interpolation.js';
+import { MathUtils } from '../common/math-utils.js';
+import { LibError } from '../error/lib-error.js';
+import { ExifData } from '../exif/exif-data.js';
+import { FrameType } from './frame-type.js';
+import { IccProfile } from './icc-profile.js';
+import { MemoryImageData } from './image-data.js';
+import { MemoryImageDataFloat16 } from './image-data-float16.js';
+import { MemoryImageDataFloat32 } from './image-data-float32.js';
+import { MemoryImageDataFloat64 } from './image-data-float64.js';
+import { MemoryImageDataInt16 } from './image-data-int16.js';
+import { MemoryImageDataInt32 } from './image-data-int32.js';
+import { MemoryImageDataInt8 } from './image-data-int8.js';
+import { MemoryImageDataUint1 } from './image-data-uint1.js';
+import { MemoryImageDataUint16 } from './image-data-uint16.js';
+import { MemoryImageDataUint2 } from './image-data-uint2.js';
+import { MemoryImageDataUint32 } from './image-data-uint32.js';
+import { MemoryImageDataUint4 } from './image-data-uint4.js';
+import { MemoryImageDataUint8 } from './image-data-uint8.js';
+import { Palette } from './palette.js';
+import { PaletteFloat16 } from './palette-float16.js';
+import { PaletteFloat32 } from './palette-float32.js';
+import { PaletteFloat64 } from './palette-float64.js';
+import { PaletteInt16 } from './palette-int16.js';
+import { PaletteInt32 } from './palette-int32.js';
+import { PaletteInt8 } from './palette-int8.js';
+import { PaletteUint16 } from './palette-uint16.js';
+import { PaletteUint32 } from './palette-uint32.js';
+import { PaletteUint8 } from './palette-uint8.js';
+import { Pixel, UndefinedPixel } from './pixel.js';
 
 interface MemoryImageInitializeOptions {
   width: number;

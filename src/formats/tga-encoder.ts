@@ -1,8 +1,8 @@
 /** @format */
 
-import { OutputBuffer } from '../common/output-buffer';
-import { MemoryImage } from '../image/image';
-import { Encoder, EncoderEncodeOptions } from './encoder';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { MemoryImage } from '../image/image.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
 
 /**
  * Encode a TGA image. This only supports the 24-bit uncompressed format.

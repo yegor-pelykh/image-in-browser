@@ -1,7 +1,7 @@
 /** @format */
 
-import { InputBuffer } from './input-buffer';
-import { ArrayUtils } from './array-utils';
+import { InputBuffer } from './input-buffer.js';
+import { ArrayUtils } from './array-utils.js';
 
 export interface OutputBufferInitOptions {
   bigEndian?: boolean;

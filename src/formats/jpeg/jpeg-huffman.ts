@@ -1,6 +1,6 @@
 /** @format */
 
-import { HuffmanNode } from './huffman-node';
+import { HuffmanNode } from './huffman-node.js';
 
 export class JpegHuffman {
   private readonly _children: Array<HuffmanNode | undefined> = [];

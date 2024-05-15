@@ -1,7 +1,7 @@
 /** @format */
 
-import { MathUtils } from '../common/math-utils';
-import { LibError } from '../error/lib-error';
+import { MathUtils } from '../common/math-utils.js';
+import { LibError } from '../error/lib-error.js';
 
 /**
  * The format of a color or image.

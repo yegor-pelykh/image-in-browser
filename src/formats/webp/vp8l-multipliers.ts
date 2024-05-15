@@ -1,6 +1,6 @@
 /** @format */
 
-import { BitUtils } from '../../common/bit-utils';
+import { BitUtils } from '../../common/bit-utils.js';
 
 export class VP8LMultipliers {
   private readonly _data = new Uint8Array(3);

@@ -1,7 +1,7 @@
 /** @format */
 
-import { VP8L } from './vp8l';
-import { VP8LBitReader } from './vp8l-bit-reader';
+import { VP8L } from './vp8l.js';
+import { VP8LBitReader } from './vp8l-bit-reader.js';
 
 export class HuffmanTree {
   // Fast lookup for short bit lengths

@@ -1,8 +1,8 @@
 /** @format */
 
-import { Format } from '../color/format';
-import { Float16 } from '../common/float16';
-import { Palette } from './palette';
+import { Format } from '../color/format.js';
+import { Float16 } from '../common/float16.js';
+import { Palette } from './palette.js';
 
 export class PaletteFloat16 implements Palette {
   private readonly _data: Uint16Array;

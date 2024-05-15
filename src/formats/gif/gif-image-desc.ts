@@ -1,7 +1,7 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { GifColorMap } from './gif-color-map';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { GifColorMap } from './gif-color-map.js';
 
 export class GifImageDesc {
   private readonly _x: number;

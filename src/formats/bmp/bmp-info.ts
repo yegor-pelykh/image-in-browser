@@ -1,13 +1,13 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { BitUtils } from '../../common/bit-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { PaletteUint8 } from '../../image/palette-uint8';
-import { DecodeInfo } from '../decode-info';
-import { BmpCompressionMode } from './bmp-compression-mode';
-import { BmpFileHeader } from './bmp-file-header';
+import { Color } from '../../color/color.js';
+import { BitUtils } from '../../common/bit-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { PaletteUint8 } from '../../image/palette-uint8.js';
+import { DecodeInfo } from '../decode-info.js';
+import { BmpCompressionMode } from './bmp-compression-mode.js';
+import { BmpFileHeader } from './bmp-file-header.js';
 
 export class BmpInfo implements DecodeInfo {
   private readonly _startPos: number;

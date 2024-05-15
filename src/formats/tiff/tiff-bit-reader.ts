@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
+import { InputBuffer } from '../../common/input-buffer.js';
 
 export class TiffBitReader {
   private static readonly _bitMask = [0, 1, 3, 7, 15, 31, 63, 127, 255];

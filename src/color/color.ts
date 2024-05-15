@@ -1,8 +1,8 @@
 /** @format */
 
-import { Palette } from '../image/palette';
-import { Channel } from './channel';
-import { Format } from './format';
+import { Palette } from '../image/palette.js';
+import { Channel } from './channel.js';
+import { Format } from './format.js';
 
 export interface ColorConvertOptions {
   format?: Format;

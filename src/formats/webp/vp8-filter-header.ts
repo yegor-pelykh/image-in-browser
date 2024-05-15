@@ -1,6 +1,6 @@
 /** @format */
 
-import { VP8 } from './vp8';
+import { VP8 } from './vp8.js';
 
 /**
  * Filter parameters

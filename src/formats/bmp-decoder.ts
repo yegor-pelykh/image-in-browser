@@ -1,12 +1,12 @@
 /** @format */
 
-import { Format } from '../color/format';
-import { InputBuffer } from '../common/input-buffer';
-import { MemoryImage } from '../image/image';
-import { BmpFileHeader } from './bmp/bmp-file-header';
-import { BmpInfo } from './bmp/bmp-info';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
+import { Format } from '../color/format.js';
+import { InputBuffer } from '../common/input-buffer.js';
+import { MemoryImage } from '../image/image.js';
+import { BmpFileHeader } from './bmp/bmp-file-header.js';
+import { BmpInfo } from './bmp/bmp-info.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
 
 export class BmpDecoder implements Decoder {
   protected _input?: InputBuffer<Uint8Array>;

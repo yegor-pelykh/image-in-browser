@@ -1,8 +1,8 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { MemoryImage } from './image';
-import { Palette } from './palette';
+import { Color } from '../color/color.js';
+import { MemoryImage } from './image.js';
+import { Palette } from './palette.js';
 
 /**
  * Interface for color quantizers, which reduce the total number of colors

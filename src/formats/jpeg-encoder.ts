@@ -1,14 +1,14 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { Format } from '../color/format';
-import { ArrayUtils } from '../common/array-utils';
-import { MathUtils } from '../common/math-utils';
-import { OutputBuffer } from '../common/output-buffer';
-import { ExifData } from '../exif/exif-data';
-import { MemoryImage } from '../image/image';
-import { Encoder, EncoderEncodeOptions } from './encoder';
-import { JpegMarker } from './jpeg/jpeg-marker';
+import { Color } from '../color/color.js';
+import { Format } from '../color/format.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { MathUtils } from '../common/math-utils.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { ExifData } from '../exif/exif-data.js';
+import { MemoryImage } from '../image/image.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { JpegMarker } from './jpeg/jpeg-marker.js';
 
 /**
  * Object interface for specifying JpegEncoder.encode parameters.

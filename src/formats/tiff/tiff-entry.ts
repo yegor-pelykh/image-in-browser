@@ -1,22 +1,22 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { ExifImageTags } from '../../exif/exif-tag';
-import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type';
-import { IfdAsciiValue } from '../../exif/ifd-value/ifd-ascii-value';
-import { IfdByteValue } from '../../exif/ifd-value/ifd-byte-value';
-import { IfdDoubleValue } from '../../exif/ifd-value/ifd-double-value';
-import { IfdLongValue } from '../../exif/ifd-value/ifd-long-value';
-import { IfdRationalValue } from '../../exif/ifd-value/ifd-rational-value';
-import { IfdSByteValue } from '../../exif/ifd-value/ifd-sbyte-value';
-import { IfdShortValue } from '../../exif/ifd-value/ifd-short-value';
-import { IfdSingleValue } from '../../exif/ifd-value/ifd-single-value';
-import { IfdSLongValue } from '../../exif/ifd-value/ifd-slong-value';
-import { IfdSRationalValue } from '../../exif/ifd-value/ifd-srational-value';
-import { IfdSShortValue } from '../../exif/ifd-value/ifd-sshort-value';
-import { IfdValue } from '../../exif/ifd-value/ifd-value';
-import { TiffImage } from './tiff-image';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { ExifImageTags } from '../../exif/exif-tag.js';
+import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type.js';
+import { IfdAsciiValue } from '../../exif/ifd-value/ifd-ascii-value.js';
+import { IfdByteValue } from '../../exif/ifd-value/ifd-byte-value.js';
+import { IfdDoubleValue } from '../../exif/ifd-value/ifd-double-value.js';
+import { IfdLongValue } from '../../exif/ifd-value/ifd-long-value.js';
+import { IfdRationalValue } from '../../exif/ifd-value/ifd-rational-value.js';
+import { IfdSByteValue } from '../../exif/ifd-value/ifd-sbyte-value.js';
+import { IfdShortValue } from '../../exif/ifd-value/ifd-short-value.js';
+import { IfdSingleValue } from '../../exif/ifd-value/ifd-single-value.js';
+import { IfdSLongValue } from '../../exif/ifd-value/ifd-slong-value.js';
+import { IfdSRationalValue } from '../../exif/ifd-value/ifd-srational-value.js';
+import { IfdSShortValue } from '../../exif/ifd-value/ifd-sshort-value.js';
+import { IfdValue } from '../../exif/ifd-value/ifd-value.js';
+import { TiffImage } from './tiff-image.js';
 
 export interface TiffEntryInitOptions {
   tag: number;

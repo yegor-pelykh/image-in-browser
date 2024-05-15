@@ -1,9 +1,9 @@
 /** @format */
 
-import { Channel } from '../color/channel';
-import { ArrayUtils } from '../common/array-utils';
-import { MathUtils } from '../common/math-utils';
-import { MemoryImage } from '../image/image';
+import { Channel } from '../color/channel.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { MathUtils } from '../common/math-utils.js';
+import { MemoryImage } from '../image/image.js';
 
 export interface SeparableKernelApplyOptions {
   src: MemoryImage;

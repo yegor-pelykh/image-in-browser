@@ -1,6 +1,6 @@
 /** @format */
 
-import { IfdDirectory } from './ifd-directory';
+import { IfdDirectory } from './ifd-directory.js';
 
 export class IfdContainer {
   protected directories: Map<string, IfdDirectory>;

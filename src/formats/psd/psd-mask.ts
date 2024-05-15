@@ -1,6 +1,6 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
+import { InputBuffer } from '../../common/input-buffer.js';
 
 export class PsdMask {
   private _top: number = 0;

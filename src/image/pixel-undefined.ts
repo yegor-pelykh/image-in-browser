@@ -1,12 +1,12 @@
 /** @format */
 
-import { Channel } from '../color/channel';
-import { Color, ColorConvertOptions } from '../color/color';
-import { Format } from '../color/format';
-import { MemoryImageData } from './image-data';
-import { MemoryImageDataUint8 } from './image-data-uint8';
-import { Palette } from './palette';
-import { Pixel } from './pixel';
+import { Channel } from '../color/channel.js';
+import { Color, ColorConvertOptions } from '../color/color.js';
+import { Format } from '../color/format.js';
+import { MemoryImageData } from './image-data.js';
+import { MemoryImageDataUint8 } from './image-data-uint8.js';
+import { Palette } from './palette.js';
+import { Pixel } from './pixel.js';
 
 /**
  * Represents an invalid pixel.

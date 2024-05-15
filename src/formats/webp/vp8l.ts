@@ -1,18 +1,18 @@
 /** @format */
 
-import { ColorUtils } from '../../color/color-utils';
-import { ArrayUtils } from '../../common/array-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { MemoryImage } from '../../image/image';
-import { VP8LBitReader } from './vp8l-bit-reader';
-import { VP8LColorCache } from './vp8l-color-cache';
-import { VP8LImageTransformType } from './vp8l-image-transform-type';
-import { VP8LTransform } from './vp8l-transform';
-import { WebPFormat } from './webp-format';
-import { HuffmanTree } from './webp-huffman-tree';
-import { HuffmanTreeGroup } from './webp-huffman-tree-group';
-import { WebPInfo } from './webp-info';
+import { ColorUtils } from '../../color/color-utils.js';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { MemoryImage } from '../../image/image.js';
+import { VP8LBitReader } from './vp8l-bit-reader.js';
+import { VP8LColorCache } from './vp8l-color-cache.js';
+import { VP8LImageTransformType } from './vp8l-image-transform-type.js';
+import { VP8LTransform } from './vp8l-transform.js';
+import { WebPFormat } from './webp-format.js';
+import { HuffmanTree } from './webp-huffman-tree.js';
+import { HuffmanTreeGroup } from './webp-huffman-tree-group.js';
+import { WebPInfo } from './webp-info.js';
 
 export class VP8L {
   private _lastPixel: number = 0;

@@ -1,11 +1,11 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { ArrayUtils } from '../../common/array-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { DecodeInfo } from '../decode-info';
-import { IcoInfoImage } from './ico-info-image';
-import { IcoType, IcoTypeLength } from './ico-type';
+import { Color } from '../../color/color.js';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { DecodeInfo } from '../decode-info.js';
+import { IcoInfoImage } from './ico-info-image.js';
+import { IcoType, IcoTypeLength } from './ico-type.js';
 
 export class IcoInfo implements DecodeInfo {
   private _width = 0;

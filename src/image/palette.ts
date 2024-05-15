@@ -1,6 +1,6 @@
 /** @format */
 
-import { Format } from '../color/format';
+import { Format } from '../color/format.js';
 
 export interface Palette {
   /**

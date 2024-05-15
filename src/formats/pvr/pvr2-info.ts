@@ -1,7 +1,7 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { DecodeInfo } from '../decode-info';
+import { Color } from '../../color/color.js';
+import { DecodeInfo } from '../decode-info.js';
 
 export interface Pvr2InfoOptions {
   width: number;

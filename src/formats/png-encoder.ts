@@ -1,19 +1,19 @@
 /** @format */
 
-import { deflate } from '../uzip/uzip';
-import { Crc32 } from '../common/crc32';
-import { OutputBuffer } from '../common/output-buffer';
-import { StringUtils } from '../common/string-utils';
-import { CompressionLevel } from '../common/typings';
-import { Encoder, EncoderEncodeOptions } from './encoder';
-import { Quantizer } from '../image/quantizer';
-import { PngFilterType } from './png/png-filter-type';
-import { MemoryImage } from '../image/image';
-import { Format } from '../color/format';
-import { NeuralQuantizer } from '../image/neural-quantizer';
-import { PngColorType } from './png/png-color-type';
-import { Palette } from '../image/palette';
-import { IccProfile } from '../image/icc-profile';
+import { deflate } from '../uzip/uzip.js';
+import { Crc32 } from '../common/crc32.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { StringUtils } from '../common/string-utils.js';
+import { CompressionLevel } from '../common/typings.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { Quantizer } from '../image/quantizer.js';
+import { PngFilterType } from './png/png-filter-type.js';
+import { MemoryImage } from '../image/image.js';
+import { Format } from '../color/format.js';
+import { NeuralQuantizer } from '../image/neural-quantizer.js';
+import { PngColorType } from './png/png-color-type.js';
+import { Palette } from '../image/palette.js';
+import { IccProfile } from '../image/icc-profile.js';
 
 export interface PngEncoderInitOptions {
   filter?: PngFilterType;

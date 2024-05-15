@@ -1,10 +1,10 @@
 /** @format */
 
-import { LibError } from '../error/lib-error';
-import { ArrayUtils } from './array-utils';
-import { BitUtils } from './bit-utils';
-import { StringUtils } from './string-utils';
-import { TypedArray } from './typings';
+import { LibError } from '../error/lib-error.js';
+import { ArrayUtils } from './array-utils.js';
+import { BitUtils } from './bit-utils.js';
+import { StringUtils } from './string-utils.js';
+import { TypedArray } from './typings.js';
 
 export interface InputBufferInitOptions<T extends TypedArray> {
   buffer: T;

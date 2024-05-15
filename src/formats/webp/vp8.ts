@@ -1,24 +1,24 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { MemoryImage } from '../../image/image';
-import { VP8BandProbas } from './vp8-band-probas';
-import { VP8BitReader } from './vp8-bit-reader';
-import { VP8FInfo } from './vp8-f-info';
-import { VP8Filter } from './vp8-filter';
-import { VP8FilterHeader } from './vp8-filter-header';
-import { VP8FrameHeader } from './vp8-frame-header';
-import { VP8MB } from './vp8-mb';
-import { VP8MBData } from './vp8-mb-data';
-import { VP8PictureHeader } from './vp8-picture-header';
-import { VP8Proba } from './vp8-proba';
-import { VP8QuantMatrix } from './vp8-quant-matrix';
-import { VP8SegmentHeader } from './vp8-segment-header';
-import { VP8TopSamples } from './vp8-top-samples';
-import { WebPAlpha } from './webp-alpha';
-import { WebPInfo } from './webp-info';
-import { WebPInfoInternal } from './webp-info-internal';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { MemoryImage } from '../../image/image.js';
+import { VP8BandProbas } from './vp8-band-probas.js';
+import { VP8BitReader } from './vp8-bit-reader.js';
+import { VP8FInfo } from './vp8-f-info.js';
+import { VP8Filter } from './vp8-filter.js';
+import { VP8FilterHeader } from './vp8-filter-header.js';
+import { VP8FrameHeader } from './vp8-frame-header.js';
+import { VP8MB } from './vp8-mb.js';
+import { VP8MBData } from './vp8-mb-data.js';
+import { VP8PictureHeader } from './vp8-picture-header.js';
+import { VP8Proba } from './vp8-proba.js';
+import { VP8QuantMatrix } from './vp8-quant-matrix.js';
+import { VP8SegmentHeader } from './vp8-segment-header.js';
+import { VP8TopSamples } from './vp8-top-samples.js';
+import { WebPAlpha } from './webp-alpha.js';
+import { WebPInfo } from './webp-info.js';
+import { WebPInfoInternal } from './webp-info-internal.js';
 
 /**
  * WebP lossy format

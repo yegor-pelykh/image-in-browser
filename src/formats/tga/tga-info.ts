@@ -1,9 +1,9 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { InputBuffer } from '../../common/input-buffer';
-import { DecodeInfo } from '../decode-info';
-import { TgaImageType, TgaImageTypeLength } from './tga-image-type';
+import { Color } from '../../color/color.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { DecodeInfo } from '../decode-info.js';
+import { TgaImageType, TgaImageTypeLength } from './tga-image-type.js';
 
 export interface TgaInfoInitOptions {
   width?: number;

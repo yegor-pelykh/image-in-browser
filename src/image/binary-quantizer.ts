@@ -1,13 +1,13 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { ColorRgb8 } from '../color/color-rgb8';
-import { ColorUtils } from '../color/color-utils';
-import { MemoryImage } from './image';
-import { Palette } from './palette';
-import { PaletteUint8 } from './palette-uint8';
-import { Pixel } from './pixel';
-import { Quantizer } from './quantizer';
+import { Color } from '../color/color.js';
+import { ColorRgb8 } from '../color/color-rgb8.js';
+import { ColorUtils } from '../color/color-utils.js';
+import { MemoryImage } from './image.js';
+import { Palette } from './palette.js';
+import { PaletteUint8 } from './palette-uint8.js';
+import { Pixel } from './pixel.js';
+import { Quantizer } from './quantizer.js';
 
 export class BinaryQuantizer implements Quantizer {
   private readonly _palette: Palette;

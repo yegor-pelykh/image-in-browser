@@ -1,15 +1,15 @@
 /** @format */
 
-import { Format, FormatType } from '../color/format';
-import { OutputBuffer } from '../common/output-buffer';
-import { LibError } from '../error/lib-error';
-import { ExifData } from '../exif/exif-data';
-import { IfdUndefinedValue } from '../exif/ifd-value/ifd-undefined-value';
-import { MemoryImage } from '../image/image';
-import { Encoder, EncoderEncodeOptions } from './encoder';
-import { TiffCompression } from './tiff/tiff-compression';
-import { TiffFormat } from './tiff/tiff-format';
-import { TiffPhotometricType } from './tiff/tiff-photometric-type';
+import { Format, FormatType } from '../color/format.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { LibError } from '../error/lib-error.js';
+import { ExifData } from '../exif/exif-data.js';
+import { IfdUndefinedValue } from '../exif/ifd-value/ifd-undefined-value.js';
+import { MemoryImage } from '../image/image.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { TiffCompression } from './tiff/tiff-compression.js';
+import { TiffFormat } from './tiff/tiff-format.js';
+import { TiffPhotometricType } from './tiff/tiff-photometric-type.js';
 
 /**
  * Encode a MemoryImage to the TIFF format.

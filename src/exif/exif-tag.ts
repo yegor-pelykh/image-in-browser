@@ -1,6 +1,6 @@
 /** @format */
 
-import { IfdValueType } from './ifd-value-type';
+import { IfdValueType } from './ifd-value-type.js';
 
 export interface ExifTagInitOptions {
   name: string;

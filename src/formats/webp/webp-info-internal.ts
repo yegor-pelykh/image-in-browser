@@ -1,7 +1,7 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { WebPInfo } from './webp-info';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { WebPInfo } from './webp-info.js';
 
 export class WebPInfoInternal extends WebPInfo {
   private _frameCount: number = 0;

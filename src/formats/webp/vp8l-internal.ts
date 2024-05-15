@@ -1,7 +1,7 @@
 /** @format */
 
-import { VP8L } from './vp8l';
-import { VP8LTransform } from './vp8l-transform';
+import { VP8L } from './vp8l.js';
+import { VP8LTransform } from './vp8l-transform.js';
 
 export class VP8LInternal extends VP8L {
   public get transforms(): VP8LTransform[] {

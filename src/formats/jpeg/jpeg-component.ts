@@ -1,6 +1,6 @@
 /** @format */
 
-import { HuffmanNode } from './huffman-node';
+import { HuffmanNode } from './huffman-node.js';
 
 export class JpegComponent {
   private readonly _quantizationTableList: Array<Int16Array | undefined>;

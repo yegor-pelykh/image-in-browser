@@ -1,17 +1,17 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { Format, FormatType } from '../color/format';
+import { Color } from '../color/color.js';
+import { Format, FormatType } from '../color/format.js';
 import {
   MemoryImageData,
   MemoryImageDataGetBytesOptions,
   getImageDataBytes,
-} from './image-data';
-import { Palette } from './palette';
-import { Pixel } from './pixel';
-import { PixelUint1 } from './pixel-uint1';
-import { PixelRangeIterator } from './pixel-range-iterator';
-import { ColorUint1 } from '../color/color-uint1';
+} from './image-data.js';
+import { Palette } from './palette.js';
+import { Pixel } from './pixel.js';
+import { PixelUint1 } from './pixel-uint1.js';
+import { PixelRangeIterator } from './pixel-range-iterator.js';
+import { ColorUint1 } from '../color/color-uint1.js';
 
 export class MemoryImageDataUint1 implements MemoryImageData, Iterable<Pixel> {
   private pixel?: PixelUint1;

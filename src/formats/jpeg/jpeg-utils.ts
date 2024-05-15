@@ -1,9 +1,9 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { OutputBuffer } from '../../common/output-buffer';
-import { ExifData } from '../../exif/exif-data';
-import { JpegMarker } from './jpeg-marker';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { OutputBuffer } from '../../common/output-buffer.js';
+import { ExifData } from '../../exif/exif-data.js';
+import { JpegMarker } from './jpeg-marker.js';
 
 export class JpegUtils {
   // Exif\0\0

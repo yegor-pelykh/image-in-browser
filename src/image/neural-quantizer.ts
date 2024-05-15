@@ -1,14 +1,14 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { ColorRgb8 } from '../color/color-rgb8';
-import { ColorRgba8 } from '../color/color-rgba8';
-import { MathUtils } from '../common/math-utils';
-import { MemoryImage } from './image';
-import { PaletteUint32 } from './palette-uint32';
-import { PaletteUint8 } from './palette-uint8';
-import { Pixel } from './pixel';
-import { Quantizer } from './quantizer';
+import { Color } from '../color/color.js';
+import { ColorRgb8 } from '../color/color-rgb8.js';
+import { ColorRgba8 } from '../color/color-rgba8.js';
+import { MathUtils } from '../common/math-utils.js';
+import { MemoryImage } from './image.js';
+import { PaletteUint32 } from './palette-uint32.js';
+import { PaletteUint8 } from './palette-uint8.js';
+import { Pixel } from './pixel.js';
+import { Quantizer } from './quantizer.js';
 
 /**
  * Compute a color map with a given number of colors that best represents

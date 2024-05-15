@@ -1,10 +1,10 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { OutputBuffer } from '../../common/output-buffer';
-import { IfdValue } from './ifd-value';
-import { IfdValueType } from '../ifd-value-type';
-import { ArrayUtils } from '../../common/array-utils';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { OutputBuffer } from '../../common/output-buffer.js';
+import { IfdValue } from './ifd-value.js';
+import { IfdValueType } from '../ifd-value-type.js';
+import { ArrayUtils } from '../../common/array-utils.js';
 
 export class IfdSByteValue extends IfdValue {
   private _value: Int8Array;

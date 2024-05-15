@@ -6,9 +6,9 @@
 
 /** @format */
 
-import { BitUtils } from '../../common/bit-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { VP8 } from './vp8';
+import { BitUtils } from '../../common/bit-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { VP8 } from './vp8.js';
 
 export class VP8Filter {
   constructor() {

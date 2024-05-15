@@ -1,7 +1,7 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
-import { JpegComponent } from './jpeg-component';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { JpegComponent } from './jpeg-component.js';
 
 export class JpegFrame {
   private readonly _components: Map<number, JpegComponent>;

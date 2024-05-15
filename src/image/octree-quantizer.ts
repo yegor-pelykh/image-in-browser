@@ -1,13 +1,13 @@
 /** @format */
 
-import { Color } from '../color/color';
-import { ColorRgb8 } from '../color/color-rgb8';
-import { HeapNode } from './heap-node';
-import { MemoryImage } from './image';
-import { OctreeNode } from './octree-node';
-import { PaletteUint8 } from './palette-uint8';
-import { Pixel } from './pixel';
-import { Quantizer } from './quantizer';
+import { Color } from '../color/color.js';
+import { ColorRgb8 } from '../color/color-rgb8.js';
+import { HeapNode } from './heap-node.js';
+import { MemoryImage } from './image.js';
+import { OctreeNode } from './octree-node.js';
+import { PaletteUint8 } from './palette-uint8.js';
+import { Pixel } from './pixel.js';
+import { Quantizer } from './quantizer.js';
 
 /**
  * Color quantization using octree,

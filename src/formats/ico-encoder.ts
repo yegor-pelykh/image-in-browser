@@ -1,6 +1,6 @@
 /** @format */
 
-import { WinEncoder } from './win-encoder';
+import { WinEncoder } from './win-encoder.js';
 
 export class IcoEncoder extends WinEncoder {
   protected _type = 1;

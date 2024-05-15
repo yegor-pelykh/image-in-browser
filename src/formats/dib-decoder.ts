@@ -1,8 +1,8 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { BmpDecoder } from './bmp-decoder';
-import { BmpInfo } from './bmp/bmp-info';
+import { InputBuffer } from '../common/input-buffer.js';
+import { BmpDecoder } from './bmp-decoder.js';
+import { BmpInfo } from './bmp/bmp-info.js';
 
 export class DibDecoder extends BmpDecoder {
   constructor(

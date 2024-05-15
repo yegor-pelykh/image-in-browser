@@ -1,9 +1,9 @@
 /** @format */
 
-import { Line } from '../common/line';
-import { Point } from '../common/point';
-import { Rectangle } from '../common/rectangle';
-import { Pixel } from './pixel';
+import { Line } from '../common/line.js';
+import { Point } from '../common/point.js';
+import { Rectangle } from '../common/rectangle.js';
+import { Pixel } from './pixel.js';
 
 export abstract class ImageUtils {
   /**

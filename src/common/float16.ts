@@ -1,6 +1,6 @@
 /** @format */
 
-import { BitUtils } from './bit-utils';
+import { BitUtils } from './bit-utils.js';
 
 /**
  * A 16-bit floating-point number, used by high-dynamic-range image formats

@@ -1,6 +1,6 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
+import { ArrayUtils } from '../../common/array-utils.js';
 
 export class VP8Random {
   private readonly _table = new Uint32Array(VP8Random.randomTableSize);

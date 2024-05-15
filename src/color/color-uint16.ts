@@ -1,11 +1,11 @@
 /** @format */
 
-import { ArrayUtils } from '../common/array-utils';
-import { Palette } from '../image/palette';
-import { Channel } from './channel';
-import { Color, ColorConvertOptions } from './color';
-import { ColorUtils } from './color-utils';
-import { Format } from './format';
+import { ArrayUtils } from '../common/array-utils.js';
+import { Palette } from '../image/palette.js';
+import { Channel } from './channel.js';
+import { Color, ColorConvertOptions } from './color.js';
+import { ColorUtils } from './color-utils.js';
+import { Format } from './format.js';
 
 /**
  * A 16-bit unsigned int color with channel values in the range [0, 65535].

@@ -1,8 +1,8 @@
 /** @format */
 
-import { MemoryImage } from '../image/image';
-import { DecodeInfo } from './decode-info';
-import { ImageFormat } from './image-format';
+import { MemoryImage } from '../image/image.js';
+import { DecodeInfo } from './decode-info.js';
+import { ImageFormat } from './image-format.js';
 
 /**
  * Object interface for specifying Decoder.decode parameters.

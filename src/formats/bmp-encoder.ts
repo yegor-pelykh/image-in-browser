@@ -1,13 +1,13 @@
 /** @format */
 
-import { Format } from '../color/format';
-import { OutputBuffer } from '../common/output-buffer';
-import { MemoryImage } from '../image/image';
-import { PaletteUint8 } from '../image/palette-uint8';
-import { Pixel } from '../image/pixel';
-import { BmpCompressionMode } from './bmp/bmp-compression-mode';
-import { BmpFileHeader } from './bmp/bmp-file-header';
-import { Encoder, EncoderEncodeOptions } from './encoder';
+import { Format } from '../color/format.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { MemoryImage } from '../image/image.js';
+import { PaletteUint8 } from '../image/palette-uint8.js';
+import { Pixel } from '../image/pixel.js';
+import { BmpCompressionMode } from './bmp/bmp-compression-mode.js';
+import { BmpFileHeader } from './bmp/bmp-file-header.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
 
 /**
  * Encode a BMP image.

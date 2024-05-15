@@ -1,7 +1,7 @@
 /** @format */
 
-import { Format } from '../color/format';
-import { Palette } from './palette';
+import { Format } from '../color/format.js';
+import { Palette } from './palette.js';
 
 export class PaletteUint32 implements Palette {
   private readonly _data: Uint32Array;

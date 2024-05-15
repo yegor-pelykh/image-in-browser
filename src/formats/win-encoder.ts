@@ -1,10 +1,10 @@
 /** @format */
 
-import { OutputBuffer } from '../common/output-buffer';
-import { LibError } from '../error/lib-error';
-import { MemoryImage } from '../image/image';
-import { Encoder, EncoderEncodeOptions } from './encoder';
-import { PngEncoder } from './png-encoder';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { LibError } from '../error/lib-error.js';
+import { MemoryImage } from '../image/image.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { PngEncoder } from './png-encoder.js';
 
 export abstract class WinEncoder implements Encoder {
   protected _type = 0;

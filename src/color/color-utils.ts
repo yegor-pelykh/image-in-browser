@@ -1,21 +1,21 @@
 /** @format */
 
-import { MathUtils } from '../common/math-utils';
-import { LibError } from '../error/lib-error';
-import { Color } from './color';
-import { ColorFloat16 } from './color-float16';
-import { ColorFloat32 } from './color-float32';
-import { ColorFloat64 } from './color-float64';
-import { ColorInt16 } from './color-int16';
-import { ColorInt32 } from './color-int32';
-import { ColorInt8 } from './color-int8';
-import { ColorUint1 } from './color-uint1';
-import { ColorUint16 } from './color-uint16';
-import { ColorUint2 } from './color-uint2';
-import { ColorUint32 } from './color-uint32';
-import { ColorUint4 } from './color-uint4';
-import { ColorUint8 } from './color-uint8';
-import { convertFormatValue, Format } from './format';
+import { MathUtils } from '../common/math-utils.js';
+import { LibError } from '../error/lib-error.js';
+import { Color } from './color.js';
+import { ColorFloat16 } from './color-float16.js';
+import { ColorFloat32 } from './color-float32.js';
+import { ColorFloat64 } from './color-float64.js';
+import { ColorInt16 } from './color-int16.js';
+import { ColorInt32 } from './color-int32.js';
+import { ColorInt8 } from './color-int8.js';
+import { ColorUint1 } from './color-uint1.js';
+import { ColorUint16 } from './color-uint16.js';
+import { ColorUint2 } from './color-uint2.js';
+import { ColorUint32 } from './color-uint32.js';
+import { ColorUint4 } from './color-uint4.js';
+import { ColorUint8 } from './color-uint8.js';
+import { convertFormatValue, Format } from './format.js';
 
 export interface ConvertColorOptions {
   from: Color;

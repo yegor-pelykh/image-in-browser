@@ -1,6 +1,6 @@
 /** @format */
 
-import { PvrColorRgbCore } from './pvr-color-rgb-core';
+import { PvrColorRgbCore } from './pvr-color-rgb-core.js';
 
 export class PvrColorRgb implements PvrColorRgbCore<PvrColorRgb> {
   private _r: number;

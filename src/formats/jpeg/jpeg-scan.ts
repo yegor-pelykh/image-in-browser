@@ -1,14 +1,14 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { HuffmanNode } from './huffman-node';
-import { HuffmanParent } from './huffman-parent';
-import { HuffmanValue } from './huffman-value';
-import { JpegComponent } from './jpeg-component';
-import { JpegData } from './jpeg-data';
-import { JpegFrame } from './jpeg-frame';
-import { JpegMarker } from './jpeg-marker';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { HuffmanNode } from './huffman-node.js';
+import { HuffmanParent } from './huffman-parent.js';
+import { HuffmanValue } from './huffman-value.js';
+import { JpegComponent } from './jpeg-component.js';
+import { JpegData } from './jpeg-data.js';
+import { JpegFrame } from './jpeg-frame.js';
+import { JpegMarker } from './jpeg-marker.js';
 
 export type DecodeFunction = (
   component: JpegComponent,

@@ -1,52 +1,52 @@
 /** @format */
 
-import { CompressionLevel, TypedArray } from './common/typings';
-import { BmpDecoder } from './formats/bmp-decoder';
-import { BmpEncoder } from './formats/bmp-encoder';
-import { Encoder } from './formats/encoder';
-import { Decoder } from './formats/decoder';
-import { GifDecoder } from './formats/gif-decoder';
-import { GifEncoder } from './formats/gif-encoder';
-import { IcoDecoder } from './formats/ico-decoder';
-import { IcoEncoder } from './formats/ico-encoder';
-import { JpegDecoder } from './formats/jpeg-decoder';
-import { JpegChroma, JpegEncoder } from './formats/jpeg-encoder';
-import { PngDecoder } from './formats/png-decoder';
-import { PngEncoder } from './formats/png-encoder';
-import { TgaDecoder } from './formats/tga-decoder';
-import { TgaEncoder } from './formats/tga-encoder';
-import { TiffDecoder } from './formats/tiff-decoder';
-import { TiffEncoder } from './formats/tiff-encoder';
-import { MemoryImage } from './image/image';
-import { PngFilterType } from './formats/png/png-filter-type';
-import { DitherKernel } from './filter/dither-kernel';
-import { ExifData } from './exif/exif-data';
-import { JpegUtils } from './formats/jpeg/jpeg-utils';
-import { WebPDecoder } from './formats/webp-decoder';
-import { PnmDecoder } from './formats/pnm-decoder';
-import { ImageFormat } from './formats/image-format';
-import { PsdDecoder } from './formats/psd-decoder';
-import { PvrEncoder } from './formats/pvr-encoder';
-import { PvrDecoder } from './formats/pvr-decoder';
+import { CompressionLevel, TypedArray } from './common/typings.js';
+import { BmpDecoder } from './formats/bmp-decoder.js';
+import { BmpEncoder } from './formats/bmp-encoder.js';
+import { Encoder } from './formats/encoder.js';
+import { Decoder } from './formats/decoder.js';
+import { GifDecoder } from './formats/gif-decoder.js';
+import { GifEncoder } from './formats/gif-encoder.js';
+import { IcoDecoder } from './formats/ico-decoder.js';
+import { IcoEncoder } from './formats/ico-encoder.js';
+import { JpegDecoder } from './formats/jpeg-decoder.js';
+import { JpegChroma, JpegEncoder } from './formats/jpeg-encoder.js';
+import { PngDecoder } from './formats/png-decoder.js';
+import { PngEncoder } from './formats/png-encoder.js';
+import { TgaDecoder } from './formats/tga-decoder.js';
+import { TgaEncoder } from './formats/tga-encoder.js';
+import { TiffDecoder } from './formats/tiff-decoder.js';
+import { TiffEncoder } from './formats/tiff-encoder.js';
+import { MemoryImage } from './image/image.js';
+import { PngFilterType } from './formats/png/png-filter-type.js';
+import { DitherKernel } from './filter/dither-kernel.js';
+import { ExifData } from './exif/exif-data.js';
+import { JpegUtils } from './formats/jpeg/jpeg-utils.js';
+import { WebPDecoder } from './formats/webp-decoder.js';
+import { PnmDecoder } from './formats/pnm-decoder.js';
+import { ImageFormat } from './formats/image-format.js';
+import { PsdDecoder } from './formats/psd-decoder.js';
+import { PvrEncoder } from './formats/pvr-encoder.js';
+import { PvrDecoder } from './formats/pvr-decoder.js';
 
 // Export types from 'color' directory
-export { ChannelOrder, ChannelOrderLength } from './color/channel-order';
-export { Channel } from './color/channel';
-export { ColorFloat16 } from './color/color-float16';
-export { ColorFloat32 } from './color/color-float32';
-export { ColorFloat64 } from './color/color-float64';
-export { ColorInt8 } from './color/color-int8';
-export { ColorInt16 } from './color/color-int16';
-export { ColorInt32 } from './color/color-int32';
-export { ColorRgb8 } from './color/color-rgb8';
-export { ColorRgba8 } from './color/color-rgba8';
-export { ColorUint1 } from './color/color-uint1';
-export { ColorUint2 } from './color/color-uint2';
-export { ColorUint4 } from './color/color-uint4';
-export { ColorUint8 } from './color/color-uint8';
-export { ColorUint16 } from './color/color-uint16';
-export { ColorUint32 } from './color/color-uint32';
-export { Color, ColorConvertOptions } from './color/color';
+export { ChannelOrder, ChannelOrderLength } from './color/channel-order.js';
+export { Channel } from './color/channel.js';
+export { ColorFloat16 } from './color/color-float16.js';
+export { ColorFloat32 } from './color/color-float32.js';
+export { ColorFloat64 } from './color/color-float64.js';
+export { ColorInt8 } from './color/color-int8.js';
+export { ColorInt16 } from './color/color-int16.js';
+export { ColorInt32 } from './color/color-int32.js';
+export { ColorRgb8 } from './color/color-rgb8.js';
+export { ColorRgba8 } from './color/color-rgba8.js';
+export { ColorUint1 } from './color/color-uint1.js';
+export { ColorUint2 } from './color/color-uint2.js';
+export { ColorUint4 } from './color/color-uint4.js';
+export { ColorUint8 } from './color/color-uint8.js';
+export { ColorUint16 } from './color/color-uint16.js';
+export { ColorUint32 } from './color/color-uint32.js';
+export { Color, ColorConvertOptions } from './color/color.js';
 export {
   Format,
   FormatType,
@@ -55,28 +55,35 @@ export {
   FormatToFormatType,
   getRowStride,
   convertFormatValue,
-} from './color/format';
+} from './color/format.js';
 
 // Export types from 'common' directory
-export { ArrayUtils } from './common/array-utils';
-export { BitUtils } from './common/bit-utils';
-export { Crc32, Crc32Options } from './common/crc32';
-export { Float16 } from './common/float16';
-export { InputBuffer, InputBufferInitOptions } from './common/input-buffer';
-export { Interpolation } from './common/interpolation';
-export { Line } from './common/line';
-export { MathUtils } from './common/math-utils';
-export { OutputBuffer, OutputBufferInitOptions } from './common/output-buffer';
-export { Point } from './common/point';
-export { RandomUtils } from './common/random-utils';
-export { Rational } from './common/rational';
-export { Rectangle } from './common/rectangle';
-export { StringUtils } from './common/string-utils';
-export { BufferEncoding, CompressionLevel, TypedArray } from './common/typings';
+export { ArrayUtils } from './common/array-utils.js';
+export { BitUtils } from './common/bit-utils.js';
+export { Crc32, Crc32Options } from './common/crc32.js';
+export { Float16 } from './common/float16.js';
+export { InputBuffer, InputBufferInitOptions } from './common/input-buffer.js';
+export { Interpolation } from './common/interpolation.js';
+export { Line } from './common/line.js';
+export { MathUtils } from './common/math-utils.js';
+export {
+  OutputBuffer,
+  OutputBufferInitOptions,
+} from './common/output-buffer.js';
+export { Point } from './common/point.js';
+export { RandomUtils } from './common/random-utils.js';
+export { Rational } from './common/rational.js';
+export { Rectangle } from './common/rectangle.js';
+export { StringUtils } from './common/string-utils.js';
+export {
+  BufferEncoding,
+  CompressionLevel,
+  TypedArray,
+} from './common/typings.js';
 
 // Export types from 'draw' directory
-export { BlendMode } from './draw/blend-mode';
-export { CircleQuadrant } from './draw/circle-quadrant';
+export { BlendMode } from './draw/blend-mode.js';
+export { CircleQuadrant } from './draw/circle-quadrant.js';
 export {
   Draw,
   CompositeImageOptions,
@@ -91,27 +98,27 @@ export {
   FillPolygonOptions,
   FillRectOptions,
   MaskFloodOptions,
-} from './draw/draw';
+} from './draw/draw.js';
 
 // Export types from 'error' directory
-export { LibError } from './error/lib-error';
+export { LibError } from './error/lib-error.js';
 
 // Export types from 'exif' directory
-export { IfdAsciiValue } from './exif/ifd-value/ifd-ascii-value';
-export { IfdByteValue } from './exif/ifd-value/ifd-byte-value';
-export { IfdDoubleValue } from './exif/ifd-value/ifd-double-value';
-export { IfdLongValue } from './exif/ifd-value/ifd-long-value';
-export { IfdRationalValue } from './exif/ifd-value/ifd-rational-value';
-export { IfdSByteValue } from './exif/ifd-value/ifd-sbyte-value';
-export { IfdShortValue } from './exif/ifd-value/ifd-short-value';
-export { IfdSingleValue } from './exif/ifd-value/ifd-single-value';
-export { IfdSLongValue } from './exif/ifd-value/ifd-slong-value';
-export { IfdSRationalValue } from './exif/ifd-value/ifd-srational-value';
-export { IfdSShortValue } from './exif/ifd-value/ifd-sshort-value';
-export { IfdUndefinedValue } from './exif/ifd-value/ifd-undefined-value';
-export { IfdValue } from './exif/ifd-value/ifd-value';
-export { ExifData } from './exif/exif-data';
-export { ExifEntry } from './exif/exif-entry';
+export { IfdAsciiValue } from './exif/ifd-value/ifd-ascii-value.js';
+export { IfdByteValue } from './exif/ifd-value/ifd-byte-value.js';
+export { IfdDoubleValue } from './exif/ifd-value/ifd-double-value.js';
+export { IfdLongValue } from './exif/ifd-value/ifd-long-value.js';
+export { IfdRationalValue } from './exif/ifd-value/ifd-rational-value.js';
+export { IfdSByteValue } from './exif/ifd-value/ifd-sbyte-value.js';
+export { IfdShortValue } from './exif/ifd-value/ifd-short-value.js';
+export { IfdSingleValue } from './exif/ifd-value/ifd-single-value.js';
+export { IfdSLongValue } from './exif/ifd-value/ifd-slong-value.js';
+export { IfdSRationalValue } from './exif/ifd-value/ifd-srational-value.js';
+export { IfdSShortValue } from './exif/ifd-value/ifd-sshort-value.js';
+export { IfdUndefinedValue } from './exif/ifd-value/ifd-undefined-value.js';
+export { IfdValue } from './exif/ifd-value/ifd-value.js';
+export { ExifData } from './exif/exif-data.js';
+export { ExifEntry } from './exif/exif-entry.js';
 export {
   ExifTag,
   ExifTagInitOptions,
@@ -119,18 +126,18 @@ export {
   ExifImageTags,
   ExifInteropTags,
   ExifTagNameToID,
-} from './exif/exif-tag';
-export { IfdContainer } from './exif/ifd-container';
-export { IfdDirectory } from './exif/ifd-directory';
+} from './exif/exif-tag.js';
+export { IfdContainer } from './exif/ifd-container.js';
+export { IfdDirectory } from './exif/ifd-directory.js';
 export {
   IfdValueType,
   IfdValueTypeSize,
   getIfdValueTypeSize,
   getIfdValueTypeString,
-} from './exif/ifd-value-type';
+} from './exif/ifd-value-type.js';
 
 // Export types from 'filter' directory
-export { DitherKernel, DitherKernels } from './filter/dither-kernel';
+export { DitherKernel, DitherKernels } from './filter/dither-kernel.js';
 export {
   Filter,
   AdjustColorOptions,
@@ -172,220 +179,226 @@ export {
   SolarizeOptions,
   StretchDistortionOptions,
   VignetteOptions,
-} from './filter/filter';
-export { NoiseType } from './filter/noise-type';
-export { PixelateMode } from './filter/pixelate-mode';
-export { QuantizeMethod } from './filter/quantize-method';
+} from './filter/filter.js';
+export { NoiseType } from './filter/noise-type.js';
+export { PixelateMode } from './filter/pixelate-mode.js';
+export { QuantizeMethod } from './filter/quantize-method.js';
 export {
   SeparableKernel,
   SeparableKernelApplyOptions,
-} from './filter/separable-kernel';
-export { SolarizeMode } from './filter/solarize-mode';
+} from './filter/separable-kernel.js';
+export { SolarizeMode } from './filter/solarize-mode.js';
 
 // Export types from 'formats' directory
-export { BmpCompressionMode } from './formats/bmp/bmp-compression-mode';
-export { BmpFileHeader } from './formats/bmp/bmp-file-header';
-export { BmpInfo } from './formats/bmp/bmp-info';
+export { BmpCompressionMode } from './formats/bmp/bmp-compression-mode.js';
+export { BmpFileHeader } from './formats/bmp/bmp-file-header.js';
+export { BmpInfo } from './formats/bmp/bmp-info.js';
 
-export { GifColorMap } from './formats/gif/gif-color-map';
-export { GifImageDesc } from './formats/gif/gif-image-desc';
-export { GifInfo, GifInfoInitOptions } from './formats/gif/gif-info';
+export { GifColorMap } from './formats/gif/gif-color-map.js';
+export { GifImageDesc } from './formats/gif/gif-image-desc.js';
+export { GifInfo, GifInfoInitOptions } from './formats/gif/gif-info.js';
 
-export { IcoBmpInfo } from './formats/ico/ico-bmp-info';
+export { IcoBmpInfo } from './formats/ico/ico-bmp-info.js';
 export {
   IcoInfoImage,
   IcoInfoImageInitOptions,
-} from './formats/ico/ico-info-image';
-export { IcoInfo } from './formats/ico/ico-info';
-export { IcoType, IcoTypeLength } from './formats/ico/ico-type';
+} from './formats/ico/ico-info-image.js';
+export { IcoInfo } from './formats/ico/ico-info.js';
+export { IcoType, IcoTypeLength } from './formats/ico/ico-type.js';
 
-export { HuffmanNode } from './formats/jpeg/huffman-node';
-export { HuffmanParent } from './formats/jpeg/huffman-parent';
-export { HuffmanValue } from './formats/jpeg/huffman-value';
-export { JpegAdobe } from './formats/jpeg/jpeg-adobe';
-export { JpegComponentData } from './formats/jpeg/jpeg-component-data';
-export { JpegComponent } from './formats/jpeg/jpeg-component';
-export { JpegData } from './formats/jpeg/jpeg-data';
-export { JpegFrame } from './formats/jpeg/jpeg-frame';
-export { JpegHuffman } from './formats/jpeg/jpeg-huffman';
-export { JpegInfo } from './formats/jpeg/jpeg-info';
-export { JpegJfif } from './formats/jpeg/jpeg-jfif';
-export { JpegMarker } from './formats/jpeg/jpeg-marker';
-export { JpegQuantize } from './formats/jpeg/jpeg-quantize';
-export { JpegScan } from './formats/jpeg/jpeg-scan';
-export { JpegUtils } from './formats/jpeg/jpeg-utils';
+export { HuffmanNode } from './formats/jpeg/huffman-node.js';
+export { HuffmanParent } from './formats/jpeg/huffman-parent.js';
+export { HuffmanValue } from './formats/jpeg/huffman-value.js';
+export { JpegAdobe } from './formats/jpeg/jpeg-adobe.js';
+export { JpegComponentData } from './formats/jpeg/jpeg-component-data.js';
+export { JpegComponent } from './formats/jpeg/jpeg-component.js';
+export { JpegData } from './formats/jpeg/jpeg-data.js';
+export { JpegFrame } from './formats/jpeg/jpeg-frame.js';
+export { JpegHuffman } from './formats/jpeg/jpeg-huffman.js';
+export { JpegInfo } from './formats/jpeg/jpeg-info.js';
+export { JpegJfif } from './formats/jpeg/jpeg-jfif.js';
+export { JpegMarker } from './formats/jpeg/jpeg-marker.js';
+export { JpegQuantize } from './formats/jpeg/jpeg-quantize.js';
+export { JpegScan } from './formats/jpeg/jpeg-scan.js';
+export { JpegUtils } from './formats/jpeg/jpeg-utils.js';
 
-export { PngBlendMode } from './formats/png/png-blend-mode';
-export { PngColorType } from './formats/png/png-color-type';
-export { PngDisposeMode } from './formats/png/png-dispose-mode';
-export { PngFilterType } from './formats/png/png-filter-type';
-export { PngFrame, PngFrameInitOptions } from './formats/png/png-frame';
-export { PngInfo, PngInfoInitOptions } from './formats/png/png-info';
+export { PngBlendMode } from './formats/png/png-blend-mode.js';
+export { PngColorType } from './formats/png/png-color-type.js';
+export { PngDisposeMode } from './formats/png/png-dispose-mode.js';
+export { PngFilterType } from './formats/png/png-filter-type.js';
+export { PngFrame, PngFrameInitOptions } from './formats/png/png-frame.js';
+export { PngInfo, PngInfoInitOptions } from './formats/png/png-info.js';
 
-export { PnmFormat } from './formats/pnm/pnm-format';
-export { PnmInfo } from './formats/pnm/pnm-info';
+export { PnmFormat } from './formats/pnm/pnm-format.js';
+export { PnmInfo } from './formats/pnm/pnm-info.js';
 
 export {
   PsdBevelEffect,
   PsdBevelEffectOptions,
-} from './formats/psd/effect/psd-bevel-effect';
+} from './formats/psd/effect/psd-bevel-effect.js';
 export {
   PsdDropShadowEffect,
   PsdDropShadowEffectOptions,
-} from './formats/psd/effect/psd-drop-shadow-effect';
-export { PsdEffect, PsdEffectOptions } from './formats/psd/effect/psd-effect';
+} from './formats/psd/effect/psd-drop-shadow-effect.js';
+export {
+  PsdEffect,
+  PsdEffectOptions,
+} from './formats/psd/effect/psd-effect.js';
 export {
   PsdInnerGlowEffect,
   PsdInnerGlowEffectOptions,
-} from './formats/psd/effect/psd-inner-glow-effect';
+} from './formats/psd/effect/psd-inner-glow-effect.js';
 export {
   PsdInnerShadowEffect,
   PsdInnerShadowEffectOptions,
-} from './formats/psd/effect/psd-inner-shadow-effect';
+} from './formats/psd/effect/psd-inner-shadow-effect.js';
 export {
   PsdOuterGlowEffect,
   PsdOuterGlowEffectOptions,
-} from './formats/psd/effect/psd-outer-glow-effect';
+} from './formats/psd/effect/psd-outer-glow-effect.js';
 export {
   PsdSolidFillEffect,
   PsdSolidFillEffectOptions,
-} from './formats/psd/effect/psd-solid-fill-effect';
-export { PsdLayerDataFactory } from './formats/psd/layer-data/psd-layer-data-factory';
-export { PsdLayerData } from './formats/psd/layer-data/psd-layer-data';
-export { PsdLayerAdditionalData } from './formats/psd/layer-data/psd-layer-additional-data';
-export { PsdLayerSectionDivider } from './formats/psd/layer-data/psd-layer-section-divider';
-export { PsdBlendMode } from './formats/psd/psd-blend-mode';
-export { PsdBlendingRanges } from './formats/psd/psd-blending-ranges';
+} from './formats/psd/effect/psd-solid-fill-effect.js';
+export { PsdLayerDataFactory } from './formats/psd/layer-data/psd-layer-data-factory.js';
+export { PsdLayerData } from './formats/psd/layer-data/psd-layer-data.js';
+export { PsdLayerAdditionalData } from './formats/psd/layer-data/psd-layer-additional-data.js';
+export { PsdLayerSectionDivider } from './formats/psd/layer-data/psd-layer-section-divider.js';
+export { PsdBlendMode } from './formats/psd/psd-blend-mode.js';
+export { PsdBlendingRanges } from './formats/psd/psd-blending-ranges.js';
 export {
   PsdChannel,
   ReadOptions,
   ReadPlaneOptions,
-} from './formats/psd/psd-channel';
-export { PsdColorMode } from './formats/psd/psd-color-mode';
-export { PsdFlag } from './formats/psd/psd-flag';
-export { PsdImage } from './formats/psd/psd-image';
-export { PsdImageResource } from './formats/psd/psd-image-resource';
-export { PsdLayer } from './formats/psd/psd-layer';
-export { PsdMask } from './formats/psd/psd-mask';
+} from './formats/psd/psd-channel.js';
+export { PsdColorMode } from './formats/psd/psd-color-mode.js';
+export { PsdFlag } from './formats/psd/psd-flag.js';
+export { PsdImage } from './formats/psd/psd-image.js';
+export { PsdImageResource } from './formats/psd/psd-image-resource.js';
+export { PsdLayer } from './formats/psd/psd-layer.js';
+export { PsdMask } from './formats/psd/psd-mask.js';
 
 export {
   PvrAppleInfo,
   PvrAppleInfoOptions,
-} from './formats/pvr/pvr-apple-info';
-export { PvrBitUtility } from './formats/pvr/pvr-bit-utility';
-export { PvrColorBoundingBox } from './formats/pvr/pvr-color-bounding-box';
-export { PvrColorRgb } from './formats/pvr/pvr-color-rgb';
-export { PvrColorRgbCore } from './formats/pvr/pvr-color-rgb-core';
-export { PvrColorRgba } from './formats/pvr/pvr-color-rgba';
-export { PvrFormat } from './formats/pvr/pvr-format';
-export { PvrPacket } from './formats/pvr/pvr-packet';
-export { Pvr2Info, Pvr2InfoOptions } from './formats/pvr/pvr2-info';
-export { Pvr3Info, Pvr3InfoOptions } from './formats/pvr/pvr3-info';
+} from './formats/pvr/pvr-apple-info.js';
+export { PvrBitUtility } from './formats/pvr/pvr-bit-utility.js';
+export { PvrColorBoundingBox } from './formats/pvr/pvr-color-bounding-box.js';
+export { PvrColorRgb } from './formats/pvr/pvr-color-rgb.js';
+export { PvrColorRgbCore } from './formats/pvr/pvr-color-rgb-core.js';
+export { PvrColorRgba } from './formats/pvr/pvr-color-rgba.js';
+export { PvrFormat } from './formats/pvr/pvr-format.js';
+export { PvrPacket } from './formats/pvr/pvr-packet.js';
+export { Pvr2Info, Pvr2InfoOptions } from './formats/pvr/pvr2-info.js';
+export { Pvr3Info, Pvr3InfoOptions } from './formats/pvr/pvr3-info.js';
 
-export { TgaImageType, TgaImageTypeLength } from './formats/tga/tga-image-type';
-export { TgaInfo, TgaInfoInitOptions } from './formats/tga/tga-info';
+export {
+  TgaImageType,
+  TgaImageTypeLength,
+} from './formats/tga/tga-image-type.js';
+export { TgaInfo, TgaInfoInitOptions } from './formats/tga/tga-info.js';
 
-export { TiffBitReader } from './formats/tiff/tiff-bit-reader';
-export { TiffCompression } from './formats/tiff/tiff-compression';
-export { TiffEntry, TiffEntryInitOptions } from './formats/tiff/tiff-entry';
+export { TiffBitReader } from './formats/tiff/tiff-bit-reader.js';
+export { TiffCompression } from './formats/tiff/tiff-compression.js';
+export { TiffEntry, TiffEntryInitOptions } from './formats/tiff/tiff-entry.js';
 export {
   TiffFaxDecoder,
   TiffFaxDecoderInitOptions,
-} from './formats/tiff/tiff-fax-decoder';
-export { TiffFormat } from './formats/tiff/tiff-format';
-export { TiffImageType } from './formats/tiff/tiff-image-type';
-export { TiffImage } from './formats/tiff/tiff-image';
-export { TiffInfo, TiffInfoInitOptions } from './formats/tiff/tiff-info';
-export { LzwDecoder } from './formats/tiff/tiff-lzw-decoder';
+} from './formats/tiff/tiff-fax-decoder.js';
+export { TiffFormat } from './formats/tiff/tiff-format.js';
+export { TiffImageType } from './formats/tiff/tiff-image-type.js';
+export { TiffImage } from './formats/tiff/tiff-image.js';
+export { TiffInfo, TiffInfoInitOptions } from './formats/tiff/tiff-info.js';
+export { LzwDecoder } from './formats/tiff/tiff-lzw-decoder.js';
 export {
   TiffPhotometricType,
   TiffPhotometricTypeLength,
-} from './formats/tiff/tiff-photometric-type';
+} from './formats/tiff/tiff-photometric-type.js';
 
-export { VP8BandProbas } from './formats/webp/vp8-band-probas';
-export { VP8BitReader } from './formats/webp/vp8-bit-reader';
-export { VP8FInfo } from './formats/webp/vp8-f-info';
-export { VP8FilterHeader } from './formats/webp/vp8-filter-header';
-export { VP8Filter } from './formats/webp/vp8-filter';
-export { VP8FrameHeader } from './formats/webp/vp8-frame-header';
-export { VP8MBData } from './formats/webp/vp8-mb-data';
-export { VP8MB } from './formats/webp/vp8-mb';
-export { VP8PictureHeader } from './formats/webp/vp8-picture-header';
-export { VP8Proba } from './formats/webp/vp8-proba';
-export { VP8QuantMatrix } from './formats/webp/vp8-quant-matrix';
-export { VP8Random } from './formats/webp/vp8-random';
-export { VP8SegmentHeader } from './formats/webp/vp8-segment-header';
-export { VP8TopSamples } from './formats/webp/vp8-top-samples';
-export { VP8 } from './formats/webp/vp8';
-export { VP8LBitReader } from './formats/webp/vp8l-bit-reader';
-export { VP8LColorCache } from './formats/webp/vp8l-color-cache';
-export { VP8LImageTransformType } from './formats/webp/vp8l-image-transform-type';
-export { VP8LInternal } from './formats/webp/vp8l-internal';
-export { VP8LMultipliers } from './formats/webp/vp8l-multipliers';
-export { VP8LTransform } from './formats/webp/vp8l-transform';
-export { VP8L } from './formats/webp/vp8l';
-export { WebPAlpha } from './formats/webp/webp-alpha';
-export { WebPFilters } from './formats/webp/webp-filters';
-export { WebPFormat } from './formats/webp/webp-format';
-export { WebPFrame } from './formats/webp/webp-frame';
-export { HuffmanTreeGroup } from './formats/webp/webp-huffman-tree-group';
-export { HuffmanTree } from './formats/webp/webp-huffman-tree';
-export { WebPInfoInternal } from './formats/webp/webp-info-internal';
-export { WebPInfo } from './formats/webp/webp-info';
+export { VP8BandProbas } from './formats/webp/vp8-band-probas.js';
+export { VP8BitReader } from './formats/webp/vp8-bit-reader.js';
+export { VP8FInfo } from './formats/webp/vp8-f-info.js';
+export { VP8FilterHeader } from './formats/webp/vp8-filter-header.js';
+export { VP8Filter } from './formats/webp/vp8-filter.js';
+export { VP8FrameHeader } from './formats/webp/vp8-frame-header.js';
+export { VP8MBData } from './formats/webp/vp8-mb-data.js';
+export { VP8MB } from './formats/webp/vp8-mb.js';
+export { VP8PictureHeader } from './formats/webp/vp8-picture-header.js';
+export { VP8Proba } from './formats/webp/vp8-proba.js';
+export { VP8QuantMatrix } from './formats/webp/vp8-quant-matrix.js';
+export { VP8Random } from './formats/webp/vp8-random.js';
+export { VP8SegmentHeader } from './formats/webp/vp8-segment-header.js';
+export { VP8TopSamples } from './formats/webp/vp8-top-samples.js';
+export { VP8 } from './formats/webp/vp8.js';
+export { VP8LBitReader } from './formats/webp/vp8l-bit-reader.js';
+export { VP8LColorCache } from './formats/webp/vp8l-color-cache.js';
+export { VP8LImageTransformType } from './formats/webp/vp8l-image-transform-type.js';
+export { VP8LInternal } from './formats/webp/vp8l-internal.js';
+export { VP8LMultipliers } from './formats/webp/vp8l-multipliers.js';
+export { VP8LTransform } from './formats/webp/vp8l-transform.js';
+export { VP8L } from './formats/webp/vp8l.js';
+export { WebPAlpha } from './formats/webp/webp-alpha.js';
+export { WebPFilters } from './formats/webp/webp-filters.js';
+export { WebPFormat } from './formats/webp/webp-format.js';
+export { WebPFrame } from './formats/webp/webp-frame.js';
+export { HuffmanTreeGroup } from './formats/webp/webp-huffman-tree-group.js';
+export { HuffmanTree } from './formats/webp/webp-huffman-tree.js';
+export { WebPInfoInternal } from './formats/webp/webp-info-internal.js';
+export { WebPInfo } from './formats/webp/webp-info.js';
 
-export { BmpDecoder } from './formats/bmp-decoder';
-export { BmpEncoder } from './formats/bmp-encoder';
-export { DecodeInfo } from './formats/decode-info';
-export { Decoder, DecoderDecodeOptions } from './formats/decoder';
-export { DibDecoder } from './formats/dib-decoder';
-export { Encoder, EncoderEncodeOptions } from './formats/encoder';
-export { GifDecoder } from './formats/gif-decoder';
-export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder';
-export { IcoDecoder } from './formats/ico-decoder';
-export { IcoEncoder } from './formats/ico-encoder';
-export { ImageFormat } from './formats/image-format';
-export { JpegDecoder } from './formats/jpeg-decoder';
+export { BmpDecoder } from './formats/bmp-decoder.js';
+export { BmpEncoder } from './formats/bmp-encoder.js';
+export { DecodeInfo } from './formats/decode-info.js';
+export { Decoder, DecoderDecodeOptions } from './formats/decoder.js';
+export { DibDecoder } from './formats/dib-decoder.js';
+export { Encoder, EncoderEncodeOptions } from './formats/encoder.js';
+export { GifDecoder } from './formats/gif-decoder.js';
+export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder.js';
+export { IcoDecoder } from './formats/ico-decoder.js';
+export { IcoEncoder } from './formats/ico-encoder.js';
+export { ImageFormat } from './formats/image-format.js';
+export { JpegDecoder } from './formats/jpeg-decoder.js';
 export {
   JpegChroma,
   JpegEncoder,
   JpegEncoderEncodeOptions,
-} from './formats/jpeg-encoder';
-export { PngDecoder } from './formats/png-decoder';
-export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder';
-export { PnmDecoder } from './formats/pnm-decoder';
-export { PsdDecoder } from './formats/psd-decoder';
-export { PvrDecoder } from './formats/pvr-decoder';
-export { PvrEncoder } from './formats/pvr-encoder';
-export { TgaDecoder } from './formats/tga-decoder';
-export { TgaEncoder } from './formats/tga-encoder';
-export { TiffDecoder } from './formats/tiff-decoder';
-export { TiffEncoder } from './formats/tiff-encoder';
-export { WebPDecoder } from './formats/webp-decoder';
-export { WinEncoder } from './formats/win-encoder';
+} from './formats/jpeg-encoder.js';
+export { PngDecoder } from './formats/png-decoder.js';
+export { PngEncoder, PngEncoderInitOptions } from './formats/png-encoder.js';
+export { PnmDecoder } from './formats/pnm-decoder.js';
+export { PsdDecoder } from './formats/psd-decoder.js';
+export { PvrDecoder } from './formats/pvr-decoder.js';
+export { PvrEncoder } from './formats/pvr-encoder.js';
+export { TgaDecoder } from './formats/tga-decoder.js';
+export { TgaEncoder } from './formats/tga-encoder.js';
+export { TiffDecoder } from './formats/tiff-decoder.js';
+export { TiffEncoder } from './formats/tiff-encoder.js';
+export { WebPDecoder } from './formats/webp-decoder.js';
+export { WinEncoder } from './formats/win-encoder.js';
 
 // Export types from 'image' directory
-export { BinaryQuantizer } from './image/binary-quantizer';
-export { FrameType } from './image/frame-type';
-export { HeapNode } from './image/heap-node';
-export { IccProfile } from './image/icc-profile';
-export { IccProfileCompression } from './image/icc-profile-compression';
-export { MemoryImageDataFloat16 } from './image/image-data-float16';
-export { MemoryImageDataFloat32 } from './image/image-data-float32';
-export { MemoryImageDataFloat64 } from './image/image-data-float64';
-export { MemoryImageDataInt8 } from './image/image-data-int8';
-export { MemoryImageDataInt16 } from './image/image-data-int16';
-export { MemoryImageDataInt32 } from './image/image-data-int32';
-export { MemoryImageDataUint1 } from './image/image-data-uint1';
-export { MemoryImageDataUint2 } from './image/image-data-uint2';
-export { MemoryImageDataUint4 } from './image/image-data-uint4';
-export { MemoryImageDataUint8 } from './image/image-data-uint8';
-export { MemoryImageDataUint16 } from './image/image-data-uint16';
-export { MemoryImageDataUint32 } from './image/image-data-uint32';
+export { BinaryQuantizer } from './image/binary-quantizer.js';
+export { FrameType } from './image/frame-type.js';
+export { HeapNode } from './image/heap-node.js';
+export { IccProfile } from './image/icc-profile.js';
+export { IccProfileCompression } from './image/icc-profile-compression.js';
+export { MemoryImageDataFloat16 } from './image/image-data-float16.js';
+export { MemoryImageDataFloat32 } from './image/image-data-float32.js';
+export { MemoryImageDataFloat64 } from './image/image-data-float64.js';
+export { MemoryImageDataInt8 } from './image/image-data-int8.js';
+export { MemoryImageDataInt16 } from './image/image-data-int16.js';
+export { MemoryImageDataInt32 } from './image/image-data-int32.js';
+export { MemoryImageDataUint1 } from './image/image-data-uint1.js';
+export { MemoryImageDataUint2 } from './image/image-data-uint2.js';
+export { MemoryImageDataUint4 } from './image/image-data-uint4.js';
+export { MemoryImageDataUint8 } from './image/image-data-uint8.js';
+export { MemoryImageDataUint16 } from './image/image-data-uint16.js';
+export { MemoryImageDataUint32 } from './image/image-data-uint32.js';
 export {
   MemoryImageData,
   MemoryImageDataGetBytesOptions,
-} from './image/image-data';
-export { ImageUtils } from './image/image-utils';
+} from './image/image-data.js';
+export { ImageUtils } from './image/image-utils.js';
 export {
   MemoryImage,
   MemoryImageCloneOptions,
@@ -393,41 +406,41 @@ export {
   MemoryImageConvertOptions,
   MemoryImageCreateOptions,
   MemoryImageFromBytesOptions,
-} from './image/image';
-export { NeuralQuantizer } from './image/neural-quantizer';
-export { OctreeNode } from './image/octree-node';
-export { OctreeQuantizer } from './image/octree-quantizer';
-export { PaletteFloat16 } from './image/palette-float16';
-export { PaletteFloat32 } from './image/palette-float32';
-export { PaletteFloat64 } from './image/palette-float64';
-export { PaletteInt8 } from './image/palette-int8';
-export { PaletteInt16 } from './image/palette-int16';
-export { PaletteInt32 } from './image/palette-int32';
-export { PaletteUint8 } from './image/palette-uint8';
-export { PaletteUint16 } from './image/palette-uint16';
-export { PaletteUint32 } from './image/palette-uint32';
-export { Palette } from './image/palette';
-export { PixelFloat16 } from './image/pixel-float16';
-export { PixelFloat32 } from './image/pixel-float32';
-export { PixelFloat64 } from './image/pixel-float64';
-export { PixelInt8 } from './image/pixel-int8';
-export { PixelInt16 } from './image/pixel-int16';
-export { PixelInt32 } from './image/pixel-int32';
-export { PixelUint1 } from './image/pixel-uint1';
-export { PixelUint2 } from './image/pixel-uint2';
-export { PixelUint4 } from './image/pixel-uint4';
-export { PixelUint8 } from './image/pixel-uint8';
-export { PixelUint16 } from './image/pixel-uint16';
-export { PixelUint32 } from './image/pixel-uint32';
-export { PixelUndefined } from './image/pixel-undefined';
-export { PixelRangeIterator } from './image/pixel-range-iterator';
-export { Pixel, UndefinedPixel } from './image/pixel';
-export { QuantizerType } from './image/quantizer-type';
-export { Quantizer } from './image/quantizer';
+} from './image/image.js';
+export { NeuralQuantizer } from './image/neural-quantizer.js';
+export { OctreeNode } from './image/octree-node.js';
+export { OctreeQuantizer } from './image/octree-quantizer.js';
+export { PaletteFloat16 } from './image/palette-float16.js';
+export { PaletteFloat32 } from './image/palette-float32.js';
+export { PaletteFloat64 } from './image/palette-float64.js';
+export { PaletteInt8 } from './image/palette-int8.js';
+export { PaletteInt16 } from './image/palette-int16.js';
+export { PaletteInt32 } from './image/palette-int32.js';
+export { PaletteUint8 } from './image/palette-uint8.js';
+export { PaletteUint16 } from './image/palette-uint16.js';
+export { PaletteUint32 } from './image/palette-uint32.js';
+export { Palette } from './image/palette.js';
+export { PixelFloat16 } from './image/pixel-float16.js';
+export { PixelFloat32 } from './image/pixel-float32.js';
+export { PixelFloat64 } from './image/pixel-float64.js';
+export { PixelInt8 } from './image/pixel-int8.js';
+export { PixelInt16 } from './image/pixel-int16.js';
+export { PixelInt32 } from './image/pixel-int32.js';
+export { PixelUint1 } from './image/pixel-uint1.js';
+export { PixelUint2 } from './image/pixel-uint2.js';
+export { PixelUint4 } from './image/pixel-uint4.js';
+export { PixelUint8 } from './image/pixel-uint8.js';
+export { PixelUint16 } from './image/pixel-uint16.js';
+export { PixelUint32 } from './image/pixel-uint32.js';
+export { PixelUndefined } from './image/pixel-undefined.js';
+export { PixelRangeIterator } from './image/pixel-range-iterator.js';
+export { Pixel, UndefinedPixel } from './image/pixel.js';
+export { QuantizerType } from './image/quantizer-type.js';
+export { Quantizer } from './image/quantizer.js';
 
 // Export types from 'transform' directory
-export { ExpandCanvasPosition } from './transform/expand-canvas-position';
-export { FlipDirection } from './transform/flip-direction';
+export { ExpandCanvasPosition } from './transform/expand-canvas-position.js';
+export { FlipDirection } from './transform/flip-direction.js';
 export {
   Transform,
   CopyCropCircleOptions,
@@ -441,9 +454,9 @@ export {
   FlipOptions,
   TransformOptions,
   TrimOptions,
-} from './transform/transform';
-export { TrimMode } from './transform/trim-mode';
-export { TrimSide } from './transform/trim-side';
+} from './transform/transform.js';
+export { TrimMode } from './transform/trim-mode.js';
+export { TrimSide } from './transform/trim-side.js';
 
 // In-place exports
 export interface DecodeOptions {

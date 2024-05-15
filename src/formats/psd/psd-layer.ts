@@ -1,24 +1,24 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
-import { MemoryImage } from '../../image/image';
-import { PsdBevelEffect } from './effect/psd-bevel-effect';
-import { PsdDropShadowEffect } from './effect/psd-drop-shadow-effect';
-import { PsdEffect } from './effect/psd-effect';
-import { PsdInnerGlowEffect } from './effect/psd-inner-glow-effect';
-import { PsdInnerShadowEffect } from './effect/psd-inner-shadow-effect';
-import { PsdOuterGlowEffect } from './effect/psd-outer-glow-effect';
-import { PsdSolidFillEffect } from './effect/psd-solid-fill-effect';
-import { PsdLayerAdditionalData } from './layer-data/psd-layer-additional-data';
-import { PsdLayerData } from './layer-data/psd-layer-data';
-import { PsdLayerDataFactory } from './layer-data/psd-layer-data-factory';
-import { PsdLayerSectionDivider } from './layer-data/psd-layer-section-divider';
-import { PsdBlendingRanges } from './psd-blending-ranges';
-import { PsdChannel } from './psd-channel';
-import { PsdFlag } from './psd-flag';
-import { PsdImage } from './psd-image';
-import { PsdMask } from './psd-mask';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
+import { MemoryImage } from '../../image/image.js';
+import { PsdBevelEffect } from './effect/psd-bevel-effect.js';
+import { PsdDropShadowEffect } from './effect/psd-drop-shadow-effect.js';
+import { PsdEffect } from './effect/psd-effect.js';
+import { PsdInnerGlowEffect } from './effect/psd-inner-glow-effect.js';
+import { PsdInnerShadowEffect } from './effect/psd-inner-shadow-effect.js';
+import { PsdOuterGlowEffect } from './effect/psd-outer-glow-effect.js';
+import { PsdSolidFillEffect } from './effect/psd-solid-fill-effect.js';
+import { PsdLayerAdditionalData } from './layer-data/psd-layer-additional-data.js';
+import { PsdLayerData } from './layer-data/psd-layer-data.js';
+import { PsdLayerDataFactory } from './layer-data/psd-layer-data-factory.js';
+import { PsdLayerSectionDivider } from './layer-data/psd-layer-section-divider.js';
+import { PsdBlendingRanges } from './psd-blending-ranges.js';
+import { PsdChannel } from './psd-channel.js';
+import { PsdFlag } from './psd-flag.js';
+import { PsdImage } from './psd-image.js';
+import { PsdMask } from './psd-mask.js';
 
 export class PsdLayer {
   // '8BIM'

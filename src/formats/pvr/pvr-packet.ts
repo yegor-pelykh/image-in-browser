@@ -1,9 +1,9 @@
 /** @format */
 
-import { TypedArray } from '../../common/typings';
-import { PvrBitUtility } from './pvr-bit-utility';
-import { PvrColorRgb } from './pvr-color-rgb';
-import { PvrColorRgba } from './pvr-color-rgba';
+import { TypedArray } from '../../common/typings.js';
+import { PvrBitUtility } from './pvr-bit-utility.js';
+import { PvrColorRgb } from './pvr-color-rgb.js';
+import { PvrColorRgba } from './pvr-color-rgba.js';
 
 /**
  * Ported from Jeffrey Lim's PVRTC encoder/decoder,

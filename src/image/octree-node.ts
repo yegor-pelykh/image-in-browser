@@ -1,6 +1,6 @@
 /** @format */
 
-import { ArrayUtils } from '../common/array-utils';
+import { ArrayUtils } from '../common/array-utils.js';
 
 export class OctreeNode {
   // sum of all colors represented by this node.

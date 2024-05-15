@@ -1,7 +1,7 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { LibError } from '../../error/lib-error';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
 
 export class LzwDecoder {
   private static readonly _lzMaxCode = 4095;

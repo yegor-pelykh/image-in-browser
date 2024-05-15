@@ -1,11 +1,11 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { VP8LImageTransformType } from './vp8l-image-transform-type';
-import { VP8LInternal } from './vp8l-internal';
-import { WebPFilters } from './webp-filters';
-import { WebPInfo } from './webp-info';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { VP8LImageTransformType } from './vp8l-image-transform-type.js';
+import { VP8LInternal } from './vp8l-internal.js';
+import { WebPFilters } from './webp-filters.js';
+import { WebPInfo } from './webp-info.js';
 
 export class WebPAlpha {
   private _input: InputBuffer<Uint8Array>;

@@ -1,13 +1,13 @@
 /** @format */
 
-import { OutputBuffer } from '../../common/output-buffer';
-import { Rational } from '../../common/rational';
-import { LibError } from '../../error/lib-error';
+import { OutputBuffer } from '../../common/output-buffer.js';
+import { Rational } from '../../common/rational.js';
+import { LibError } from '../../error/lib-error.js';
 import {
   getIfdValueTypeSize,
   getIfdValueTypeString,
   IfdValueType,
-} from '../ifd-value-type';
+} from '../ifd-value-type.js';
 
 export abstract class IfdValue {
   public get type(): IfdValueType {

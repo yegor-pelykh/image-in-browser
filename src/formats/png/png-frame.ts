@@ -1,7 +1,7 @@
 /** @format */
 
-import { PngBlendMode } from './png-blend-mode';
-import { PngDisposeMode } from './png-dispose-mode';
+import { PngBlendMode } from './png-blend-mode.js';
+import { PngDisposeMode } from './png-dispose-mode.js';
 
 export interface PngFrameInitOptions {
   sequenceNumber?: number;

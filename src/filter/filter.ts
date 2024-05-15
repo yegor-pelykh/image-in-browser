@@ -1,24 +1,24 @@
 /** @format */
 
-import { Channel } from '../color/channel';
-import { Color } from '../color/color';
-import { ColorRgba8 } from '../color/color-rgba8';
-import { Interpolation } from '../common/interpolation';
-import { MathUtils } from '../common/math-utils';
-import { NeuralQuantizer } from '../image/neural-quantizer';
-import { OctreeQuantizer } from '../image/octree-quantizer';
-import { Quantizer } from '../image/quantizer';
-import { RandomUtils } from '../common/random-utils';
-import { Draw } from '../draw/draw';
-import { MemoryImage } from '../image/image';
-import { DitherKernel, DitherKernels } from './dither-kernel';
-import { NoiseType } from './noise-type';
-import { PixelateMode } from './pixelate-mode';
-import { QuantizeMethod } from './quantize-method';
-import { SeparableKernel } from './separable-kernel';
-import { ColorUtils } from '../color/color-utils';
-import { SolarizeMode } from './solarize-mode';
-import { BinaryQuantizer } from '../image/binary-quantizer';
+import { Channel } from '../color/channel.js';
+import { Color } from '../color/color.js';
+import { ColorRgba8 } from '../color/color-rgba8.js';
+import { Interpolation } from '../common/interpolation.js';
+import { MathUtils } from '../common/math-utils.js';
+import { NeuralQuantizer } from '../image/neural-quantizer.js';
+import { OctreeQuantizer } from '../image/octree-quantizer.js';
+import { Quantizer } from '../image/quantizer.js';
+import { RandomUtils } from '../common/random-utils.js';
+import { Draw } from '../draw/draw.js';
+import { MemoryImage } from '../image/image.js';
+import { DitherKernel, DitherKernels } from './dither-kernel.js';
+import { NoiseType } from './noise-type.js';
+import { PixelateMode } from './pixelate-mode.js';
+import { QuantizeMethod } from './quantize-method.js';
+import { SeparableKernel } from './separable-kernel.js';
+import { ColorUtils } from '../color/color-utils.js';
+import { SolarizeMode } from './solarize-mode.js';
+import { BinaryQuantizer } from '../image/binary-quantizer.js';
 
 interface ContrastCache {
   lastContrast: number;

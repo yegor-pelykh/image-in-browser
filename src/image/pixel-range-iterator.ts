@@ -1,6 +1,6 @@
 /** @format */
 
-import { Pixel } from './pixel';
+import { Pixel } from './pixel.js';
 
 export class PixelRangeIterator implements Iterator<Pixel> {
   private _pixel: Pixel;

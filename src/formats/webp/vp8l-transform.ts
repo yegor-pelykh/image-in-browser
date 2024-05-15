@@ -1,11 +1,11 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
-import { InputBuffer } from '../../common/input-buffer';
-import { VP8L } from './vp8l';
-import { VP8LImageTransformType } from './vp8l-image-transform-type';
-import { VP8LInternal } from './vp8l-internal';
-import { VP8LMultipliers } from './vp8l-multipliers';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { VP8L } from './vp8l.js';
+import { VP8LImageTransformType } from './vp8l-image-transform-type.js';
+import { VP8LInternal } from './vp8l-internal.js';
+import { VP8LMultipliers } from './vp8l-multipliers.js';
 
 export class VP8LTransform {
   private _type: VP8LImageTransformType = VP8LImageTransformType.predictor;

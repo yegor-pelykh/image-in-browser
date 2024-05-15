@@ -1,8 +1,8 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
-import { VP8 } from './vp8';
-import { VP8BandProbas } from './vp8-band-probas';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { VP8 } from './vp8.js';
+import { VP8BandProbas } from './vp8-band-probas.js';
 
 /**
  * Struct collecting all frame-persistent probabilities

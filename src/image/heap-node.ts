@@ -1,6 +1,6 @@
 /** @format */
 
-import { OctreeNode } from './octree-node';
+import { OctreeNode } from './octree-node.js';
 
 export class HeapNode {
   private _buf: Array<OctreeNode | undefined> = [undefined];

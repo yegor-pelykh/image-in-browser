@@ -1,13 +1,13 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { ExifData } from '../exif/exif-data';
-import { FrameType } from '../image/frame-type';
-import { MemoryImage } from '../image/image';
-import { Decoder, DecoderDecodeOptions } from './decoder';
-import { ImageFormat } from './image-format';
-import { TiffImage } from './tiff/tiff-image';
-import { TiffInfo } from './tiff/tiff-info';
+import { InputBuffer } from '../common/input-buffer.js';
+import { ExifData } from '../exif/exif-data.js';
+import { FrameType } from '../image/frame-type.js';
+import { MemoryImage } from '../image/image.js';
+import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { ImageFormat } from './image-format.js';
+import { TiffImage } from './tiff/tiff-image.js';
+import { TiffInfo } from './tiff/tiff-info.js';
 
 export class TiffDecoder implements Decoder {
   private static readonly _tiffSignature = 42;

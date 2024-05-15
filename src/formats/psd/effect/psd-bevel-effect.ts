@@ -1,6 +1,6 @@
 /** @format */
 
-import { PsdEffect, PsdEffectOptions } from './psd-effect';
+import { PsdEffect, PsdEffectOptions } from './psd-effect.js';
 
 export interface PsdBevelEffectOptions extends PsdEffectOptions {
   angle: number;

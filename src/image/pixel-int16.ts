@@ -1,14 +1,14 @@
 /** @format */
 
-import { Channel } from '../color/channel';
-import { Color, ColorConvertOptions } from '../color/color';
-import { ColorUtils } from '../color/color-utils';
-import { Format } from '../color/format';
-import { ArrayUtils } from '../common/array-utils';
-import { MemoryImage } from './image';
-import { MemoryImageDataInt16 } from './image-data-int16';
-import { Palette } from './palette';
-import { Pixel } from './pixel';
+import { Channel } from '../color/channel.js';
+import { Color, ColorConvertOptions } from '../color/color.js';
+import { ColorUtils } from '../color/color-utils.js';
+import { Format } from '../color/format.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { MemoryImage } from './image.js';
+import { MemoryImageDataInt16 } from './image-data-int16.js';
+import { Palette } from './palette.js';
+import { Pixel } from './pixel.js';
 
 export class PixelInt16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   private _index: number;

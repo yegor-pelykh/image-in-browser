@@ -1,6 +1,6 @@
 /** @format */
 
-import { Point } from './point';
+import { Point } from './point.js';
 
 export class Line {
   private _x1: number;

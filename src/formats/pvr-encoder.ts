@@ -1,15 +1,15 @@
 /** @format */
 
-import { OutputBuffer } from '../common/output-buffer';
-import { LibError } from '../error/lib-error';
-import { MemoryImage } from '../image/image';
-import { Encoder, EncoderEncodeOptions } from './encoder';
-import { PvrBitUtility } from './pvr/pvr-bit-utility';
-import { PvrColorBoundingBox } from './pvr/pvr-color-bounding-box';
-import { PvrColorRgb } from './pvr/pvr-color-rgb';
-import { PvrColorRgba } from './pvr/pvr-color-rgba';
-import { PvrFormat } from './pvr/pvr-format';
-import { PvrPacket } from './pvr/pvr-packet';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { LibError } from '../error/lib-error.js';
+import { MemoryImage } from '../image/image.js';
+import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { PvrBitUtility } from './pvr/pvr-bit-utility.js';
+import { PvrColorBoundingBox } from './pvr/pvr-color-bounding-box.js';
+import { PvrColorRgb } from './pvr/pvr-color-rgb.js';
+import { PvrColorRgba } from './pvr/pvr-color-rgba.js';
+import { PvrFormat } from './pvr/pvr-format.js';
+import { PvrPacket } from './pvr/pvr-packet.js';
 
 /**
  * Ported from Jeffrey Lim's PVRTC encoder/decoder,

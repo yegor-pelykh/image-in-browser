@@ -1,10 +1,10 @@
 /** @format */
 
-import { InputBuffer } from '../../common/input-buffer';
-import { OutputBuffer } from '../../common/output-buffer';
-import { StringUtils } from '../../common/string-utils';
-import { IfdValue } from './ifd-value';
-import { IfdValueType } from '../ifd-value-type';
+import { InputBuffer } from '../../common/input-buffer.js';
+import { OutputBuffer } from '../../common/output-buffer.js';
+import { StringUtils } from '../../common/string-utils.js';
+import { IfdValue } from './ifd-value.js';
+import { IfdValueType } from '../ifd-value-type.js';
 
 export class IfdAsciiValue extends IfdValue {
   private _value: string;

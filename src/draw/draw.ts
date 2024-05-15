@@ -1,18 +1,18 @@
 /** @format */
 
-import { Channel } from '../color/channel';
-import { Color } from '../color/color';
-import { ColorUtils } from '../color/color-utils';
-import { ArrayUtils } from '../common/array-utils';
-import { Line } from '../common/line';
-import { MathUtils } from '../common/math-utils';
-import { Point } from '../common/point';
-import { Rectangle } from '../common/rectangle';
-import { MemoryImage } from '../image/image';
-import { ImageUtils } from '../image/image-utils';
-import { Pixel } from '../image/pixel';
-import { BlendMode } from './blend-mode';
-import { CircleQuadrant } from './circle-quadrant';
+import { Channel } from '../color/channel.js';
+import { Color } from '../color/color.js';
+import { ColorUtils } from '../color/color-utils.js';
+import { ArrayUtils } from '../common/array-utils.js';
+import { Line } from '../common/line.js';
+import { MathUtils } from '../common/math-utils.js';
+import { Point } from '../common/point.js';
+import { Rectangle } from '../common/rectangle.js';
+import { MemoryImage } from '../image/image.js';
+import { ImageUtils } from '../image/image-utils.js';
+import { Pixel } from '../image/pixel.js';
+import { BlendMode } from './blend-mode.js';
+import { CircleQuadrant } from './circle-quadrant.js';
 
 type FillFloodTestPixel = (y: number, x: number) => boolean;
 type FillFloodMarkPixel = (y: number, x: number) => void;

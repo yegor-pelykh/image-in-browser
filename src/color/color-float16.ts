@@ -1,12 +1,12 @@
 /** @format */
 
-import { ArrayUtils } from '../common/array-utils';
-import { Float16 } from '../common/float16';
-import { Palette } from '../image/palette';
-import { Channel } from './channel';
-import { Color, ColorConvertOptions } from './color';
-import { ColorUtils } from './color-utils';
-import { Format } from './format';
+import { ArrayUtils } from '../common/array-utils.js';
+import { Float16 } from '../common/float16.js';
+import { Palette } from '../image/palette.js';
+import { Channel } from './channel.js';
+import { Color, ColorConvertOptions } from './color.js';
+import { ColorUtils } from './color-utils.js';
+import { Format } from './format.js';
 
 /**
  * A 16-bit floating point color.

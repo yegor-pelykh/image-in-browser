@@ -1,9 +1,9 @@
 /** @format */
 
-import { Color } from '../../color/color';
-import { DecodeInfo } from '../decode-info';
-import { PngColorType } from './png-color-type';
-import { PngFrame } from './png-frame';
+import { Color } from '../../color/color.js';
+import { DecodeInfo } from '../decode-info.js';
+import { PngColorType } from './png-color-type.js';
+import { PngFrame } from './png-frame.js';
 
 export interface PngInfoInitOptions {
   width?: number;

@@ -1,8 +1,8 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils';
-import { VP8L } from './vp8l';
-import { HuffmanTree } from './webp-huffman-tree';
+import { ArrayUtils } from '../../common/array-utils.js';
+import { VP8L } from './vp8l.js';
+import { HuffmanTree } from './webp-huffman-tree.js';
 
 /**
  * A group of huffman trees

@@ -1,25 +1,25 @@
 /** @format */
 
-import { InputBuffer } from '../common/input-buffer';
-import { OutputBuffer } from '../common/output-buffer';
-import { ExifEntry } from './exif-entry';
-import { ExifImageTags, ExifTagNameToID } from './exif-tag';
-import { IfdContainer } from './ifd-container';
-import { IfdDirectory } from './ifd-directory';
-import { IfdValueType, IfdValueTypeSize } from './ifd-value-type';
-import { IfdAsciiValue } from './ifd-value/ifd-ascii-value';
-import { IfdByteValue } from './ifd-value/ifd-byte-value';
-import { IfdDoubleValue } from './ifd-value/ifd-double-value';
-import { IfdLongValue } from './ifd-value/ifd-long-value';
-import { IfdRationalValue } from './ifd-value/ifd-rational-value';
-import { IfdSByteValue } from './ifd-value/ifd-sbyte-value';
-import { IfdShortValue } from './ifd-value/ifd-short-value';
-import { IfdSingleValue } from './ifd-value/ifd-single-value';
-import { IfdSLongValue } from './ifd-value/ifd-slong-value';
-import { IfdSRationalValue } from './ifd-value/ifd-srational-value';
-import { IfdSShortValue } from './ifd-value/ifd-sshort-value';
-import { IfdUndefinedValue } from './ifd-value/ifd-undefined-value';
-import { IfdValue } from './ifd-value/ifd-value';
+import { InputBuffer } from '../common/input-buffer.js';
+import { OutputBuffer } from '../common/output-buffer.js';
+import { ExifEntry } from './exif-entry.js';
+import { ExifImageTags, ExifTagNameToID } from './exif-tag.js';
+import { IfdContainer } from './ifd-container.js';
+import { IfdDirectory } from './ifd-directory.js';
+import { IfdValueType, IfdValueTypeSize } from './ifd-value-type.js';
+import { IfdAsciiValue } from './ifd-value/ifd-ascii-value.js';
+import { IfdByteValue } from './ifd-value/ifd-byte-value.js';
+import { IfdDoubleValue } from './ifd-value/ifd-double-value.js';
+import { IfdLongValue } from './ifd-value/ifd-long-value.js';
+import { IfdRationalValue } from './ifd-value/ifd-rational-value.js';
+import { IfdSByteValue } from './ifd-value/ifd-sbyte-value.js';
+import { IfdShortValue } from './ifd-value/ifd-short-value.js';
+import { IfdSingleValue } from './ifd-value/ifd-single-value.js';
+import { IfdSLongValue } from './ifd-value/ifd-slong-value.js';
+import { IfdSRationalValue } from './ifd-value/ifd-srational-value.js';
+import { IfdSShortValue } from './ifd-value/ifd-sshort-value.js';
+import { IfdUndefinedValue } from './ifd-value/ifd-undefined-value.js';
+import { IfdValue } from './ifd-value/ifd-value.js';
 
 export class ExifData extends IfdContainer {
   public get imageIfd(): IfdDirectory {
