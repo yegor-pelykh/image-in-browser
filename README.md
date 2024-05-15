@@ -21,11 +21,6 @@ Overview
 
 This library may be especially useful when you need to work with static or animated images directly in the browser code when the code is isolated from the system it's running on.
 
-Performance Warning
-===================
-
-Since this library is written entirely in Typescript and is not a native executable library, its performance will not be as fast as a the native library.
-
 Supported Image Formats
 =======================
 
@@ -51,6 +46,20 @@ The following formats are currently supported for encoding / decoding:
 **Write Only**
 
 - CUR
+
+Examples of using
+=================
+
+You can see examples of using this library by checking out the repository that was specifically created for publishing code examples there:
+
+[image-in-browser.examples](https://github.com/yegor-pelykh/image-in-browser.examples) (GitHub)
+
+It will be supplemented and updated over time.
+
+Performance Warning
+===================
+
+Since this library is written entirely in Typescript and is not a native executable library, its performance will not be as fast as a the native library.
 
 Documentation
 ============
