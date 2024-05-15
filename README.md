@@ -16,7 +16,8 @@ Overview
 
 - works both in Node.js and in the browser (no need for server-side Node.js)
 - written entirely in Typescript with transpiling into Javascript
-- fully compatible with the ES6 standard and provides typings for use with Typescript
+- doesn't have any dependencies on other packages
+- fully compatible with the ES6 standard and provides typings (declarations) for use with Typescript
 
 This library may be especially useful when you need to work with static or animated images directly in the browser code when the code is isolated from the system it's running on.
 
