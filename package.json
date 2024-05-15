@@ -110,7 +110,8 @@
     "build:src-js": "tsc -p tsconfig.build.json --removeComments",
     "build:src-typings": "tsc -p tsconfig.build.json --emitDeclarationOnly",
     "build:src": "npm run build:src-js && npm run build:src-typings",
-    "build": "npm run format && npm run build:src",
+    "build:pre": "node pre-build.js",
+    "build": "npm run build:pre && npm run format && npm run build:src",
     "release": "release-it"
   },
   "devDependencies": {
