@@ -1,7 +1,7 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, decodeWebP, encodePng } from '../../src';
+import { IfdShortValue, decodePng, decodeWebP, encodePng } from '../../src';
 import { WebPDecoder } from '../../src/formats/webp-decoder';
 import { WebPFormat } from '../../src/formats/webp/webp-format';
 import { ImageTestUtils } from '../_utils/image-test-utils';
@@ -19,6 +19,25 @@ type WebPFileInfo = {
 };
 
 describe('Format: WEBP', () => {
+  test('exif', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.webp,
+      'buck_24.webp'
+    );
+    const webp = decodeWebP({
+      data: input,
+    });
+    expect(webp).toBeDefined();
+    if (webp === undefined) {
+      return;
+    }
+    const correctOrientation = new IfdShortValue(1);
+    expect(
+      webp.exifData.imageIfd.getValue('Orientation')?.equals(correctOrientation)
+    ).toBeTruthy();
+  });
+
   test('animated_lossy', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
