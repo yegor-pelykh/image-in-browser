@@ -19,6 +19,8 @@ import { VP8TopSamples } from './vp8-top-samples.js';
 import { WebPAlpha } from './webp-alpha.js';
 import { WebPInfo } from './webp-info.js';
 import { WebPInfoInternal } from './webp-info-internal.js';
+import { StringUtils } from '../../common/string-utils.js';
+import { ExifData } from '../../exif/exif-data.js';
 
 /**
  * WebP lossy format
@@ -1710,6 +1712,13 @@ export class VP8 {
     // Main decoding loop
     if (!this.parseFrame()) {
       return undefined;
+    }
+
+    if (this._webp.exifData.length > 0) {
+      const input = new InputBuffer({
+        buffer: StringUtils.getCodePoints(this._webp.exifData),
+      });
+      this._output.exifData = ExifData.fromInputBuffer(input);
     }
 
     return this._output;

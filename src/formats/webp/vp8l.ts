@@ -13,6 +13,8 @@ import { WebPFormat } from './webp-format.js';
 import { HuffmanTree } from './webp-huffman-tree.js';
 import { HuffmanTreeGroup } from './webp-huffman-tree-group.js';
 import { WebPInfo } from './webp-info.js';
+import { StringUtils } from '../../common/string-utils.js';
+import { ExifData } from '../../exif/exif-data.js';
 
 export class VP8L {
   private _lastPixel: number = 0;
@@ -903,6 +905,13 @@ export class VP8L {
       )
     ) {
       return undefined;
+    }
+
+    if (this._webp.exifData.length > 0) {
+      const input = new InputBuffer({
+        buffer: StringUtils.getCodePoints(this._webp.exifData),
+      });
+      this._image.exifData = ExifData.fromInputBuffer(input);
     }
 
     return this._image;

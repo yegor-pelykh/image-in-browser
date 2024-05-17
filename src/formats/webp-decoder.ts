@@ -104,8 +104,7 @@ export class WebPDecoder implements Decoder {
     input: InputBuffer<Uint8Array>,
     webp: WebPInfoInternal
   ): boolean {
-    let found = false;
-    while (!input.isEOS && !found) {
+    while (!input.isEOS) {
       const tag = input.readString(4);
       const size = input.readUint32();
       // For odd sized chunks, there's a 1 byte padding at the end.
@@ -122,13 +121,11 @@ export class WebPDecoder implements Decoder {
           webp.vp8Position = input.position;
           webp.vp8Size = size;
           webp.format = WebPFormat.lossy;
-          found = true;
           break;
         case 'VP8L':
           webp.vp8Position = input.position;
           webp.vp8Size = size;
           webp.format = WebPFormat.lossless;
-          found = true;
           break;
         case 'ALPH':
           webp.alphaData = new InputBuffer<Uint8Array>({
