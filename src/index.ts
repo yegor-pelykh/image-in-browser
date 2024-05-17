@@ -56,6 +56,7 @@ export {
   getRowStride,
   convertFormatValue,
 } from './color/format.js';
+export { ColorUtils, ConvertColorOptions } from './color/color-utils.js';
 
 // Export types from 'common' directory
 export { ArrayUtils } from './common/array-utils.js';
