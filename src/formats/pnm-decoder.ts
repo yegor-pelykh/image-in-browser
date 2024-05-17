@@ -103,7 +103,7 @@ export class PnmDecoder implements Decoder {
     );
   }
 
-  public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
+  public startDecode(bytes: Uint8Array): PnmInfo | undefined {
     this._input = new InputBuffer({
       buffer: bytes,
     });

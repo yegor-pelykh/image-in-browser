@@ -435,7 +435,7 @@ export class PngDecoder implements Decoder {
    * Start decoding the data as an animation sequence, but don't actually
    * process the frames until they are requested with decodeFrame.
    */
-  public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
+  public startDecode(bytes: Uint8Array): PngInfo | undefined {
     if (!this.isValidFile(bytes) || this._input === undefined) {
       return undefined;
     }

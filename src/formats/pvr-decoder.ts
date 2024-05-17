@@ -29,7 +29,7 @@ export class PvrDecoder implements Decoder {
     return 1;
   }
 
-  private decodePvr3Header(bytes: Uint8Array): DecodeInfo | undefined {
+  private decodePvr3Header(bytes: Uint8Array): Pvr3Info | undefined {
     const input = new InputBuffer({
       buffer: bytes,
     });
@@ -76,7 +76,7 @@ export class PvrDecoder implements Decoder {
     return info;
   }
 
-  private decodePvr2Header(bytes: Uint8Array): DecodeInfo | undefined {
+  private decodePvr2Header(bytes: Uint8Array): Pvr2Info | undefined {
     const input = new InputBuffer({
       buffer: bytes,
     });
@@ -122,7 +122,7 @@ export class PvrDecoder implements Decoder {
     return info;
   }
 
-  private decodeApplePvrtcHeader(bytes: Uint8Array): DecodeInfo | undefined {
+  private decodeApplePvrtcHeader(bytes: Uint8Array): PvrAppleInfo | undefined {
     const fileSize = bytes.length;
 
     const input = new InputBuffer({
@@ -737,7 +737,9 @@ export class PvrDecoder implements Decoder {
     return this.startDecode(bytes) !== undefined;
   }
 
-  public startDecode(bytes: Uint8Array): DecodeInfo | undefined {
+  public startDecode(
+    bytes: Uint8Array
+  ): PvrAppleInfo | Pvr3Info | Pvr2Info | undefined {
     // Use a heuristic to detect potential apple PVRTC formats
     if (this.countBits(bytes.length) === 1) {
       // very likely to be apple PVRTC
@@ -748,16 +750,20 @@ export class PvrDecoder implements Decoder {
       }
     }
 
-    let info = this.decodePvr3Header(bytes);
-    if (info !== undefined) {
-      this._data = bytes;
-      return (this._info = info);
+    {
+      const info = this.decodePvr3Header(bytes);
+      if (info !== undefined) {
+        this._data = bytes;
+        return (this._info = info);
+      }
     }
 
-    info = this.decodePvr2Header(bytes);
-    if (info !== undefined) {
-      this._data = bytes;
-      return (this._info = info);
+    {
+      const info = this.decodePvr2Header(bytes);
+      if (info !== undefined) {
+        this._data = bytes;
+        return (this._info = info);
+      }
     }
 
     return undefined;
