@@ -74,6 +74,8 @@ Contributions are what make the open source community such an amazing place to l
 To contribute:
 - Fork the project
 - Create your feature branch (git checkout -b feature/AmazingFeature)
+- **!** Run the script `npm run build` to bring the code up to project standards
+- **!** Fix all errors and warnings associated with your changes
 - Commit your changes (git commit -m 'Add some AmazingFeature')
 - Push to the branch (git push origin feature/AmazingFeature)
 - Open a Pull Request
