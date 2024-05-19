@@ -1,13 +1,13 @@
 Table of contents
 =================
 
-- [Table of contents](#table-of-contents)
-- [Overview](#overview)
-- [Performance Warning](#performance-warning)
-- [Supported Image Formats](#supported-image-formats)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [Links](#links)
+- [**Table of contents**](#table-of-contents)
+- [**Overview**](#overview)
+- [**Performance Warning**](#performance-warning)
+- [**Supported Image Formats**](#supported-image-formats)
+- [**Documentation**](#documentation)
+- [**Contributing**](#contributing)
+- [**Links**](#links)
 
 Overview
 ========
@@ -52,7 +52,7 @@ Examples of using
 
 You can see examples of using this library by checking out the repository that was specifically created for publishing code examples there:
 
-[image-in-browser.examples](https://github.com/yegor-pelykh/image-in-browser.examples) (GitHub)
+[**image-in-browser.examples**](https://github.com/yegor-pelykh/image-in-browser.examples) (_GitHub_)
 
 It will be supplemented and updated over time.
 
@@ -64,7 +64,7 @@ Since this library is written entirely in Typescript and is not a native executa
 Documentation
 ============
 
-To view the documentation for the package, please go to the [Wiki](https://github.com/yegor-pelykh/image-in-browser/wiki).
+To view the documentation for the package, please go to the [**Wiki**](https://github.com/yegor-pelykh/image-in-browser/wiki).
 
 Contributing
 ============
