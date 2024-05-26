@@ -28,24 +28,24 @@ The following formats are currently supported for encoding / decoding:
 
 **Read / Write**
 
-- BMP
-- GIF, animated GIF
-- ICO
-- JPG
-- PNG, animated APNG
-- TGA
-- PVR
-- TIFF
+- **BMP**
+- **GIF, animated GIF**
+- **ICO**
+- **JPG**
+- **PNG, animated APNG**
+- **TGA**
+- **PVR**
+- **TIFF**
 
 **Read Only**
 
-- PNM, PBM, PGM, PPM
-- PSD
-- WEBP, animated WEBP
+- **PNM, PBM, PGM, PPM**
+- **PSD**
+- **WEBP, animated WEBP**
 
 **Write Only**
 
-- CUR
+- **CUR**
 
 Examples of using
 =================
