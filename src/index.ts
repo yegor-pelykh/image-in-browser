@@ -138,6 +138,7 @@ export {
 } from './exif/ifd-value-type.js';
 
 // Export types from 'filter' directory
+export { ContrastMode } from './filter/contrast-mode.js';
 export { DitherKernel, DitherKernels } from './filter/dither-kernel.js';
 export {
   Filter,

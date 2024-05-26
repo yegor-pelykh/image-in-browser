@@ -19,6 +19,7 @@ import { SeparableKernel } from './separable-kernel.js';
 import { ColorUtils } from '../color/color-utils.js';
 import { SolarizeMode } from './solarize-mode.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
+import { ContrastMode } from './contrast-mode.js';
 
 interface ContrastCache {
   lastContrast: number;
@@ -103,6 +104,7 @@ export interface ColorOffsetOptions {
 export interface ContrastOptions {
   image: MemoryImage;
   contrast: number;
+  mode?: ContrastMode;
   maskChannel?: Channel;
   mask?: MemoryImage;
 }
@@ -961,8 +963,8 @@ export abstract class Filter {
   /**
    * Set the contrast level for the **image**.
    *
-   * **contrast** values below 100 will decrees the contrast of the image,
-   * and values above 100 will increase the contrast. A contrast of of 100
+   * **contrast** values below 100 will decrease the contrast of the image,
+   * and values above 100 will increase the contrast. A contrast of 100
    * will have no affect.
    */
   public static contrast(opt: ContrastOptions): MemoryImage {
@@ -972,6 +974,7 @@ export abstract class Filter {
         })
       : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
+    const mode = opt.mode ?? ContrastMode.proportional;
 
     if (opt.contrast === 100) {
       return opt.image;
@@ -986,11 +989,21 @@ export abstract class Filter {
         contrast: new Uint8Array(256),
       };
 
-      const c = (opt.contrast * opt.contrast) / 10000;
-      for (let i = 0; i < 256; ++i) {
-        Filter._contrastCache.contrast[i] = MathUtils.clampInt255(
-          ((i / 255 - 0.5) * c + 0.5) * 255
-        );
+      if (mode === ContrastMode.proportional) {
+        const c = (opt.contrast * opt.contrast) / 10000;
+        for (let i = 0; i < 256; ++i) {
+          Filter._contrastCache.contrast[i] = MathUtils.clampInt255(
+            ((i / 255 - 0.5) * c + 0.5) * 255
+          );
+        }
+      } else {
+        /// 0.12 is an arbitrary adjustment to use 100 as mid point
+        const c = opt.contrast / 100 - 0.12;
+        for (let i = 0; i < 256; ++i) {
+          Filter._contrastCache.contrast[i] = MathUtils.clampInt255(
+            ((Math.tan((i / 128 - 1) * c) + 1) / 2) * 255
+          );
+        }
       }
     }
 
