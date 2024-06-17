@@ -144,11 +144,17 @@ export class PsdChannel {
       if (n < 0) {
         n = 1 - n;
         const b = src.read();
+        if (_dstIndex + n > dst.length) {
+          n = dst.length - _dstIndex;
+        }
         for (let i = 0; i < n; ++i) {
           dst[_dstIndex++] = b;
         }
       } else {
         n++;
+        if (_dstIndex + n > dst.length) {
+          n = dst.length - _dstIndex;
+        }
         for (let i = 0; i < n; ++i) {
           dst[_dstIndex++] = src.read();
         }

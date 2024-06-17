@@ -25,8 +25,8 @@ export class PsdImage implements DecodeInfo {
     return this._input;
   }
 
-  private _imageResourceData: InputBuffer<Uint8Array> | undefined;
-  private _layerAndMaskData: InputBuffer<Uint8Array> | undefined;
+  // private _imageResourceData: InputBuffer<Uint8Array> | undefined;
+  // private _layerAndMaskData: InputBuffer<Uint8Array> | undefined;
   private _imageData: InputBuffer<Uint8Array> | undefined;
 
   private _width: number = 0;
@@ -119,10 +119,12 @@ export class PsdImage implements DecodeInfo {
     this._input.readRange(len);
 
     len = this._input.readUint32();
-    this._imageResourceData = this._input.readRange(len);
+    /* this._imageResourceData = */
+    this._input.readRange(len);
 
     len = this._input.readUint32();
-    this._layerAndMaskData = this._input.readRange(len);
+    /* this._layerAndMaskData = */
+    this._input.readRange(len);
 
     this._imageData = this._input.readRange(this._input.length);
   }
@@ -512,6 +514,7 @@ export class PsdImage implements DecodeInfo {
     // TODO: support indexed and duotone images.
   }
 
+  /*
   private readImageResources(): void {
     this._imageResourceData!.rewind();
     while (!this._imageResourceData!.isEOS) {
@@ -540,7 +543,9 @@ export class PsdImage implements DecodeInfo {
       }
     }
   }
+  */
 
+  /*
   private readLayerAndMaskData(): void {
     this._layerAndMaskData!.rewind();
     let len = this._layerAndMaskData!.readUint32();
@@ -575,23 +580,24 @@ export class PsdImage implements DecodeInfo {
     len = this._layerAndMaskData!.readUint32();
     const maskData = this._layerAndMaskData!.readRange(len);
     if (len > 0) {
-      /* let colorSpace: number = */
+      // let colorSpace: number = 
       maskData.readUint16();
-      /* let rc: number = */
+      // let rc: number = 
       maskData.readUint16();
-      /* let gc: number = */
+      // let gc: number = 
       maskData.readUint16();
-      /* let bc: number = */
+      // let bc: number = 
       maskData.readUint16();
-      /* let ac: number = */
+      // let ac: number = 
       maskData.readUint16();
       // 0-100
-      /* let opacity: number = */
+      // let opacity: number = 
       maskData.readUint16();
-      /* let kind: number = */
+      // let kind: number = 
       maskData.read();
     }
   }
+  */
 
   private readMergeImageData(): void {
     this._imageData!.rewind();
@@ -645,15 +651,15 @@ export class PsdImage implements DecodeInfo {
     // Image Resource Block:
     // Image resources are used to store non-pixel data associated with images,
     // such as pen tool paths.
-    this.readImageResources();
+    // this.readImageResources();
 
-    this.readLayerAndMaskData();
+    // this.readLayerAndMaskData();
 
     this.readMergeImageData();
 
     this._input = undefined;
-    this._imageResourceData = undefined;
-    this._layerAndMaskData = undefined;
+    // this._imageResourceData = undefined;
+    // this._layerAndMaskData = undefined;
     this._imageData = undefined;
 
     return true;

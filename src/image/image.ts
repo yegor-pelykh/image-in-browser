@@ -654,12 +654,6 @@ export class MemoryImage implements Iterable<Pixel> {
     const withPalette = opt.withPalette ?? false;
     const paletteFormat = opt.paletteFormat ?? Format.uint8;
 
-    if (numChannels < 1 || numChannels > 4) {
-      throw new LibError(
-        `Invalid number of channels for image (${numChannels}). Must be between 1 and 4.`
-      );
-    }
-
     this._iccProfile = opt.iccProfile;
 
     if (opt.exifData !== undefined) {
