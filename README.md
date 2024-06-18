@@ -1,13 +1,13 @@
 📋 Table of contents
 =================
 
-- [📜 Overview](#overview)
-- [🖼️ Supported Image Formats](#supported-image-formats)
-- [🆘 Examples of using](#examples-of-using)
-- [📰 Documentation](#documentation)
-- [🏭 Performance Warning](#performance-warning)
-- [🔧 Contributing](#contributing)
-- [🔗 Links](#links)
+- [**Overview**](#overview)
+- [**Supported Image Formats**](#supported-image-formats)
+- [**Examples of using**](#examples-of-using)
+- [**Documentation**](#documentation)
+- [**Performance Warning**](#performance-warning)
+- [**Contributing**](#contributing)
+- [**Links**](#links)
 
 <h1 id="overview">📜 Overview</h1>
 
