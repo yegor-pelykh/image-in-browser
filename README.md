@@ -1,13 +1,13 @@
 📋 Table of contents
 =================
 
-- [**Table of contents**](#table-of-contents)
-- [**Overview**](#overview)
-- [**Performance Warning**](#performance-warning)
-- [**Supported Image Formats**](#supported-image-formats)
-- [**Documentation**](#documentation)
-- [**Contributing**](#contributing)
-- [**Links**](#links)
+- [📜 Overview](#📜-overview)
+- [🖼️ Supported Image Formats](#🖼️-supported-image-formats)
+- [🆘 Examples of using](#🆘-examples-of-using)
+- [📰 Documentation](#📰-documentation)
+- [🏭 Performance Warning](#🏭-performance-warning)
+- [🔧 Contributing](#🔧-contributing)
+- [🔗 Links](#🔗-links)
 
 📜 Overview
 ========
