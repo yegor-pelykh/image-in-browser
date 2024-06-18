@@ -1,4 +1,4 @@
-Table of contents
+📋 Table of contents
 =================
 
 - [**Table of contents**](#table-of-contents)
@@ -9,7 +9,7 @@ Table of contents
 - [**Contributing**](#contributing)
 - [**Links**](#links)
 
-Overview
+📜 Overview
 ========
 
 **image-in-browser** is an NPM package providing the ability to load, manipulate and save images of various image file formats.
@@ -21,7 +21,7 @@ Overview
 
 This library may be especially useful when you need to work with static or animated images directly in the browser code when the code is isolated from the system it's running on.
 
-Supported Image Formats
+🖼️ Supported Image Formats
 =======================
 
 The following formats are currently supported for encoding / decoding:
@@ -47,7 +47,7 @@ The following formats are currently supported for encoding / decoding:
 
 - **CUR**
 
-Examples of using
+🆘 Examples of using
 =================
 
 You can see examples of using this library by checking out the repository that was specifically created for publishing code examples there:
@@ -56,17 +56,17 @@ You can see examples of using this library by checking out the repository that w
 
 It will be supplemented and updated over time.
 
-Performance Warning
-===================
-
-Since this library is written entirely in Typescript and is not a native executable library, its performance will not be as fast as a the native library.
-
-Documentation
+📰 Documentation
 ============
 
 To view the documentation for the package, please go to the [**Wiki**](https://github.com/yegor-pelykh/image-in-browser/wiki).
 
-Contributing
+🏭 Performance Warning
+===================
+
+Since this library is written entirely in Typescript and is not a native executable library, its performance will not be as fast as a the native library.
+
+🔧 Contributing
 ============
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
@@ -82,7 +82,7 @@ To contribute:
 
 I will be very grateful for your support.
 
-Links
+🔗 Links
 =====
 
 Link to NPM repository:
