@@ -172,12 +172,7 @@ export class WebPFilters {
    */
   private static gradientPredictor(a: number, b: number, c: number): number {
     const g = a + b - c;
-    return (g & ~0xff) === 0
-      ? g
-      : g < 0
-        ? 0
-        : // clip to 8bit
-          255;
+    return (g & ~0xff) === 0 ? g : g < 0 ? 0 : 255;
   }
 
   /**

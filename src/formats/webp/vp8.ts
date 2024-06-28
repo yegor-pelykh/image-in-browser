@@ -1325,10 +1325,10 @@ export class VP8 {
         InputBuffer.from(topDst, (2 * x - 1) * 4)
       );
       this.yuvToRgba(
-        topY.get(2 * x - 0),
+        topY.get(2 * x),
         uv1 & 0xff,
         uv1 >>> 16,
-        InputBuffer.from(topDst, (2 * x - 0) * 4)
+        InputBuffer.from(topDst, 2 * x * 4)
       );
 
       if (bottomY !== undefined) {

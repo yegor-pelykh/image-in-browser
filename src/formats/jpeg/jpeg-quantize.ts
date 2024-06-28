@@ -68,14 +68,22 @@ export abstract class JpegQuantize {
     const p = dataIn;
 
     // IDCT constants (20.12 fixed point format)
-    const cos1 = 4017; // cos(pi/16)*4096
-    const sin1 = 799; // sin(pi/16)*4096
-    const cos3 = 3406; // cos(3*pi/16)*4096
-    const sin3 = 2276; // sin(3*pi/16)*4096
-    const cos6 = 1567; // cos(6*pi/16)*4096
-    const sin6 = 3784; // sin(6*pi/16)*4096
-    const sqrt2 = 5793; // sqrt(2)*4096
-    const sqrt102 = 2896; // sqrt(2) / 2
+    // cos(pi/16)*4096
+    const cos1 = 4017;
+    // sin(pi/16)*4096
+    const sin1 = 799;
+    // cos(3*pi/16)*4096
+    const cos3 = 3406;
+    // sin(3*pi/16)*4096
+    const sin3 = 2276;
+    // cos(6*pi/16)*4096
+    const cos6 = 1567;
+    // sin(6*pi/16)*4096
+    const sin6 = 3784;
+    // sqrt(2)*4096
+    const sqrt2 = 5793;
+    // sqrt(2) / 2
+    const sqrt102 = 2896;
 
     // de-quantize
     for (let i = 0; i < 64; i++) {
