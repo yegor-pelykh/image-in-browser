@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate, deflate } from '../uzip/uzip.js';
+import { inflate, deflate } from '../packer/packer.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { IccProfileCompression } from './icc-profile-compression.js';
 

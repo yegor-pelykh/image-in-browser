@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate } from '../uzip/uzip.js';
+import { inflate } from '../packer/packer.js';
 import { Crc32 } from '../common/crc32.js';
 import { InputBuffer } from '../common/input-buffer.js';
 import { ArrayUtils } from '../common/array-utils.js';
@@ -849,7 +849,7 @@ export class PngDecoder implements Decoder {
 
     let uncompressed: Uint8Array | undefined = undefined;
     try {
-      uncompressed = inflate(imageData) as Uint8Array;
+      uncompressed = inflate(imageData);
     } catch (error) {
       console.error(error);
       return undefined;

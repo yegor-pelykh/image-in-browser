@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -29,9 +28,7 @@
     ],
   },
   "include": [
-    "src/**/*.js",
     "src/**/*.ts",
-    "test/**/*.js",
     "test/**/*.ts"
   ]
 }

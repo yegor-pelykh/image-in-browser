@@ -1,6 +1,6 @@
 /** @format */
 
-import { deflate } from '../uzip/uzip.js';
+import { deflate } from '../packer/packer.js';
 import { Crc32 } from '../common/crc32.js';
 import { OutputBuffer } from '../common/output-buffer.js';
 import { StringUtils } from '../common/string-utils.js';

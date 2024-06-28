@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate } from '../../uzip/uzip.js';
+import { inflate } from '../../packer/packer.js';
 import { ColorUtils } from '../../color/color-utils.js';
 import { Format } from '../../color/format.js';
 import { ArrayUtils } from '../../common/array-utils.js';
