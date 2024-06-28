@@ -28,6 +28,7 @@
     ],
   },
   "include": [
+    "eslint.config.mjs",
     "src/**/*.ts",
     "test/**/*.ts"
   ]
