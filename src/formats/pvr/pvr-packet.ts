@@ -10,9 +10,12 @@ import { PvrColorRgba } from './pvr-color-rgba.js';
  * https://bitbucket.org/jthlim/pvrtccompressor
  */
 export class PvrPacket {
+  /** 14-bit mask */
   private static readonly bits14 = (1 << 14) - 1;
+  /** 15-bit mask */
   private static readonly bits15 = (1 << 15) - 1;
 
+  /** Morton table for interleaving bits */
   private static readonly mortonTable = [
     0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014, 0x0015, 0x0040,
     0x0041, 0x0044, 0x0045, 0x0050, 0x0051, 0x0054, 0x0055, 0x0100, 0x0101,
@@ -45,6 +48,7 @@ export class PvrPacket {
     0x5550, 0x5551, 0x5554, 0x5555,
   ];
 
+  /** Bilinear factors for interpolation */
   public static readonly bilinearFactors = [
     [4, 4, 4, 4],
     [2, 6, 2, 6],
@@ -64,7 +68,7 @@ export class PvrPacket {
     [9, 3, 3, 1],
   ];
 
-  // Weights are { colorA, colorB, alphaA, alphaB }
+  /** Weights for color and alpha blending */
   public static readonly weights = [
     // Weights for Mode = 0
     [8, 0, 8, 0],
@@ -79,16 +83,19 @@ export class PvrPacket {
     [0, 8, 0, 8],
   ];
 
+  /** Raw data of the packet */
   private _rawData: Uint32Array;
   public get rawData(): Uint32Array {
     return this._rawData;
   }
 
+  /** Index of the packet */
   private _index: number = 0;
   public get index(): number {
     return this._index;
   }
 
+  /** Modulation data of the packet */
   public get modulationData(): number {
     return this._rawData[this._index];
   }
@@ -96,6 +103,7 @@ export class PvrPacket {
     this._rawData[this._index] = x;
   }
 
+  /** Color data of the packet */
   public get colorData(): number {
     return this._rawData[this._index + 1];
   }
@@ -103,6 +111,7 @@ export class PvrPacket {
     this._rawData[this._index + 1] = x;
   }
 
+  /** Flag indicating if punchthrough alpha is used */
   private _usePunchthroughAlpha: boolean = false;
   public get usePunchthroughAlpha(): boolean {
     return this._usePunchthroughAlpha;
@@ -112,6 +121,7 @@ export class PvrPacket {
     this.colorData = this.getColorData();
   }
 
+  /** Color A of the packet */
   private _colorA: number = 0;
   public get colorA(): number {
     return this._colorA;
@@ -121,6 +131,7 @@ export class PvrPacket {
     this.colorData = this.getColorData();
   }
 
+  /** Flag indicating if color A is opaque */
   private _colorAIsOpaque: boolean = false;
   public get colorAIsOpaque(): boolean {
     return this._colorAIsOpaque;
@@ -130,6 +141,7 @@ export class PvrPacket {
     this.colorData = this.getColorData();
   }
 
+  /** Color B of the packet */
   private _colorB: number = 0;
   public get colorB(): number {
     return this._colorB;
@@ -139,6 +151,7 @@ export class PvrPacket {
     this.colorData = this.getColorData();
   }
 
+  /** Flag indicating if color B is opaque */
   private _colorBIsOpaque: boolean = false;
   public get colorBIsOpaque(): boolean {
     return this._colorBIsOpaque;
@@ -148,10 +161,20 @@ export class PvrPacket {
     this.colorData = this.getColorData();
   }
 
+  /**
+   * Constructor for PvrPacket
+   * @param {TypedArray} data - TypedArray containing the raw data
+   */
   constructor(data: TypedArray) {
     this._rawData = new Uint32Array(data.buffer);
   }
 
+  /**
+   * Get Morton number for given x and y coordinates
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @returns {number} Morton number
+   */
   private static getMortonNumber(x: number, y: number): number {
     return (
       (this.mortonTable[x >> 8] << 17) |
@@ -161,6 +184,10 @@ export class PvrPacket {
     );
   }
 
+  /**
+   * Get color data from the packet
+   * @returns {number} Color data
+   */
   private getColorData(): number {
     return (
       (this.usePunchthroughAlpha ? 1 : 0) |
@@ -171,6 +198,9 @@ export class PvrPacket {
     );
   }
 
+  /**
+   * Update the packet data
+   */
   private update(): void {
     const x = this.colorData;
     this.usePunchthroughAlpha = (x & 1) === 1;
@@ -180,10 +210,19 @@ export class PvrPacket {
     this.colorBIsOpaque = ((x >> 31) & 1) === 1;
   }
 
+  /**
+   * Set the block coordinates
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   */
   public setBlock(x: number, y: number): void {
     this.setIndex(PvrPacket.getMortonNumber(x, y));
   }
 
+  /**
+   * Set the index of the packet
+   * @param {number} i - Index
+   */
   public setIndex(i: number): void {
     // A PvrPacket uses 2 uint32 values, so get the physical index
     // from the logical index by multiplying by 2.
@@ -192,6 +231,10 @@ export class PvrPacket {
     this.update();
   }
 
+  /**
+   * Set color A using PvrColorRgb
+   * @param {PvrColorRgb} c - PvrColorRgb object
+   */
   public setColorRgbA(c: PvrColorRgb): void {
     const r = PvrBitUtility.bitScale8To5Floor[c.r];
     const g = PvrBitUtility.bitScale8To5Floor[c.g];
@@ -200,6 +243,10 @@ export class PvrPacket {
     this.colorAIsOpaque = true;
   }
 
+  /**
+   * Set color A using PvrColorRgba
+   * @param {PvrColorRgba} c - PvrColorRgba object
+   */
   public setColorRgbaA(c: PvrColorRgba): void {
     const a = PvrBitUtility.bitScale8To3Floor[c.a];
     if (a === 7) {
@@ -217,6 +264,10 @@ export class PvrPacket {
     }
   }
 
+  /**
+   * Set color B using PvrColorRgb
+   * @param {PvrColorRgb} c - PvrColorRgb object
+   */
   public setColorRgbB(c: PvrColorRgb): void {
     const r = PvrBitUtility.bitScale8To5Ceil[c.r];
     const g = PvrBitUtility.bitScale8To5Ceil[c.g];
@@ -225,6 +276,10 @@ export class PvrPacket {
     this.colorBIsOpaque = false;
   }
 
+  /**
+   * Set color B using PvrColorRgba
+   * @param {PvrColorRgba} c - PvrColorRgba object
+   */
   public setColorRgbaB(c: PvrColorRgba): void {
     const a = PvrBitUtility.bitScale8To3Ceil[c.a];
     if (a === 7) {
@@ -242,6 +297,10 @@ export class PvrPacket {
     }
   }
 
+  /**
+   * Get color A as PvrColorRgb
+   * @returns {PvrColorRgb} PvrColorRgb object
+   */
   public getColorRgbA(): PvrColorRgb {
     if (this.colorAIsOpaque) {
       const r = this.colorA >> 9;
@@ -264,6 +323,10 @@ export class PvrPacket {
     }
   }
 
+  /**
+   * Get color A as PvrColorRgba
+   * @returns {PvrColorRgba} PvrColorRgba object
+   */
   public getColorRgbaA(): PvrColorRgba {
     if (this.colorAIsOpaque) {
       const r = this.colorA >> 9;
@@ -289,6 +352,10 @@ export class PvrPacket {
     }
   }
 
+  /**
+   * Returns the RGB color representation of colorB.
+   * @returns {PvrColorRgb} The RGB color.
+   */
   public getColorRgbB(): PvrColorRgb {
     if (this.colorBIsOpaque) {
       const r = this.colorB >> 10;
@@ -311,6 +378,10 @@ export class PvrPacket {
     }
   }
 
+  /**
+   * Returns the RGBA color representation of colorB.
+   * @returns {PvrColorRgba} The RGBA color.
+   */
   public getColorRgbaB(): PvrColorRgba {
     if (this.colorBIsOpaque) {
       const r = this.colorB >> 10;

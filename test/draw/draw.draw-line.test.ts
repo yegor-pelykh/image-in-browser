@@ -6,7 +6,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for drawing operations.
+ */
 describe('Draw', () => {
+  /**
+   * Test case for drawing lines on an image.
+   */
   test('drawLine', () => {
     const i0 = new MemoryImage({
       width: 256,
@@ -37,6 +43,9 @@ describe('Draw', () => {
     );
   });
 
+  /**
+   * Test case for drawing lines using Wu's algorithm.
+   */
   test('drawLineWu', () => {
     const i0 = new MemoryImage({
       width: 800,

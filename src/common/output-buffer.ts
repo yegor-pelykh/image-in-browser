@@ -3,38 +3,85 @@
 import { InputBuffer } from './input-buffer.js';
 import { ArrayUtils } from './array-utils.js';
 
+/**
+ * Interface for initializing OutputBuffer options.
+ */
 export interface OutputBufferInitOptions {
+  /**
+   * Indicates if the buffer should use big-endian byte order.
+   */
   bigEndian?: boolean;
+  /**
+   * Initial size of the buffer.
+   */
   size?: number;
 }
 
+/**
+ * Class representing a buffer for output operations.
+ */
 export class OutputBuffer {
-  // 8k block-size
+  /**
+   * Default block size for the buffer.
+   */
   private static readonly _blockSize = 0x2000;
 
+  /**
+   * Internal buffer storage.
+   */
   private _buffer: Uint8Array;
+
+  /**
+   * Gets the internal buffer.
+   */
   public get buffer(): Uint8Array {
     return this._buffer;
   }
 
+  /**
+   * Indicates if the buffer uses big-endian byte order.
+   */
   private _bigEndian: boolean;
+
+  /**
+   * Gets the big-endian flag.
+   */
   public get bigEndian(): boolean {
     return this._bigEndian;
   }
+
+  /**
+   * Sets the big-endian flag.
+   */
   public set bigEndian(v: boolean) {
     this._bigEndian = v;
   }
 
+  /**
+   * Current length of the buffer.
+   */
   private _length: number;
+
+  /**
+   * Gets the current length of the buffer.
+   */
   public get length(): number {
     return this._length;
   }
+
+  /**
+   * Sets the current length of the buffer.
+   */
   public set length(v: number) {
     this._length = v;
   }
 
   /**
-   * Create a byte buffer for writing.
+   * Constructs an OutputBuffer instance.
+   *
+   * @param {OutputBufferInitOptions} [opt] - Optional initialization options.
+   * @param {boolean} [opt.bigEndian=false] - Indicates if the buffer should use big-endian byte order.
+   * @param {number} [opt.size=OutputBuffer._blockSize] - The initial size of the buffer.
    */
   constructor(opt?: OutputBufferInitOptions) {
     this._bigEndian = opt?.bigEndian ?? false;
@@ -44,6 +91,7 @@ export class OutputBuffer {
 
   /**
    * Grow the buffer to accommodate additional data.
+   * @param {number} required - The required additional size.
    */
   private expandBuffer(required?: number): void {
     let blockSize: number = OutputBuffer._blockSize;
@@ -57,6 +105,9 @@ export class OutputBuffer {
     this._buffer = newBuffer;
   }
 
+  /**
+   * Rewind the buffer to the beginning.
+   */
   public rewind(): void {
     this._length = 0;
   }
@@ -71,6 +122,7 @@ export class OutputBuffer {
 
   /**
    * Get the resulting bytes from the buffer.
+   * @returns {Uint8Array} A Uint8Array containing the bytes in the buffer.
    */
   public getBytes(): Uint8Array {
     return new Uint8Array(this._buffer.buffer, 0, this._length);
@@ -78,6 +130,7 @@ export class OutputBuffer {
 
   /**
    * Write a byte to the end of the buffer.
+   * @param {number} value - The byte value to write.
    */
   public writeByte(value: number): void {
     if (this._length === this._buffer.length) {
@@ -88,6 +141,8 @@ export class OutputBuffer {
 
   /**
    * Write a set of bytes to the end of the buffer.
+   * @param {Uint8Array} bytes - The bytes to write.
+   * @param {number} [length] - The number of bytes to write.
    */
   public writeBytes(bytes: Uint8Array, length?: number): void {
     const bytesLength = length ?? bytes.length;
@@ -98,6 +153,10 @@ export class OutputBuffer {
     this._length += bytesLength;
   }
 
+  /**
+   * Write the contents of another buffer to the end of this buffer.
+   * @param {InputBuffer<Uint8Array>} bytes - The InputBuffer to write from.
+   */
   public writeBuffer(bytes: InputBuffer<Uint8Array>): void {
     const bytesLength = bytes.length;
     const requiredLength = this._length + bytesLength;
@@ -116,6 +175,7 @@ export class OutputBuffer {
 
   /**
    * Write a 16-bit word to the end of the buffer.
+   * @param {number} value - The 16-bit word to write.
    */
   public writeUint16(value: number): void {
     if (this._bigEndian) {
@@ -129,6 +189,7 @@ export class OutputBuffer {
 
   /**
    * Write a 32-bit word to the end of the buffer.
+   * @param {number} value - The 32-bit word to write.
    */
   public writeUint32(value: number): void {
     if (this._bigEndian) {
@@ -146,6 +207,7 @@ export class OutputBuffer {
 
   /**
    * Write a 32-bit float value to the end of the buffer.
+   * @param {number} value - The 32-bit float value to write.
    */
   public writeFloat32(value: number): void {
     const fb = new Float32Array(1);
@@ -166,6 +228,7 @@ export class OutputBuffer {
 
   /**
    * Write a 64-bit float value to the end of the buffer.
+   * @param {number} value - The 64-bit float value to write.
    */
   public writeFloat64(value: number): void {
     const fb = new Float64Array(1);
@@ -197,6 +260,9 @@ export class OutputBuffer {
    * If **start** or **end** are < 0 then it is relative to the end of the buffer.
    * If **end** is not specified (or undefined), then it is the end of the buffer.
    * This is equivalent to the python list range operator.
+   * @param {number} start - The start index of the subarray.
+   * @param {number} [end] - The end index of the subarray.
+   * @returns {Uint8Array} A Uint8Array representing the subarray.
    */
   public subarray(start: number, end?: number): Uint8Array {
     const correctedStart: number = start >= 0 ? start : this._length + start;

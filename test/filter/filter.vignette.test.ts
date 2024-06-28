@@ -6,14 +6,22 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Filter functionality.
+ */
 describe('Filter', () => {
+  /**
+   * Test case for the vignette filter.
+   */
   test('vignette', () => {
+    // Read input image from file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
+    // Decode the input PNG image
     const img = decodePng({
       data: input,
     });
@@ -22,6 +30,7 @@ describe('Filter', () => {
       return;
     }
 
+    // Apply vignette filter with default settings
     const v1 = Filter.vignette({
       image: img.clone(),
     });
@@ -35,6 +44,7 @@ describe('Filter', () => {
       output
     );
 
+    // Apply vignette filter with white color
     const v2 = Filter.vignette({
       image: img.clone(),
       color: new ColorRgb8(255, 255, 255),
@@ -49,6 +59,7 @@ describe('Filter', () => {
       output
     );
 
+    // Apply vignette filter with custom settings
     const v3 = Filter.vignette({
       image: img.clone().convert({
         numChannels: 4,

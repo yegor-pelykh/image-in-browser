@@ -24,155 +24,360 @@ import {
   TiffPhotometricTypeLength,
 } from './tiff-photometric-type.js';
 
+/**
+ * Represents a TIFF image and provides methods to decode it.
+ */
 export class TiffImage {
+  /**
+   * Map of TIFF tags to their corresponding entries.
+   */
   private readonly _tags: Map<number, TiffEntry> = new Map<number, TiffEntry>();
+
+  /**
+   * Gets the TIFF tags.
+   */
   public get tags(): Map<number, TiffEntry> {
     return this._tags;
   }
 
+  /**
+   * Width of the image.
+   */
   private readonly _width: number = 0;
+
+  /**
+   * Gets the width of the image.
+   */
   public get width(): number {
     return this._width;
   }
 
+  /**
+   * Height of the image.
+   */
   private readonly _height: number = 0;
+
+  /**
+   * Gets the height of the image.
+   */
   public get height(): number {
     return this._height;
   }
 
+  /**
+   * Photometric type of the image.
+   */
   private _photometricType: TiffPhotometricType = TiffPhotometricType.unknown;
+
+  /**
+   * Gets the photometric type of the image.
+   */
   public get photometricType(): TiffPhotometricType {
     return this._photometricType;
   }
 
+  /**
+   * Compression type of the image.
+   */
   private _compression = 1;
+
+  /**
+   * Gets the compression type of the image.
+   */
   public get compression(): number {
     return this._compression;
   }
 
+  /**
+   * Bits per sample in the image.
+   */
   private _bitsPerSample = 1;
+
+  /**
+   * Gets the bits per sample in the image.
+   */
   public get bitsPerSample(): number {
     return this._bitsPerSample;
   }
 
+  /**
+   * Samples per pixel in the image.
+   */
   private _samplesPerPixel = 1;
+
+  /**
+   * Gets the samples per pixel in the image.
+   */
   public get samplesPerPixel(): number {
     return this._samplesPerPixel;
   }
 
+  /**
+   * Sample format of the image.
+   */
   private _sampleFormat: TiffFormat = TiffFormat.uint;
+
+  /**
+   * Gets the sample format of the image.
+   */
   public get sampleFormat(): TiffFormat {
     return this._sampleFormat;
   }
 
+  /**
+   * Type of the image.
+   */
   private _imageType: TiffImageType = TiffImageType.invalid;
+
+  /**
+   * Gets the type of the image.
+   */
   public get imageType(): TiffImageType {
     return this._imageType;
   }
 
+  /**
+   * Indicates if white is zero in the image.
+   */
   private _isWhiteZero = false;
+
+  /**
+   * Gets whether white is zero in the image.
+   */
   public get isWhiteZero(): boolean {
     return this._isWhiteZero;
   }
 
+  /**
+   * Predictor value for the image.
+   */
   private _predictor = 1;
+
+  /**
+   * Gets the predictor value for the image.
+   */
   public get predictor(): number {
     return this._predictor;
   }
 
+  /**
+   * Horizontal chroma subsampling value.
+   */
   private _chromaSubH = 0;
+
+  /**
+   * Gets the horizontal chroma subsampling value.
+   */
   public get chromaSubH(): number {
     return this._chromaSubH;
   }
 
+  /**
+   * Vertical chroma subsampling value.
+   */
   private _chromaSubV = 0;
+
+  /**
+   * Gets the vertical chroma subsampling value.
+   */
   public get chromaSubV(): number {
     return this._chromaSubV;
   }
 
+  /**
+   * Indicates if the image is tiled.
+   */
   private _tiled = false;
+
+  /**
+   * Gets whether the image is tiled.
+   */
   public get tiled(): boolean {
     return this._tiled;
   }
 
+  /**
+   * Width of the tiles in the image.
+   */
   private _tileWidth = 0;
+
+  /**
+   * Gets the width of the tiles in the image.
+   */
   public get tileWidth(): number {
     return this._tileWidth;
   }
 
+  /**
+   * Height of the tiles in the image.
+   */
   private _tileHeight = 0;
+
+  /**
+   * Gets the height of the tiles in the image.
+   */
   public get tileHeight(): number {
     return this._tileHeight;
   }
 
+  /**
+   * Offsets of the tiles in the image.
+   */
   private _tileOffsets: number[] | undefined;
+
+  /**
+   * Gets the offsets of the tiles in the image.
+   */
   public get tileOffsets(): number[] | undefined {
     return this._tileOffsets;
   }
 
+  /**
+   * Byte counts of the tiles in the image.
+   */
   private _tileByteCounts: number[] | undefined;
+
+  /**
+   * Gets the byte counts of the tiles in the image.
+   */
   public get tileByteCounts(): number[] | undefined {
     return this._tileByteCounts;
   }
 
+  /**
+   * Number of tiles in the horizontal direction.
+   */
   private _tilesX = 0;
+
+  /**
+   * Gets the number of tiles in the horizontal direction.
+   */
   public get tilesX(): number {
     return this._tilesX;
   }
 
+  /**
+   * Number of tiles in the vertical direction.
+   */
   private _tilesY = 0;
+
+  /**
+   * Gets the number of tiles in the vertical direction.
+   */
   public get tilesY(): number {
     return this._tilesY;
   }
 
+  /**
+   * Size of the tiles in bytes.
+   */
   private _tileSize: number | undefined;
+
+  /**
+   * Gets the size of the tiles in bytes.
+   */
   public get tileSize(): number | undefined {
     return this._tileSize;
   }
 
+  /**
+   * Fill order of the image.
+   */
   private _fillOrder = 1;
+
+  /**
+   * Gets the fill order of the image.
+   */
   public get fillOrder(): number {
     return this._fillOrder;
   }
 
+  /**
+   * T4 options for the image.
+   */
   private _t4Options = 0;
+
+  /**
+   * Gets the T4 options for the image.
+   */
   public get t4Options(): number {
     return this._t4Options;
   }
 
+  /**
+   * T6 options for the image.
+   */
   private _t6Options = 0;
+
+  /**
+   * Gets the T6 options for the image.
+   */
   public get t6Options(): number {
     return this._t6Options;
   }
 
+  /**
+   * Extra samples in the image.
+   */
   private _extraSamples: number | undefined;
+
+  /**
+   * Gets the extra samples in the image.
+   */
   public get extraSamples(): number | undefined {
     return this._extraSamples;
   }
 
+  /**
+   * Number of color map samples in the image.
+   */
   private _colorMapSamples = 0;
+
+  /**
+   * Gets the number of color map samples in the image.
+   */
   public get colorMapSamples(): number {
     return this._colorMapSamples;
   }
 
+  /**
+   * Color map of the image.
+   */
   private _colorMap: Uint16Array | undefined;
+
+  /**
+   * Gets the color map of the image.
+   */
   public get colorMap(): Uint16Array | undefined {
     return this._colorMap;
   }
 
-  // Starting index in the [colorMap] for the red channel.
+  /**
+   * Starting index in the color map for the red channel.
+   */
   private _colorMapRed = 0;
 
-  // Starting index in the [colorMap] for the green channel.
+  /**
+   * Starting index in the color map for the green channel.
+   */
   private _colorMapGreen = 0;
 
-  // Starting index in the [colorMap] for the blue channel.
+  /**
+   * Starting index in the color map for the blue channel.
+   */
   private _colorMapBlue = 0;
 
+  /**
+   * Gets whether the image is valid.
+   */
   public get isValid(): boolean {
     return this._width !== 0 && this._height !== 0;
   }
 
+  /**
+   * Constructs a new TiffImage instance.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the TIFF image data.
+   */
   constructor(p: InputBuffer<Uint8Array>) {
     const p3 = InputBuffer.from(p);
 
@@ -402,6 +607,13 @@ export class TiffImage {
     }
   }
 
+  /**
+   * Reads the value of a tag of the specified type.
+   *
+   * @param {number} type - The type of the tag to read.
+   * @param {number} [defaultValue=0] - The default value to return if the tag does not exist.
+   * @returns {number} - The value of the tag, or the default value if the tag does not exist.
+   */
   private readTag(type: number, defaultValue = 0): number {
     if (!this.hasTag(type)) {
       return defaultValue;
@@ -409,6 +621,12 @@ export class TiffImage {
     return this._tags.get(type)!.read()?.toInt() ?? 0;
   }
 
+  /**
+   * Reads a list of tags of the specified type.
+   *
+   * @param {number} type - The type of tags to read.
+   * @returns {number[] | undefined} - An array of numbers representing the tags, or undefined if the tag type does not exist.
+   */
   private readTagList(type: number): number[] | undefined {
     if (!this.hasTag(type)) {
       return undefined;
@@ -418,6 +636,15 @@ export class TiffImage {
     return ArrayUtils.generate<number>(tag.count, (i) => value.toInt(i));
   }
 
+  /**
+   * Decodes a bilevel tile from the input buffer and writes the decoded data to the image.
+   *
+   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the encoded tile data.
+   * @param {MemoryImage} image - The image object where the decoded tile data will be written.
+   * @param {number} tileX - The x-coordinate of the tile in the image.
+   * @param {number} tileY - The y-coordinate of the tile in the image.
+   * @throws {LibError} Throws an error if the compression type is unsupported.
+   */
   private decodeBilevelTile(
     p: InputBuffer<Uint8Array>,
     image: MemoryImage,
@@ -553,6 +780,15 @@ export class TiffImage {
     }
   }
 
+  /**
+   * Decodes a tile from the input buffer and writes the decoded data to the image.
+   *
+   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the tile data.
+   * @param {MemoryImage} image - The image to write the decoded tile data to.
+   * @param {number} tileX - The x-coordinate of the tile.
+   * @param {number} tileY - The y-coordinate of the tile.
+   * @throws {LibError} If an unsupported compression type or bits per sample is encountered.
+   */
   private decodeTile(
     p: InputBuffer<Uint8Array>,
     image: MemoryImage,
@@ -906,6 +1142,16 @@ export class TiffImage {
     }
   }
 
+  /**
+   * Copies a JPEG tile image into a larger image at a specified position.
+   *
+   * @param {MemoryImage} tile - The source tile image in memory.
+   * @param {MemoryImage} image - The destination image in memory.
+   * @param {number} outX - The x-coordinate in the destination image where the tile should be placed.
+   * @param {number} outY - The y-coordinate in the destination image where the tile should be placed.
+   * @param {number} tileWidth - The width of the tile image.
+   * @param {number} tileHeight - The height of the tile image.
+   */
   private jpegToImage(
     tile: MemoryImage,
     image: MemoryImage,
@@ -924,7 +1170,11 @@ export class TiffImage {
   }
 
   /**
-   * Uncompress packbits compressed image data.
+   * Decodes PackBits encoded data.
+   *
+   * @param {InputBuffer<Uint8Array>} data - The input buffer containing the PackBits encoded data.
+   * @param {number} arraySize - The size of the destination array.
+   * @param {Uint8Array} dst - The destination array where the decoded data will be stored.
    */
   private decodePackBits(
     data: InputBuffer<Uint8Array>,
@@ -954,6 +1204,12 @@ export class TiffImage {
     }
   }
 
+  /**
+   * Decodes the input buffer into a MemoryImage.
+   *
+   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the image data.
+   * @returns {MemoryImage} - The decoded MemoryImage.
+   */
   public decode(p: InputBuffer<Uint8Array>): MemoryImage {
     const isFloat = this._sampleFormat === TiffFormat.float;
     const isInt = this._sampleFormat === TiffFormat.int;
@@ -1022,6 +1278,12 @@ export class TiffImage {
     return image;
   }
 
+  /**
+   * Checks if the specified tag exists in the tags set.
+   *
+   * @param {number} tag - The tag to check for existence.
+   * @returns {boolean} - Returns true if the tag exists, otherwise false.
+   */
   public hasTag(tag: number): boolean {
     return this._tags.has(tag);
   }

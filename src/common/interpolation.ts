@@ -1,26 +1,26 @@
 /** @format */
 
 /**
- * Interpolation method to use when resizing images.
+ * Enumeration representing different interpolation methods for resizing images.
  */
 export enum Interpolation {
   /**
-   * Select the closest pixel.Fastest, lowest quality.
+   * Selects the closest pixel. Fastest method with the lowest quality.
    */
   nearest,
 
   /**
-   * Linearly blend between the neighboring pixels.
+   * Linearly blends between the neighboring pixels. Moderate speed and quality.
    */
   linear,
 
   /**
-   * Cubic blend between the neighboring pixels. Slowest, highest Quality.
+   * Uses cubic interpolation between neighboring pixels. Slowest method with the highest quality.
    */
   cubic,
 
   /**
-   * Average the colors of the neighboring pixels.
+   * Averages the colors of the neighboring pixels. Balanced speed and quality.
    */
   average,
 }

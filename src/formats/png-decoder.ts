@@ -6,7 +6,6 @@ import { InputBuffer } from '../common/input-buffer.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { StringUtils } from '../common/string-utils.js';
 import { LibError } from '../error/lib-error.js';
-import { DecodeInfo } from './decode-info.js';
 import { Decoder, DecoderDecodeOptions } from './decoder.js';
 import { PngFrame } from './png/png-frame.js';
 import { PngInfo } from './png/png-info.js';
@@ -31,31 +30,69 @@ import { Rectangle } from '../common/rectangle.js';
  * Decode a PNG encoded image.
  */
 export class PngDecoder implements Decoder {
+  /**
+   * The input buffer for the PNG data.
+   */
   private _input?: InputBuffer<Uint8Array>;
+
+  /**
+   * Get the input buffer.
+   */
   public get input(): InputBuffer<Uint8Array> | undefined {
     return this._input;
   }
 
+  /**
+   * Information about the PNG image.
+   */
   private _info: PngInfo = new PngInfo();
+
+  /**
+   * Get the PNG information.
+   */
   public get info(): PngInfo {
     return this._info;
   }
 
+  /**
+   * The current progress in the Y direction.
+   */
   private _progressY = 0;
+
+  /**
+   * Get the current progress in the Y direction.
+   */
   public get progressY(): number {
     return this._progressY;
   }
 
+  /**
+   * The bit buffer used for reading bits.
+   */
   private _bitBuffer = 0;
+
+  /**
+   * Get the bit buffer.
+   */
   public get bitBuffer(): number {
     return this._bitBuffer;
   }
 
+  /**
+   * The length of the bit buffer.
+   */
   private _bitBufferLen = 0;
+
+  /**
+   * Get the length of the bit buffer.
+   */
   public get bitBufferLen(): number {
     return this._bitBufferLen;
   }
 
+  /**
+   * Get the image format.
+   */
   get format(): ImageFormat {
     return ImageFormat.png;
   }
@@ -66,7 +103,14 @@ export class PngDecoder implements Decoder {
   public get numFrames(): number {
     return this._info.numFrames;
   }
-
+  /**
+   * Unfilter a row of pixels.
+   * @param {PngFilterType} filterType - The type of filter used.
+   * @param {number} bpp - Bytes per pixel.
+   * @param {Uint8Array} row - The current row of pixels.
+   * @param {Uint8Array} [prevRow] - The previous row of pixels.
+   * @throws {LibError} Throws an error if the filter type is invalid.
+   */
   private static unfilter(
     filterType: PngFilterType,
     bpp: number,
@@ -126,7 +170,10 @@ export class PngDecoder implements Decoder {
   }
 
   /**
-   * Return the CRC of the bytes
+   * Return the CRC of the bytes.
+   * @param {string} type - The type of the chunk.
+   * @param {Uint8Array} bytes - The bytes of the chunk.
+   * @returns {number} The CRC value.
    */
   private static crc(type: string, bytes: Uint8Array): number {
     const typeCodeUnits = StringUtils.getCodePoints(type);
@@ -141,6 +188,14 @@ export class PngDecoder implements Decoder {
 
   /**
    * Process a pass of an interlaced image.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {MemoryImage} image - The memory image.
+   * @param {number} xOffset - The X offset.
+   * @param {number} yOffset - The Y offset.
+   * @param {number} xStep - The X step.
+   * @param {number} yStep - The Y step.
+   * @param {number} passWidth - The width of the pass.
+   * @param {number} passHeight - The height of the pass.
    */
   private processPass(
     input: InputBuffer<Uint8Array>,
@@ -218,6 +273,11 @@ export class PngDecoder implements Decoder {
     }
   }
 
+  /**
+   * Process the input buffer and decode the image.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {MemoryImage} image - The memory image.
+   */
   private process(input: InputBuffer<Uint8Array>, image: MemoryImage): void {
     let channels = 1;
     if (this._info.colorType === PngColorType.grayscaleAlpha) {
@@ -271,6 +331,9 @@ export class PngDecoder implements Decoder {
     }
   }
 
+  /**
+   * Reset the bit buffer.
+   */
   private resetBits(): void {
     this._bitBuffer = 0;
     this._bitBufferLen = 0;
@@ -278,6 +341,10 @@ export class PngDecoder implements Decoder {
 
   /**
    * Read a number of bits from the input stream.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number} numBits - The number of bits to read.
+   * @returns {number} The read bits.
+   * @throws {LibError} If there is invalid PNG data.
    */
   private readBits(input: InputBuffer<Uint8Array>, numBits: number): number {
     if (numBits === 0) {
@@ -338,6 +405,8 @@ export class PngDecoder implements Decoder {
 
   /**
    * Read the next pixel from the input stream.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number[]} pixel - The pixel array to store the read pixel.
    */
   private readPixel(input: InputBuffer<Uint8Array>, pixel: number[]): void {
     switch (this._info.colorType) {
@@ -366,7 +435,11 @@ export class PngDecoder implements Decoder {
     throw new LibError(`Invalid color type: ${this._info.colorType}.`);
   }
 
-  // Get the color with the list of components.
+  /**
+   * Set the pixel color.
+   * @param {Pixel} p - The pixel object.
+   * @param {number[]} raw - The raw pixel data.
+   */
   private setPixel(p: Pixel, raw: number[]): void {
     switch (this._info.colorType) {
       case PngColorType.grayscale:
@@ -415,6 +488,8 @@ export class PngDecoder implements Decoder {
 
   /**
    * Is the given file a valid PNG image?
+   * @param {Uint8Array} bytes - The bytes of the file.
+   * @returns {boolean} True if the file is valid, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
     this._input = new InputBuffer<Uint8Array>({
@@ -434,6 +509,9 @@ export class PngDecoder implements Decoder {
   /**
    * Start decoding the data as an animation sequence, but don't actually
    * process the frames until they are requested with decodeFrame.
+   * @param {Uint8Array} bytes - The bytes of the PNG file.
+   * @returns {PngInfo | undefined} The PNG information if successful, undefined otherwise.
+   * @throws {LibError} If there is an invalid checksum or invalid chunk.
    */
   public startDecode(bytes: Uint8Array): PngInfo | undefined {
     if (!this.isValidFile(bytes) || this._input === undefined) {
@@ -692,6 +770,9 @@ export class PngDecoder implements Decoder {
 
   /**
    * Decode the frame (assuming **startDecode** has already been called).
+   * @param {number} frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if input is not defined.
+   * @throws {LibError} If an invalid checksum or frame number is encountered.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined) {
@@ -912,6 +993,13 @@ export class PngDecoder implements Decoder {
     return image;
   }
 
+  /**
+   * Decode the image based on the provided options.
+   * @param {DecoderDecodeOptions} opt - The options for decoding the image.
+   * @param {Uint8Array} opt.bytes - The byte array of the image to decode.
+   * @param {number} [opt.frameIndex] - The index of the frame to decode (optional).
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
+   */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 

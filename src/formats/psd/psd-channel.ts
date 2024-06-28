@@ -3,64 +3,128 @@
 import { InputBuffer } from '../../common/input-buffer.js';
 import { LibError } from '../../error/lib-error.js';
 
-// TODO: remove?
+/**
+ * Interface representing the options for reading.
+ */
 export interface ReadOptions {
+  /** The input buffer containing the data. */
   input: InputBuffer<Uint8Array>;
+  /** The ID of the channel. */
   id: number;
+  /** The width of the image. */
   width: number;
+  /** The height of the image. */
   height: number;
+  /** The bit depth of the image. */
   bitDepth: number;
+  /** The compression type used. */
   compression: number;
+  /** The plane number. */
   planeNumber: number;
+  /** Optional array of line lengths. */
   lineLengths?: Uint16Array;
 }
 
-// TODO: remove?
+/**
+ * Interface representing the options for reading a plane.
+ */
 export interface ReadPlaneOptions {
+  /** The input buffer containing the data. */
   input: InputBuffer<Uint8Array>;
+  /** The width of the image. */
   width: number;
+  /** The height of the image. */
   height: number;
+  /** The bit depth of the image. */
   bitDepth: number;
+  /** Optional compression type used. */
   compression?: number;
+  /** Optional array of line lengths. */
   lineLengths?: Uint16Array;
+  /** Optional plane number. */
   planeNumber?: number;
 }
 
+/**
+ * Class representing a PSD channel.
+ */
 export class PsdChannel {
+  /** Red channel identifier. */
   public static readonly red = 0;
+  /** Green channel identifier. */
   public static readonly green = 1;
+  /** Blue channel identifier. */
   public static readonly blue = 2;
+  /** Black channel identifier. */
   public static readonly black = 3;
+  /** Alpha channel identifier. */
   public static readonly alpha = -1;
+  /** Mask channel identifier. */
   public static readonly mask = -2;
+  /** Real mask channel identifier. */
   public static readonly realMask = -3;
 
+  /** No compression identifier. */
   public static readonly compressNone = 0;
+  /** RLE compression identifier. */
   public static readonly compressRle = 1;
+  /** ZIP compression identifier. */
   public static readonly compressZip = 2;
+  /** ZIP predictor compression identifier. */
   public static readonly compressZipPredictor = 3;
 
+  /** The ID of the channel. */
   private _id: number;
+  /** The length of the data. */
+  private _dataLength: number | undefined;
+  /** The data of the channel. */
+  private _data!: Uint8Array;
+
+  /**
+   * Gets the ID of the channel.
+   */
   public get id(): number {
     return this._id;
   }
 
-  private _dataLength: number | undefined;
+  /**
+   * Gets the length of the data.
+   */
   public get dataLength(): number | undefined {
     return this._dataLength;
   }
 
-  private _data!: Uint8Array;
+  /**
+   * Gets the data of the channel.
+   */
   public get data(): Uint8Array {
     return this._data;
   }
 
+  /**
+   * Constructs a new PSD channel.
+   * @param {number} id - The ID of the channel.
+   * @param {number} [dataLength] - The length of the data.
+   */
   constructor(id: number, dataLength?: number) {
     this._id = id;
     this._dataLength = dataLength;
   }
 
-  public static read(opt: ReadOptions) {
+  /**
+   * Reads a PSD channel from the given options.
+   * @param {ReadOptions} opt - The options for reading.
+   * @param {number} opt.id - The identifier for the PSD channel.
+   * @param {InputBuffer<Uint8Array>} opt.input - The input data for the PSD channel.
+   * @param {number} opt.width - The width of the PSD channel.
+   * @param {number} opt.height - The height of the PSD channel.
+   * @param {number} opt.bitDepth - The bit depth of the PSD channel.
+   * @param {number} opt.compression - The compression method used for the PSD channel.
+   * @param {Uint16Array} opt.lineLengths - The lengths of the lines in the PSD channel.
+   * @param {number} opt.planeNumber - The plane number of the PSD channel.
+   * @returns {PsdChannel} The PSD channel.
+   */
+  public static read(opt: ReadOptions): PsdChannel {
     const obj = new PsdChannel(opt.id);
     obj.readPlane({
       input: opt.input,
@@ -74,6 +138,12 @@ export class PsdChannel {
     return obj;
   }
 
+  /**
+   * Reads the line lengths from the input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number} height - The height of the image.
+   * @returns {Uint16Array} The array of line lengths.
+   */
   private readLineLengths(
     input: InputBuffer<Uint8Array>,
     height: number
@@ -85,6 +155,13 @@ export class PsdChannel {
     return lineLengths;
   }
 
+  /**
+   * Reads an uncompressed plane from the input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {number} bitDepth - The bit depth of the image.
+   */
   private readPlaneUncompressed(
     input: InputBuffer<Uint8Array>,
     width: number,
@@ -105,6 +182,15 @@ export class PsdChannel {
     this._data = imgData.toUint8Array();
   }
 
+  /**
+   * Reads an RLE compressed plane from the input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {number} bitDepth - The bit depth of the image.
+   * @param {Uint16Array} lineLengths - The array of line lengths.
+   * @param {number} planeNum - The plane number.
+   */
   private readPlaneRleCompressed(
     input: InputBuffer<Uint8Array>,
     width: number,
@@ -133,6 +219,12 @@ export class PsdChannel {
     }
   }
 
+  /**
+   * Decodes RLE compressed data.
+   * @param {InputBuffer<Uint8Array>} src - The source input buffer.
+   * @param {Uint8Array} dst - The destination array.
+   * @param {number} dstIndex - The starting index in the destination array.
+   */
   private decodeRLE(
     src: InputBuffer<Uint8Array>,
     dst: Uint8Array,
@@ -162,6 +254,18 @@ export class PsdChannel {
     }
   }
 
+  /**
+   * Reads a plane from the given options.
+   * @param {ReadPlaneOptions} opt - The options for reading the plane.
+   * @param {InputBuffer<Uint8Array>} opt.input - The input data stream.
+   * @param {number} opt.width - The width of the plane.
+   * @param {number} opt.height - The height of the plane.
+   * @param {number} opt.bitDepth - The bit depth of the plane.
+   * @param {number} [opt.planeNumber] - The number of the plane (optional).
+   * @param {number} [opt.compression] - The compression type (optional).
+   * @param {Uint16Array} [opt.lineLengths] - The lengths of the lines for RLE compression (optional).
+   * @throws {LibError} If the compression type is unsupported.
+   */
   public readPlane(opt: ReadPlaneOptions): void {
     const planeNumber = opt.planeNumber ?? 0;
     const compression = opt.compression ?? opt.input.readUint16();

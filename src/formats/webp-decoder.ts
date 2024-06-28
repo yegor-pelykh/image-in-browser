@@ -19,33 +19,59 @@ import { WebPInfoInternal } from './webp/webp-info-internal.js';
  * lossy+alpha, and animated WebP images.
  */
 export class WebPDecoder implements Decoder {
+  /**
+   * Input buffer for the WebPDecoder.
+   * @private
+   */
   private _input!: InputBuffer<Uint8Array>;
 
+  /**
+   * Internal WebP information.
+   * @private
+   */
   private _info!: WebPInfoInternal;
+
+  /**
+   * Get the WebP information.
+   * @returns {WebPInfo | undefined} The WebP information.
+   */
   public get info(): WebPInfo | undefined {
     return this._info;
   }
 
+  /**
+   * Get the image format.
+   * @returns {ImageFormat} The image format.
+   */
   get format(): ImageFormat {
     return ImageFormat.webp;
   }
 
   /**
-   * How many frames are available to decode?
-   *
-   * You should have prepared the decoder by either passing the file bytes
-   * to the constructor, or calling getInfo.
+   * Get the number of frames available to decode.
+   * @returns {number} The number of frames.
    */
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;
   }
 
+  /**
+   * Constructor for WebPDecoder.
+   * @param {Uint8Array} [bytes] - Optional bytes to start decoding.
+   */
   constructor(bytes?: Uint8Array) {
     if (bytes !== undefined) {
       this.startDecode(bytes);
     }
   }
 
+  /**
+   * Decode a frame internally.
+   * @private
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number} [frameIndex=0] - The frame index.
+   * @returns {MemoryImage | undefined} The decoded image.
+   */
   private decodeFrameInternal(
     input: InputBuffer<Uint8Array>,
     frameIndex: number = 0
@@ -82,6 +108,12 @@ export class WebPDecoder implements Decoder {
     return undefined;
   }
 
+  /**
+   * Validate the WebP format header.
+   * @private
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @returns {boolean} True if valid, false otherwise.
+   */
   private getHeader(input: InputBuffer<Uint8Array>): boolean {
     // Validate the webp format header
     let tag = input.readString(4);
@@ -100,6 +132,13 @@ export class WebPDecoder implements Decoder {
     return true;
   }
 
+  /**
+   * Get information about the WebP image.
+   * @private
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {WebPInfoInternal} webp - The WebP information.
+   * @returns {boolean} True if successful, false otherwise.
+   */
   private getInfo(
     input: InputBuffer<Uint8Array>,
     webp: WebPInfoInternal
@@ -176,6 +215,13 @@ export class WebPDecoder implements Decoder {
     return webp!.format !== WebPFormat.undefined;
   }
 
+  /**
+   * Get VP8X information.
+   * @private
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {WebPInfo} [webp] - The WebP information.
+   * @returns {boolean} True if successful, false otherwise.
+   */
   private getVp8xInfo(
     input: InputBuffer<Uint8Array>,
     webp?: WebPInfo
@@ -205,6 +251,13 @@ export class WebPDecoder implements Decoder {
     return true;
   }
 
+  /**
+   * Get animation information.
+   * @private
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {WebPInfo} webp - The WebP information.
+   * @returns {boolean} True if successful, false otherwise.
+   */
   private getAnimInfo(input: InputBuffer<Uint8Array>, webp: WebPInfo): boolean {
     const c = input.readUint32();
     // Color is stored in [blue, green, red, alpha] order.
@@ -217,6 +270,14 @@ export class WebPDecoder implements Decoder {
     return true;
   }
 
+  /**
+   * Get animation frame information.
+   * @private
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {WebPInfo} webp - The WebP information.
+   * @param {number} size - The size of the frame.
+   * @returns {boolean} True if successful, false otherwise.
+   */
   private getAnimFrameInfo(
     input: InputBuffer<Uint8Array>,
     webp: WebPInfo,
@@ -232,6 +293,8 @@ export class WebPDecoder implements Decoder {
 
   /**
    * Is the given file a valid WebP image?
+   * @param {Uint8Array} bytes - The file bytes.
+   * @returns {boolean} True if valid, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
     this._input = new InputBuffer<Uint8Array>({
@@ -246,6 +309,8 @@ export class WebPDecoder implements Decoder {
   /**
    * Validate the file is a WebP image and get information about it.
    * If the file is not a valid WebP image, undefined is returned.
+   * @param {Uint8Array} bytes - The file bytes.
+   * @returns {WebPInfo | undefined} The WebP information.
    */
   public startDecode(bytes: Uint8Array): WebPInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
@@ -293,6 +358,10 @@ export class WebPDecoder implements Decoder {
   /**
    * Decode a WebP formatted file stored in **bytes** into an Image.
    * If it's not a valid WebP file, undefined is returned.
+   * @param {DecoderDecodeOptions} opt - The decode options.
+   * @param {Uint8Array} opt.bytes - The file bytes.
+   * @param {number} [opt.frameIndex] - The frame index to decode.
+   * @returns {MemoryImage | undefined} The decoded image.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
@@ -345,6 +414,11 @@ export class WebPDecoder implements Decoder {
     return firstImage;
   }
 
+  /**
+   * Decode a specific frame.
+   * @param {number} frameIndex - The frame index.
+   * @returns {MemoryImage | undefined} The decoded image.
+   */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;

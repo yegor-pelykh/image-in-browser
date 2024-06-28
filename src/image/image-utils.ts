@@ -5,11 +5,20 @@ import { Point } from '../common/point.js';
 import { Rectangle } from '../common/rectangle.js';
 import { Pixel } from './pixel.js';
 
+/**
+ * Abstract class containing utility methods for image processing.
+ */
 export abstract class ImageUtils {
   /**
    * Test if the pixel **p** is within the circle centered at **center** with a
    * squared radius of **rad2**. This will test the corners, edges, and center
    * of the pixel and return the ratio of samples within the circle.
+   *
+   * @param {Pixel} p - The pixel to test.
+   * @param {Point} center - The center point of the circle.
+   * @param {number} rad2 - The squared radius of the circle.
+   * @param {boolean} [antialias=true] - Whether to apply antialiasing. Defaults to true.
+   * @returns {number} The ratio of samples within the circle.
    */
   public static circleTest(
     p: Pixel,
@@ -77,11 +86,10 @@ export abstract class ImageUtils {
 
   /**
    * Clip a line to a rectangle using the Cohen–Sutherland clipping algorithm.
-   * **line** is a Line object.
-   * **rect** is a Rectangle object.
-   * Results are stored in **line**.
-   * If **line** falls completely outside of **rect**, false is returned, otherwise
-   * true is returned.
+   *
+   * @param {Rectangle} rect - The rectangle to clip against.
+   * @param {Line} line - The line to be clipped. Results are stored in this object.
+   * @returns {boolean} True if the line is partially or completely within the rectangle, false otherwise.
    */
   public static clipLine(rect: Rectangle, line: Line): boolean {
     const xmin = rect.left;
@@ -100,6 +108,12 @@ export abstract class ImageUtils {
     // 1000
     const top = 8;
 
+    /**
+     * Compute the outcode for a point based on its position relative to the rectangle.
+     *
+     * @param {Point} p - The point for which to compute the outcode.
+     * @returns {number} The outcode representing the point's position.
+     */
     const computeOutCode = (p: Point): number => {
       // initialized as being inside of clip window
       let code = inside;

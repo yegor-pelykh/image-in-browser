@@ -3,7 +3,13 @@
 import { describe, expect, test } from 'vitest';
 import { ColorUint8 } from '../../src';
 
+/**
+ * Test suite for the Color class.
+ */
 describe('Color', () => {
+  /**
+   * Test cases for the ColorUint8 class.
+   */
   test('ColorUint8', () => {
     const c0 = new ColorUint8(0);
     expect(c0.length).toBe(0);
@@ -39,6 +45,9 @@ describe('Color', () => {
     expect(a).toBe(1);
   });
 
+  /**
+   * Test cases for the equality method of the ColorUint8 class.
+   */
   test('ColorUint8.equality', () => {
     const ca = ColorUint8.rgba(5, 10, 123, 40);
     const cb = ColorUint8.rgba(3, 10, 123, 40);

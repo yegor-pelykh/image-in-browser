@@ -20,116 +20,185 @@ import { PsdFlag } from './psd-flag.js';
 import { PsdImage } from './psd-image.js';
 import { PsdMask } from './psd-mask.js';
 
+/**
+ * Represents a layer in a PSD file.
+ */
 export class PsdLayer {
-  // '8BIM'
+  /**
+   * The signature for PSD layers.
+   */
   public static readonly signature: number = 0x3842494d;
 
   private _top: number | undefined;
+  /**
+   * Gets the top position of the layer.
+   */
   public get top(): number | undefined {
     return this._top;
   }
 
   private _left: number | undefined;
+  /**
+   * Gets the left position of the layer.
+   */
   public get left(): number | undefined {
     return this._left;
   }
 
   private _bottom: number;
+  /**
+   * Gets the bottom position of the layer.
+   */
   public get bottom(): number {
     return this._bottom;
   }
 
   private _right: number;
+  /**
+   * Gets the right position of the layer.
+   */
   public get right(): number {
     return this._right;
   }
 
   private _width: number;
+  /**
+   * Gets the width of the layer.
+   */
   public get width(): number {
     return this._width;
   }
 
   private _height: number;
+  /**
+   * Gets the height of the layer.
+   */
   public get height(): number {
     return this._height;
   }
 
   private _blendMode: number;
+  /**
+   * Gets the blend mode of the layer.
+   */
   public get blendMode(): number {
     return this._blendMode;
   }
 
   private _opacity: number;
+  /**
+   * Gets the opacity of the layer.
+   */
   public get opacity(): number {
     return this._opacity;
   }
 
   private _clipping: number | undefined;
+  /**
+   * Gets the clipping value of the layer.
+   */
   public get clipping(): number | undefined {
     return this._clipping;
   }
 
   private _flags: number;
+  /**
+   * Gets the flags of the layer.
+   */
   public get flags(): number {
     return this._flags;
   }
 
   private _compression: number | undefined;
+  /**
+   * Gets the compression value of the layer.
+   */
   public get compression(): number | undefined {
     return this._compression;
   }
 
   private _name: string | undefined;
+  /**
+   * Gets the name of the layer.
+   */
   public get name(): string | undefined {
     return this._name;
   }
 
   private _channels: PsdChannel[];
+  /**
+   * Gets the channels of the layer.
+   */
   public get channels(): PsdChannel[] {
     return this._channels;
   }
 
   private _mask: PsdMask | undefined;
+  /**
+   * Gets the mask of the layer.
+   */
   public get mask(): PsdMask | undefined {
     return this._mask;
   }
 
   private _blendingRanges: PsdBlendingRanges | undefined;
+  /**
+   * Gets the blending ranges of the layer.
+   */
   public get blendingRanges(): PsdBlendingRanges | undefined {
     return this._blendingRanges;
   }
 
   private _additionalData: Map<string, PsdLayerData> = new Map();
+  /**
+   * Gets the additional data of the layer.
+   */
   public get additionalData(): Map<string, PsdLayerData> {
     return this._additionalData;
   }
 
   private _children: PsdLayer[] = [];
+  /**
+   * Gets the children layers.
+   */
   public get children(): PsdLayer[] {
     return this._children;
   }
 
   private _parent: PsdLayer | undefined;
+  /**
+   * Gets the parent layer.
+   */
   public get parent(): PsdLayer | undefined {
     return this._parent;
   }
 
   private _layerImage!: MemoryImage;
+  /**
+   * Gets the image of the layer.
+   */
   public get layerImage(): MemoryImage {
     return this._layerImage;
   }
 
   private _effects: PsdEffect[] = [];
+  /**
+   * Gets the effects applied to the layer.
+   */
   public get effects(): PsdEffect[] {
     return this._effects;
   }
 
-  // Is this layer visible?
+  /**
+   * Checks if the layer is visible.
+   */
   public get isVisible(): boolean {
     return (this._flags & PsdFlag.hidden) === 0;
   }
 
-  // Is this layer a folder?
+  /**
+   * Checks if the layer is a folder.
+   */
   public get type(): number {
     if (this._additionalData.has(PsdLayerSectionDivider.tagName)) {
       const section = this._additionalData.get(
@@ -140,6 +209,12 @@ export class PsdLayer {
     return PsdLayerSectionDivider.normal;
   }
 
+  /**
+   * Initializes a new instance of the PsdLayer class.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer to read the layer data from.
+   * @throws {LibError} If the PSD layer signature is invalid.
+   * @throws {LibError} If the PSD layer data is invalid.
+   */
   constructor(input: InputBuffer<Uint8Array>) {
     this._top = input.readInt32();
     this._left = input.readInt32();
@@ -495,8 +570,11 @@ export class PsdLayer {
     }
   }
 
-  // Get the channel for the given id.
-  // Returns undefined if the layer does not have the given channel.
+  /**
+   * Gets the channel for the given id.
+   * @param {number} id - The id of the channel.
+   * @returns {PsdChannel | undefined} The channel with the given id, or undefined if not found.
+   */
   public getChannel(id: number): PsdChannel | undefined {
     for (let i = 0; i < this._channels.length; ++i) {
       if (this._channels[i].id === id) {
@@ -506,6 +584,11 @@ export class PsdLayer {
     return undefined;
   }
 
+  /**
+   * Reads the image data for the layer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer to read the image data from.
+   * @param {PsdImage} psd - The PSD image containing the layer.
+   */
   public readImageData(input: InputBuffer<Uint8Array>, psd: PsdImage): void {
     for (let i = 0; i < this._channels.length; ++i) {
       this._channels[i].readPlane({

@@ -16,19 +16,40 @@ import { Pvr3Info } from './pvr/pvr3-info.js';
  * https://bitbucket.org/jthlim/pvrtccompressor
  */
 export class PvrDecoder implements Decoder {
+  /**
+   * Size of the PVR header.
+   */
   private static readonly pvrHeaderSize = 52;
 
+  /**
+   * The data to be decoded.
+   */
   private _data: Uint8Array | undefined;
+
+  /**
+   * Information about the decoded data.
+   */
   private _info: DecodeInfo | undefined;
 
+  /**
+   * Gets the image format.
+   */
   public get format(): ImageFormat {
     return ImageFormat.pvr;
   }
 
+  /**
+   * Gets the number of frames.
+   */
   public get numFrames(): number {
     return 1;
   }
 
+  /**
+   * Decodes the PVR3 header.
+   * @param {Uint8Array} bytes - The byte array containing the header.
+   * @returns {Pvr3Info | undefined} The decoded PVR3 information or undefined if invalid.
+   */
   private decodePvr3Header(bytes: Uint8Array): Pvr3Info | undefined {
     const input = new InputBuffer({
       buffer: bytes,
@@ -76,6 +97,11 @@ export class PvrDecoder implements Decoder {
     return info;
   }
 
+  /**
+   * Decodes the PVR2 header.
+   * @param {Uint8Array} bytes - The byte array containing the header.
+   * @returns {Pvr2Info | undefined} The decoded PVR2 information or undefined if invalid.
+   */
   private decodePvr2Header(bytes: Uint8Array): Pvr2Info | undefined {
     const input = new InputBuffer({
       buffer: bytes,
@@ -122,6 +148,11 @@ export class PvrDecoder implements Decoder {
     return info;
   }
 
+  /**
+   * Decodes the Apple PVRTC header.
+   * @param {Uint8Array} bytes - The byte array containing the header.
+   * @returns {PvrAppleInfo | undefined} The decoded Apple PVRTC information or undefined if invalid.
+   */
   private decodeApplePvrtcHeader(bytes: Uint8Array): PvrAppleInfo | undefined {
     const fileSize = bytes.length;
 
@@ -223,6 +254,11 @@ export class PvrDecoder implements Decoder {
     return info;
   }
 
+  /**
+   * Decodes the PVR2 data.
+   * @param {Uint8Array} data - The byte array containing the data.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if invalid.
+   */
   private decodePvr2(data: Uint8Array): MemoryImage | undefined {
     const length = data.length;
 
@@ -410,6 +446,11 @@ export class PvrDecoder implements Decoder {
     return undefined;
   }
 
+  /**
+   * Decodes the PVR3 data.
+   * @param {Uint8Array} data - The byte array containing the data.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if invalid.
+   */
   private decodePvr3(data: Uint8Array): MemoryImage | undefined {
     if (this._info instanceof Pvr3Info) {
       return undefined;
@@ -539,6 +580,11 @@ export class PvrDecoder implements Decoder {
     return undefined;
   }
 
+  /**
+   * Counts the number of bits set to 1 in the binary representation of a number.
+   * @param {number} x - The number to count bits in.
+   * @returns {number} The number of bits set to 1.
+   */
   private countBits(x: number): number {
     let _x = x;
     _x = (_x - ((_x >> 1) & 0x55555555)) & 0xffffffff;
@@ -549,6 +595,13 @@ export class PvrDecoder implements Decoder {
     return _x;
   }
 
+  /**
+   * Decodes a 4bpp RGB image.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {TypedArray} data - The image data.
+   * @returns {MemoryImage} The decoded MemoryImage.
+   */
   private decodeRgb4bpp(
     width: number,
     height: number,
@@ -640,6 +693,13 @@ export class PvrDecoder implements Decoder {
     return result;
   }
 
+  /**
+   * Decodes a 4bpp RGBA image.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {TypedArray} data - The image data.
+   * @returns {MemoryImage} The decoded MemoryImage.
+   */
   private decodeRgba4bpp(
     width: number,
     height: number,
@@ -733,10 +793,20 @@ export class PvrDecoder implements Decoder {
     return result;
   }
 
+  /**
+   * Checks if the given file is valid.
+   * @param {Uint8Array} bytes - The file data.
+   * @returns {boolean} True if the file is valid, false otherwise.
+   */
   public isValidFile(bytes: Uint8Array): boolean {
     return this.startDecode(bytes) !== undefined;
   }
 
+  /**
+   * Starts decoding the given file.
+   * @param {Uint8Array} bytes - The file data.
+   * @returns {PvrAppleInfo | Pvr3Info | Pvr2Info | undefined} The decoded PvrAppleInfo, Pvr3Info, Pvr2Info, or undefined if decoding fails.
+   */
   public startDecode(
     bytes: Uint8Array
   ): PvrAppleInfo | Pvr3Info | Pvr2Info | undefined {
@@ -769,6 +839,13 @@ export class PvrDecoder implements Decoder {
     return undefined;
   }
 
+  /**
+   * Decodes the PVR file into a MemoryImage.
+   * @param {DecoderDecodeOptions} opt - The decoding options.
+   * @param {Uint8Array} opt.bytes - The file data.
+   * @param {number} [opt.frameIndex] - The frame index to decode (optional).
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
+   */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
       return undefined;
@@ -776,6 +853,11 @@ export class PvrDecoder implements Decoder {
     return this.decodeFrame(opt.frameIndex ?? 0);
   }
 
+  /**
+   * Decodes a specific frame.
+   * @param {number} _frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
+   */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined || this._data === undefined) {
       return undefined;

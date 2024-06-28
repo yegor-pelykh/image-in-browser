@@ -6,7 +6,16 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for drawing operations.
+ */
 describe('Draw', () => {
+  /**
+   * Test case for the fillPolygon function.
+   * This test creates an image, defines a set of vertices for a polygon,
+   * fills the polygon with a specified color, and then encodes the image
+   * as a PNG file which is written to the output directory.
+   */
   test('fillPolygon', () => {
     const i0 = new MemoryImage({
       width: 256,

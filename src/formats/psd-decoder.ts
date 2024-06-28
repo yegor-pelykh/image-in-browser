@@ -10,18 +10,30 @@ import { PsdImage } from './psd/psd-image.js';
  * Decode a Photoshop PSD image.
  */
 export class PsdDecoder implements Decoder {
+  /**
+   * Information about the PSD image.
+   */
   private _info: PsdImage | undefined;
+
+  /**
+   * Get the PSD image information.
+   * @returns {PsdImage | undefined} The PSD image information.
+   */
   public get info(): PsdImage | undefined {
     return this._info;
   }
 
+  /**
+   * Get the image format.
+   * @returns {ImageFormat} The image format.
+   */
   public get format(): ImageFormat {
     return ImageFormat.psd;
   }
 
   /**
-   * How many frames are available to be decoded. **startDecode** should have
-   * been called first. Non animated image files will have a single frame.
+   * Get the number of frames available to be decoded.
+   * @returns {number} The number of frames.
    */
   public get numFrames(): number {
     return this._info?.numFrames ?? 0;
@@ -29,6 +41,8 @@ export class PsdDecoder implements Decoder {
 
   /**
    * Decode a raw PSD image without rendering it to a flat image.
+   * @param {Uint8Array} bytes - The raw PSD image data.
+   * @returns {PsdImage | undefined} The decoded PSD image.
    */
   public decodePsd(bytes: Uint8Array): PsdImage | undefined {
     const psd = new PsdImage(bytes);
@@ -36,8 +50,9 @@ export class PsdDecoder implements Decoder {
   }
 
   /**
-   * A light-weight function to test if the given file is able to be decoded
-   * by this Decoder.
+   * Test if the given file is able to be decoded by this Decoder.
+   * @param {Uint8Array} bytes - The raw file data.
+   * @returns {boolean} True if the file is valid, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
     const image = new PsdImage(bytes);
@@ -45,8 +60,9 @@ export class PsdDecoder implements Decoder {
   }
 
   /**
-   * Start decoding the data as an animation sequence, but don't actually
-   * process the frames until they are requested with decodeFrame.
+   * Start decoding the data as an animation sequence.
+   * @param {Uint8Array} bytes - The raw file data.
+   * @returns {PsdImage | undefined} The PSD image information.
    */
   public startDecode(bytes: Uint8Array): PsdImage | undefined {
     this._info = new PsdImage(bytes);
@@ -54,9 +70,11 @@ export class PsdDecoder implements Decoder {
   }
 
   /**
-   * Decode the file and extract a single image from it. If the file is
-   * animated, the specified **frameIndex** will be decoded. If there was a problem
-   * decoding the file, undefined is returned.
+   * Decode the file and extract a single image from it.
+   * @param {DecoderDecodeOptions} opt - The decode options.
+   * @param {Uint8Array} opt.bytes - The raw file data.
+   * @param {number} [opt.frameIndex] - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded image.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
@@ -86,9 +104,9 @@ export class PsdDecoder implements Decoder {
   }
 
   /**
-   * Decode a single frame from the data stat was set with **startDecode**.
-   * If **frameIndex** is out of the range of available frames, undefined is returned.
-   * Non animated image files will only have **frameIndex** 0.
+   * Decode a single frame from the data set with startDecode.
+   * @param {number} _frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded frame.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
     return this._info?.decodeImage();

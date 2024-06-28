@@ -19,7 +19,13 @@ import { HuffmanNode } from './huffman-node.js';
 import { HuffmanValue } from './huffman-value.js';
 import { HuffmanParent } from './huffman-parent.js';
 
+/**
+ * Class representing JPEG data.
+ */
 export class JpegData {
+  /**
+   * Zigzag order for DCT coefficients.
+   */
   public static readonly dctZigZag = [
     0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40,
     48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36,
@@ -29,19 +35,33 @@ export class JpegData {
     63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63,
   ];
 
-  // The basic DCT block is 8x8 samples
+  /**
+   * The basic DCT block is 8x8 samples.
+   */
   public static readonly dctSize = 8;
-  // DCTSIZE squared; # of elements in a block
+  /**
+   * DCTSIZE squared; # of elements in a block.
+   */
   public static readonly dctSize2 = 64;
-  // Quantization tables are 0..3
+  /**
+   * Quantization tables are 0..3.
+   */
   public static readonly numQuantizationTables = 4;
-  // Huffman tables are numbered 0..3
+  /**
+   * Huffman tables are numbered 0..3.
+   */
   public static readonly numHuffmanTables = 4;
-  // Arith-coding tables are numbered 0..15
+  /**
+   * Arith-coding tables are numbered 0..15.
+   */
   public static readonly numArithTables = 16;
-  // JPEG limit on # of components in one scan
+  /**
+   * JPEG limit on # of components in one scan.
+   */
   public static readonly maxCompsInScan = 4;
-  // JPEG limit on sampling factors
+  /**
+   * JPEG limit on sampling factors.
+   */
   public static readonly maxSamplingFactor = 4;
 
   private _input!: InputBuffer<Uint8Array>;
@@ -122,6 +142,9 @@ export class JpegData {
     return this._frame!.scanLines;
   }
 
+  /**
+   * Reads JPEG markers from the input buffer.
+   */
   private readMarkers(): void {
     let marker = this.nextMarker();
     if (marker !== JpegMarker.soi) {
@@ -226,6 +249,9 @@ export class JpegData {
     }
   }
 
+  /**
+   * Skips a block in the input buffer.
+   */
   private skipBlock(): void {
     const length = this._input.readUint16();
     if (length < 2) {
@@ -234,6 +260,11 @@ export class JpegData {
     this._input.skip(length - 2);
   }
 
+  /**
+   * Validates the JPEG data.
+   * @param {Uint8Array} bytes - The input byte array.
+   * @returns {boolean} True if the data is valid JPEG, otherwise false.
+   */
   public validate(bytes: Uint8Array): boolean {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -291,6 +322,11 @@ export class JpegData {
     return hasSOF && hasSOS;
   }
 
+  /**
+   * Reads JPEG information from the input byte array.
+   * @param {Uint8Array} bytes - The input byte array.
+   * @returns {JpegInfo | undefined} The JPEG information or undefined if invalid.
+   */
   public readInfo(bytes: Uint8Array): JpegInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -345,6 +381,11 @@ export class JpegData {
     return hasSOF && hasSOS ? info : undefined;
   }
 
+  /**
+   * Reads JPEG data from the input byte array.
+   * @param {Uint8Array} bytes - The input byte array.
+   * @throws {LibError} Only single frame JPEGs supported.
+   */
   public read(bytes: Uint8Array): void {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -377,10 +418,20 @@ export class JpegData {
     }
   }
 
+  /**
+   * Gets the image from the JPEG data.
+   * @returns {MemoryImage} The memory image.
+   */
   getImage(): MemoryImage {
     return JpegQuantize.getImageFromJpeg(this);
   }
 
+  /**
+   * Builds a Huffman table.
+   * @param {Uint8Array} codeLengths - The code lengths.
+   * @param {Uint8Array} values - The values.
+   * @returns {Array<HuffmanNode | undefined>} The Huffman table.
+   */
   private static buildHuffmanTable(
     codeLengths: Uint8Array,
     values: Uint8Array
@@ -435,6 +486,11 @@ export class JpegData {
     return code[0].children;
   }
 
+  /**
+   * Builds component data.
+   * @param {JpegComponent} component - The JPEG component.
+   * @returns {Array<Uint8Array | undefined>} The component data.
+   */
   private static buildComponentData(
     component: JpegComponent
   ): Array<Uint8Array | undefined> {
@@ -477,12 +533,22 @@ export class JpegData {
     return lines;
   }
 
+  /**
+   * Converts a value to fixed-point representation.
+   * @param {number} val - The value to convert.
+   * @returns {number} The fixed-point representation.
+   */
   public static toFix(val: number): number {
     const fixedPoint = 20;
     const one = 1 << fixedPoint;
     return Math.trunc(val * one) & 0xffffffff;
   }
 
+  /**
+   * Reads a block from the input buffer.
+   * @returns {InputBuffer<Uint8Array>} The input buffer containing the block.
+   * @throws {LibError} If the block length is invalid.
+   */
   private readBlock(): InputBuffer<Uint8Array> {
     const length = this._input.readUint16();
     if (length < 2) {
@@ -491,6 +557,10 @@ export class JpegData {
     return this._input.readRange(length - 2);
   }
 
+  /**
+   * Reads the next marker from the input buffer.
+   * @returns {number} The next marker.
+   */
   private nextMarker(): number {
     let c = 0;
     if (this._input.isEOS) {
@@ -514,6 +584,10 @@ export class JpegData {
     return c;
   }
 
+  /**
+   * Reads the EXIF data from the provided input buffer.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the EXIF data.
+   */
   private readExifData(block: InputBuffer<Uint8Array>): void {
     // Exif Header
     // Exif\0\0
@@ -529,6 +603,11 @@ export class JpegData {
     this.exifData.read(block);
   }
 
+  /**
+   * Reads application-specific data from the JPEG file based on the marker provided.
+   * @param {number} marker - The marker indicating the type of application data.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the application data.
+   */
   private readAppData(marker: number, block: InputBuffer<Uint8Array>): void {
     const appData = block;
 
@@ -593,6 +672,12 @@ export class JpegData {
     }
   }
 
+  /**
+   * Reads the Define Quantization Table (DQT) from the provided input buffer.
+   * This method processes the DQT block, extracting quantization tables and storing them.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the DQT block data.
+   * @throws {LibError} If the number of quantization tables is invalid or if the DQT block length is incorrect.
+   */
   private readDQT(block: InputBuffer<Uint8Array>): void {
     while (!block.isEOS) {
       let n = block.read();
@@ -621,6 +706,13 @@ export class JpegData {
     }
   }
 
+  /**
+   * Reads a JPEG frame from the input buffer and initializes the frame data.
+   * Throws an error if a duplicate frame is found.
+   * @param {number} marker - The JPEG marker indicating the type of frame.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the frame data.
+   * @throws {LibError} If duplicate JPEG frame data is found.
+   */
   private readFrame(marker: number, block: InputBuffer<Uint8Array>): void {
     if (this._frame !== undefined) {
       throw new LibError('Duplicate JPG frame data found.');
@@ -661,6 +753,13 @@ export class JpegData {
     this.frames.push(this._frame);
   }
 
+  /**
+   * Reads the Define Huffman Table (DHT) segment from the input buffer.
+   * This method processes the Huffman table definitions used for decoding
+   * JPEG images, distinguishing between AC and DC tables.
+   *
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the DHT segment data.
+   */
   private readDHT(block: InputBuffer<Uint8Array>): void {
     while (!block.isEOS) {
       let index = block.read();
@@ -692,10 +791,22 @@ export class JpegData {
     }
   }
 
+  /**
+   * Reads the Define Restart Interval (DRI) marker segment from the input buffer.
+   * This marker segment specifies the interval between restart markers in the compressed data stream.
+   *
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the DRI marker segment.
+   */
   private readDRI(block: InputBuffer<Uint8Array>): void {
     this._resetInterval = block.readUint16();
   }
 
+  /**
+   * Reads the Start of Scan (SOS) block from the input buffer and decodes the scan.
+   *
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the SOS block data.
+   * @throws {LibError} - Throws an error if the SOS block is invalid or if a component is invalid.
+   */
   private readSOS(block: InputBuffer<Uint8Array>): void {
     const n = block.read();
     if (n < 1 || n > JpegData.maxCompsInScan) {

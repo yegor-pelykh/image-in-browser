@@ -15,8 +15,15 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Draw module.
+ */
 describe('Draw', () => {
+  /**
+   * Test case for the compositeImage function.
+   */
   test('compositeImage', () => {
+    // Create two MemoryImage instances with specified dimensions
     const i0 = new MemoryImage({
       width: 256,
       height: 256,
@@ -27,13 +34,17 @@ describe('Draw', () => {
       numChannels: 4,
     });
 
+    // Clear the first image with a solid red color
     i0.clear(new ColorRgba8(255, 0, 0, 255));
+
+    // Modify the second image's pixels
     for (const p of i1) {
       p.r = p.x;
       p.g = p.y;
       p.a = p.y;
     }
 
+    // Composite the second image onto the first image at specified positions and sizes
     Draw.compositeImage({
       dst: i0,
       src: i1,
@@ -52,6 +63,7 @@ describe('Draw', () => {
       dstH: 100,
     });
 
+    // Encode the resulting image to PNG format and write to file
     const output = encodePng({
       image: i0,
     });
@@ -63,6 +75,7 @@ describe('Draw', () => {
       output
     );
 
+    // Read and decode a TGA image file
     const fgBytes = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.tga,
@@ -76,16 +89,19 @@ describe('Draw', () => {
       return;
     }
 
+    // Convert the TGA image to have 4 channels
     fg = fg.convert({
       numChannels: 4,
     });
 
+    // Modify the alpha channel of the TGA image
     for (const p of fg) {
       if (p.r === 0 && p.g === 0 && p.b === 0) {
         p.a = 0;
       }
     }
 
+    // Read and decode a PNG image file
     const origBgBytes = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
@@ -99,6 +115,7 @@ describe('Draw', () => {
       return;
     }
 
+    // Composite the TGA image onto the PNG image at specified positions and sizes
     {
       const bg = origBg.clone();
       Draw.compositeImage({
@@ -139,6 +156,7 @@ describe('Draw', () => {
       );
     }
 
+    // Composite the TGA image onto the PNG image using different blend modes
     for (const blend of ArrayUtils.getNumEnumValues(BlendMode)) {
       const bg = origBg.clone();
       Draw.compositeImage({

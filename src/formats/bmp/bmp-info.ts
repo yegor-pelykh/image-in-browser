@@ -9,6 +9,9 @@ import { DecodeInfo } from '../decode-info.js';
 import { BmpCompressionMode } from './bmp-compression-mode.js';
 import { BmpFileHeader } from './bmp-file-header.js';
 
+/**
+ * Class representing BMP information and decoding logic.
+ */
 export class BmpInfo implements DecodeInfo {
   private readonly _startPos: number;
   private _redShift = 0;
@@ -21,104 +24,186 @@ export class BmpInfo implements DecodeInfo {
   private _alphaScale = 0;
 
   private readonly _width: number = 0;
+
+  /**
+   * Gets the width of the BMP image.
+   */
   public get width(): number {
     return this._width;
   }
 
   protected readonly _height: number = 0;
+
+  /**
+   * Gets the height of the BMP image.
+   */
   public get height(): number {
     return Math.abs(this._height);
   }
 
   private readonly _backgroundColor: Color | undefined = undefined;
+
+  /**
+   * Gets the background color of the BMP image.
+   */
   public get backgroundColor(): Color | undefined {
     return this._backgroundColor;
   }
 
   private readonly _numFrames: number = 1;
+
+  /**
+   * Gets the number of frames in the BMP image.
+   */
   public get numFrames(): number {
     return this._numFrames;
   }
 
   private readonly _header: BmpFileHeader;
+
+  /**
+   * Gets the BMP file header.
+   */
   public get header(): BmpFileHeader {
     return this._header;
   }
 
   private readonly _headerSize: number;
+
+  /**
+   * Gets the size of the BMP header.
+   */
   public get headerSize(): number {
     return this._headerSize;
   }
 
   private readonly _planes: number;
+
+  /**
+   * Gets the number of planes in the BMP image.
+   */
   public get planes(): number {
     return this._planes;
   }
 
   private readonly _bitsPerPixel: number;
+
+  /**
+   * Gets the bits per pixel of the BMP image.
+   */
   public get bitsPerPixel(): number {
     return this._bitsPerPixel;
   }
 
   private readonly _compression: BmpCompressionMode;
+
+  /**
+   * Gets the compression mode of the BMP image.
+   */
   public get compression(): BmpCompressionMode {
     return this._compression;
   }
 
   private readonly _imageSize: number;
+
+  /**
+   * Gets the size of the BMP image.
+   */
   public get imageSize(): number {
     return this._imageSize;
   }
 
   private readonly _xppm: number;
+
+  /**
+   * Gets the horizontal resolution (pixels per meter) of the BMP image.
+   */
   public get xppm(): number {
     return this._xppm;
   }
 
   private readonly _yppm: number;
+
+  /**
+   * Gets the vertical resolution (pixels per meter) of the BMP image.
+   */
   public get yppm(): number {
     return this._yppm;
   }
 
   private readonly _totalColors: number;
+
+  /**
+   * Gets the total number of colors in the BMP image.
+   */
   public get totalColors(): number {
     return this._totalColors;
   }
 
   private readonly _importantColors: number;
+
+  /**
+   * Gets the number of important colors in the BMP image.
+   */
   public get importantColors(): number {
     return this._importantColors;
   }
 
   private _redMask = 0;
+
+  /**
+   * Gets the red mask value.
+   */
   public get redMask(): number {
     return this._redMask;
   }
 
   private _greenMask = 0;
+
+  /**
+   * Gets the green mask value.
+   */
   public get greenMask(): number {
     return this._greenMask;
   }
 
   private _blueMask = 0;
+
+  /**
+   * Gets the blue mask value.
+   */
   public get blueMask(): number {
     return this._blueMask;
   }
 
   private _alphaMask = 0;
+
+  /**
+   * Gets the alpha mask value.
+   */
   public get alphaMask(): number {
     return this._alphaMask;
   }
 
   private _palette: PaletteUint8 | undefined;
+
+  /**
+   * Gets the palette of the BMP image.
+   */
   public get palette(): PaletteUint8 | undefined {
     return this._palette;
   }
 
+  /**
+   * Determines if the BMP image is read bottom-up.
+   */
   public get readBottomUp(): boolean {
     return this._height >= 0;
   }
 
+  /**
+   * Determines if the alpha channel should be ignored.
+   */
   public get ignoreAlphaChannel(): boolean {
     // Gimp and Photoshop ignore the alpha channel for BITMAPINFOHEADER.
     return (
@@ -128,6 +213,11 @@ export class BmpInfo implements DecodeInfo {
     );
   }
 
+  /**
+   * Initializes a new instance of the BmpInfo class.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {BmpFileHeader} [header] - Optional BMP file header.
+   */
   constructor(p: InputBuffer<Uint8Array>, header?: BmpFileHeader) {
     this._header = header ?? new BmpFileHeader(p);
     this._startPos = p.offset;
@@ -235,6 +325,10 @@ export class BmpInfo implements DecodeInfo {
     }
   }
 
+  /**
+   * Reads the palette from the input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   */
   private readPalette(input: InputBuffer<Uint8Array>): void {
     const numColors =
       this._totalColors === 0 ? 1 << this._bitsPerPixel : this._totalColors;
@@ -250,6 +344,12 @@ export class BmpInfo implements DecodeInfo {
     }
   }
 
+  /**
+   * Decodes a pixel from the input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {(r: number, g: number, b: number, a: number) => void} pixel - The callback function to handle the decoded pixel.
+   * @throws {LibError} Throws an error if the bitsPerPixel or compression is unsupported.
+   */
   public decodePixel(
     input: InputBuffer<Uint8Array>,
     pixel: (r: number, g: number, b: number, a: number) => void

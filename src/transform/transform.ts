@@ -17,79 +17,158 @@ import { TrimMode } from './trim-mode.js';
 import { ExpandCanvasPosition } from './expand-canvas-position.js';
 import { Color } from '../color/color.js';
 
+/**
+ * Interface for transform options.
+ */
 export interface TransformOptions {
+  /** The image to be transformed. */
   image: MemoryImage;
 }
 
+/**
+ * Interface for copy crop circle options.
+ */
 export interface CopyCropCircleOptions extends TransformOptions {
+  /** The radius of the circle. */
   radius?: number;
+  /** The center point of the circle. */
   center?: Point;
+  /** Whether to apply antialiasing. */
   antialias?: boolean;
 }
 
+/**
+ * Interface for copy crop options.
+ */
 export interface CopyCropOptions extends TransformOptions {
+  /** The rectangle to crop. */
   rect: Rectangle;
+  /** The radius for rounded corners. */
   radius?: number;
+  /** Whether to apply antialiasing. */
   antialias?: boolean;
 }
 
+/**
+ * Interface for copy expand canvas options.
+ */
 export interface CopyExpandCanvasOptions extends TransformOptions {
+  /** The new width of the canvas. */
   newWidth?: number;
+  /** The new height of the canvas. */
   newHeight?: number;
+  /** The padding around the image. */
   padding?: number;
+  /** The position of the image on the new canvas. */
   position?: ExpandCanvasPosition;
+  /** The background color of the new canvas. */
   backgroundColor?: Color;
+  /** The image to copy to. */
   toImage?: MemoryImage;
 }
 
+/**
+ * Interface for copy rectify options.
+ */
 export interface CopyRectifyOptions extends TransformOptions {
+  /** The top-left point of the rectangle. */
   topLeft: Point;
+  /** The top-right point of the rectangle. */
   topRight: Point;
+  /** The bottom-left point of the rectangle. */
   bottomLeft: Point;
+  /** The bottom-right point of the rectangle. */
   bottomRight: Point;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** The image to copy to. */
   toImage?: MemoryImage;
 }
 
+/**
+ * Interface for copy resize crop square options.
+ */
 export interface CopyResizeCropSquareOptions extends TransformOptions {
+  /** The size of the square. */
   size: number;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** The radius for rounded corners. */
   radius?: number;
+  /** Whether to apply antialiasing. */
   antialias?: boolean;
 }
 
+/**
+ * Interface for copy resize options using width.
+ */
 export interface CopyResizeOptionsUsingWidth extends TransformOptions {
+  /** The width to resize to. */
   width: number;
+  /** The height to resize to. */
   height?: number;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** Whether to maintain the aspect ratio. */
   maintainAspect?: boolean;
+  /** The background color to use. */
   backgroundColor?: Color;
 }
 
+/**
+ * Interface for copy resize options using height.
+ */
 export interface CopyResizeOptionsUsingHeight extends TransformOptions {
+  /** The height to resize to. */
   height: number;
+  /** The width to resize to. */
   width?: number;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** Whether to maintain the aspect ratio. */
   maintainAspect?: boolean;
+  /** The background color to use. */
   backgroundColor?: Color;
 }
 
+/**
+ * Interface for copy rotate options.
+ */
 export interface CopyRotateOptions extends TransformOptions {
+  /** The angle to rotate by. */
   angle: number;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
 }
 
+/**
+ * Interface for flip options.
+ */
 export interface FlipOptions extends TransformOptions {
+  /** The direction to flip. */
   direction: FlipDirection;
 }
 
+/**
+ * Interface for trim options.
+ */
 export interface TrimOptions extends TransformOptions {
+  /** The trim mode to use. */
   mode?: TrimMode;
+  /** The sides to trim. */
   sides?: TrimSide;
 }
 
+/**
+ * Abstract class for image transformations.
+ */
 export abstract class Transform {
-  private static rotate90(src: MemoryImage) {
+  /**
+   * Rotates the image by 90 degrees.
+   * @param {MemoryImage} src - The source image.
+   * @returns {MemoryImage} The rotated image.
+   */
+  private static rotate90(src: MemoryImage): MemoryImage {
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
       const dst: MemoryImage =
@@ -106,7 +185,12 @@ export abstract class Transform {
     return firstFrame!;
   }
 
-  private static rotate180(src: MemoryImage) {
+  /**
+   * Rotates the image by 180 degrees.
+   * @param {MemoryImage} src - The source image.
+   * @returns {MemoryImage} The rotated image.
+   */
+  private static rotate180(src: MemoryImage): MemoryImage {
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
       const wm1 = frame.width - 1;
@@ -123,7 +207,12 @@ export abstract class Transform {
     return firstFrame!;
   }
 
-  private static rotate270(src: MemoryImage) {
+  /**
+   * Rotates the image by 270 degrees.
+   * @param {MemoryImage} src - The source image.
+   * @returns {MemoryImage} The rotated image.
+   */
+  private static rotate270(src: MemoryImage): MemoryImage {
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
       const wm1 = src.width - 1;
@@ -143,8 +232,11 @@ export abstract class Transform {
   /**
    * Find the crop area to be used by the trim function.
    *
-   * Returns the Rectangle. You could pass these constraints
-   * to the **copyCrop** function to crop the image.
+   * @param {TrimOptions} opt - The trim options.
+   * @param {TrimMode} opt.mode - The mode of trimming.
+   * @param {TrimSide} opt.sides - The sides of the image to trim.
+   * @param {MemoryImage} opt.image - The image to be trimmed.
+   * @returns {Rectangle} The Rectangle. You could pass these constraints to the **copyCrop** function to crop the image.
    */
   private static findTrim(opt: TrimOptions): Rectangle {
     const mode = opt.mode ?? TrimMode.transparent;
@@ -222,6 +314,9 @@ export abstract class Transform {
    * image so that it physically matches its orientation. This can be used to
    * bake the orientation of the image for image formats that don't support exif
    * data.
+   * @param {TransformOptions} opt - The transform options.
+   * @param {MemoryImage} opt.image - The image to be transformed.
+   * @returns {MemoryImage} The image with baked orientation.
    */
   public static bakeOrientation(opt: TransformOptions): MemoryImage {
     const bakedImage = MemoryImage.from(opt.image);
@@ -288,7 +383,13 @@ export abstract class Transform {
   }
 
   /**
-   * Returns a cropped copy of **image**.
+   * Returns a cropped copy of the image.
+   * @param {CopyCropOptions} opt The copy crop options.
+   * @param {MemoryImage} opt.image The source image to be cropped.
+   * @param {Rectangle} opt.rect The rectangle defining the crop area.
+   * @param {number} [opt.radius] The radius for rounded corners (optional).
+   * @param {boolean} [opt.antialias] Whether to apply antialiasing (optional).
+   * @returns {MemoryImage} The cropped image.
    */
   public static copyCrop(opt: CopyCropOptions): MemoryImage {
     let image = opt.image;
@@ -391,6 +492,14 @@ export abstract class Transform {
    * a radius filling the image will be used. If **centerX** is not provided,
    * the horizontal mid-point of the image will be used. If **centerY** is not
    * provided, the vertical mid-point of the image will be used.
+   * @param {CopyCropCircleOptions} opt The copy crop circle options.
+   * @param {MemoryImage} opt.image The image to be cropped.
+   * @param {Point} [opt.center] The center point of the circle.
+   * @param {number} [opt.center.x] The x-coordinate of the center point.
+   * @param {number} [opt.center.y] The y-coordinate of the center point.
+   * @param {number} [opt.radius] The radius of the circle.
+   * @param {boolean} [opt.antialias] Whether to apply antialiasing.
+   * @returns {MemoryImage} The circle cropped image.
    */
   public static copyCropCircle(opt: CopyCropCircleOptions): MemoryImage {
     let image = opt.image;
@@ -463,6 +572,20 @@ export abstract class Transform {
    * on a new canvas of specified size at a specified location, and the rest of
    * the canvas is filled with the specified color or transparent if
    * no color is provided.
+   *
+   * @param {CopyExpandCanvasOptions} opt - Options for expanding the canvas.
+   * @param {MemoryImage} opt.image - The original image to be expanded.
+   * @param {number} [opt.newWidth] - The new width of the canvas.
+   * @param {number} [opt.newHeight] - The new height of the canvas.
+   * @param {number} [opt.padding] - The padding to be added around the original image.
+   * @param {ExpandCanvasPosition} [opt.position] - The position where the original image will be placed on the new canvas.
+   * @param {Color} [opt.backgroundColor] - The background color to fill the new canvas.
+   * @param {MemoryImage} [opt.toImage] - An optional image to use as the new canvas.
+   * @returns {MemoryImage} The expanded canvas with the original image placed at the specified position.
+   * @throws {LibError} If the new dimensions or padding are not provided, or if both are provided.
+   * @throws {LibError} If the new dimensions are smaller than the original image.
+   * @throws {LibError} If the provided image does not match the new dimensions.
+   * @throws {LibError} If an invalid position is provided.
    */
   public static copyExpandCanvas(opt: CopyExpandCanvasOptions): MemoryImage {
     const position = opt.position ?? ExpandCanvasPosition.center;
@@ -595,7 +718,12 @@ export abstract class Transform {
   }
 
   /**
-   * Returns a copy of the **image** image, flipped by the given **direction**.
+   * Returns a copy of the image, flipped by the given direction.
+   *
+   * @param {FlipOptions} opt - Options for flipping the image.
+   * @param {MemoryImage} opt.image - The image to be flipped.
+   * @param {string} opt.direction - The direction to flip the image.
+   * @returns {MemoryImage} A new MemoryImage that is a flipped copy of the original image.
    */
   public static copyFlip(opt: FlipOptions): MemoryImage {
     return Transform.flip({
@@ -607,6 +735,16 @@ export abstract class Transform {
   /**
    * Returns a copy of the **image**, where the given rectangle
    * has been mapped to the full image.
+   *
+   * @param {CopyRectifyOptions} opt - The options for rectifying the image.
+   * @param {MemoryImage} opt.image - The source image to be rectified.
+   * @param {Point} opt.topLeft - The top-left coordinate of the rectangle.
+   * @param {Point} opt.topRight - The top-right coordinate of the rectangle.
+   * @param {Point} opt.bottomLeft - The bottom-left coordinate of the rectangle.
+   * @param {Point} opt.bottomRight - The bottom-right coordinate of the rectangle.
+   * @param {MemoryImage} [opt.toImage] - The target image to copy the rectified image into.
+   * @param {Interpolation} [opt.interpolation] - The interpolation method to use.
+   * @returns {MemoryImage} The rectified image.
    */
   public static copyRectify(opt: CopyRectifyOptions): MemoryImage {
     const interpolation = opt.interpolation ?? Interpolation.nearest;
@@ -670,6 +808,16 @@ export abstract class Transform {
    *
    * If **width** isn't specified, then it will be determined by the aspect ratio
    * of **image** and **height**.
+   *
+   * @param {CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight} opt - The options for resizing the image.
+   * @param {MemoryImage} opt.image - The image to be resized.
+   * @param {number} [opt.width] - The width to resize the image to.
+   * @param {number} [opt.height] - The height to resize the image to.
+   * @param {Interpolation} [opt.interpolation] - Optional interpolation method to use.
+   * @param {boolean} [opt.maintainAspect] - Optional flag to maintain aspect ratio.
+   * @param {Color} [opt.backgroundColor] - Optional background color to use if maintaining aspect ratio.
+   * @returns {MemoryImage} A resized copy of the image.
+   * @throws {LibError} If both width and height are undefined.
    */
   public static copyResize(
     opt: CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight
@@ -848,7 +996,16 @@ export abstract class Transform {
   }
 
   /**
-   * Returns a resized and square cropped copy of the **image** of **size** size.
+   * Returns a resized and square cropped copy of the image of size size.
+   *
+   * @param {CopyResizeCropSquareOptions} opt - The options for resizing and cropping.
+   * @param {MemoryImage} opt.image - The source image to be resized and cropped.
+   * @param {number} opt.size - The size to which the image should be resized and cropped.
+   * @param {Interpolation} [opt.interpolation] - The interpolation method to be used.
+   * @param {number} [opt.radius] - The radius for rounded corners.
+   * @param {boolean} [opt.antialias] - Whether to apply antialiasing.
+   * @returns {MemoryImage} The resized and cropped image.
+   * @throws {LibError} If the size is less than or equal to 0.
    */
   public static copyResizeCropSquare(
     opt: CopyResizeCropSquareOptions
@@ -986,7 +1143,12 @@ export abstract class Transform {
   }
 
   /**
-   * Returns a copy of the **image**, rotated by **angle** degrees.
+   * Returns a copy of the image, rotated by the specified angle in degrees.
+   * @param {CopyRotateOptions} opt - The options for the rotation.
+   * @param {MemoryImage} opt.image - The image to be rotated.
+   * @param {number} opt.angle - The angle in degrees to rotate the image.
+   * @param {Interpolation} [opt.interpolation] - The interpolation method to use for rotation.
+   * @returns {MemoryImage} A new MemoryImage instance with the rotated image.
    */
   public static copyRotate(opt: CopyRotateOptions): MemoryImage {
     const src = opt.image;
@@ -1065,8 +1227,12 @@ export abstract class Transform {
   }
 
   /**
-   * Flips the **image** using the given **direction**, which can be one of:
-   * _FlipDirection.horizontal_, _FlipDirection.vertical_ or _FlipDirection.both_.
+   * Flips the image using the given direction.
+   *
+   * @param {FlipOptions} opt - The options for the flip operation.
+   * @param {MemoryImage} opt.image - The image to be flipped.
+   * @param {FlipDirection} opt.direction - The direction in which to flip the image. Can be one of: FlipDirection.horizontal, FlipDirection.vertical, or FlipDirection.both.
+   * @returns {MemoryImage} The flipped image.
    */
   public static flip(opt: FlipOptions): MemoryImage {
     switch (opt.direction) {
@@ -1085,7 +1251,11 @@ export abstract class Transform {
   }
 
   /**
-   * Flips the **image** vertically.
+   * Flips the image vertically.
+   *
+   * @param {TransformOptions} opt - The options for transforming the image.
+   * @param {MemoryImage} opt.image - The image to be transformed.
+   * @returns {MemoryImage} The transformed image.
    */
   public static flipVertical(opt: TransformOptions): MemoryImage {
     const numFrames = opt.image.numFrames;
@@ -1132,7 +1302,11 @@ export abstract class Transform {
   }
 
   /**
-   * Flips the **image** horizontally.
+   * Flips the image horizontally.
+   *
+   * @param {TransformOptions} opt - The options for the transformation.
+   * @param {MemoryImage} opt.image - The image to be flipped.
+   * @returns {MemoryImage} The flipped image.
    */
   public static flipHorizontal(opt: TransformOptions): MemoryImage {
     const numFrames = opt.image.numFrames;
@@ -1179,7 +1353,11 @@ export abstract class Transform {
   }
 
   /**
-   * Flip the **image** horizontally and vertically.
+   * Flip the image horizontally and vertically.
+   *
+   * @param {TransformOptions} opt - The transformation options.
+   * @param {MemoryImage} opt.image - The image to be transformed.
+   * @returns {MemoryImage} The transformed image.
    */
   public static flipHorizontalVertical(opt: TransformOptions): MemoryImage {
     const numFrames = opt.image.numFrames;
@@ -1235,6 +1413,12 @@ export abstract class Transform {
    * **sides** can be used to control which sides of the image get trimmed,
    * and can be any combination of _TrimSide.top_, _TrimSide.bottom_, _TrimSide.left_,
    * and _TrimSide.right_.
+   *
+   * @param {TrimOptions} opt - The options for trimming the image.
+   * @param {MemoryImage} opt.image - The image to be trimmed.
+   * @param {TrimMode} opt.mode - The mode to use for trimming.
+   * @param {TrimSide} opt.sides - The sides of the image to trim.
+   * @returns {MemoryImage} The trimmed image.
    */
   public static trim(opt: TrimOptions): MemoryImage {
     const mode = opt.mode ?? TrimMode.topLeftColor;

@@ -42,54 +42,105 @@ import { PaletteUint32 } from './palette-uint32.js';
 import { PaletteUint8 } from './palette-uint8.js';
 import { Pixel, UndefinedPixel } from './pixel.js';
 
+/**
+ * Interface for initializing a MemoryImage.
+ */
 interface MemoryImageInitializeOptions {
+  /** Width of the image */
   width: number;
+  /** Height of the image */
   height: number;
+  /** Format of the image */
   format?: Format;
+  /** Number of color channels */
   numChannels?: number;
+  /** Whether the image has a palette */
   withPalette?: boolean;
+  /** Format of the palette */
   paletteFormat?: Format;
+  /** Palette of the image */
   palette?: Palette;
+  /** EXIF data of the image */
   exifData?: ExifData;
+  /** ICC profile of the image */
   iccProfile?: IccProfile;
 }
 
+/**
+ * Interface for creating a MemoryImage.
+ */
 export interface MemoryImageCreateOptions extends MemoryImageInitializeOptions {
+  /** Number of times the animation should loop */
   loopCount?: number;
+  /** Type of the frame */
   frameType?: FrameType;
+  /** Duration of the frame */
   frameDuration?: number;
+  /** Index of the frame */
   frameIndex?: number;
+  /** Background color of the image */
   backgroundColor?: Color;
+  /** Text data associated with the image */
   textData?: Map<string, string>;
 }
 
+/**
+ * Interface for creating a MemoryImage from bytes.
+ */
 export interface MemoryImageFromBytesOptions extends MemoryImageCreateOptions {
+  /** Byte data of the image */
   bytes: ArrayBufferLike;
+  /** Offset to start reading bytes */
   byteOffset?: number;
+  /** Row stride of the image data */
   rowStride?: number;
+  /** Order of the color channels */
   channelOrder?: ChannelOrder;
 }
 
+/**
+ * Interface for cloning a MemoryImage.
+ */
 export interface MemoryImageCloneOptions {
+  /** Whether to skip animation frames */
   skipAnimation?: boolean;
+  /** Whether to skip pixel data */
   skipPixels?: boolean;
 }
 
+/**
+ * Interface for converting a MemoryImage.
+ */
 export interface MemoryImageConvertOptions {
+  /** Format to convert to */
   format?: Format;
+  /** Number of color channels */
   numChannels?: number;
+  /** Alpha value for the new format */
   alpha?: number;
+  /** Whether the new image should have a palette */
   withPalette?: boolean;
+  /** Whether to skip animation frames */
   skipAnimation?: boolean;
 }
 
+/**
+ * Interface for color extremes in a MemoryImage.
+ */
 export interface MemoryImageColorExtremes {
+  /** Minimum color value */
   min: number;
+  /** Maximum color value */
   max: number;
 }
 
+/**
+ * Interface for getting bytes from a MemoryImage.
+ */
 export interface MemoryImageGetBytesOptions {
+  /** Order of the color channels */
   order?: ChannelOrder;
+  /** Alpha value for the new format */
   alpha?: number;
 }
 
@@ -99,6 +150,11 @@ export interface MemoryImageGetBytesOptions {
  */
 export class MemoryImage implements Iterable<Pixel> {
   private _data?: MemoryImageData;
+
+  /**
+   * Gets the image data.
+   * @returns {MemoryImageData | undefined} The image data.
+   */
   public get data(): MemoryImageData | undefined {
     return this._data;
   }
@@ -111,18 +167,25 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Indicates whether this image has a palette.
+   * Checks if the image has a palette.
+   * @returns {boolean} True if the image has a palette, otherwise false.
    */
   public get hasPalette(): boolean {
     return this._data?.palette !== undefined;
   }
 
   /**
-   * The palette if the image has one, undefined otherwise.
+   * Gets the palette of the image.
+   * @returns {Palette | undefined} The palette of the image.
    */
   public get palette(): Palette | undefined {
     return this._data?.palette;
   }
+
+  /**
+   * Sets the palette of the image.
+   * @param {Palette | undefined} p - The palette to set.
+   */
   public set palette(p: Palette | undefined) {
     if (this._data !== undefined) {
       this._data.palette = p;
@@ -130,16 +193,16 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * The number of color channels for the image.
+   * Gets the number of channels.
+   * @returns {number} The number of channels.
    */
   public get numChannels(): number {
     return this.palette?.numChannels ?? this._data?.numChannels ?? 0;
   }
 
   /**
-   * Indicates whether this image is animated.
-   * An image is considered animated if it has more than one frame, as the
-   * first image in the frames list is the image itself.
+   * Checks if the image has animation frames.
+   * @returns {boolean} True if there is more than one frame, otherwise false.
    */
   public get hasAnimation(): boolean {
     return this._frames.length > 1;
@@ -149,29 +212,38 @@ export class MemoryImage implements Iterable<Pixel> {
    * The number of frames in this MemoryImage. A MemoryImage will have at least one
    * frame, itself, so it's considered animated if it has more than one
    * frame.
+   * @returns {number} The number of frames.
    */
   public get numFrames(): number {
     return this._frames.length;
   }
 
   private _exifData?: ExifData;
+
   /**
    * The EXIF metadata for the image. If an ExifData hasn't been created
    * for the image yet, one will be added.
+   * @returns {ExifData} The EXIF metadata.
    */
   public get exifData(): ExifData {
     this._exifData ??= new ExifData();
     return this._exifData;
   }
+
+  /**
+   * Sets the EXIF metadata for the image.
+   * @param {ExifData} exif - The EXIF metadata to set.
+   */
   public set exifData(exif: ExifData) {
     this._exifData = exif;
   }
 
   /**
    * The maximum value of a pixel channel, based on the format of the image.
-   * If the image has a **palette**, this will be the maximum value of a palette
-   * color channel. Float format images will have a **maxChannelValue** of 1,
+   * If the image has a palette, this will be the maximum value of a palette
+   * color channel. Float format images will have a maxChannelValue of 1,
    * though they can have values above that.
+   * @returns {number} The maximum value of a pixel channel.
    */
   public get maxChannelValue(): number {
     return this._data?.maxChannelValue ?? 0;
@@ -179,8 +251,9 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The maximum value of a palette index, based on the format of the image.
-   * This differs from **maxChannelValue** in that it will not be affected by
-   * the format of the **palette**.
+   * This differs from maxChannelValue in that it will not be affected by
+   * the format of the palette.
+   * @returns {number} The maximum value of a palette index.
    */
   public get maxIndexValue(): number {
     return this.data?.maxIndexValue ?? 0;
@@ -188,6 +261,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Indicates whether this image supports using a palette.
+   * @returns {boolean} True if the image supports using a palette, otherwise false.
    */
   public get supportsPalette(): boolean {
     return (
@@ -201,6 +275,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The width of the image in pixels.
+   * @returns {number} The width of the image.
    */
   public get width(): number {
     return this.data?.width ?? 0;
@@ -208,6 +283,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The height of the image in pixels.
+   * @returns {number} The height of the image.
    */
   public get height(): number {
     return this.data?.height ?? 0;
@@ -216,6 +292,7 @@ export class MemoryImage implements Iterable<Pixel> {
   /**
    * The general type of the format, whether it's uint data, int data, or
    * float data (regardless of precision).
+   * @returns {FormatType} The format type.
    */
   public get formatType(): FormatType {
     return this.data?.formatType ?? FormatType.uint;
@@ -223,6 +300,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Indicates whether this image is valid and has data.
+   * @returns {boolean} True if the image is valid, otherwise false.
    */
   public get isValid(): boolean {
     return this._data !== undefined && this.width > 0 && this.height > 0;
@@ -230,6 +308,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The ArrayBufferLike of the image storage data or undefined if not initialized.
+   * @returns {ArrayBufferLike | undefined} The buffer of the image data.
    */
   public get buffer(): ArrayBufferLike | undefined {
     return this._data?.buffer;
@@ -237,6 +316,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The length in bytes of the image data buffer.
+   * @returns {number} The byte length of the image data buffer.
    */
   public get byteLength(): number {
     return this._data?.buffer.byteLength ?? 0;
@@ -244,6 +324,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The length in bytes of a row of pixels in the image buffer.
+   * @returns {number} The row stride of the image data buffer.
    */
   public get rowStride(): number {
     return this._data?.rowStride ?? 0;
@@ -251,6 +332,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Indicates whether this image is a Low Dynamic Range (regular) image.
+   * @returns {boolean} True if the image is a Low Dynamic Range image, otherwise false.
    */
   public get isLdrFormat(): boolean {
     return this._data?.isLdrFormat ?? false;
@@ -258,6 +340,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Indicates whether this image is a High Dynamic Range image.
+   * @returns {boolean} True if the image is a High Dynamic Range image, otherwise false.
    */
   public get isHdrFormat(): boolean {
     return this._data?.isHdrFormat ?? false;
@@ -265,6 +348,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * The number of bits per color channel.
+   * @returns {number} The number of bits per color channel.
    */
   public get bitsPerChannel(): number {
     return this._data?.bitsPerChannel ?? 0;
@@ -272,6 +356,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Indicates whether this MemoryImage has an alpha channel.
+   * @returns {boolean} True if the image has an alpha channel, otherwise false.
    */
   public get hasAlpha(): boolean {
     return this.numChannels === 2 || this.numChannels === 4;
@@ -283,50 +368,86 @@ export class MemoryImage implements Iterable<Pixel> {
   private _extraChannels?: Map<string, MemoryImageData>;
 
   private _iccProfile: IccProfile | undefined;
+
+  /**
+   * Gets the ICC profile of the image.
+   * @returns {IccProfile | undefined} The ICC profile of the image.
+   */
   public get iccProfile(): IccProfile | undefined {
     return this._iccProfile;
   }
+
+  /**
+   * Sets the ICC profile of the image.
+   * @param {IccProfile | undefined} v - The ICC profile to set.
+   */
   public set iccProfile(v: IccProfile | undefined) {
     this._iccProfile = v;
   }
 
   private _textData: Map<string, string> | undefined;
+
+  /**
+   * Gets the text data associated with the image.
+   * @returns {Map<string, string> | undefined} The text data.
+   */
   public get textData(): Map<string, string> | undefined {
     return this._textData;
   }
 
   private _backgroundColor?: Color;
+
   /**
    * The suggested background color to clear the canvas with.
+   * @returns {Color | undefined} The background color.
    */
   public get backgroundColor(): Color | undefined {
     return this._backgroundColor;
   }
+
+  /**
+   * Sets the background color of the image.
+   * @param {Color | undefined} v - The background color to set.
+   */
   public set backgroundColor(v: Color | undefined) {
     this._backgroundColor = v;
   }
 
   private _loopCount: number;
+
   /**
    * How many times should the animation loop (0 means forever)
+   * @returns {number} The loop count.
    */
   public get loopCount(): number {
     return this._loopCount;
   }
+
+  /**
+   * Sets the loop count of the animation.
+   * @param {number} v - The loop count to set.
+   */
   public set loopCount(v: number) {
     this._loopCount = v;
   }
 
   private _frameType: FrameType;
+
   /**
    * Gets or sets how should the frames be interpreted.
-   * If the **frameType** is _FrameType.animation_, the frames are part
-   * of an animated sequence. If the **frameType** is _FrameType.page_,
+   * If the frameType is FrameType.animation, the frames are part
+   * of an animated sequence. If the frameType is FrameType.page,
    * the frames are the pages of a document.
+   * @returns {FrameType} The frame type.
    */
   public get frameType(): FrameType {
     return this._frameType;
   }
+
+  /**
+   * Sets the frame type of the image.
+   * @param {FrameType} v - The frame type to set.
+   */
   public set frameType(v: FrameType) {
     this._frameType = v;
   }
@@ -335,36 +456,64 @@ export class MemoryImage implements Iterable<Pixel> {
    * The list of sub-frames for the image, if it's an animation. An image
    * is considered animated if it has more than one frame, as the first
    * frame will be the image itself.
+   * @returns {MemoryImage[]} The list of sub-frames.
    */
   private _frames: MemoryImage[] = [];
+
+  /**
+   * Gets the frames of the image.
+   * @returns {MemoryImage[]} The frames of the image.
+   */
   public get frames(): MemoryImage[] {
     return this._frames;
   }
 
   private _frameDuration: number;
+
   /**
    * How long this frame should be displayed, in milliseconds.
    * A duration of 0 indicates no delay and the next frame will be drawn
    * as quickly as it can.
+   * @returns {number} The frame duration.
    */
   public get frameDuration(): number {
     return this._frameDuration;
   }
+
+  /**
+   * Sets the frame duration of the image.
+   * @param {number} v - The frame duration to set.
+   */
   public set frameDuration(v: number) {
     this._frameDuration = v;
   }
 
   /**
    * Index of this image in the parent animations frame list.
+   * @returns {number} The frame index.
    */
   private _frameIndex: number;
+
+  /**
+   * Gets the frame index of the image.
+   * @returns {number} The frame index.
+   */
   public get frameIndex(): number {
     return this._frameIndex;
   }
+
+  /**
+   * Sets the frame index of the image.
+   * @param {number} v - The frame index to set.
+   */
   public set frameIndex(v: number) {
     this._frameIndex = v;
   }
 
+  /**
+   * Constructs a new MemoryImage.
+   * @param {MemoryImageCreateOptions} [opt] - The options for creating the MemoryImage.
+   */
   constructor(opt?: MemoryImageCreateOptions) {
     if (opt !== undefined) {
       this._loopCount = opt.loopCount ?? 0;
@@ -394,6 +543,11 @@ export class MemoryImage implements Iterable<Pixel> {
     }
   }
 
+  /**
+   * Gets the number of pixel colors based on the format.
+   * @param {Format} format - The format of the image.
+   * @returns {number} The number of pixel colors.
+   */
   private static getNumPixelColors(format: Format): number {
     return format === Format.uint1
       ? 2
@@ -408,6 +562,14 @@ export class MemoryImage implements Iterable<Pixel> {
               : 0;
   }
 
+  /**
+   * Creates a resized MemoryImage from another MemoryImage.
+   * @param {MemoryImage} other - The other MemoryImage to resize.
+   * @param {number} width - The width of the new image.
+   * @param {number} height - The height of the new image.
+   * @param {boolean} [skipAnimation=false] - Whether to skip animation frames.
+   * @returns {MemoryImage} The resized MemoryImage.
+   */
   public static fromResized(
     other: MemoryImage,
     width: number,
@@ -648,6 +810,20 @@ export class MemoryImage implements Iterable<Pixel> {
     return image;
   }
 
+  /**
+   * Initializes the memory image with the provided options.
+   *
+   * @param {MemoryImageInitializeOptions} opt - The options for initializing the memory image.
+   * @param {Format} [opt.format] - The format of the image. Defaults to `Format.uint8`.
+   * @param {number} [opt.numChannels] - The number of channels in the image. Defaults to 3.
+   * @param {boolean} [opt.withPalette] - Whether to use a palette. Defaults to `false`.
+   * @param {Format} [opt.paletteFormat] - The format of the palette. Defaults to `Format.uint8`.
+   * @param {ICCProfile} [opt.iccProfile] - The ICC profile for the image.
+   * @param {ExifData} [opt.exifData] - The EXIF data for the image.
+   * @param {Palette} [opt.palette] - The palette for the image.
+   * @param {number} opt.width - The width of the image.
+   * @param {number} opt.height - The height of the image.
+   */
   private initialize(opt: MemoryImageInitializeOptions): void {
     const format = opt.format ?? Format.uint8;
     const numChannels = opt.numChannels ?? 3;
@@ -669,6 +845,15 @@ export class MemoryImage implements Iterable<Pixel> {
     this.createImageData(opt.width, opt.height, format, numChannels, palette);
   }
 
+  /**
+   * Creates image data based on the specified parameters.
+   *
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {Format} format - The format of the image data.
+   * @param {number} numChannels - The number of channels in the image data.
+   * @param {Palette} [palette] - Optional palette for indexed formats.
+   */
   private createImageData(
     width: number,
     height: number,
@@ -736,6 +921,15 @@ export class MemoryImage implements Iterable<Pixel> {
     }
   }
 
+  /**
+   * Creates a palette based on the specified format and palette format.
+   *
+   * @param {Format} format - The format of the image.
+   * @param {Format} paletteFormat - The format of the palette to be created.
+   * @param {number} numChannels - The number of color channels in the palette.
+   * @returns {Palette | undefined} A Palette object of the specified format, or undefined if the format is not supported.
+   * @throws {LibError} If the palette format is unknown.
+   */
   private createPalette(
     format: Format,
     paletteFormat: Format,
@@ -798,7 +992,11 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Add a frame to the animation of this MemoryImage.
+   * Adds a frame to the current image sequence.
+   * If no image is provided, a new MemoryImage is created from the current instance.
+   *
+   * @param {MemoryImage} [image] - The image to be added as a frame. If not provided, a new MemoryImage is created.
+   * @returns {MemoryImage} The added or newly created MemoryImage.
    */
   public addFrame(image?: MemoryImage): MemoryImage {
     const img = image ?? MemoryImage.from(this, true, true);
@@ -810,16 +1008,22 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Get a frame from this image. If the MemoryImage is not animated, this
-   * MemoryImage will be returned; otherwise the particular frame MemoryImage will
-   * be returned.
+   * Retrieves the frame at the specified index.
+   *
+   * @param {number} index - The index of the frame to retrieve.
+   * @returns {MemoryImage} The MemoryImage object at the specified index.
    */
   public getFrame(index: number): MemoryImage {
     return this._frames[index];
   }
 
   /**
-   * Create a copy of this image.
+   * Creates a clone of the current MemoryImage instance.
+   *
+   * @param {MemoryImageCloneOptions} [opt] - Optional parameters for cloning.
+   * @param {boolean} [opt.skipAnimation=false] - If true, skips cloning the animation data.
+   * @param {boolean} [opt.skipPixels=false] - If true, skips cloning the pixel data.
+   * @returns {MemoryImage} A new MemoryImage instance that is a clone of the current instance.
    */
   public clone(opt?: MemoryImageCloneOptions): MemoryImage {
     const skipAnimation = opt?.skipAnimation ?? false;
@@ -827,16 +1031,34 @@ export class MemoryImage implements Iterable<Pixel> {
     return MemoryImage.from(this, skipAnimation, skipPixels);
   }
 
+  /**
+   * Checks if an extra channel with the given name exists.
+   *
+   * @param {string} name - The name of the channel to check.
+   * @returns {boolean} Returns true if the extra channel exists, otherwise false.
+   */
   public hasExtraChannel(name: string): boolean {
     return this._extraChannels !== undefined && this._extraChannels.has(name);
   }
 
+  /**
+   * Retrieves the extra channel data by its name.
+   *
+   * @param {string} name - The name of the extra channel to retrieve.
+   * @returns {MemoryImageData | undefined} The data of the extra channel if it exists, otherwise undefined.
+   */
   public getExtraChannel(name: string): MemoryImageData | undefined {
     return this._extraChannels !== undefined
       ? this._extraChannels.get(name)
       : undefined;
   }
 
+  /**
+   * Sets or removes an extra channel with the given name and data.
+   *
+   * @param {string} name - The name of the extra channel.
+   * @param {MemoryImageData} [data] - Optional. The data to be associated with the extra channel. If undefined, the extra channel will be removed.
+   */
   public setExtraChannel(name: string, data?: MemoryImageData): void {
     if (this._extraChannels === undefined && data === undefined) {
       return;
@@ -856,8 +1078,13 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Returns a pixel iterator for iterating over a rectangular range of pixels
-   * in the image.
+   * Retrieves an iterator for a range of pixels within the specified rectangular area.
+   *
+   * @param {number} x - The x-coordinate of the top-left corner of the rectangular area.
+   * @param {number} y - The y-coordinate of the top-left corner of the rectangular area.
+   * @param {number} width - The width of the rectangular area.
+   * @param {number} height - The height of the rectangular area.
+   * @returns {Iterator<Pixel>} An iterator for the pixels within the specified range.
    */
   public getRange(
     x: number,
@@ -869,7 +1096,9 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Get a Uint8Array view of the image storage data.
+   * Converts the image storage data to a Uint8Array.
+   *
+   * @returns {Uint8Array} The Uint8Array representation of the image storage data.
    */
   public toUint8Array(): Uint8Array {
     return (
@@ -881,13 +1110,12 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Similar to **toUint8Array**, but will convert the channels of the image pixels
-   * to the given **order**. If that happens, the returned bytes will be a copy
-   * and not a direct view of the image data. If the number of channels needed
-   * by **order** differs from what the image has, the bytes will come from a
-   * converted image. If the converted image needs an alpha channel added,
-   * then you can use the **alpha** argument to specify the value of the
-   * added alpha channel.
+   * Retrieves the byte representation of the image.
+   *
+   * @param {MemoryImageGetBytesOptions} [opt] - Optional parameters for getting bytes.
+   * @param {string} [opt.order] - The order of the channels.
+   * @param {boolean} [opt.alpha] - Whether to include the alpha channel.
+   * @returns {Uint8Array} The byte array representation of the image.
    */
   public getBytes(opt?: MemoryImageGetBytesOptions): Uint8Array {
     const order = opt?.order;
@@ -924,11 +1152,19 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Remap the color channels to the given **order**. Normally MemoryImage color
-   * channels are stored in rgba order for 4 channel images, and
-   * rgb order for 3 channel images. This method lets you re-arrange the
-   * color channels in-place without needing to clone the image for preparing
-   * image data for external usage that requires alternative channel ordering.
+   * Remaps the color channels of the pixels based on the specified order.
+   *
+   * @param {ChannelOrder} order - The desired channel order to remap the pixels to.
+   *
+   * The method supports the following channel orders:
+   *
+   * For 4-channel images (RGBA):
+   *   - ChannelOrder.abgr: Swaps RGBA to ABGR.
+   *   - ChannelOrder.argb: Swaps RGBA to ARGB.
+   *   - ChannelOrder.bgra: Swaps RGBA to BGRA.
+   *
+   * For 3-channel images (RGB):
+   *   - ChannelOrder.bgr: Swaps RGB to BGR.
    */
   public remapChannels(order: ChannelOrder): void {
     if (this.numChannels === 4) {
@@ -984,32 +1220,50 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Returns true if the given pixel coordinates is within the dimensions
-   * of the image.
+   * Checks if the given coordinates (x, y) are within the bounds of the defined width and height.
+   *
+   * @param {number} x - The x-coordinate to check.
+   * @param {number} y - The y-coordinate to check.
+   * @returns {boolean} True if the coordinates are within bounds, false otherwise.
    */
   public isBoundsSafe(x: number, y: number): boolean {
     return x >= 0 && y >= 0 && x < this.width && y < this.height;
   }
 
   /**
-   * Create a Color object with the format and number of channels of the
-   * image.
+   * Retrieves a color based on the provided RGBA values with the format
+   * and number of channels of the image.
+   *
+   * @param {number} r - The red component of the color (0-255).
+   * @param {number} g - The green component of the color (0-255).
+   * @param {number} b - The blue component of the color (0-255).
+   * @param {number} [a] - The optional alpha component of the color (0-255). If not provided, a default value may be used.
+   * @returns {Color} The color object corresponding to the provided RGBA values. If the color cannot be retrieved, a default color is returned.
    */
   public getColor(r: number, g: number, b: number, a?: number): Color {
     return this._data?.getColor(r, g, b, a) ?? new ColorUint8(0);
   }
 
   /**
-   * Return the Pixel at the given coordinates **x**,**y**. If **pixel** is provided,
-   * it will be updated and returned rather than allocating a new Pixel.
+   * Retrieves the pixel at the specified coordinates.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {Pixel} [pixel] - Optional. An existing Pixel object to populate with the pixel data.
+   * @returns {Pixel} The pixel at the specified coordinates, or UndefinedPixel if the data is not available.
    */
   public getPixel(x: number, y: number, pixel?: Pixel): Pixel {
     return this._data?.getPixel(x, y, pixel) ?? UndefinedPixel;
   }
 
   /**
-   * Get the pixel from the given **x**, **y** coordinate. If the pixel coordinates
-   * are out of bounds, PixelUndefined is returned.
+   * Retrieves a pixel from the specified coordinates safely.
+   * If the coordinates are out of bounds, it returns an UndefinedPixel.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {Pixel} [pixel] - An optional pixel object to be populated with the pixel data.
+   * @returns {Pixel} The pixel at the specified coordinates, or UndefinedPixel if out of bounds.
    */
   public getPixelSafe(x: number, y: number, pixel?: Pixel): Pixel {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
@@ -1019,8 +1273,12 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Get the pixel from the given **x**, **y** coordinate. If the pixel coordinates
-   * are out of range of the image, they will be clamped to the resolution.
+   * Retrieves a pixel from the image, ensuring the coordinates are clamped within the image boundaries.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {Pixel} [pixel] - Optional. An existing Pixel object to populate with the pixel data.
+   * @returns {Pixel} The Pixel object at the clamped coordinates.
    */
   public getPixelClamped(x: number, y: number, pixel?: Pixel): Pixel {
     const _x = MathUtils.clamp(x, 0, this.width - 1);
@@ -1029,16 +1287,25 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Get the pixel index from the given **x**, **y** coordinate.
+   * Retrieves the pixel index at the specified (x, y) coordinates.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @returns {number} The index of the pixel, truncated to an integer. Returns 0 if the index is undefined.
    */
-  public getPixelIndex(x: number, y: number) {
+  public getPixelIndex(x: number, y: number): number {
     const index = this._data?.getPixel(x, y).index;
     return index !== undefined ? Math.trunc(index) : 0;
   }
 
   /**
-   * Get the pixel using the given **interpolation** type for non-integer pixel
-   * coordinates.
+   * Retrieves the interpolated pixel color at the specified coordinates.
+   *
+   * @param {number} fx - The x-coordinate.
+   * @param {number} fy - The y-coordinate.
+   * @param {Interpolation} [interpolation=Interpolation.linear] - The interpolation method to use (default is Interpolation.linear).
+   * @returns {Color} The interpolated color at the specified coordinates.
+   * @throws {LibError} If an unknown interpolation mode is provided.
    */
   public getPixelInterpolate(
     fx: number,
@@ -1058,8 +1325,11 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Get the pixel using linear interpolation for non-integer pixel
-   * coordinates.
+   * Retrieves the color of a pixel using bilinear interpolation.
+   *
+   * @param {number} fx - The x-coordinate of the pixel in floating-point.
+   * @param {number} fy - The y-coordinate of the pixel in floating-point.
+   * @returns {Color} The interpolated color at the specified coordinates.
    */
   public getPixelLinear(fx: number, fy: number): Color {
     const x = Math.trunc(fx) - (fx >= 0 ? 0 : 1);
@@ -1069,6 +1339,15 @@ export class MemoryImage implements Iterable<Pixel> {
     const dx = fx - x;
     const dy = fy - y;
 
+    /**
+     * Performs linear interpolation between four color components.
+     *
+     * @param {number} icc - The color component at (x, y).
+     * @param {number} inc - The color component at (nx, y).
+     * @param {number} icn - The color component at (x, ny).
+     * @param {number} inn - The color component at (nx, ny).
+     * @returns {number} The interpolated color component.
+     */
     const linear = (
       icc: number,
       inc: number,
@@ -1095,8 +1374,11 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Get the pixel using cubic interpolation for non-integer pixel
-   * coordinates.
+   * Performs cubic interpolation to get the color of a pixel at a given floating-point coordinate.
+   *
+   * @param {number} fx - The x-coordinate of the pixel in floating-point.
+   * @param {number} fy - The y-coordinate of the pixel in floating-point.
+   * @returns {Color} The interpolated color at the given coordinates.
    */
   public getPixelCubic(fx: number, fy: number): Color {
     const x = Math.trunc(fx) - (fx >= 0 ? 0 : 1);
@@ -1111,6 +1393,16 @@ export class MemoryImage implements Iterable<Pixel> {
     const dx = fx - x;
     const dy = fy - y;
 
+    /**
+     * Computes the cubic interpolation for a given set of points and a delta value.
+     *
+     * @param {number} dx - The delta value for interpolation.
+     * @param {number} ipp - The intensity of the previous previous point.
+     * @param {number} icp - The intensity of the current previous point.
+     * @param {number} inp - The intensity of the next point.
+     * @param {number} iap - The intensity of the after next point.
+     * @returns {number} The interpolated intensity.
+     */
     const cubic = (
       dx: number,
       ipp: number,
@@ -1186,8 +1478,11 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Set the color of the pixel at the given coordinates to the color of the
-   * given Color **c**.
+   * Sets the pixel at the specified (x, y) coordinates to the given color or pixel.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {Color | Pixel} c - The color or pixel to set. Can be an instance of Color or Pixel.
    */
   public setPixel(x: number, y: number, c: Color | Pixel): void {
     // TODO: improve the class check for being a Pixel
@@ -1203,7 +1498,11 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Set the index value for palette images, or the red channel otherwise.
+   * Sets the pixel index at the specified (x, y) coordinates.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {number} i - The index value to set for the pixel.
    */
   public setPixelIndex(x: number, y: number, i: number): void {
     this._data?.setPixelR(x, y, i);
@@ -1211,14 +1510,23 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Set the red (or index) color channel of a pixel.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {number} i - The intensity value for the red color channel.
    */
   public setPixelR(x: number, y: number, i: number): void {
     this._data?.setPixelR(x, y, i);
   }
 
   /**
-   * Set the color of the Pixel at the given coordinates to the given
-   * color values **r**, **g**, **b**.
+   * Sets the RGB value of a specific pixel in the image data.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {number} r - The red component of the pixel (0-255).
+   * @param {number} g - The green component of the pixel (0-255).
+   * @param {number} b - The blue component of the pixel (0-255).
    */
   public setPixelRgb(
     x: number,
@@ -1231,8 +1539,14 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Set the color of the Pixel at the given coordinates to the given
-   * color values **r**, **g**, **b**, and **a**.
+   * Sets the RGBA value of a specific pixel in the image data.
+   *
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {number} r - The red component of the pixel (0-255).
+   * @param {number} g - The green component of the pixel (0-255).
+   * @param {number} b - The blue component of the pixel (0-255).
+   * @param {number} a - The alpha (transparency) component of the pixel (0-255).
    */
   public setPixelRgba(
     x: number,
@@ -1246,21 +1560,30 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Set all pixels in the image to the given **color**. If no color is provided
-   * the image will be initialized to 0.
+   * Clears the current data with an optional color.
+   *
+   * @param {Color} [color] - The optional color to clear the data with.
    */
   public clear(color?: Color): void {
     this._data?.clear(color);
   }
 
   /**
-   * Convert this image to a new **format** or number of channels, **numChannels**.
+   * Convert this image to a new format or number of channels.
    * If the new number of channels is 4 and the current image does
-   * not have an alpha channel, then the given **alpha** value will be used
-   * to set the new alpha channel. If **alpha** is not provided, then the
-   * **maxChannelValue** will be used to set the alpha. If **withPalette** is
-   * true, and to target format and **numChannels** has fewer than 256 colors,
+   * not have an alpha channel, then the given alpha value will be used
+   * to set the new alpha channel. If alpha is not provided, then the
+   * maxChannelValue will be used to set the alpha. If withPalette is
+   * true, and to target format and numChannels has fewer than 256 colors,
    * then the new image will be converted to use a palette.
+   *
+   * @param {MemoryImageConvertOptions} opt - Options for the image conversion.
+   * @param {Format} [opt.format] - The target format for the image.
+   * @param {number} [opt.numChannels] - The number of channels for the image.
+   * @param {number} [opt.alpha] - The alpha value to use if adding an alpha channel.
+   * @param {boolean} [opt.withPalette] - Whether to use a palette for the image.
+   * @param {boolean} [opt.skipAnimation] - Whether to skip animation frames.
+   * @returns {MemoryImage} The converted memory image.
    */
   public convert(opt: MemoryImageConvertOptions): MemoryImage {
     const format = opt.format ?? this.format;
@@ -1370,6 +1693,7 @@ export class MemoryImage implements Iterable<Pixel> {
 
   /**
    * Add text metadata to the image.
+   * @param {Map<string, string>} data - A map containing key-value pairs of text metadata.
    */
   public addTextData(data: Map<string, string>): void {
     this._textData ??= new Map<string, string>();
@@ -1378,6 +1702,11 @@ export class MemoryImage implements Iterable<Pixel> {
     }
   }
 
+  /**
+   * Calculates the minimum and maximum color channel values from the image.
+   *
+   * @returns {MemoryImageColorExtremes} An object containing the minimum and maximum color channel values.
+   */
   public getColorExtremes(): MemoryImageColorExtremes {
     let first = true;
     let min = 0;
@@ -1400,6 +1729,12 @@ export class MemoryImage implements Iterable<Pixel> {
     };
   }
 
+  /**
+   * Returns a string representation of the image.
+   * The string includes the class name and the values of width, height, format, and number of channels.
+   *
+   * @returns {string} A string representation of the object.
+   */
   public toString(): string {
     return `${this.constructor.name} (w: ${this.width}, h: ${this.height}, f: ${
       Format[this.format]
@@ -1407,8 +1742,9 @@ export class MemoryImage implements Iterable<Pixel> {
   }
 
   /**
-   * Returns a pixel iterator for iterating over all of the pixels in the
-   * image.
+   * Returns an iterator for the Pixel data.
+   *
+   * @returns {Iterator<Pixel>} An iterator for the Pixel data.
    */
   public [Symbol.iterator](): Iterator<Pixel> {
     return this._data !== undefined

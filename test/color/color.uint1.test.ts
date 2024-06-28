@@ -3,7 +3,14 @@
 import { describe, expect, test } from 'vitest';
 import { ColorUint1 } from '../../src';
 
+/**
+ * Test suite for the Color class.
+ */
 describe('Color', () => {
+  /**
+   * Test case for the ColorUint1 class.
+   * This test verifies the properties and methods of the ColorUint1 class.
+   */
   test('ColorUint1', () => {
     const c0 = new ColorUint1(0);
     expect(c0.length).toBe(0);

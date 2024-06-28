@@ -13,7 +13,15 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Transform module.
+ */
 describe('Transform', () => {
+  /**
+   * Test case for the copyResizeCropSquare function.
+   * Reads an input PNG file, decodes it, resizes and crops it to a square of size 64,
+   * and writes the output to a file.
+   */
   test('copyResizeCropSquare', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -44,6 +52,11 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResizeCropSquare function with rounded corners.
+   * Reads an input PNG file, decodes it, converts it to 4 channels, resizes and crops it to a square of size 64 with rounded corners,
+   * composites it onto a white background, and writes the output to a file.
+   */
   test('copyResizeCropSquare rounded', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -90,6 +103,11 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResizeCropSquare function with rounded corners and alpha channel.
+   * Reads an input PNG file, decodes it, converts it to 4 channels, resizes and crops it to a square of size 300 with rounded corners,
+   * and writes the output to a file.
+   */
   test('copyResizeCropSquare rounded alpha', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

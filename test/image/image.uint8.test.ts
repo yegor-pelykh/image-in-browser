@@ -3,7 +3,13 @@
 import { describe, expect, test } from 'vitest';
 import { ColorRgba8, Format, MemoryImage } from '../../src';
 
-describe('Image', () => {
+/**
+ * Test suite for the MemoryImage class.
+ */
+describe('MemoryImage', () => {
+  /**
+   * Test case for an image with uint8 format and 1 channel.
+   */
   test('uint8 nc:1', () => {
     const i1 = new MemoryImage({
       width: 32,
@@ -35,6 +41,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test case for an image with uint8 format and 2 channels.
+   */
   test('uint8 nc:2', () => {
     const i2 = new MemoryImage({
       width: 32,
@@ -68,6 +77,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test case for an image with uint8 format and 3 channels.
+   */
   test('uint8 nc:3', () => {
     const i3 = new MemoryImage({
       width: 32,
@@ -102,6 +114,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test case for an image with uint8 format and 4 channels.
+   */
   test('uint8 nc:4', () => {
     const i4 = new MemoryImage({
       width: 32,
@@ -136,6 +151,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test case for an image with uint8 format, 3 channels, and a palette.
+   */
   test('uint8 nc:3 palette', () => {
     const i5 = new MemoryImage({
       width: 32,
@@ -170,6 +188,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test case for an image with uint8 format, 4 channels, and a palette.
+   */
   test('uint8 nc:4 palette', () => {
     const i6 = new MemoryImage({
       width: 32,

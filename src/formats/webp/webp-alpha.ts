@@ -7,60 +7,144 @@ import { VP8LInternal } from './vp8l-internal.js';
 import { WebPFilters } from './webp-filters.js';
 import { WebPInfo } from './webp-info.js';
 
+/**
+ * Class representing WebPAlpha.
+ */
 export class WebPAlpha {
+  /**
+   * Input buffer for the alpha data.
+   */
   private _input: InputBuffer<Uint8Array>;
+
+  /**
+   * Gets the input buffer.
+   * @returns {InputBuffer<Uint8Array>} The input buffer.
+   */
   public get input(): InputBuffer<Uint8Array> {
     return this._input;
   }
 
+  /**
+   * Width of the image.
+   */
   private _width: number = 0;
+
+  /**
+   * Gets the width of the image.
+   * @returns {number} The width of the image.
+   */
   public get width(): number {
     return this._width;
   }
 
+  /**
+   * Height of the image.
+   */
   private _height: number = 0;
+
+  /**
+   * Gets the height of the image.
+   * @returns {number} The height of the image.
+   */
   public get height(): number {
     return this._height;
   }
 
+  /**
+   * Compression method used.
+   */
   private _method: number = 0;
+
+  /**
+   * Gets the compression method used.
+   * @returns {number} The compression method.
+   */
   public get method(): number {
     return this._method;
   }
 
+  /**
+   * Filter type used.
+   */
   private _filter: number = 0;
+
+  /**
+   * Gets the filter type used.
+   * @returns {number} The filter type.
+   */
   public get filter(): number {
     return this._filter;
   }
 
+  /**
+   * Pre-processing level.
+   */
   private _preProcessing: number = 0;
+
+  /**
+   * Gets the pre-processing level.
+   * @returns {number} The pre-processing level.
+   */
   public get preProcessing(): number {
     return this._preProcessing;
   }
 
+  /**
+   * Reserved field.
+   */
   private _rsrv: number = 1;
+
+  /**
+   * Gets the reserved field.
+   * @returns {number} The reserved field.
+   */
   public get rsrv(): number {
     return this._rsrv;
   }
 
+  /**
+   * Indicates if the alpha channel is decoded.
+   */
   private _isAlphaDecoded: boolean = false;
+
+  /**
+   * Gets the alpha decoded status.
+   * @returns {boolean} True if alpha is decoded, otherwise false.
+   */
   public get isAlphaDecoded(): boolean {
     return this._isAlphaDecoded;
   }
 
+  /**
+   * VP8L internal data.
+   */
   private _vp8l!: VP8LInternal;
+
+  /**
+   * Gets the VP8L internal data.
+   * @returns {VP8LInternal} The VP8L internal data.
+   */
   public get vp8l(): VP8LInternal {
     return this._vp8l;
   }
 
-  // Although alpha channel requires only 1 byte per
-  // pixel, sometimes VP8LDecoder may need to allocate
-  // 4 bytes per pixel internally during decode.
+  /**
+   * Indicates if 8-bit decode is used.
+   */
   private _use8bDecode: boolean = false;
+
+  /**
+   * Gets the 8-bit decode usage status.
+   * @returns {boolean} True if 8-bit decode is used, otherwise false.
+   */
   public get use8bDecode(): boolean {
     return this._use8bDecode;
   }
 
+  /**
+   * Gets the validity status of the alpha data.
+   * @returns {boolean} True if valid, otherwise false.
+   */
   public get isValid(): boolean {
     if (
       this._method < WebPAlpha.alphaNoCompression ||
@@ -74,6 +158,12 @@ export class WebPAlpha {
     return true;
   }
 
+  /**
+   * Creates an instance of WebPAlpha.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   */
   constructor(input: InputBuffer<Uint8Array>, width: number, height: number) {
     this._input = input;
     this._width = width;
@@ -100,6 +190,15 @@ export class WebPAlpha {
     }
   }
 
+  /**
+   * Dequantizes the levels.
+   * @param {Uint8Array} _data - The data array.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {number} row - The starting row.
+   * @param {number} numRows - The number of rows.
+   * @returns {boolean} True if successful, otherwise false.
+   */
   private dequantizeLevels(
     _data: Uint8Array,
     width: number,
@@ -119,6 +218,12 @@ export class WebPAlpha {
     return true;
   }
 
+  /**
+   * Decodes the alpha image stream.
+   * @param {number} lastRow - The last row to decode.
+   * @param {Uint8Array} output - The output array.
+   * @returns {boolean} True if successful, otherwise false.
+   */
   private decodeAlphaImageStream(lastRow: number, output: Uint8Array): boolean {
     this._vp8l.opaque = output;
     // Decode (with special row processing).
@@ -137,6 +242,10 @@ export class WebPAlpha {
         );
   }
 
+  /**
+   * Decodes the alpha header.
+   * @returns {boolean} True if successful, otherwise false.
+   */
   private decodeAlphaHeader(): boolean {
     const webp = new WebPInfo();
     webp.width = this._width;
@@ -166,6 +275,13 @@ export class WebPAlpha {
     return true;
   }
 
+  /**
+   * Decodes the alpha data.
+   * @param {number} row - The starting row.
+   * @param {number} numRows - The number of rows.
+   * @param {Uint8Array} output - The output array.
+   * @returns {boolean} True if successful, otherwise false.
+   */
   public decode(row: number, numRows: number, output: Uint8Array): boolean {
     if (!this.isValid) {
       return false;
@@ -215,7 +331,9 @@ export class WebPAlpha {
     return true;
   }
 
-  // Alpha related constants.
+  /**
+   * Alpha related constants.
+   */
   private static readonly alphaNoCompression = 0;
   private static readonly alphaLosslessCompression = 1;
   private static readonly alphaPreprocessedLevels = 1;

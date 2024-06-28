@@ -3,7 +3,13 @@
 import { describe, expect, test } from 'vitest';
 import { ColorFloat16 } from '../../src';
 
+/**
+ * Test suite for the Color class.
+ */
 describe('Color', () => {
+  /**
+   * Test case for the ColorFloat16 class.
+   */
   test('ColorFloat16', () => {
     const c0 = new ColorFloat16(0);
     expect(c0.length).toBe(0);

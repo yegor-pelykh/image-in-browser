@@ -15,8 +15,17 @@ import { PngColorType } from './png/png-color-type.js';
 import { Palette } from '../image/palette.js';
 import { IccProfile } from '../image/icc-profile.js';
 
+/**
+ * Options for initializing the PNG encoder.
+ */
 export interface PngEncoderInitOptions {
+  /**
+   * The filter type to use.
+   */
   filter?: PngFilterType;
+  /**
+   * The compression level to use.
+   */
   level?: CompressionLevel;
 }
 
@@ -24,37 +33,73 @@ export interface PngEncoderInitOptions {
  * Encode an image to the PNG format.
  */
 export class PngEncoder implements Encoder {
+  /**
+   * Global quantizer for the encoder.
+   */
   private _globalQuantizer: Quantizer | undefined;
 
+  /**
+   * Filter type for the encoder.
+   */
   private _filter: PngFilterType;
 
+  /**
+   * Compression level for the encoder.
+   */
   private _level: number;
 
+  /**
+   * Number of times to repeat the animation.
+   */
   private _repeat = 0;
 
+  /**
+   * Number of frames in the animation.
+   */
   private _frames = 0;
 
+  /**
+   * Sequence number for the animation frames.
+   */
   private _sequenceNumber = 0;
 
+  /**
+   * Is the image animated?
+   */
   private _isAnimated = false;
 
+  /**
+   * Output buffer for the encoded PNG.
+   */
   private _output: OutputBuffer | undefined;
 
-  /**
-   * Does this encoder support animation?
-   */
   private _supportsAnimation = true;
-  public get supportsAnimation() {
+
+  /**
+   * Checks if this encoder supports animation.
+   *
+   * @returns {boolean} True if the encoder supports animation, otherwise false.
+   */
+  public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Constructor for PngEncoder.
+   * @param {PngEncoderInitOptions} [opt] - Initialization options for the encoder.
+   * @param {PngFilterType} [opt.filter] - The filter type to use for encoding. Defaults to PngFilterType.paeth.
+   * @param {number} [opt.level] - The compression level to use for encoding. Defaults to 6.
+   */
   constructor(opt?: PngEncoderInitOptions) {
     this._filter = opt?.filter ?? PngFilterType.paeth;
     this._level = opt?.level ?? 6;
   }
 
   /**
-   * Return the CRC of the bytes
+   * Return the CRC of the bytes.
+   * @param {string} type - The type of the chunk.
+   * @param {Uint8Array} bytes - The bytes of the chunk.
+   * @returns {number} The CRC checksum.
    */
   private static crc(type: string, bytes: Uint8Array): number {
     const typeCodeUnits = StringUtils.getCodePoints(type);
@@ -67,6 +112,12 @@ export class PngEncoder implements Encoder {
     });
   }
 
+  /**
+   * Write a chunk to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   * @param {string} type - The type of the chunk.
+   * @param {Uint8Array} chunk - The bytes of the chunk.
+   */
   private static writeChunk(
     out: OutputBuffer,
     type: string,
@@ -80,6 +131,15 @@ export class PngEncoder implements Encoder {
     out.writeUint32(crc);
   }
 
+  /**
+   * Write bytes to the output buffer.
+   * @param {number} bpc - Bytes per channel.
+   * @param {Uint8Array} row - The row of bytes.
+   * @param {number} ri - Row index.
+   * @param {Uint8Array} out - The output buffer.
+   * @param {number} oi - Output index.
+   * @returns {number} The new output index.
+   */
   private static write(
     bpc: number,
     row: Uint8Array,
@@ -97,6 +157,15 @@ export class PngEncoder implements Encoder {
     return _oi;
   }
 
+  /**
+   * Apply the sub filter to the row.
+   * @param {Uint8Array} row - The row of bytes.
+   * @param {number} bpc - Bytes per channel.
+   * @param {number} bpp - Bytes per pixel.
+   * @param {Uint8Array} out - The output buffer.
+   * @param {number} oi - Output index.
+   * @returns {number} The new output index.
+   */
   private static filterSub(
     row: Uint8Array,
     bpc: number,
@@ -118,6 +187,15 @@ export class PngEncoder implements Encoder {
     return _oi;
   }
 
+  /**
+   * Apply the up filter to the row.
+   * @param {Uint8Array} row - The row of bytes.
+   * @param {number} bpc - Bytes per channel.
+   * @param {Uint8Array} out - The output buffer.
+   * @param {number} oi - Output index.
+   * @param {Uint8Array} [prevRow] - The previous row of bytes.
+   * @returns {number} The new output index.
+   */
   private static filterUp(
     row: Uint8Array,
     bpc: number,
@@ -137,6 +215,16 @@ export class PngEncoder implements Encoder {
     return _oi;
   }
 
+  /**
+   * Apply the average filter to the row.
+   * @param {Uint8Array} row - The row of bytes.
+   * @param {number} bpc - Bytes per channel.
+   * @param {number} bpp - Bytes per pixel.
+   * @param {Uint8Array} out - The output buffer.
+   * @param {number} oi - Output index.
+   * @param {Uint8Array} [prevRow] - The previous row of bytes.
+   * @returns {number} The new output index.
+   */
   private static filterAverage(
     row: Uint8Array,
     bpc: number,
@@ -160,6 +248,13 @@ export class PngEncoder implements Encoder {
     return _oi;
   }
 
+  /**
+   * Paeth predictor function.
+   * @param {number} a - Left pixel.
+   * @param {number} b - Above pixel.
+   * @param {number} c - Upper-left pixel.
+   * @returns {number} The predicted value.
+   */
   private static paethPredictor(a: number, b: number, c: number): number {
     const p = a + b - c;
     const pa = p > a ? p - a : a - p;
@@ -173,6 +268,16 @@ export class PngEncoder implements Encoder {
     return c;
   }
 
+  /**
+   * Apply the Paeth filter to the row.
+   * @param {Uint8Array} row - The row of bytes.
+   * @param {number} bpc - Bytes per channel.
+   * @param {number} bpp - Bytes per pixel.
+   * @param {Uint8Array} out - The output buffer.
+   * @param {number} oi - Output index.
+   * @param {Uint8Array} [prevRow] - The previous row of bytes.
+   * @returns {number} The new output index.
+   */
   private static filterPaeth(
     row: Uint8Array,
     bpc: number,
@@ -198,6 +303,14 @@ export class PngEncoder implements Encoder {
     return _oi;
   }
 
+  /**
+   * Apply the none filter to the row.
+   * @param {Uint8Array} rowBytes - The row of bytes.
+   * @param {number} bpc - Bytes per channel.
+   * @param {Uint8Array} out - The output buffer.
+   * @param {number} oi - Output index.
+   * @returns {number} The new output index.
+   */
   private static filterNone(
     rowBytes: Uint8Array,
     bpc: number,
@@ -220,10 +333,19 @@ export class PngEncoder implements Encoder {
     return _oi;
   }
 
+  /**
+   * Get the number of channels in the image.
+   * @param {MemoryImage} image - The image.
+   * @returns {number} The number of channels.
+   */
   private static numChannels(image: MemoryImage): number {
     return image.hasPalette ? 1 : image.numChannels;
   }
 
+  /**
+   * Write the PNG header.
+   * @param {MemoryImage} image - The image.
+   */
   private writeHeader(image: MemoryImage): void {
     // PNG file signature
     this._output!.writeBytes(
@@ -261,6 +383,10 @@ export class PngEncoder implements Encoder {
     PngEncoder.writeChunk(this._output!, 'IHDR', chunk.getBytes());
   }
 
+  /**
+   * Write the ICC profile chunk.
+   * @param {IccProfile} iccp - The ICC profile.
+   */
   private writeICCPChunk(iccp: IccProfile): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
@@ -280,6 +406,9 @@ export class PngEncoder implements Encoder {
     PngEncoder.writeChunk(this._output!, 'iCCP', chunk.getBytes());
   }
 
+  /**
+   * Write the animation control chunk.
+   */
   private writeAnimationControlChunk(): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
@@ -291,6 +420,10 @@ export class PngEncoder implements Encoder {
     PngEncoder.writeChunk(this._output!, 'acTL', chunk.getBytes());
   }
 
+  /**
+   * Write the frame control chunk.
+   * @param {MemoryImage} image - The image.
+   */
   private writeFrameControlChunk(image: MemoryImage): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
@@ -313,6 +446,10 @@ export class PngEncoder implements Encoder {
     PngEncoder.writeChunk(this._output!, 'fcTL', chunk.getBytes());
   }
 
+  /**
+   * Write the palette chunk.
+   * @param {Palette} palette - The palette.
+   */
   private writePalette(palette: Palette): void {
     if (
       palette.format === Format.uint8 &&
@@ -348,6 +485,11 @@ export class PngEncoder implements Encoder {
     }
   }
 
+  /**
+   * Write the text chunk.
+   * @param {string} keyword - The keyword.
+   * @param {string} text - The text.
+   */
   private writeTextChunk(keyword: string, text: string): void {
     const chunk = new OutputBuffer({
       bigEndian: true,
@@ -360,6 +502,11 @@ export class PngEncoder implements Encoder {
     PngEncoder.writeChunk(this._output!, 'tEXt', chunk.getBytes());
   }
 
+  /**
+   * Apply the filter to the image.
+   * @param {MemoryImage} image - The image.
+   * @param {Uint8Array} out - The output buffer.
+   */
   private filter(image: MemoryImage, out: Uint8Array): void {
     let oi = 0;
     const filter = image.hasPalette ? PngFilterType.none : this._filter;
@@ -399,6 +546,11 @@ export class PngEncoder implements Encoder {
     }
   }
 
+  /**
+   * Adds a frame to the PNG encoder.
+   *
+   * @param {MemoryImage} image - The image to add as a frame.
+   */
   public addFrame(image: MemoryImage): void {
     let _image = image;
     // PNG can't encode HDR formats, and can only encode formats with fewer
@@ -474,7 +626,7 @@ export class PngEncoder implements Encoder {
       });
       fdat.writeUint32(this._sequenceNumber);
       fdat.writeBytes(compressed);
-      PngEncoder.writeChunk(this._output, 'fdAT', fdat.getBytes());
+      PngEncoder.writeChunk(this._output!, 'fdAT', fdat.getBytes());
 
       this._sequenceNumber++;
     }
@@ -484,6 +636,8 @@ export class PngEncoder implements Encoder {
    * Start encoding a PNG.
    *
    * Call this method once before calling **addFrame**.
+   *
+   * @param {number} frameCount - The number of frames to encode.
    */
   public start(frameCount: number): void {
     this._frames = frameCount;
@@ -494,6 +648,8 @@ export class PngEncoder implements Encoder {
    * Finish encoding a PNG, and return the resulting bytes.
    *
    * Call this method to finalize the encoding, after all **addFrame** calls.
+   *
+   * @returns {Uint8Array | undefined} The encoded PNG bytes, or undefined if encoding was not started.
    */
   public finish(): Uint8Array | undefined {
     let bytes: Uint8Array | undefined = undefined;
@@ -512,6 +668,12 @@ export class PngEncoder implements Encoder {
 
   /**
    * Encode **image** to the PNG format.
+   *
+   * @param {EncoderEncodeOptions} opt - The encoding options.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @param {boolean} [opt.singleFrame] - Whether to encode a single frame (default is false).
+   *
+   * @returns {Uint8Array} The encoded PNG bytes.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const image = opt.image;

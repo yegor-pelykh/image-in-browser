@@ -6,14 +6,24 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Filter module.
+ */
 describe('Filter', () => {
+  /**
+   * Test case for the ditherImage function.
+   * This test reads an input image, applies various dithering kernels,
+   * and writes the output images to the file system.
+   */
   test('ditherImage', () => {
+    // Read the input image from file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
+    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -22,6 +32,7 @@ describe('Filter', () => {
       return;
     }
 
+    // Apply Atkinson dithering and write the output image to file
     let id = Filter.ditherImage({
       image: i0,
       kernel: DitherKernel.atkinson,
@@ -37,6 +48,7 @@ describe('Filter', () => {
       output
     );
 
+    // Apply Floyd-Steinberg dithering and write the output image to file
     id = Filter.ditherImage({
       image: i0,
       kernel: DitherKernel.floydSteinberg,
@@ -52,6 +64,7 @@ describe('Filter', () => {
       output
     );
 
+    // Apply False Floyd-Steinberg dithering and write the output image to file
     id = Filter.ditherImage({
       image: i0,
       kernel: DitherKernel.falseFloydSteinberg,
@@ -67,6 +80,7 @@ describe('Filter', () => {
       output
     );
 
+    // Apply Stucki dithering and write the output image to file
     id = Filter.ditherImage({
       image: i0,
       kernel: DitherKernel.stucki,
@@ -82,6 +96,7 @@ describe('Filter', () => {
       output
     );
 
+    // Apply no dithering and write the output image to file
     id = Filter.ditherImage({
       image: i0,
       kernel: DitherKernel.none,

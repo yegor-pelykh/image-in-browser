@@ -7,47 +7,114 @@ import { VP8LImageTransformType } from './vp8l-image-transform-type.js';
 import { VP8LInternal } from './vp8l-internal.js';
 import { VP8LMultipliers } from './vp8l-multipliers.js';
 
+/**
+ * Class representing a VP8L Transform.
+ */
 export class VP8LTransform {
+  /**
+   * Type of the transform.
+   */
   private _type: VP8LImageTransformType = VP8LImageTransformType.predictor;
+
+  /**
+   * Gets the type of the transform.
+   */
   public get type(): VP8LImageTransformType {
     return this._type;
   }
+
+  /**
+   * Sets the type of the transform.
+   */
   public set type(v: VP8LImageTransformType) {
     this._type = v;
   }
 
+  /**
+   * Width of the transform.
+   */
   private _xsize: number = 0;
+
+  /**
+   * Gets the width of the transform.
+   */
   public get xsize(): number {
     return this._xsize;
   }
+
+  /**
+   * Sets the width of the transform.
+   */
   public set xsize(v: number) {
     this._xsize = v;
   }
 
+  /**
+   * Height of the transform.
+   */
   private _ysize: number = 0;
+
+  /**
+   * Gets the height of the transform.
+   */
   public get ysize(): number {
     return this._ysize;
   }
+
+  /**
+   * Sets the height of the transform.
+   */
   public set ysize(v: number) {
     this._ysize = v;
   }
 
+  /**
+   * Data of the transform.
+   */
   private _data?: Uint32Array;
+
+  /**
+   * Gets the data of the transform.
+   */
   public get data(): Uint32Array | undefined {
     return this._data;
   }
+
+  /**
+   * Sets the data of the transform.
+   */
   public set data(v: Uint32Array | undefined) {
     this._data = v;
   }
 
+  /**
+   * Bits of the transform.
+   */
   private _bits: number = 0;
+
+  /**
+   * Gets the bits of the transform.
+   */
   public get bits(): number {
     return this._bits;
   }
+
+  /**
+   * Sets the bits of the transform.
+   */
   public set bits(v: number) {
     this._bits = v;
   }
 
+  /**
+   * Applies the inverse transform.
+   * @param {number} rowStart - The starting row.
+   * @param {number} rowEnd - The ending row.
+   * @param {Uint32Array} inData - Input data array.
+   * @param {number} rowsIn - Number of input rows.
+   * @param {Uint32Array} outData - Output data array.
+   * @param {number} rowsOut - Number of output rows.
+   */
   public inverseTransform(
     rowStart: number,
     rowEnd: number,
@@ -117,6 +184,13 @@ export class VP8LTransform {
     }
   }
 
+  /**
+   * Applies the color index inverse transform for alpha channel.
+   * @param {number} yStart - The starting row.
+   * @param {number} yEnd - The ending row.
+   * @param {InputBuffer<Uint8Array>} src - Source input buffer.
+   * @param {InputBuffer<Uint8Array>} dst - Destination input buffer.
+   */
   public colorIndexInverseTransformAlpha(
     yStart: number,
     yEnd: number,
@@ -157,6 +231,15 @@ export class VP8LTransform {
     }
   }
 
+  /**
+   * Applies the color index inverse transform.
+   * @param {number} yStart - The starting row.
+   * @param {number} yEnd - The ending row.
+   * @param {Uint32Array} inData - Input data array.
+   * @param {number} src - Source index.
+   * @param {Uint32Array} outData - Output data array.
+   * @param {number} dst - Destination index.
+   */
   public colorIndexInverseTransform(
     yStart: number,
     yEnd: number,
@@ -197,7 +280,13 @@ export class VP8LTransform {
     }
   }
 
-  // Color space inverse transform
+  /**
+   * Applies the color space inverse transform.
+   * @param {number} yStart - The starting row.
+   * @param {number} yEnd - The ending row.
+   * @param {Uint32Array} outData - Output data array.
+   * @param {number} data - Data index.
+   */
   public colorSpaceInverseTransform(
     yStart: number,
     yEnd: number,
@@ -233,7 +322,11 @@ export class VP8LTransform {
   }
 
   /**
-   * Inverse prediction
+   * Applies the predictor inverse transform.
+   * @param {number} yStart - The starting row.
+   * @param {number} yEnd - The ending row.
+   * @param {Uint32Array} outData - Output data array.
+   * @param {number} data - Data index.
    */
   public predictorInverseTransform(
     yStart: number,
@@ -302,7 +395,10 @@ export class VP8LTransform {
   }
 
   /**
-   * Add green to blue and red channels
+   * Adds green to blue and red channels.
+   * @param {Uint32Array} pixels - The pixel data array.
+   * @param {number} data - Data index.
+   * @param {number} dataEnd - End index of the data.
    */
   public addGreenToBlueAndRed(
     pixels: Uint32Array,
@@ -320,23 +416,48 @@ export class VP8LTransform {
     }
   }
 
+  /**
+   * Gets the ARGB index.
+   * @param {number} idx - The index value.
+   * @returns {number} The ARGB index.
+   */
   private static getARGBIndex(idx: number): number {
     return (idx >>> 8) & 0xff;
   }
 
+  /**
+   * Gets the alpha index.
+   * @param {number} idx - The index value.
+   * @returns {number} The alpha index.
+   */
   private static getAlphaIndex(idx: number): number {
     return idx;
   }
 
+  /**
+   * Gets the ARGB value.
+   * @param {number} val - The value.
+   * @returns {number} The ARGB value.
+   */
   private static getARGBValue(val: number): number {
     return val;
   }
 
+  /**
+   * Gets the alpha value.
+   * @param {number} val - The value.
+   * @returns {number} The alpha value.
+   */
   private static getAlphaValue(val: number): number {
     return (val >>> 8) & 0xff;
   }
 
-  // In-place sum of each component with mod 256.
+  /**
+   * In-place sum of each component with mod 256.
+   * @param {Uint32Array} pixels - The pixel data array.
+   * @param {number} a - Index a.
+   * @param {number} b - Index b.
+   */
   private static addPixelsEq(pixels: Uint32Array, a: number, b: number): void {
     const pa = pixels[a];
     const alphaAndGreen = (pa & 0xff00ff00) + (b & 0xff00ff00);
@@ -344,14 +465,35 @@ export class VP8LTransform {
     pixels[a] = (alphaAndGreen & 0xff00ff00) | (redAndBlue & 0x00ff00ff);
   }
 
+  /**
+   * Averages two values.
+   * @param {number} a0 - Value 0.
+   * @param {number} a1 - Value 1.
+   * @returns {number} The average value.
+   */
   private static average2(a0: number, a1: number): number {
     return (((a0 ^ a1) & 0xfefefefe) >>> 1) + (a0 & a1);
   }
 
+  /**
+   * Averages three values.
+   * @param {number} a0 - Value 0.
+   * @param {number} a1 - Value 1.
+   * @param {number} a2 - Value 2.
+   * @returns {number} The average value.
+   */
   private static average3(a0: number, a1: number, a2: number): number {
     return this.average2(this.average2(a0, a2), a1);
   }
 
+  /**
+   * Averages four values.
+   * @param {number} a0 - Value 0.
+   * @param {number} a1 - Value 1.
+   * @param {number} a2 - Value 2.
+   * @param {number} a3 - Value 3.
+   * @returns {number} The average value.
+   */
   private static average4(
     a0: number,
     a1: number,
@@ -362,8 +504,9 @@ export class VP8LTransform {
   }
 
   /**
-   * Return 0, when a is a negative integer.
-   * Return 255, when a is positive.
+   * Clips the value to 0 or 255.
+   * @param {number} a - The value.
+   * @returns {number} The clipped value.
    */
   private static clip255(a: number): number {
     if (a < 0) {
@@ -375,6 +518,13 @@ export class VP8LTransform {
     return a;
   }
 
+  /**
+   * Adds and subtracts components with full range.
+   * @param {number} a - Value a.
+   * @param {number} b - Value b.
+   * @param {number} c - Value c.
+   * @returns {number} The result.
+   */
   private static addSubtractComponentFull(
     a: number,
     b: number,
@@ -383,6 +533,13 @@ export class VP8LTransform {
     return this.clip255(a + b - c);
   }
 
+  /**
+   * Clamped add and subtract with full range.
+   * @param {number} c0 - Value 0.
+   * @param {number} c1 - Value 1.
+   * @param {number} c2 - Value 2.
+   * @returns {number} The result.
+   */
   private static clampedAddSubtractFull(
     c0: number,
     c1: number,
@@ -403,10 +560,29 @@ export class VP8LTransform {
     return (a << 24) | (r << 16) | (g << 8) | b;
   }
 
+  /**
+   * Adds the given number `a` to half the difference between `a` and `b`,
+   * then clips the result to a maximum value of 255.
+   *
+   * @param {number} a - The first number.
+   * @param {number} b - The second number.
+   * @returns {number} The result of the operation, clipped to a maximum of 255.
+   */
   private static addSubtractComponentHalf(a: number, b: number): number {
     return this.clip255(a + Math.trunc((a - b) / 2));
   }
 
+  /**
+   * Performs a clamped addition and subtraction operation on the half components of the given numbers.
+   *
+   * This function calculates the average of the first two input numbers, then performs an add/subtract
+   * operation on each color component (alpha, red, green, blue) with the third input number.
+   *
+   * @param {number} c0 - The first input number.
+   * @param {number} c1 - The second input number.
+   * @param {number} c2 - The third input number.
+   * @returns {number} The result of the clamped add/subtract operation on the half components.
+   */
   private static clampedAddSubtractHalf(
     c0: number,
     c1: number,
@@ -429,12 +605,30 @@ export class VP8LTransform {
     return (a << 24) | (r << 16) | (g << 8) | b;
   }
 
+  /**
+   * Subtracts the third parameter from the first two parameters,
+   * calculates the absolute values of the results, and returns
+   * the difference between these absolute values.
+   *
+   * @param {number} a - The first number.
+   * @param {number} b - The second number.
+   * @param {number} c - The third number to be subtracted from the first two numbers.
+   * @returns {number} The difference between the absolute values of (b - c) and (a - c).
+   */
   private static sub3(a: number, b: number, c: number): number {
     const pb = b - c;
     const pa = a - c;
     return Math.abs(pb) - Math.abs(pa);
   }
 
+  /**
+   * Selects between two numbers based on a comparison with a third number.
+   *
+   * @param {number} a - The first number to compare.
+   * @param {number} b - The second number to compare.
+   * @param {number} c - The number to compare against.
+   * @returns {number} The selected number, either `a` or `b`.
+   */
   private static select(a: number, b: number, c: number): number {
     const paMinusPb =
       this.sub3(a >>> 24, b >>> 24, c >>> 24) +
@@ -448,6 +642,14 @@ export class VP8LTransform {
   // Predictors
   //--------------------------------------------------------------------------
 
+  /**
+   * A static method that predicts a value based on the given pixel data.
+   *
+   * @param {Uint32Array} _pixels - An array of 32-bit unsigned integers representing pixel data.
+   * @param {number} _left - The left coordinate for the prediction.
+   * @param {number} _top - The top coordinate for the prediction.
+   * @returns {number} A constant value representing a black ARGB color.
+   */
   private static predictor0(
     _pixels: Uint32Array,
     _left: number,
@@ -456,6 +658,14 @@ export class VP8LTransform {
     return VP8L.argbBlack;
   }
 
+  /**
+   * A predictor function that returns the value of the left pixel.
+   *
+   * @param {Uint32Array} _pixels - The array of pixel data.
+   * @param {number} left - The value of the left pixel.
+   * @param {number} _top - The value of the top pixel (unused).
+   * @returns {number} The value of the left pixel.
+   */
   private static predictor1(
     _pixels: Uint32Array,
     left: number,
@@ -464,6 +674,14 @@ export class VP8LTransform {
     return left;
   }
 
+  /**
+   * Predicts the value using the second predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} _left - The left pixel value (unused).
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor2(
     pixels: Uint32Array,
     _left: number,
@@ -472,6 +690,14 @@ export class VP8LTransform {
     return pixels[top];
   }
 
+  /**
+   * Predicts the value using the third predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} _left - The left pixel value (unused).
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor3(
     pixels: Uint32Array,
     _left: number,
@@ -480,6 +706,14 @@ export class VP8LTransform {
     return pixels[top + 1];
   }
 
+  /**
+   * Predicts the value using the fourth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} _left - The left pixel value (unused).
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor4(
     pixels: Uint32Array,
     _left: number,
@@ -488,6 +722,14 @@ export class VP8LTransform {
     return pixels[top - 1];
   }
 
+  /**
+   * Predicts the value using the fifth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor5(
     pixels: Uint32Array,
     left: number,
@@ -496,6 +738,14 @@ export class VP8LTransform {
     return VP8LTransform.average3(left, pixels[top], pixels[top + 1]);
   }
 
+  /**
+   * Predicts the value using the sixth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor6(
     pixels: Uint32Array,
     left: number,
@@ -504,6 +754,14 @@ export class VP8LTransform {
     return VP8LTransform.average2(left, pixels[top - 1]);
   }
 
+  /**
+   * Predicts the value using the seventh predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor7(
     pixels: Uint32Array,
     left: number,
@@ -512,6 +770,14 @@ export class VP8LTransform {
     return VP8LTransform.average2(left, pixels[top]);
   }
 
+  /**
+   * Predicts the value using the eighth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} _left - The left pixel value (unused).
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor8(
     pixels: Uint32Array,
     _left: number,
@@ -520,6 +786,14 @@ export class VP8LTransform {
     return VP8LTransform.average2(pixels[top - 1], pixels[top]);
   }
 
+  /**
+   * Predicts the value using the ninth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} _left - The left pixel value (unused).
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor9(
     pixels: Uint32Array,
     _left: number,
@@ -528,6 +802,14 @@ export class VP8LTransform {
     return VP8LTransform.average2(pixels[top], pixels[top + 1]);
   }
 
+  /**
+   * Predicts the value using the tenth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor10(
     pixels: Uint32Array,
     left: number,
@@ -541,6 +823,14 @@ export class VP8LTransform {
     );
   }
 
+  /**
+   * Predicts the value using the eleventh predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor11(
     pixels: Uint32Array,
     left: number,
@@ -549,6 +839,14 @@ export class VP8LTransform {
     return VP8LTransform.select(pixels[top], left, pixels[top - 1]);
   }
 
+  /**
+   * Predicts the value using the twelfth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor12(
     pixels: Uint32Array,
     left: number,
@@ -561,6 +859,14 @@ export class VP8LTransform {
     );
   }
 
+  /**
+   * Predicts the value using the thirteenth predictor method.
+   *
+   * @param {Uint32Array} pixels - The array of pixel values.
+   * @param {number} left - The left pixel value.
+   * @param {number} top - The top pixel index.
+   * @returns {number} The predicted pixel value.
+   */
   private static predictor13(
     pixels: Uint32Array,
     left: number,
@@ -573,6 +879,10 @@ export class VP8LTransform {
     );
   }
 
+  /**
+   * Array of predictor functions.
+   * Each predictor function is referenced by its index.
+   */
   private static readonly predictors = [
     this.predictor0,
     this.predictor1,

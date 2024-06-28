@@ -27,27 +27,63 @@ import { ExifData } from '../../exif/exif-data.js';
  */
 export class VP8 {
   // headers
+  /**
+   * VP8 Frame Header
+   */
   private readonly _frameHeader = new VP8FrameHeader();
+  /**
+   * VP8 Picture Header
+   */
   private readonly _picHeader = new VP8PictureHeader();
+  /**
+   * VP8 Filter Header
+   */
   private readonly _filterHeader = new VP8FilterHeader();
+  /**
+   * VP8 Segment Header
+   */
   private readonly _segmentHeader = new VP8SegmentHeader();
 
+  /**
+   * Input buffer for Uint8Array
+   */
   private _input: InputBuffer<Uint8Array>;
 
+  /**
+   * Internal WebP information
+   */
   private readonly _webp: WebPInfoInternal;
+  /**
+   * Public getter for WebP information
+   */
   public get webp(): WebPInfo {
     return this._webp;
   }
 
-  // Main data source
+  /**
+   * Main data source
+   */
   private _br!: VP8BitReader;
   private _dsp!: VP8Filter;
   private _output?: MemoryImage;
 
+  /**
+   * Left crop value
+   */
   private _cropLeft: number = 0;
+  /**
+   * Right crop value
+   */
   private _cropRight: number = 0;
+  /**
+   * Top crop value
+   */
   private _cropTop: number = 0;
+  /**
+   * Bottom crop value
+   */
   private _cropBottom: number = 0;
+
   /**
    * Width in macroblock units
    */
@@ -57,12 +93,21 @@ export class VP8 {
    */
   private _mbHeight: number = 0;
 
-  // Macroblock to process/filter, depending on cropping and filter_type
-  // top-left MB that must be in-loop filtered
+  /**
+   * Top-left macroblock X coordinate that must be in-loop filtered
+   */
   private _tlMbX: number = 0;
+  /**
+   * Top-left macroblock Y coordinate that must be in-loop filtered
+   */
   private _tlMbY: number = 0;
-  // last bottom-right MB that must be decoded
+  /**
+   * Bottom-right macroblock X coordinate that must be decoded
+   */
   private _brMbX: number = 0;
+  /**
+   * Bottom-right macroblock Y coordinate that must be decoded
+   */
   private _brMbY: number = 0;
 
   /**
@@ -88,48 +133,57 @@ export class VP8 {
     VP8QuantMatrix | undefined
   >(VP8.numMbSegments, undefined);
 
-  // probabilities
+  /**
+   * Probabilities
+   */
   private _proba?: VP8Proba;
+  /**
+   * Whether to use skip probability
+   */
   private _useSkipProba: boolean = false;
+  /**
+   * Skip probability
+   */
   private _skipP: number = 0;
 
-  // Boundary data cache and persistent buffers.
   /**
-   * top intra modes values: 4 * _mbWidth
+   * Top intra modes values: 4 * _mbWidth
    */
   private _intraT?: Uint8Array;
 
   /**
-   * left intra modes values
+   * Left intra modes values
    */
   private readonly _intraL: Uint8Array = new Uint8Array(4);
 
   /**
-   * uint8, segment of the currently parsed block
+   * Segment of the currently parsed block
    */
   private _segment: number = 0;
 
   /**
-   * top y/u/v samples
+   * Top Y/U/V samples
    */
   private _yuvT!: VP8TopSamples[];
 
   /**
-   * contextual macroblock info (mb_w_ + 1)
+   * Contextual macroblock info (mb_w_ + 1)
    */
   private _mbInfo!: VP8MB[];
 
   /**
-   * filter strength info
+   * Filter strength info
    */
   private _fInfo!: Array<VP8FInfo | undefined>;
 
   /**
-   * main block for Y/U/V (size = YUV_SIZE)
+   * Main block for Y/U/V (size = YUV_SIZE)
    */
   private _yuvBlock!: Uint8Array;
 
-  // macroblock row for storing unfiltered samples
+  /**
+   * Macroblock row for storing unfiltered samples
+   */
   private _cacheY!: InputBuffer<Uint8Array>;
   private _cacheU!: InputBuffer<Uint8Array>;
   private _cacheV!: InputBuffer<Uint8Array>;
@@ -145,46 +199,71 @@ export class VP8 {
   private _v!: InputBuffer<Uint8Array>;
   private _a?: InputBuffer<Uint8Array>;
 
-  // Per macroblock non-persistent infos.
-  // current position, in macroblock units
+  /**
+   * Current position in macroblock units (X coordinate)
+   */
   private _mbX: number = 0;
+  /**
+   * Current position in macroblock units (Y coordinate)
+   */
   private _mbY: number = 0;
 
   /**
-   * parsed reconstruction data
+   * Parsed reconstruction data
    */
   private _mbData!: VP8MBData[];
 
   /**
-   * 0=off, 1=simple, 2=complex
+   * Filter type: 0=off, 1=simple, 2=complex
    */
   private _filterType!: number;
 
   /**
-   * precalculated per-segment/type
+   * Precalculated per-segment/type filter strengths
    */
   private _fStrengths!: Array<Array<VP8FInfo>>;
 
   /**
-   * alpha-plane decoder object
+   * Alpha-plane decoder object
    */
   private _alpha!: WebPAlpha;
 
   /**
-   * compressed alpha data (if present)
+   * Compressed alpha data (if present)
    */
   private _alphaData?: InputBuffer<Uint8Array>;
+  /**
+   * Alpha plane data
+   */
   private _alphaPlane!: Uint8Array;
 
+  /**
+   * Constructs a new VP8 instance.
+   * @param {InputBuffer<Uint8Array>} input - Input buffer of Uint8Array type.
+   * @param {WebPInfoInternal} webp - WebPInfoInternal object containing webp information.
+   */
   constructor(input: InputBuffer<Uint8Array>, webp: WebPInfoInternal) {
     this._input = input;
     this._webp = webp;
   }
 
+  /**
+   * Clips the value v to the range [0, M].
+   * @param {number} v - The value to be clipped.
+   * @param {number} M - The maximum value for clipping.
+   * @returns {number} The clipped value.
+   */
   private static clip(v: number, M: number): number {
     return v < 0 ? 0 : v > M ? M : v;
   }
 
+  /**
+   * Checks the mode based on mbX and mbY values.
+   * @param {number} mbX - Macroblock X coordinate.
+   * @param {number} mbY - Macroblock Y coordinate.
+   * @param {number} [mode] - Optional mode value.
+   * @returns {number | undefined} The mode or undefined.
+   */
   private static checkMode(
     mbX: number,
     mbY: number,
@@ -200,6 +279,10 @@ export class VP8 {
     return mode;
   }
 
+  /**
+   * Retrieves the headers.
+   * @returns {boolean} True if headers are successfully retrieved, otherwise false.
+   */
   private getHeaders(): boolean {
     if (!this.decodeHeader()) {
       return false;
@@ -258,6 +341,12 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Parses the segment header.
+   * @param {VP8SegmentHeader} hdr - VP8SegmentHeader object containing segment header information.
+   * @param {VP8Proba} [proba] - Optional VP8Proba object containing probability information.
+   * @returns {boolean} True if segment header is successfully parsed, otherwise false.
+   */
   private parseSegmentHeader(hdr: VP8SegmentHeader, proba?: VP8Proba): boolean {
     hdr.useSegment = this._br.get() !== 0;
     if (hdr.useSegment) {
@@ -287,6 +376,11 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Parses the filter header.
+   *
+   * @returns {boolean} True if filter header is successfully parsed, otherwise false.
+   */
   private parseFilterHeader(): boolean {
     const hdr = this._filterHeader;
     this._filterHeader.simple = this._br.get() !== 0;
@@ -316,14 +410,10 @@ export class VP8 {
   }
 
   /**
-   * This function returns VP8_STATUS_SUSPENDED if we don't have all the
-   * necessary data in **input**.
-   * This case is not necessarily an error (for incremental decoding).
-   * Still, no bitreader is ever initialized to make it possible to read
-   * unavailable memory.
-   * If we don't even have the partitions sizes, than
-   * VP8_STATUS_NOT_ENOUGH_DATA is returned, and this is an unrecoverable error.
-   * If the partitions were positioned ok, VP8_STATUS_OK is returned.
+   * Parses the partitions from the given input buffer.
+   *
+   * @param {InputBuffer<Uint8Array>} input - The input buffer containing the data to be parsed.
+   * @returns {boolean} true if the partitions were successfully parsed, false otherwise.
    */
   private parsePartitions(input: InputBuffer<Uint8Array>): boolean {
     let sz = 0;
@@ -357,6 +447,13 @@ export class VP8 {
     return partStart < bufEnd;
   }
 
+  /**
+   * Parses quantization parameters and updates the dequantization matrices.
+   *
+   * This method reads quantization values from the bit reader and updates the
+   * dequantization matrices for each macroblock segment based on the segment
+   * header and quantization parameters.
+   */
   private parseQuant(): void {
     const baseQ0 = this._br.getValue(7);
     const dqy1Dc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
@@ -404,6 +501,12 @@ export class VP8 {
     }
   }
 
+  /**
+   * Parses the probability values for VP8 codec.
+   * This method updates the probability values used in the decoding process.
+   * It iterates through types, bands, contexts, and probabilities to set the appropriate values.
+   * It also checks and sets the skip probability if applicable.
+   */
   private parseProba(): void {
     const proba = this._proba;
     for (let t = 0; t < VP8.numTypes; ++t) {
@@ -427,8 +530,10 @@ export class VP8 {
   }
 
   /**
-   * Precompute the filtering strength for each segment and each i4x4/i16x16
-   * mode.
+   * Precomputes the filter strengths for each macroblock segment.
+   * This method calculates the filter strength based on the segment header,
+   * filter header, and other parameters, and updates the filter strengths
+   * for each segment and sub-block.
    */
   private precomputeFilterStrengths(): void {
     if (this._filterType > 0) {
@@ -488,6 +593,15 @@ export class VP8 {
     }
   }
 
+  /**
+   * Initializes the frame for processing.
+   *
+   * This method sets up various buffers and parameters required for processing
+   * the frame, including alpha data, filter strengths, YUV samples, and caches.
+   * It also defines the area where in-loop filtering can be skipped in case of cropping.
+   *
+   * @returns {boolean} - Returns true when initialization is successful.
+   */
   private initFrame(): boolean {
     if (this._webp.alphaData !== undefined) {
       this._alphaData = this._webp.alphaData;
@@ -602,6 +716,12 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Parses the frame by iterating through macroblock rows and columns.
+   * For each macroblock, it decodes and processes the row.
+   *
+   * @returns {boolean} - Returns true if the frame is successfully parsed, otherwise false.
+   */
   private parseFrame(): boolean {
     for (this._mbY = 0; this._mbY < this._brMbY; ++this._mbY) {
       // Parse bitstream for this row
@@ -627,6 +747,12 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Processes a row by reconstructing it and then determining whether to use a filter
+   * based on certain conditions.
+   *
+   * @returns {boolean} - The result of finishing the row, potentially using a filter.
+   */
   private processRow(): boolean {
     this.reconstructRow();
 
@@ -637,6 +763,12 @@ export class VP8 {
     return this.finishRow(useFilter);
   }
 
+  /**
+   * Reconstructs a row of macroblocks by processing each macroblock in the row.
+   * This involves rotating left samples, initializing top-left samples, bringing
+   * top samples into the cache, predicting and adding residuals, and transferring
+   * reconstructed samples to the final destination.
+   */
   private reconstructRow(): void {
     const mbY = this._mbY;
     const yDst = new InputBuffer<Uint8Array>({
@@ -813,6 +945,13 @@ export class VP8 {
     }
   }
 
+  /**
+   * Transforms the input buffer based on the specified bit pattern.
+   *
+   * @param {number} bits - The bit pattern used to determine the type of transformation.
+   * @param {InputBuffer<Int16Array>} src - The source input buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination input buffer to store the transformed Uint8Array data.
+   */
   private doTransform(
     bits: number,
     src: InputBuffer<Int16Array>,
@@ -833,6 +972,13 @@ export class VP8 {
     }
   }
 
+  /**
+   * Performs a UV transform on the given input buffers based on the provided bits.
+   *
+   * @param {number} bits - A number representing the bits to check for non-zero coefficients.
+   * @param {InputBuffer<Int16Array>} src - The source input buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination input buffer to store the transformed Uint8Array data.
+   */
   private doUVTransform(
     bits: number,
     src: InputBuffer<Int16Array>,
@@ -850,6 +996,12 @@ export class VP8 {
     }
   }
 
+  /**
+   * Applies filtering to the macroblock at the specified coordinates.
+   *
+   * @param {number} mbX - The x-coordinate of the macroblock.
+   * @param {number} mbY - The y-coordinate of the macroblock.
+   */
   private doFilter(mbX: number, mbY: number): void {
     const yBps = this._cacheYStride;
     const fInfo = this._fInfo[mbX]!;
@@ -901,7 +1053,10 @@ export class VP8 {
   }
 
   /**
-   * Filter the decoded macroblock row (if needed)
+   * Filters a row of data by iterating through a range of X coordinates
+   * and applying a filter function to each coordinate.
+   *
+   * @private
    */
   private filterRow(): void {
     for (let mbX = this._tlMbX; mbX < this._brMbX; ++mbX) {
@@ -909,20 +1064,17 @@ export class VP8 {
     }
   }
 
+  /**
+   * Applies a dithering effect to the current row.
+   */
   private ditherRow(): void {}
 
   /**
-   * This function is called after a row of macroblocks is finished decoding.
-   * It also takes into account the following restrictions:
+   * Processes the current row of macroblocks, applying filters and dithering if necessary,
+   * and updates the internal buffers for the next row.
    *
-   * * In case of in-loop filtering, we must hold off sending some of the bottom
-   * pixels as they are yet unfiltered. They will be when the next macroblock
-   * row is decoded. Meanwhile, we must preserve them by rotating them in the
-   * cache area. This doesn't hold for the very bottom row of the uncropped
-   * picture of course.
-   *
-   * * we must clip the remaining pixels against the cropping area. The VP8Io
-   * struct must have the following fields set correctly before calling put():
+   * @param {boolean} useFilter - Indicates whether to apply the filter to the current row.
+   * @returns {boolean} Returns true if the row was successfully processed, false otherwise.
    */
   private finishRow(useFilter: boolean): boolean {
     const extraYRows = VP8.kFilterExtraRows[this._filterType];
@@ -1011,6 +1163,15 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Puts the specified width and height at the given Y-coordinate.
+   * Emits fancy RGB and alpha RGB values.
+   *
+   * @param {number} mbY - The Y-coordinate.
+   * @param {number} mbW - The width to be put.
+   * @param {number} mbH - The height to be put.
+   * @returns {boolean} Returns true if the width and height are greater than 0, otherwise false.
+   */
   private put(mbY: number, mbW: number, mbH: number): boolean {
     if (mbW <= 0 || mbH <= 0) {
       return false;
@@ -1022,25 +1183,59 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Clips the given value to an 8-bit range based on specific conditions.
+   *
+   * @param {number} v - The value to be clipped.
+   * @returns {number} The clipped value, either shifted right by a fixed amount or set to 0 or 255.
+   */
   private clip8(v: number): number {
     const d = (v & VP8.xorYuvMask2) === 0 ? v >>> VP8.yuvFix2 : v < 0 ? 0 : 255;
     return d;
   }
 
+  /**
+   * Converts YUV color space values to the Red (R) component in RGB color space.
+   *
+   * @param {number} y - The Y (luminance) component of the YUV color space.
+   * @param {number} v - The V (chrominance) component of the YUV color space.
+   * @returns {number} The Red (R) component in RGB color space.
+   */
   private yuvToR(y: number, v: number): number {
     return this.clip8(VP8.kYScale * y + VP8.kVToR * v + VP8.kRCst);
   }
 
+  /**
+   * Converts YUV color components to the green (G) component in RGB color space.
+   *
+   * @param {number} y - The Y (luminance) component of the YUV color space.
+   * @param {number} u - The U (chrominance) component of the YUV color space.
+   * @param {number} v - The V (chrominance) component of the YUV color space.
+   * @returns {number} The green (G) component in the RGB color space.
+   */
   private yuvToG(y: number, u: number, v: number): number {
     return this.clip8(
       VP8.kYScale * y - VP8.kUToG * u - VP8.kVToG * v + VP8.kGCst
     );
   }
 
+  /**
+   * Converts YUV to Blue component.
+   * @param {number} y - Luminance component.
+   * @param {number} u - Chrominance component U.
+   * @returns {number} Blue component.
+   */
   private yuvToB(y: number, u: number): number {
     return this.clip8(VP8.kYScale * y + VP8.kUToB * u + VP8.kBCst);
   }
 
+  /**
+   * Converts YUV to RGB.
+   * @param {number} y - Luminance component.
+   * @param {number} u - Chrominance component U.
+   * @param {number} v - Chrominance component V.
+   * @param {InputBuffer<Uint8Array>} rgb - Buffer to store RGB values.
+   */
   private yuvToRgb(
     y: number,
     u: number,
@@ -1052,6 +1247,13 @@ export class VP8 {
     rgb.set(2, this.yuvToB(y, u));
   }
 
+  /**
+   * Converts YUV to RGBA.
+   * @param {number} y - Luminance component.
+   * @param {number} u - Chrominance component U.
+   * @param {number} v - Chrominance component V.
+   * @param {InputBuffer<Uint8Array>} rgba - Buffer to store RGBA values.
+   */
   private yuvToRgba(
     y: number,
     u: number,
@@ -1062,6 +1264,18 @@ export class VP8 {
     rgba.set(3, 0xff);
   }
 
+  /**
+   * Upsamples YUV components.
+   * @param {InputBuffer<Uint8Array>} topY - Top Y component buffer.
+   * @param {InputBuffer<Uint8Array> | undefined} bottomY - Bottom Y component buffer.
+   * @param {InputBuffer<Uint8Array>} topU - Top U component buffer.
+   * @param {InputBuffer<Uint8Array>} topV - Top V component buffer.
+   * @param {InputBuffer<Uint8Array>} curU - Current U component buffer.
+   * @param {InputBuffer<Uint8Array>} curV - Current V component buffer.
+   * @param {InputBuffer<Uint8Array>} topDst - Top destination buffer.
+   * @param {InputBuffer<Uint8Array> | undefined} bottomDst - Bottom destination buffer.
+   * @param {number} len - Length of the buffer.
+   */
   private upSample(
     topY: InputBuffer<Uint8Array>,
     bottomY: InputBuffer<Uint8Array> | undefined,
@@ -1159,6 +1373,12 @@ export class VP8 {
     }
   }
 
+  /**
+   * Emits alpha values for RGB.
+   * @param {number} mbY - Macroblock Y position.
+   * @param {number} mbW - Macroblock width.
+   * @param {number} mbH - Macroblock height.
+   */
   private emitAlphaRGB(mbY: number, mbW: number, mbH: number): void {
     if (this._a === undefined) {
       return;
@@ -1196,6 +1416,13 @@ export class VP8 {
     }
   }
 
+  /**
+   * Emits fancy RGB values.
+   * @param {number} mbY - Macroblock Y position.
+   * @param {number} mbW - Macroblock width.
+   * @param {number} mbH - Macroblock height.
+   * @returns {number} Number of lines output.
+   */
   private emitFancyRGB(mbY: number, mbW: number, mbH: number): number {
     // a priori guess
     let numLinesOut = mbH;
@@ -1296,6 +1523,12 @@ export class VP8 {
     return numLinesOut;
   }
 
+  /**
+   * Decompresses alpha rows.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to decompress.
+   * @returns {InputBuffer<Uint8Array> | undefined} Buffer containing decompressed alpha rows.
+   */
   private decompressAlphaRows(
     row: number,
     numRows: number
@@ -1326,6 +1559,11 @@ export class VP8 {
     });
   }
 
+  /**
+   * Decodes a macroblock.
+   * @param {VP8BitReader} [tokenBr] - Optional bit reader for tokens.
+   * @returns {boolean} True if decoding was successful.
+   */
   private decodeMB(tokenBr?: VP8BitReader): boolean {
     const left = this._mbInfo[0];
     const mb = this._mbInfo[1 + this._mbX];
@@ -1370,6 +1608,12 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Parses residuals for a macroblock.
+   * @param {VP8MB} mb - Macroblock information.
+   * @param {VP8BitReader} [tokenBr] - Optional bit reader for tokens.
+   * @returns {boolean} True if parsing was successful.
+   */
   private parseResiduals(mb: VP8MB, tokenBr?: VP8BitReader): boolean {
     const bands = this._proba!.bands;
     const q = this._dqm[this._segment];
@@ -1476,6 +1720,12 @@ export class VP8 {
     return (nonZeroY | nonZeroUV) === 0;
   }
 
+  /**
+   * Performs a Walsh-Hadamard Transform (WHT) on the input buffer and stores the result in the output buffer.
+   *
+   * @param {InputBuffer<Int16Array>} src - The source input buffer containing the data to be transformed.
+   * @param {InputBuffer<Int16Array>} out - The output buffer where the transformed data will be stored.
+   */
   private transformWHT(
     src: InputBuffer<Int16Array>,
     out: InputBuffer<Int16Array>
@@ -1509,6 +1759,13 @@ export class VP8 {
     }
   }
 
+  /**
+   * Computes the non-zero coefficients.
+   * @param {number} nzCoeffs - The number of non-zero coefficients.
+   * @param {number} nz - The number of non-zero coefficients in the current block.
+   * @param {number} dcNz - The number of non-zero DC coefficients.
+   * @returns {number} The computed non-zero coefficients.
+   */
   private nzCodeBits(nzCoeffs: number, nz: number, dcNz: number): number {
     let _nzCoeffs = nzCoeffs;
     _nzCoeffs <<= 2;
@@ -1517,7 +1774,10 @@ export class VP8 {
   }
 
   /**
-   * See section 13-2: http://tools.ietf.org/html/rfc6386#section-13.2
+   * Retrieves a large value based on bit reading.
+   * @param {VP8BitReader} br - The bit reader.
+   * @param {Uint8Array} p - The probability array.
+   * @returns {number} The large value.
    */
   private getLargeValue(br: VP8BitReader, p: Uint8Array): number {
     let v: number = 0;
@@ -1552,7 +1812,14 @@ export class VP8 {
   }
 
   /**
-   * Returns the position of the last non-zero coeff plus one
+   * Returns the position of the last non-zero coefficient plus one.
+   * @param {VP8BitReader | undefined} br - The bit reader.
+   * @param {VP8BandProbas[]} prob - The probability bands.
+   * @param {number} ctx - The context.
+   * @param {Int32Array} dq - The dequantization values.
+   * @param {number} n - The initial coefficient index.
+   * @param {InputBuffer<Int16Array>} out - The output buffer.
+   * @returns {number} The position of the last non-zero coefficient plus one.
    */
   private getCoeffs(
     br: VP8BitReader | undefined,
@@ -1597,6 +1864,9 @@ export class VP8 {
     return 16;
   }
 
+  /**
+   * Parses the intra mode.
+   */
   private parseIntraMode(): void {
     const ti = 4 * this._mbX;
     const li = 0;
@@ -1659,6 +1929,10 @@ export class VP8 {
             : VP8.hPred;
   }
 
+  /**
+   * Decodes the header of the input stream.
+   * @returns {boolean} True if the header is successfully decoded, false otherwise.
+   */
   public decodeHeader(): boolean {
     const bits = this._input.readUint24();
 
@@ -1693,6 +1967,10 @@ export class VP8 {
     return true;
   }
 
+  /**
+   * Decodes the input stream and returns the decoded image.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
+   */
   public decode(): MemoryImage | undefined {
     if (!this.getHeaders()) {
       return undefined;
@@ -1725,7 +2003,9 @@ export class VP8 {
   }
 
   /**
-   * Vertical position of a MB
+   * Computes the vertical position of a macroblock.
+   * @param {number} mbY - The macroblock Y-coordinate.
+   * @returns {number} The vertical position of the macroblock.
    */
   public macroBlockVPos(mbY: number): number {
     return mbY * 16;
@@ -1734,22 +2014,46 @@ export class VP8 {
   /**
    * How many extra lines are needed on the MB boundary
    * for caching, given a filtering level.
-   * Simple filter:  up to 2 luma samples are read and 1 is written.
+   * Simple filter: up to 2 luma samples are read and 1 is written.
    * Complex filter: up to 4 luma samples are read and 3 are written. Same for
    * U/V, so it's 8 samples total (because of the 2x upsampling).
    */
   public static readonly filterExtraRows = [0, 2, 8];
 
+  /**
+   * VP8 signature constant.
+   */
   public static readonly vp8Signature = 0x2a019d;
 
+  /**
+   * Number of probabilities in the macroblock feature tree.
+   */
   public static readonly mbFeatureTreeProbs = 3;
+
+  /**
+   * Number of macroblock segments.
+   */
   public static readonly numMbSegments = 4;
+
+  /**
+   * Number of reference loop filter deltas.
+   */
   public static readonly numRefLfDeltas = 4;
-  // I4x4, ZERO, *, SPLIT
+
+  /**
+   * Number of mode loop filter deltas.
+   * I4x4, ZERO, *, SPLIT
+   */
   public static readonly numModeLfDeltas = 4;
+
+  /**
+   * Maximum number of partitions.
+   */
   public static readonly maxNumPartitions = 8;
 
-  // 4x4 modes
+  /**
+   * 4x4 prediction modes.
+   */
   public static readonly bDcPred = 0;
   public static readonly bTmPred = 1;
   public static readonly bVePred = 2;
@@ -1760,67 +2064,171 @@ export class VP8 {
   public static readonly bVlPred = 7;
   public static readonly bHdPred = 8;
   public static readonly bHuPred = 9;
+
+  /**
+   * Number of 4x4 prediction modes.
+   */
   public static readonly numBModes = VP8.bHuPred + 1 - VP8.bDcPred;
 
-  // Luma16 or UV modes
+  /**
+   * Luma16 or UV prediction modes.
+   */
   public static readonly dcPred = VP8.bDcPred;
   public static readonly vPred = VP8.bVePred;
   public static readonly hPred = VP8.bHePred;
   public static readonly tmPred = VP8.bTmPred;
   public static readonly bPred = VP8.numBModes;
 
-  // special modes
+  /**
+   * Special prediction modes.
+   */
   public static readonly bDcPredNoTop = 4;
   public static readonly bDcPredNoLeft = 5;
   public static readonly bDcPredNoTopLeft = 6;
   public static readonly numBDcModes = 7;
 
-  // Probabilities
+  /**
+   * Number of types.
+   */
   public static readonly numTypes = 4;
+
+  /**
+   * Number of bands.
+   */
   public static readonly numBands = 8;
+
+  /**
+   * Number of contexts.
+   */
   public static readonly numCtx = 3;
+
+  /**
+   * Number of probabilities.
+   */
   public static readonly numProbas = 11;
 
-  // this is the common stride used by yuv[]
+  /**
+   * Common stride used by yuv[].
+   */
   public static readonly bps = 32;
+
+  /**
+   * YUV size.
+   */
   public static readonly yuvSize = VP8.bps * 17 + VP8.bps * 9;
+
+  /**
+   * Y size.
+   */
   public static readonly ySize = VP8.bps * 17;
+
+  /**
+   * Y offset.
+   */
   public static readonly yOffset = Number(VP8.bps) + 8;
+
+  /**
+   * U offset.
+   */
   public static readonly uOffset = VP8.yOffset + VP8.bps * 16 + VP8.bps;
+
+  /**
+   * V offset.
+   */
   public static readonly vOffset = VP8.uOffset + 16;
 
-  // fixed-point precision for RGB->YUV
+  /**
+   * Fixed-point precision for RGB->YUV.
+   */
   public static readonly yuvFix = 16;
+
+  /**
+   * Half value for YUV fixed-point precision.
+   */
   public static readonly yuvHalf = 1 << (VP8.yuvFix - 1);
+
+  /**
+   * Mask value for YUV fixed-point precision.
+   */
   public static readonly yuvMask = (256 << VP8.yuvFix) - 1;
-  // min value of r/g/b output
+
+  /**
+   * Minimum value of r/g/b output.
+   */
   public static readonly yuvRangeMin = -227;
-  // max value of r/g/b output
+
+  /**
+   * Maximum value of r/g/b output.
+   */
   public static readonly yuvRangeMax = 256 + 226;
-  // fixed-point precision for YUV->RGB
+
+  /**
+   * Fixed-point precision for YUV->RGB.
+   */
   public static readonly yuvFix2 = 14;
+
+  /**
+   * Half value for YUV->RGB fixed-point precision.
+   */
   public static readonly yuvHalf2 = 1 << (VP8.yuvFix2 - 1);
+
+  /**
+   * Mask value for YUV->RGB fixed-point precision.
+   */
   public static readonly yuvMask2 = (256 << VP8.yuvFix2) - 1;
+
+  /**
+   * XOR mask value for YUV->RGB fixed-point precision.
+   */
   public static readonly xorYuvMask2 = -VP8.yuvMask2 - 1;
 
-  // These constants are 14b fixed-point version of ITU-R BT.601 constants.
-  // 1.164 = 255 / 219
+  /**
+   * 14b fixed-point version of ITU-R BT.601 constants.
+   * 1.164 = 255 / 219
+   */
   public static readonly kYScale = 19077;
-  // 1.596 = 255 / 112 * 0.701
+
+  /**
+   * 1.596 = 255 / 112 * 0.701
+   */
   public static readonly kVToR = 26149;
-  // 0.391 = 255 / 112 * 0.886 * 0.114 / 0.587
+
+  /**
+   * 0.391 = 255 / 112 * 0.886 * 0.114 / 0.587
+   */
   public static readonly kUToG = 6419;
-  // 0.813 = 255 / 112 * 0.701 * 0.299 / 0.587
+
+  /**
+   * 0.813 = 255 / 112 * 0.701 * 0.299 / 0.587
+   */
   public static readonly kVToG = 13320;
-  // 2.018 = 255 / 112 * 0.886
+
+  /**
+   * 2.018 = 255 / 112 * 0.886
+   */
   public static readonly kUToB = 33050;
+
+  /**
+   * Constant for red channel.
+   */
   public static readonly kRCst =
     -VP8.kYScale * 16 - VP8.kVToR * 128 + VP8.yuvHalf2;
+
+  /**
+   * Constant for green channel.
+   */
   public static readonly kGCst =
     -VP8.kYScale * 16 + VP8.kUToG * 128 + VP8.kVToG * 128 + VP8.yuvHalf2;
+
+  /**
+   * Constant for blue channel.
+   */
   public static readonly kBCst =
     -VP8.kYScale * 16 - VP8.kUToB * 128 + VP8.yuvHalf2;
 
+  /**
+   * Intra4 prediction modes for Y.
+   */
   public static readonly kYModesIntra4: number[] = [
     -VP8.bDcPred,
     1,
@@ -1842,6 +2250,9 @@ export class VP8 {
     -VP8.bHuPred,
   ];
 
+  /**
+   * Probabilities for B modes.
+   */
   public static readonly kBModesProba: Array<Array<Array<number>>> = [
     [
       [231, 120, 48, 89, 115, 113, 120, 152, 112],
@@ -1965,6 +2376,9 @@ export class VP8 {
     ],
   ];
 
+  /**
+   * A 4-dimensional array representing the probability coefficients for Proba0.
+   */
   public static readonly coeffsProba0: Array<Array<Array<Array<number>>>> = [
     [
       [
@@ -2136,6 +2550,9 @@ export class VP8 {
     ],
   ];
 
+  /**
+   * A 4-dimensional array representing the probability coefficients for UpdateProba.
+   */
   public static readonly coeffsUpdateProba: Array<Array<Array<Array<number>>>> =
     [
       [
@@ -2309,7 +2726,7 @@ export class VP8 {
     ];
 
   /**
-   * Paragraph 14.1
+   * Represents a table of DC values.
    */
   public static readonly dcTable: number[] = [
     // uint8
@@ -2323,6 +2740,9 @@ export class VP8 {
     157,
   ];
 
+  /**
+   * Represents a table of AC values.
+   */
   public static readonly acTable: number[] = [
     // uint16
     4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
@@ -2334,7 +2754,9 @@ export class VP8 {
     189, 193, 197, 201, 205, 209, 213, 217, 221, 225, 229, 234, 239, 245, 249,
     254, 259, 264, 269, 274, 279, 284,
   ];
-
+  /**
+   * Scan order for VP8.
+   */
   public static readonly kScan: number[] = [
     0 + 0 * VP8.bps,
     4 + 0 * VP8.bps,
@@ -2354,20 +2776,38 @@ export class VP8 {
     12 + 12 * VP8.bps,
   ];
 
+  /**
+   * Band order for VP8.
+   */
   public static readonly kBands: number[] = [
     0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0,
   ];
 
+  /**
+   * Category 3 probabilities for VP8.
+   */
   public static readonly kCat3: number[] = [173, 148, 140];
 
+  /**
+   * Category 4 probabilities for VP8.
+   */
   public static readonly kCat4: number[] = [176, 155, 140, 135];
 
+  /**
+   * Category 5 probabilities for VP8.
+   */
   public static readonly kCat5: number[] = [180, 157, 141, 134, 130];
 
+  /**
+   * Category 6 probabilities for VP8.
+   */
   public static readonly kCat6: number[] = [
     254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129,
   ];
 
+  /**
+   * Combined categories 3, 4, 5, and 6 probabilities for VP8.
+   */
   public static readonly kCat3456: Array<Array<number>> = [
     VP8.kCat3,
     VP8.kCat4,
@@ -2375,6 +2815,9 @@ export class VP8 {
     VP8.kCat6,
   ];
 
+  /**
+   * Zigzag order for VP8.
+   */
   public static readonly kZigzag: number[] = [
     0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15,
   ];

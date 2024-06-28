@@ -3,7 +3,13 @@
 import { describe, expect, test } from 'vitest';
 import { Format, MemoryImage } from '../../src';
 
-describe('Image', () => {
+/**
+ * Test suite for the MemoryImage class.
+ */
+describe('MemoryImage', () => {
+  /**
+   * Test case for a 32x32 image with uint32 format and 1 channel.
+   */
   test('uint32 nc:1', () => {
     const i1 = new MemoryImage({
       width: 32,
@@ -27,6 +33,9 @@ describe('Image', () => {
     expect(i1.getPixel(1, 1).equals([5214245])).toBeTruthy();
   });
 
+  /**
+   * Test case for a 32x32 image with uint32 format and 2 channels.
+   */
   test('uint32 nc:2', () => {
     const i2 = new MemoryImage({
       width: 32,
@@ -51,6 +60,9 @@ describe('Image', () => {
     expect(i2.getPixel(1, 1).equals([110, 84]));
   });
 
+  /**
+   * Test case for a 32x32 image with uint32 format and 3 channels.
+   */
   test('uint32 nc:3', () => {
     const i3 = new MemoryImage({
       width: 32,
@@ -75,6 +87,9 @@ describe('Image', () => {
     expect(i3.getPixel(1, 1).equals([110, 84, 94])).toBeTruthy();
   });
 
+  /**
+   * Test case for a 32x32 image with uint32 format and 4 channels.
+   */
   test('uint32 nc:4', () => {
     const i4 = new MemoryImage({
       width: 32,

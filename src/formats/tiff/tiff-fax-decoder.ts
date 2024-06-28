@@ -3,53 +3,34 @@
 import { InputBuffer } from '../../common/input-buffer.js';
 import { LibError } from '../../error/lib-error.js';
 
+/**
+ * Interface for initializing options for TiffFaxDecoder.
+ */
 export interface TiffFaxDecoderInitOptions {
+  /** Fill order of the bits. */
   fillOrder: number;
+  /** Width of the image. */
   width: number;
+  /** Height of the image. */
   height: number;
 }
 
+/**
+ * Class for decoding TIFF Fax images.
+ */
 export class TiffFaxDecoder {
+  /**
+   * Table for bit manipulation.
+   */
   private static readonly _table1: number[] = [
-    // 0 bits are left in first byte - SHOULD NOT HAPPEN
-    0x00,
-    // 1 bits are left in first byte
-    0x01,
-    // 2 bits are left in first byte
-    0x03,
-    // 3 bits are left in first byte
-    0x07,
-    // 4 bits are left in first byte
-    0x0f,
-    // 5 bits are left in first byte
-    0x1f,
-    // 6 bits are left in first byte
-    0x3f,
-    // 7 bits are left in first byte
-    0x7f,
-    // 8 bits are left in first byte
-    0xff,
+    0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff,
   ];
 
+  /**
+   * Table for bit manipulation.
+   */
   private static readonly _table2: number[] = [
-    // 0
-    0x00,
-    // 1
-    0x80,
-    // 2
-    0xc0,
-    // 3
-    0xe0,
-    // 4
-    0xf0,
-    // 5
-    0xf8,
-    // 6
-    0xfc,
-    // 7
-    0xfe,
-    // 8
-    0xff,
+    0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff,
   ];
 
   /**
@@ -75,7 +56,7 @@ export class TiffFaxDecoder {
   ];
 
   /**
-   * The main 10 bit white runs lookup table
+   * The main 10 bit white runs lookup table.
    */
   private static readonly _white: number[] = [
     // 0 - 7
@@ -337,7 +318,7 @@ export class TiffFaxDecoder {
   ];
 
   /**
-   * Additional make up codes for both White and Black runs
+   * Additional make up codes for both white and black runs
    */
   private static readonly _additionalMakeup: number[] = [
     28679, 28679, 31752, -32759, -31735, -30711, -29687, -28663, 29703, 29703,
@@ -345,7 +326,11 @@ export class TiffFaxDecoder {
   ];
 
   /**
-   * Initial black run look up table, uses the first 4 bits of a code
+   * Initial black values.
+   *
+   * The array is divided into two segments:
+   * - 0 - 7: Initial values for the first segment.
+   * - 8 - 15: Initial values for the second segment.
    */
   private static readonly _initBlack: number[] = [
     // 0 - 7
@@ -354,10 +339,13 @@ export class TiffFaxDecoder {
     100, 100, 100, 100, 68, 68, 68, 68,
   ];
 
+  /**
+   * Two-bit black values.
+   */
   private static readonly _twoBitBlack: number[] = [292, 260, 226, 226];
 
   /**
-   * Main black run table, using the last 9 bits of possible 13 bit code
+   * Main black run table, using the last 9 bits of possible 13 bit code.
    */
   private static readonly _black: number[] = [
     // 0 - 7
@@ -490,6 +478,9 @@ export class TiffFaxDecoder {
     390, 390, 390, 390, 390, 390, 390, 390,
   ];
 
+  /**
+   * Array of 2D codes.
+   */
   private static readonly _twoDCodes: number[] = [
     // 0 - 7
     80, 88, 23, 71, 30, 30, 62, 62,
@@ -525,39 +516,115 @@ export class TiffFaxDecoder {
     41, 41, 41, 41, 41, 41, 41, 41,
   ];
 
+  /**
+   * The width of the image to decode.
+   * @private
+   */
   private _width: number;
+  /**
+   * Gets the width of the image to decode.
+   */
   public get width(): number {
     return this._width;
   }
 
+  /**
+   * The height of the image to decode.
+   * @private
+   */
   private _height: number;
+  /**
+   * Gets the height of the image to decode.
+   */
   public get height(): number {
     return this._height;
   }
 
+  /**
+   * The fill order of the image.
+   * @private
+   */
   private _fillOrder: number;
+  /**
+   * Gets the fill order of the image.
+   * @returns {number} The fill order of the object.
+   */
   public get fillOrder(): number {
     return this._fillOrder;
   }
 
-  // Data structures needed to store changing elements for the previous
-  // and the current scanline
+  /**
+   * Size of the element that is being changed.
+   * @private
+   */
   private _changingElemSize = 0;
+
+  /**
+   * Array to store changing elements for the previous scanline
+   */
   private _prevChangingElements?: Array<number>;
+
+  /**
+   * Array to store changing elements for the current scanline
+   */
   private _currChangingElements?: Array<number>;
+
+  /**
+   * Input buffer containing Uint8Array data
+   */
   private _data!: InputBuffer<Uint8Array>;
+
+  /**
+   * Pointer to the current bit in the input buffer
+   */
   private _bitPointer = 0;
+
+  /**
+   * Pointer to the current byte in the input buffer
+   */
   private _bytePointer = 0;
 
   // Element at which to start search in getNextChangingElement
+
+  /**
+   * The last element that was changed.
+   * @private
+   */
   private _lastChangingElement = 0;
+  /**
+   * The compression level.
+   * @private
+   */
   private _compression = 2;
 
   // Variables set by T4Options
+
+  /**
+   * Mode for uncompressed data.
+   * @private
+   */
   private _uncompressedMode = 0;
+
+  /**
+   * Bits used for filling.
+   * @private
+   */
   private _fillBits = 0;
+
+  /**
+   * One-dimensional mode.
+   * @private
+   */
   private _oneD = 0;
 
+  /**
+   * Constructs a new TiffFaxDecoder instance with the given options.
+   *
+   * @param {TiffFaxDecoderInitOptions} opt - The initialization options for the decoder.
+   * @param {number} opt.fillOrder - The fill order for the decoder.
+   * @param {number} opt.width - The width of the image to decode.
+   * @param {number} opt.height - The height of the image to decode.
+   */
   constructor(opt: TiffFaxDecoderInitOptions) {
     this._fillOrder = opt.fillOrder;
     this._width = opt.width;
@@ -568,6 +635,13 @@ export class TiffFaxDecoder {
     this._currChangingElements.fill(0);
   }
 
+  /**
+   * Retrieves the next specified number of bits from the data stream.
+   *
+   * @param {number} bitsToGet - The number of bits to retrieve.
+   * @returns {number} The next bitsToGet bits from the data stream.
+   * @throws {LibError} If the fill order is not recognized.
+   */
   private nextNBits(bitsToGet: number): number {
     let b = 0;
     let next = 0;
@@ -640,7 +714,12 @@ export class TiffFaxDecoder {
 
     return i1 | i2;
   }
-
+  /**
+   * Retrieves the next value with fewer than 8 bits from the data.
+   * @param {number} bitsToGet - The number of bits to retrieve.
+   * @returns {number} The next value with the specified number of bits.
+   * @throws {LibError} If the fill order is not 1 or 2.
+   */
   private nextLesserThan8Bits(bitsToGet: number): number {
     let b = 0;
     let next = 0;
@@ -693,7 +772,9 @@ export class TiffFaxDecoder {
   }
 
   /**
-   * Move pointer backwards by given amount of bits
+   * Move pointer backwards by given amount of bits.
+   *
+   * @param {number} bitsToMoveBack - The number of bits to move the bit pointer back.
    */
   private updatePointer(bitsToMoveBack: number): void {
     const i = this._bitPointer - bitsToMoveBack;
@@ -707,7 +788,9 @@ export class TiffFaxDecoder {
   }
 
   /**
-   * Move to the next byte boundary
+   * Move to the next byte boundary.
+   *
+   * @returns {boolean} Always returns true.
    */
   private advancePointer(): boolean {
     if (this._bitPointer !== 0) {
@@ -718,6 +801,14 @@ export class TiffFaxDecoder {
     return true;
   }
 
+  /**
+   * Sets a specified number of bits to black (1) in the given buffer.
+   *
+   * @param {InputBuffer<Uint8Array>} buffer - The buffer containing the bits to be set.
+   * @param {number} lineOffset - The line offset in the buffer where the setting starts.
+   * @param {number} bitOffset - The bit offset within the line where the setting starts.
+   * @param {number} numBits - The number of bits to set to black.
+   */
   private setToBlack(
     buffer: InputBuffer<Uint8Array>,
     lineOffset: number,
@@ -757,6 +848,14 @@ export class TiffFaxDecoder {
     }
   }
 
+  /**
+   * Decodes the next scanline from the input buffer.
+   *
+   * @param {InputBuffer<Uint8Array>} buffer - The input buffer containing the scanline data.
+   * @param {number} lineOffset - The offset in the buffer where the scanline starts.
+   * @param {number} bitOffset - The bit offset within the scanline.
+   * @throws {LibError} - Throws an error if an invalid code is encountered.
+   */
   private decodeNextScanline(
     buffer: InputBuffer<Uint8Array>,
     lineOffset: number,
@@ -910,6 +1009,18 @@ export class TiffFaxDecoder {
     this._currChangingElements![this._changingElemSize++] = offset;
   }
 
+  /**
+   * Reads the End Of Line (EOL) marker from the input stream.
+   *
+   * This method handles both one-dimensional and two-dimensional encoding modes.
+   * It checks for the presence of the EOL marker and ensures that the input stream
+   * is correctly aligned to byte boundaries as required by the EOL marker format.
+   *
+   * @returns {number} - Returns 1 if in one-dimensional encoding mode, otherwise returns
+   *                     the next bit indicating 1D/2D encoding of the next line.
+   * @throws {LibError} - Throws an error if the EOL marker is not found or if the input
+   *                      stream is not correctly aligned.
+   */
   private readEOL(): number {
     if (this._fillBits === 0) {
       if (this.nextNBits(12) !== 1) {
@@ -957,6 +1068,14 @@ export class TiffFaxDecoder {
     }
   }
 
+  /**
+   * Finds the next changing element in the sequence and updates the provided return array.
+   *
+   * @param {number | undefined} a0 - The reference value to compare against, can be undefined.
+   * @param {boolean} isWhite - A boolean indicating whether to search for white elements.
+   * @param {Array<number | undefined>} ret - An array to store the results, where the first element is the next changing element
+   *              greater than a0, and the second element is the subsequent changing element.
+   */
   private getNextChangingElement(
     a0: number | undefined,
     isWhite: boolean,
@@ -967,8 +1086,8 @@ export class TiffFaxDecoder {
     const ces = this._changingElemSize;
 
     // If the previous match was at an odd element, we still
-    // have to search the preceeding element.
-    // int start = lastChangingElement & ~0x1;
+    // have to search the preceding element.
+    // let start = lastChangingElement & ~0x1;
     let start =
       this._lastChangingElement > 0 ? this._lastChangingElement - 1 : 0;
     if (isWhite) {
@@ -995,7 +1114,10 @@ export class TiffFaxDecoder {
   }
 
   /**
-   * Returns run length
+   * Decodes a white code word from the input stream.
+   *
+   * @returns {number} The run length of the decoded white code word.
+   * @throws {LibError} If an error or end-of-line (EOL) condition is encountered.
    */
   private decodeWhiteCodeWord(): number {
     let current = 0;
@@ -1049,9 +1171,12 @@ export class TiffFaxDecoder {
   }
 
   /**
-   * Returns run length
+   * Decodes the black code word from the input stream.
+   *
+   * @returns {number} The run length of the decoded black code word.
+   * @throws {LibError} If an End Of Line (EOL) code is encountered.
    */
-  private decodeBlackCodeWord() {
+  private decodeBlackCodeWord(): number {
     let current = 0;
     let entry = 0;
     let bits = 0;
@@ -1121,7 +1246,12 @@ export class TiffFaxDecoder {
   }
 
   /**
-   * One-dimensional decoding methods
+   * Decodes a 1D compressed image data into an output buffer.
+   *
+   * @param {InputBuffer<Uint8Array>} out - The output buffer where the decoded data will be stored.
+   * @param {InputBuffer<Uint8Array>} compData - The compressed image data to be decoded.
+   * @param {number} startX - The starting X coordinate for decoding.
+   * @param {number} height - The number of scanlines to decode.
    */
   public decode1D(
     out: InputBuffer<Uint8Array>,
@@ -1143,7 +1273,14 @@ export class TiffFaxDecoder {
   }
 
   /**
-   * Two-dimensional decoding methods
+   * Decodes a 2D encoded image.
+   *
+   * @param {InputBuffer<Uint8Array>} out - The output buffer to store the decoded image.
+   * @param {InputBuffer<Uint8Array>} compData - The compressed data buffer.
+   * @param {number} startX - The starting X position for decoding.
+   * @param {number} height - The height of the image to decode.
+   * @param {number} tiffT4Options - The TIFF T4 options for decoding.
+   * @throws {LibError} If the data does not start with an EOL code or if an invalid code is encountered.
    */
   public decode2D(
     out: InputBuffer<Uint8Array>,
@@ -1300,6 +1437,16 @@ export class TiffFaxDecoder {
     }
   }
 
+  /**
+   * Decodes a TIFF T6 compressed image.
+   *
+   * @param {InputBuffer<Uint8Array>} out - The output buffer where the decoded image will be stored.
+   * @param {InputBuffer<Uint8Array>} compData - The input buffer containing the compressed image data.
+   * @param {number} startX - The starting X position for decoding.
+   * @param {number} height - The height of the image to decode.
+   * @param {number} tiffT6Options - The options for TIFF T6 decoding.
+   * @throws {LibError} If an invalid code is encountered during decoding.
+   */
   public decodeT6(
     out: InputBuffer<Uint8Array>,
     compData: InputBuffer<Uint8Array>,

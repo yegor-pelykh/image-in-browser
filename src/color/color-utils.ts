@@ -17,15 +17,45 @@ import { ColorUint4 } from './color-uint4.js';
 import { ColorUint8 } from './color-uint8.js';
 import { convertFormatValue, Format } from './format.js';
 
+/**
+ * Options for converting colors.
+ */
 export interface ConvertColorOptions {
+  /**
+   * The source color to convert from.
+   */
   from: Color;
+
+  /**
+   * The target color to convert to. Optional.
+   */
   to?: Color;
+
+  /**
+   * The format to convert the color to. Optional.
+   */
   format?: Format;
+
+  /**
+   * The number of color channels. Optional.
+   */
   numChannels?: number;
+
+  /**
+   * The alpha value for the color. Optional.
+   */
   alpha?: number;
 }
 
 export abstract class ColorUtils {
+  /**
+   * Converts the color channels of the source color `c` to match the format and number of channels of the target color `c2`.
+   *
+   * @param {Color} c - The source color to be converted.
+   * @param {Color} c2 - The target color object where the converted channels will be set.
+   * @param {number} a - The alpha value to be used if the target color has an alpha channel.
+   * @returns {Color} The target color `c2` with its channels set to the converted values from the source color `c`.
+   */
   private static convertColorInternal(c: Color, c2: Color, a: number): Color {
     const numChannels = c2.length;
     const format = c2.format;
@@ -71,22 +101,53 @@ export abstract class ColorUtils {
     return c2;
   }
 
+  /**
+   * Extracts the red component from a 32-bit integer color value.
+   *
+   * @param {number} c - The 32-bit integer color value.
+   * @returns {number} The red component of the color.
+   */
   public static uint32ToRed(c: number): number {
     return c & 0xff;
   }
 
+  /**
+   * Extracts the green component from a 32-bit unsigned integer color value.
+   *
+   * @param {number} c - The 32-bit unsigned integer representing the color.
+   * @returns {number} The green component of the color, as an 8-bit unsigned integer.
+   */
   public static uint32ToGreen(c: number): number {
     return (c >>> 8) & 0xff;
   }
 
+  /**
+   * Extracts the blue component from a 32-bit unsigned integer.
+   * @param {number} c - The 32-bit unsigned integer.
+   * @returns {number} The blue component (0-255).
+   */
   public static uint32ToBlue(c: number): number {
     return (c >>> 16) & 0xff;
   }
 
+  /**
+   * Extracts the alpha component from a 32-bit unsigned integer.
+   * @param {number} c - The 32-bit unsigned integer.
+   * @returns {number} The alpha component (0-255).
+   */
   public static uint32ToAlpha(c: number): number {
     return (c >>> 24) & 0xff;
   }
 
+  /**
+   * Converts RGBA color values to a single 32-bit unsigned integer.
+   *
+   * @param {number} r - The red component of the color (0-255).
+   * @param {number} g - The green component of the color (0-255).
+   * @param {number} b - The blue component of the color (0-255).
+   * @param {number} a - The alpha component of the color (0-255).
+   * @returns {number} A 32-bit unsigned integer representing the RGBA color.
+   */
   public static rgbaToUint32(
     r: number,
     g: number,
@@ -101,6 +162,13 @@ export abstract class ColorUtils {
     );
   }
 
+  /**
+   * Converts a color from one format to another.
+   *
+   * @param {ConvertColorOptions} opt - The options for the color conversion, including the source color, target format, and other parameters.
+   * @returns {Color} The converted color.
+   * @throws {LibError} if the target format is unknown.
+   */
   public static convertColor(opt: ConvertColorOptions): Color {
     const fromFormat = opt.from.palette?.format ?? opt.from.format;
     const format = opt.to?.format ?? opt.format ?? opt.from.format;
@@ -169,14 +237,20 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Returns the luminance (grayscale) value of the color.
+   * Calculates the luminance of a given color.
+   *
+   * @param {Color} c - The color for which to calculate the luminance.
+   * @returns {number} The luminance value of the color.
    */
   public static getLuminance(c: Color): number {
     return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
   }
 
   /**
-   * Returns the normalized [0, 1] luminance (grayscale) value of the color.
+   * Calculates the normalized luminance of a given color.
+   *
+   * @param {Color} c - The Color object containing normalized RGB values.
+   * @returns {number} The normalized luminance as a number.
    */
   public static getLuminanceNormalized(c: Color): number {
     return (
@@ -185,16 +259,24 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Returns the luminance (grayscale) value of the color.
+   * Calculates the luminance of an RGB color.
+   *
+   * @param {number} r - The red component of the color (0-255).
+   * @param {number} g - The green component of the color (0-255).
+   * @param {number} b - The blue component of the color (0-255).
+   * @returns {number} The luminance of the color.
    */
   public static getLuminanceRgb(r: number, g: number, b: number): number {
     return 0.299 * r + 0.587 * g + 0.114 * b;
   }
 
   /**
-   *  Convert an HSL color to RGB, where **hue** is specified in normalized degrees
-   * [0, 1] (where 1 is 360-degrees); **saturation** and **lightness** are in the range [0, 1].
-   * Returns a list [r, g, b] with values in the range [0, 255].
+   * Converts HSL (Hue, Saturation, Lightness) color values to RGB (Red, Green, Blue).
+   *
+   * @param {number} hue - The hue of the color, a number between 0 and 1.
+   * @param {number} saturation - The saturation of the color, a number between 0 and 1.
+   * @param {number} lightness - The lightness of the color, a number between 0 and 1.
+   * @returns {number[]} An array containing the RGB values [red, green, blue], each ranging from 0 to 255.
    */
   public static hslToRgb(
     hue: number,
@@ -240,9 +322,13 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert an HSV color to RGB, where **hue** is specified in normalized degrees
-   * [0, 1] (where 1 is 360-degrees); **saturation** and **brightness** are in the range [0, 1].
-   * Returns a list [r, g, b] with values in the range [0, 255].
+   * Converts an HSV color value to RGB.
+   *
+   * @param {number} hue - The hue of the color, a value between 0 and 1.
+   * @param {number} saturation - The saturation of the color, a value between 0 and 1.
+   * @param {number} brightness - The brightness of the color, a value between 0 and 1.
+   * @returns {number[]} An array containing the RGB representation of the color, with each value between 0 and 255.
+   * @throws {LibError} If the hue value is invalid.
    */
   public static hsvToRgb(
     hue: number,
@@ -303,8 +389,12 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert an RGB color to HSL, where **r**, **g** and **b** are in the range [0, 255].
-   * Returns a list [h, s, l] with values in the range [0, 1].
+   * Converts an RGB color value to HSL.
+   *
+   * @param {number} r - The red color value (0-255).
+   * @param {number} g - The green color value (0-255).
+   * @param {number} b - The blue color value (0-255).
+   * @returns {number[]} An array containing the HSL representation [hue, saturation, lightness].
    */
   public static rgbToHsl(r: number, g: number, b: number): number[] {
     const _r = r / 255;
@@ -337,7 +427,12 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert a CIE L\*a\*b color to XYZ.
+   * Converts CIELAB (CIE L\*a\*b\*) color space values to XYZ color space values.
+   *
+   * @param {number} l - The lightness value (L*) in CIELAB.
+   * @param {number} a - The a* chromaticity coordinate in CIELAB.
+   * @param {number} b - The b* chromaticity coordinate in CIELAB.
+   * @returns {number[]} The corresponding XYZ color space values.
    */
   public static labToXyz(l: number, a: number, b: number): number[] {
     let y = (l + 16) / 116;
@@ -367,7 +462,12 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert an XYZ color to RGB.
+   * Converts XYZ color space values to RGB color space values.
+   *
+   * @param {number} x - The X value in the XYZ color space (0 to 100).
+   * @param {number} y - The Y value in the XYZ color space (0 to 100).
+   * @param {number} z - The Z value in the XYZ color space (0 to 100).
+   * @returns {number[]} An array containing the RGB values, each ranging from 0 to 255.
    */
   public static xyzToRgb(x: number, y: number, z: number): number[] {
     const _x = x / 100;
@@ -400,8 +500,13 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert a CMYK color to RGB, where **c**, **m**, **y**, **k** values are in the range
-   * [0, 255]. Returns a list [r, g, b] with values in the range [0, 255].
+   * Converts CMYK color values to RGB color values.
+   *
+   * @param {number} c - The cyan component (0-255).
+   * @param {number} m - The magenta component (0-255).
+   * @param {number} y - The yellow component (0-255).
+   * @param {number} k - The black component (0-255).
+   * @returns {number[]} An array containing the RGB values [red, green, blue], each ranging from 0 to 255.
    */
   public static cmykToRgb(
     c: number,
@@ -421,7 +526,12 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert a CIE L\*a\*b color to RGB.
+   * Converts LAB color values to RGB color values.
+   *
+   * @param {number} l - The lightness value (0 to 100).
+   * @param {number} a - The green-red color component.
+   * @param {number} b - The blue-yellow color component.
+   * @returns {number[]} An array containing the RGB values [R, G, B] where each value is in the range 0 to 255.
    */
   public static labToRgb(l: number, a: number, b: number): number[] {
     const refX = 95.047;
@@ -492,7 +602,15 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert a RGB color to XYZ.
+   * Converts an RGB color value to XYZ color space.
+   *
+   * The RGB values should be in the range [0, 255]. The returned XYZ values
+   * will be in the range [0, 100].
+   *
+   * @param {number} r - The red color value, in the range [0, 255].
+   * @param {number} g - The green color value, in the range [0, 255].
+   * @param {number} b - The blue color value, in the range [0, 255].
+   * @returns {number[]} The XYZ representation of the color, as an array of three numbers.
    */
   public static rgbToXyz(r: number, g: number, b: number): number[] {
     let _r = r / 255;
@@ -527,7 +645,12 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert a XYZ color to CIE L\*a\*b.
+   * Converts XYZ color space values to CIELAB (CIE L\*a\*b\*) color space values.
+   *
+   * @param {number} x - The X value in the XYZ color space.
+   * @param {number} y - The Y value in the XYZ color space.
+   * @param {number} z - The Z value in the XYZ color space.
+   * @returns {number[]} An array containing the L*, a*, and b* values in the CIELAB color space.
    */
   public static xyzToLab(x: number, y: number, z: number): number[] {
     let _x = x / 95.047;
@@ -554,7 +677,12 @@ export abstract class ColorUtils {
   }
 
   /**
-   * Convert a RGB color to CIE L\*a\*b.
+   * Convert an RGB color to CIELAB (CIE L\*a\*b\*) color space.
+   *
+   * @param {number} r - Red component (0-255).
+   * @param {number} g - Green component (0-255).
+   * @param {number} b - Blue component (0-255).
+   * @returns {number[]} An array containing the CIELAB values.
    */
   public static rgbToLab(r: number, g: number, b: number): number[] {
     let _r = r / 255;

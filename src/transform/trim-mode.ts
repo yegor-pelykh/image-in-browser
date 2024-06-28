@@ -1,8 +1,11 @@
 /** @format */
 
+/**
+ * Enum representing different modes for trimming an image.
+ */
 export enum TrimMode {
   /**
-   * Trim an image to the top-left and bottom-right most non-transparent pixels
+   * Trim an image to the top-left and bottom-right most non-transparent pixels.
    */
   transparent,
   /**

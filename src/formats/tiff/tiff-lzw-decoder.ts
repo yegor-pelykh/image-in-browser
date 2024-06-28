@@ -3,26 +3,95 @@
 import { InputBuffer } from '../../common/input-buffer.js';
 import { LibError } from '../../error/lib-error.js';
 
+/**
+ * Class representing an LZW Decoder.
+ */
 export class LzwDecoder {
+  /**
+   * Maximum LZW code value.
+   */
   private static readonly _lzMaxCode = 4095;
+
+  /**
+   * Value representing no such code.
+   */
   private static readonly _noSuchCode = 4098;
+
+  /**
+   * Table for AND operations based on bits to get.
+   */
   private static readonly _andTable: number[] = [511, 1023, 2047, 4095];
 
+  /**
+   * Buffer for storing decoded strings.
+   */
   private readonly _buffer = new Uint8Array(4096);
 
+  /**
+   * Number of bits to get for the next code.
+   */
   private _bitsToGet = 9;
+
+  /**
+   * Pointer to the current byte in the data.
+   */
   private _bytePointer = 0;
+
+  /**
+   * Data for the next code.
+   */
   private _nextData = 0;
+
+  /**
+   * Number of bits available in the next data.
+   */
   private _nextBits = 0;
+
+  /**
+   * Input data to be decoded.
+   */
   private _data!: Uint8Array;
+
+  /**
+   * Length of the input data.
+   */
   private _dataLength!: number;
+
+  /**
+   * Output buffer for the decoded data.
+   */
   private _out!: Uint8Array;
+
+  /**
+   * Pointer to the current position in the output buffer.
+   */
   private _outPointer!: number;
+
+  /**
+   * Table for storing decoded strings.
+   */
   private _table!: Uint8Array;
+
+  /**
+   * Prefix table for the LZW algorithm.
+   */
   private _prefix!: Uint32Array;
+
+  /**
+   * Current index in the table.
+   */
   private _tableIndex?: number;
+
+  /**
+   * Length of the buffer.
+   */
   private _bufferLength!: number;
 
+  /**
+   * Adds a new string to the string table.
+   * @param {number} string - The existing string code.
+   * @param {number} newString - The new string code to add.
+   */
   private addString(string: number, newString: number): void {
     this._table[this._tableIndex!] = newString;
     this._prefix[this._tableIndex!] = string;
@@ -37,6 +106,10 @@ export class LzwDecoder {
     }
   }
 
+  /**
+   * Retrieves a string from the string table.
+   * @param {number} code - The code of the string to retrieve.
+   */
   private getString(code: number): void {
     this._bufferLength = 0;
     let c = code;
@@ -49,7 +122,8 @@ export class LzwDecoder {
   }
 
   /**
-   * Returns the next 9, 10, 11 or 12 bits
+   * Returns the next 9, 10, 11 or 12 bits.
+   * @returns {number} The next code.
    */
   private getNextCode(): number {
     if (this._bytePointer >= this._dataLength) {
@@ -90,6 +164,12 @@ export class LzwDecoder {
     this._tableIndex = 258;
   }
 
+  /**
+   * Decodes the input buffer and writes the result to the output buffer.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the data to decode.
+   * @param {Uint8Array} out - The output buffer to write the decoded data to.
+   * @throws {LibError} Throws an error if the input data is invalid.
+   */
   public decode(p: InputBuffer<Uint8Array>, out: Uint8Array): void {
     this._out = out;
     const outLen = out.length;

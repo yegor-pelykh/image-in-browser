@@ -13,91 +13,225 @@ import { LibError } from '../error/lib-error.js';
 import { DitherKernel } from '../filter/dither-kernel.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
 
+/**
+ * Interface for initializing GifEncoder options.
+ */
 export interface GifEncoderInitOptions {
+  /** The delay between frames in milliseconds. */
   delay?: number;
+  /** The number of times the GIF should loop. 0 means infinite looping. */
   repeat?: number;
+  /**  The sampling factor for color quantization. */
   samplingFactor?: number;
+  /** The dithering kernel to use. */
   dither?: DitherKernel;
+  /** Whether to use serpentine dithering. */
   ditherSerpentine?: boolean;
 }
 
+/**
+ * Class for encoding GIF images.
+ */
 export class GifEncoder implements Encoder {
+  /**
+   * GIF89a identifier.
+   */
   private static readonly _gif89Id = 'GIF89a';
 
+  /**
+   * Image Descriptor Record Type.
+   */
   private static readonly _imageDescRecordType = 0x2c;
+
+  /**
+   * Extension Record Type.
+   */
   private static readonly _extensionRecordType = 0x21;
+
+  /**
+   * Terminate Record Type.
+   */
   private static readonly _terminateRecordType = 0x3b;
 
+  /**
+   * Application Extension.
+   */
   private static readonly _applicationExt = 0xff;
+
+  /**
+   * Graphic Control Extension.
+   */
   private static readonly _graphicControlExt = 0xf9;
 
+  /**
+   * End of File.
+   */
   private static readonly _eof = -1;
+
+  /**
+   * Number of bits.
+   */
   private static readonly _bits = 12;
-  // 80% occupancy
+
+  /**
+   * Hash table size.
+   */
   private static readonly _hSize = 5003;
+
+  /**
+   * Masks for bit operations.
+   */
   private static readonly _masks = [
     0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
     0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff,
   ];
 
+  /**
+   * Delay between frames.
+   */
   private _delay: number;
 
+  /**
+   * Repeat count for the GIF.
+   */
   private _repeat: number;
 
+  /**
+   * Number of colors in the palette.
+   */
   private _numColors: number;
 
+  /**
+   * Type of quantizer to use.
+   */
   private _quantizerType: QuantizerType;
 
+  /**
+   * Sampling factor for the quantizer.
+   */
   private _samplingFactor: number;
 
+  /**
+   * Last image added to the encoder.
+   */
   private _lastImage?: MemoryImage;
 
+  /**
+   * Duration of the last image.
+   */
   private _lastImageDuration?: number;
 
+  /**
+   * Last color map used.
+   */
   private _lastColorMap?: Quantizer;
 
+  /**
+   * Width of the GIF.
+   */
   private _width!: number;
 
+  /**
+   * Height of the GIF.
+   */
   private _height!: number;
 
+  /**
+   * Number of encoded frames.
+   */
   private _encodedFrames: number;
 
+  /**
+   * Current accumulator for LZW encoding.
+   */
   private _curAccum = 0;
 
+  /**
+   * Current bits for LZW encoding.
+   */
   private _curBits = 0;
 
+  /**
+   * Number of bits for LZW encoding.
+   */
   private _nBits = 0;
 
+  /**
+   * Initial number of bits for LZW encoding.
+   */
   private _initBits = 0;
 
+  /**
+   * End of file code for LZW encoding.
+   */
   private _eofCode = 0;
 
+  /**
+   * Maximum code for LZW encoding.
+   */
   private _maxCode = 0;
 
+  /**
+   * Clear code for LZW encoding.
+   */
   private _clearCode = 0;
 
+  /**
+   * Free entry for LZW encoding.
+   */
   private _freeEnt = 0;
 
+  /**
+   * Flag indicating if the clear code was used.
+   */
   private _clearFlag = false;
 
+  /**
+   * Block of bytes for LZW encoding.
+   */
   private _block!: Uint8Array;
 
+  /**
+   * Size of the block for LZW encoding.
+   */
   private _blockSize = 0;
 
+  /**
+   * Output buffer for the encoded GIF.
+   */
   private _outputBuffer?: OutputBuffer;
 
+  /**
+   * Dither kernel to use.
+   */
   private _dither: DitherKernel;
 
+  /**
+   * Flag indicating if serpentine dithering is used.
+   */
   private _ditherSerpentine: boolean;
 
   /**
    * Does this encoder support animation?
    */
   private readonly _supportsAnimation = true;
+
+  /**
+   * Getter for supportsAnimation.
+   */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Constructor for GifEncoder.
+   * @param {GifEncoderInitOptions} [opt] - Initialization options.
+   * @param {number} [opt.delay] - The delay between frames in milliseconds. Default is 80.
+   * @param {number} [opt.repeat] - The number of times the animation should repeat. Default is 0 (infinite).
+   * @param {number} [opt.samplingFactor] - The factor by which to downsample the image. Default is 10.
+   * @param {string} [opt.dither] - The dithering algorithm to use. Default is Floyd-Steinberg.
+   * @param {boolean} [opt.ditherSerpentine] - Whether to use serpentine dithering. Default is false.
+   */
   constructor(opt?: GifEncoderInitOptions) {
     this._delay = opt?.delay ?? 80;
     this._repeat = opt?.repeat ?? 0;
@@ -109,6 +243,13 @@ export class GifEncoder implements Encoder {
     this._encodedFrames = 0;
   }
 
+  /**
+   * Adds an image to the GIF.
+   * @param {MemoryImage} image - The image to add.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @throws {LibError} Throws an error if the image does not have a palette.
+   */
   private addImage(image: MemoryImage, width: number, height: number): void {
     if (!image.hasPalette) {
       throw new LibError('GIF can only encode palette images.');
@@ -161,6 +302,10 @@ export class GifEncoder implements Encoder {
     this.encodeLZW(image);
   }
 
+  /**
+   * Encodes the image using LZW compression.
+   * @param {MemoryImage} image - The image to encode.
+   */
   private encodeLZW(image: MemoryImage): void {
     this._curAccum = 0;
     this._curBits = 0;
@@ -273,6 +418,10 @@ export class GifEncoder implements Encoder {
     this._outputBuffer!.writeByte(0);
   }
 
+  /**
+   * Outputs the given code.
+   * @param {number | undefined} code - The code to output.
+   */
   private output(code: number | undefined): void {
     this._curAccum &= GifEncoder._masks[this._curBits];
 
@@ -318,6 +467,9 @@ export class GifEncoder implements Encoder {
     }
   }
 
+  /**
+   * Writes the current block to the output buffer.
+   */
   private writeBlock(): void {
     if (this._blockSize > 0) {
       this._outputBuffer!.writeByte(this._blockSize);
@@ -326,6 +478,10 @@ export class GifEncoder implements Encoder {
     }
   }
 
+  /**
+   * Adds a byte to the current block.
+   * @param {number} c - The byte to add.
+   */
   private addToBlock(c: number): void {
     this._block[this._blockSize++] = c;
     if (this._blockSize >= 254) {
@@ -333,6 +489,9 @@ export class GifEncoder implements Encoder {
     }
   }
 
+  /**
+   * Writes the application extension block.
+   */
   private writeApplicationExt(): void {
     this._outputBuffer!.writeByte(GifEncoder._extensionRecordType);
     this._outputBuffer!.writeByte(GifEncoder._applicationExt);
@@ -348,6 +507,10 @@ export class GifEncoder implements Encoder {
     this._outputBuffer!.writeByte(0);
   }
 
+  /**
+   * Writes the graphics control extension block.
+   * @param {MemoryImage} image - The image for which the extension is written.
+   */
   private writeGraphicsCtrlExt(image: MemoryImage): void {
     this._outputBuffer!.writeByte(GifEncoder._extensionRecordType);
     this._outputBuffer!.writeByte(GifEncoder._graphicControlExt);
@@ -396,7 +559,11 @@ export class GifEncoder implements Encoder {
     this._outputBuffer!.writeByte(0);
   }
 
-  // GIF header and Logical Screen Descriptor
+  /**
+   * Writes the GIF header and Logical Screen Descriptor.
+   * @param {number} width - The width of the GIF.
+   * @param {number} height - The height of the GIF.
+   */
   private writeHeader(width: number, height: number): void {
     const idCodeUnits = StringUtils.getCodePoints(GifEncoder._gif89Id);
     this._outputBuffer!.writeBytes(idCodeUnits);
@@ -412,12 +579,14 @@ export class GifEncoder implements Encoder {
 
   /**
    * Encode the images that were added with **addFrame**.
-   * After this has been called (returning the finishes GIF),
+   * After this has been called (returning the finished GIF),
    * calling **addFrame** for a new animation or image is safe again.
    *
    * **addFrame** will not encode the first image passed and after that
    * always encode the previous image. Hence, the last image needs to be
    * encoded here.
+   *
+   * @returns {Uint8Array | undefined} The encoded GIF as a byte array, or undefined if there was an error.
    */
   private finish(): Uint8Array | undefined {
     let bytes: Uint8Array | undefined = undefined;
@@ -448,7 +617,10 @@ export class GifEncoder implements Encoder {
    * This adds the frame passed to **image**.
    * After the last frame has been added, **finish** is required to be called.
    * Optional frame **duration** is in 1/100 sec.
-   * */
+   *
+   * @param {MemoryImage} image - The image to add as a frame.
+   * @param {number} [duration] - Optional duration of the frame in 1/100 sec.
+   */
   public addFrame(image: MemoryImage, duration?: number): void {
     if (this._outputBuffer === undefined) {
       this._outputBuffer = new OutputBuffer();
@@ -521,6 +693,11 @@ export class GifEncoder implements Encoder {
 
   /**
    * Encode a single frame image.
+   *
+   * @param {EncoderEncodeOptions} opt - The options for encoding.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @param {boolean} [opt.singleFrame] - Optional flag to encode a single frame.
+   * @returns {Uint8Array} The encoded image as a Uint8Array.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const image = opt.image;

@@ -1,39 +1,46 @@
 /** @format */
 
+/**
+ * Enum representing different photometric types for TIFF images.
+ */
 export enum TiffPhotometricType {
-  // 0
+  /** White is zero (0) */
   whiteIsZero,
-  // 1
+  /** Black is zero (1) */
   blackIsZero,
-  // 2
+  /** RGB color model (2) */
   rgb,
-  // 3
+  /** Palette color (3) */
   palette,
-  // 4
+  /** Transparency mask (4) */
   transparencyMask,
-  // 5
+  /** CMYK color model (5) */
   cmyk,
-  // 6
+  /** YCbCr color model (6) */
   yCbCr,
-  // 7
+  /** Reserved (7) */
   reserved7,
-  // 8
+  /** CIE L*a*b* color model (8) */
   cieLab,
-  // 9
+  /** ICC L*a*b* color model (9) */
   iccLab,
-  // 10
+  /** ITU L*a*b* color model (10) */
   ituLab,
-  // 32844
+  /** Logarithmic luminance (32844) */
   logL,
-  // 32845
+  /** Logarithmic luminance and chrominance (32845) */
   logLuv,
-  // 32803
+  /** Color filter array (32803) */
   colorFilterArray,
-  // 34892
+  /** Linear raw (34892) */
   linearRaw,
-  // 51177
+  /** Depth map (51177) */
   depth,
+  /** Unknown photometric type */
   unknown,
 }
 
+/**
+ * Constant representing the length of the TiffPhotometricType enum.
+ */
 export const TiffPhotometricTypeLength = 17;

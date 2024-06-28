@@ -6,7 +6,16 @@ import { TestFolder } from './test-folder';
 import { TestSection } from './test-section';
 import { TestUtils } from './test-utils';
 
+/**
+ * Utility class for testing images.
+ */
 export abstract class ImageTestUtils {
+  /**
+   * Compares two MemoryImage objects for equality.
+   *
+   * @param {MemoryImage} image1 - The first MemoryImage object.
+   * @param {MemoryImage} image2 - The second MemoryImage object.
+   */
   public static testImageEquals(
     image1: MemoryImage,
     image2: MemoryImage
@@ -19,7 +28,14 @@ export abstract class ImageTestUtils {
     ImageTestUtils.testImageDataEquals(image1, image2);
   }
 
-  public static hashImage(image: MemoryImage) {
+  /**
+   * Computes a hash for the given MemoryImage.
+   *
+   * @param {MemoryImage} image - The MemoryImage object to hash.
+   * @returns {number} The computed hash value.
+   * @throws {LibError} If the pixel index is invalid.
+   */
+  public static hashImage(image: MemoryImage): number {
     let hash = 0;
     let x = 0;
     let y = 0;
@@ -47,7 +63,16 @@ export abstract class ImageTestUtils {
     return hash;
   }
 
-  public static testImageDataEquals(image1: MemoryImage, image2: MemoryImage) {
+  /**
+   * Compares the data of two MemoryImage objects for equality.
+   *
+   * @param {MemoryImage} image1 - The first MemoryImage object.
+   * @param {MemoryImage} image2 - The second MemoryImage object.
+   */
+  public static testImageDataEquals(
+    image1: MemoryImage,
+    image2: MemoryImage
+  ): void {
     const imageData = image1.data?.toUint8Array();
     const image2Data = image2.data?.toUint8Array();
 
@@ -61,6 +86,12 @@ export abstract class ImageTestUtils {
     expect(ArrayUtils.equals(imageData, image2Data)).toBeTruthy();
   }
 
+  /**
+   * Dumps the given data to a file.
+   *
+   * @param {Uint8Array} data - The data to dump.
+   * @param {string} fileName - The name of the file to write to.
+   */
   public static dumpData(data: Uint8Array, fileName: string): void {
     TestUtils.writeToFile(TestFolder.output, TestSection.dump, fileName, data);
   }

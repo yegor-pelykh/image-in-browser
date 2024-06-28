@@ -15,9 +15,17 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Transform module.
+ */
 describe('Transform', () => {
+  // Loop through each position in ExpandCanvasPosition enum
   for (const position of ArrayUtils.getNumEnumValues(ExpandCanvasPosition)) {
     const strPosition = ExpandCanvasPosition[position];
+
+    /**
+     * Test the copyExpandCanvas function with different positions.
+     */
     test(`copyExpandCanvas - ${strPosition}`, () => {
       const input = TestUtils.readFromFile(
         TestFolder.input,
@@ -52,6 +60,9 @@ describe('Transform', () => {
     });
   }
 
+  /**
+   * Test the copyExpandCanvas function with default parameters.
+   */
   test('copyExpandCanvas - default parameters', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -83,6 +94,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test the copyExpandCanvas function with a specified toImage parameter.
+   */
   test('copyExpandCanvas - with toImage', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -120,6 +134,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test the copyExpandCanvas function with padding.
+   */
   test('copyExpandCanvas - with padding', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -150,6 +167,10 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test the copyExpandCanvas function with new dimensions and padding.
+   * Expect an error to be thrown.
+   */
   test('copyExpandCanvas - with new dimensions and padding', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

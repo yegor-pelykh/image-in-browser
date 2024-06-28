@@ -15,77 +15,116 @@ import { ImageFormat } from './image-format.js';
  * animated GIF files, and transparency.
  */
 export class GifDecoder implements Decoder {
+  /** Size of the GIF stamp */
   private static readonly _stampSize: number = 6;
+  /** GIF87a stamp */
   private static readonly _gif87Stamp: string = 'GIF87a';
+  /** GIF89a stamp */
   private static readonly _gif89Stamp: string = 'GIF89a';
 
+  /** Image descriptor record type */
   private static readonly _imageDescRecordType: number = 0x2c;
+  /** Extension record type */
   private static readonly _extensionRecordType: number = 0x21;
+  /** Terminate record type */
   private static readonly _terminateRecordType: number = 0x3b;
 
+  /** Graphic control extension */
   private static readonly _graphicControlExt: number = 0xf9;
+  /** Application extension */
   private static readonly _applicationExt: number = 0xff;
 
+  /** Maximum LZ code */
   private static readonly _lzMaxCode: number = 4095;
+  /** LZ bits */
   private static readonly _lzBits: number = 12;
 
-  // Impossible code, to signal empty.
+  /** Impossible code, to signal empty. */
   private static readonly _noSuchCode: number = 4098;
 
+  /** Code masks */
   private static readonly _codeMasks: number[] = [
     0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
     0x01ff, 0x03ff, 0x07ff, 0x0fff,
   ];
 
+  /** Interlaced offset */
   private static readonly _interlacedOffset: number[] = [0, 4, 2, 1];
+  /** Interlaced jump */
   private static readonly _interlacedJump: number[] = [8, 8, 4, 2];
 
+  /** Input buffer */
   private _input?: InputBuffer<Uint8Array>;
 
+  /** GIF information */
   private _info?: GifInfo;
 
+  /** Repeat count */
   private _repeat = 0;
 
+  /** Buffer */
   private _buffer?: Uint8Array;
 
+  /** Stack */
   private _stack!: Uint8Array;
 
+  /** Suffix */
   private _suffix!: Uint8Array;
 
+  /** Prefix */
   private _prefix?: Uint32Array;
 
+  /** Bits per pixel */
   private _bitsPerPixel = 0;
 
+  /** Pixel count */
   private _pixelCount?: number;
 
+  /** Current shift DWORD */
   private _currentShiftDWord = 0;
 
+  /** Current shift state */
   private _currentShiftState = 0;
 
+  /** Stack pointer */
   private _stackPtr = 0;
 
+  /** Current code */
   private _currentCode?: number;
 
+  /** Last code */
   private _lastCode = 0;
 
+  /** Max code + 1 */
   private _maxCode1 = 0;
 
+  /** Running bits */
   private _runningBits = 0;
 
+  /** Running code */
   private _runningCode = 0;
 
+  /** EOF code */
   private _eofCode = 0;
 
+  /** Clear code */
   private _clearCode = 0;
 
+  /** Transparent flag */
   private _transparentFlag: number = 0;
 
+  /** Disposal method */
   private _disposalMethod: number = 0;
 
+  /** Transparent color index */
   private _transparent: number = 0;
 
+  /** Frame duration */
   private _duration: number = 0;
 
+  /**
+   * Get the image format.
+   */
   get format(): ImageFormat {
     return ImageFormat.gif;
   }
@@ -100,6 +139,10 @@ export class GifDecoder implements Decoder {
     return this._info !== undefined ? this._info.numFrames : 0;
   }
 
+  /**
+   * Constructor for GifDecoder.
+   * @param {Uint8Array} [bytes] - Optional bytes to start decoding.
+   */
   constructor(bytes?: Uint8Array) {
     if (bytes !== undefined) {
       this.startDecode(bytes);
@@ -111,6 +154,10 @@ export class GifDecoder implements Decoder {
    * not code, but a pixel value (less than ClearCode). Returns that pixel value.
    * If image is defective, we might loop here forever, so we limit the loops to
    * the maximum possible if image O.k. - lzMaxCode times.
+   * @param {Uint32Array} prefix - The prefix array.
+   * @param {number} code - The code to trace.
+   * @param {number} clearCode - The clear code.
+   * @returns {number} The prefix character.
    */
   private static getPrefixChar(
     prefix: Uint32Array,
@@ -128,6 +175,13 @@ export class GifDecoder implements Decoder {
     return c;
   }
 
+  /**
+   * Update the image with the given line.
+   * @param {MemoryImage} image - The memory image.
+   * @param {number} y - The y-coordinate.
+   * @param {GifColorMap} [colorMap] - The color map.
+   * @param {Uint8Array} line - The line of pixels.
+   */
   private static updateImage(
     image: MemoryImage,
     y: number,
@@ -142,6 +196,10 @@ export class GifDecoder implements Decoder {
     }
   }
 
+  /**
+   * Get information about the GIF.
+   * @returns {boolean} True if successful, false otherwise.
+   */
   private getInfo(): boolean {
     if (this._input === undefined) {
       return false;
@@ -193,6 +251,10 @@ export class GifDecoder implements Decoder {
     return true;
   }
 
+  /**
+   * Skip the current image.
+   * @returns {GifImageDesc | undefined} The skipped image descriptor or undefined.
+   */
   private skipImage(): GifImageDesc | undefined {
     if (this._input === undefined || this._input.isEOS) {
       return undefined;
@@ -207,6 +269,7 @@ export class GifDecoder implements Decoder {
    * Continue to get the image code in compressed form. This routine should be
    * called until NULL block is returned.
    * The block should NOT be freed by the user (not dynamically allocated).
+   * @returns {boolean} True if successful, false otherwise.
    */
   private skipRemainder(): boolean {
     if (this._input === undefined || this._input.isEOS) {
@@ -223,6 +286,10 @@ export class GifDecoder implements Decoder {
     return true;
   }
 
+  /**
+   * Read the application extension.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   */
   private readApplicationExt(input: InputBuffer<Uint8Array>): void {
     const blockSize = input.read();
     const tag = input.readString(blockSize);
@@ -237,6 +304,10 @@ export class GifDecoder implements Decoder {
     }
   }
 
+  /**
+   * Read the graphics control extension.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   */
   private readGraphicsControlExt(input: InputBuffer<Uint8Array>): void {
     /* const blockSize: number = */
     input.read();
@@ -276,6 +347,11 @@ export class GifDecoder implements Decoder {
     }
   }
 
+  /**
+   * Get a line of pixels.
+   * @param {Uint8Array} line - The line of pixels.
+   * @returns {boolean} True if successful, false otherwise.
+   */
   private getLine(line: Uint8Array): boolean {
     this._pixelCount = this._pixelCount! - line.length;
 
@@ -296,6 +372,8 @@ export class GifDecoder implements Decoder {
    * This version decompress the given gif file into Line of length LineLen.
    * This routine can be called few times (one per scan line, for example), in
    * order the complete the whole image.
+   * @param {Uint8Array} line - The line of pixels.
+   * @returns {boolean} True if successful, false otherwise.
    */
   private decompressLine(line: Uint8Array): boolean {
     if (this._stackPtr > GifDecoder._lzMaxCode) {
@@ -438,6 +516,7 @@ export class GifDecoder implements Decoder {
    * The LZ decompression input routine:
    * This routine is responsible for the decompression of the bit stream from
    * 8 bits (bytes) packets, into the real codes.
+   * @returns {number | undefined} The decompressed code or undefined.
    */
   private decompressInput(): number | undefined {
     // The image can't contain more than LZ_BITS per code.
@@ -480,6 +559,7 @@ export class GifDecoder implements Decoder {
    * so that the decompression routine could access it.
    * The routine returns the next byte from its internal buffer (or read next
    * block in if buffer empty) and returns undefined on failure.
+   * @returns {number | undefined} The next byte from the internal buffer or undefined on failure.
    */
   private bufferedInput(): number | undefined {
     let nextByte = 0;
@@ -510,6 +590,9 @@ export class GifDecoder implements Decoder {
     return nextByte;
   }
 
+  /**
+   * Initializes the decoding process by setting up necessary buffers and arrays.
+   */
   private initDecode(): void {
     this._buffer = new Uint8Array(256);
     this._stack = new Uint8Array(GifDecoder._lzMaxCode);
@@ -517,6 +600,11 @@ export class GifDecoder implements Decoder {
     this._prefix = new Uint32Array(GifDecoder._lzMaxCode + 1);
   }
 
+  /**
+   * Decodes a given Gif image description into a MemoryImage.
+   * @param {GifImageDesc} gifImage - The Gif image description to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined on failure.
+   */
   private decodeImage(gifImage: GifImageDesc): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;
@@ -593,6 +681,8 @@ export class GifDecoder implements Decoder {
 
   /**
    * Is the given file a valid Gif image?
+   * @param {Uint8Array} bytes - The bytes of the file to check.
+   * @returns {boolean} True if the file is a valid Gif image, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
     this._input = new InputBuffer<Uint8Array>({
@@ -604,6 +694,8 @@ export class GifDecoder implements Decoder {
   /**
    * Validate the file is a Gif image and get information about it.
    * If the file is not a valid Gif image, undefined is returned.
+   * @param {Uint8Array} bytes - The bytes of the file to decode.
+   * @returns {GifInfo | undefined} The Gif information or undefined if the file is not valid.
    */
   public startDecode(bytes: Uint8Array): GifInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
@@ -666,6 +758,13 @@ export class GifDecoder implements Decoder {
     return this._info;
   }
 
+  /**
+   * Decodes the Gif image based on the provided options.
+   * @param {DecoderDecodeOptions} opt - The decoding options.
+   * @param {Uint8Array} opt.bytes - The bytes of the Gif image.
+   * @param {number} [opt.frameIndex] - The index of the frame to decode (optional).
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined on failure.
+   */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
@@ -769,6 +868,11 @@ export class GifDecoder implements Decoder {
     return firstImage;
   }
 
+  /**
+   * Decodes a specific frame of the Gif image.
+   * @param {number} frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined on failure.
+   */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;

@@ -16,17 +16,35 @@ import { PvrPacket } from './pvr/pvr-packet.js';
  * https://bitbucket.org/jthlim/pvrtccompressor
  */
 export class PvrEncoder implements Encoder {
+  /** The format of the PVR encoder */
   private readonly _format: PvrFormat;
 
+  /** Indicates if the encoder supports animation */
   private _supportsAnimation = false;
+
+  /**
+   * Gets the value indicating if the encoder supports animation
+   * @returns {boolean} True if supports animation, otherwise false
+   */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Constructs a new PvrEncoder
+   * @param {PvrFormat} format - The format of the PVR encoder
+   */
   constructor(format: PvrFormat = PvrFormat.auto) {
     this._format = format;
   }
 
+  /**
+   * Calculates the bounding box for RGB color
+   * @param {MemoryImage} bitmap - The image bitmap
+   * @param {number} blockX - The X coordinate of the block
+   * @param {number} blockY - The Y coordinate of the block
+   * @returns {PvrColorBoundingBox} The calculated bounding box
+   */
   private static calculateBoundingBoxRgb(
     bitmap: MemoryImage,
     blockX: number,
@@ -55,6 +73,13 @@ export class PvrEncoder implements Encoder {
     return cbb;
   }
 
+  /**
+   * Calculates the bounding box for RGBA color
+   * @param {MemoryImage} bitmap - The image bitmap
+   * @param {number} blockX - The X coordinate of the block
+   * @param {number} blockY - The Y coordinate of the block
+   * @returns {PvrColorBoundingBox} The calculated bounding box
+   */
   private static calculateBoundingBoxRgba(
     bitmap: MemoryImage,
     blockX: number,
@@ -88,6 +113,12 @@ export class PvrEncoder implements Encoder {
     return cbb;
   }
 
+  /**
+   * Encodes the image using the specified options
+   * @param {EncoderEncodeOptions} opt - The encoding options
+   * @param {MemoryImage} opt.image - The image to encode
+   * @returns {Uint8Array} The encoded image data
+   */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const output = new OutputBuffer();
 
@@ -150,6 +181,12 @@ export class PvrEncoder implements Encoder {
     return output.getBytes();
   }
 
+  /**
+   * Encodes the image in RGB 4bpp format
+   * @param {MemoryImage} bitmap - The image bitmap
+   * @returns {Uint8Array} The encoded image data
+   * @throws {LibError} If the image is not square or not power-of-two sized
+   */
   public encodeRgb4bpp(bitmap: MemoryImage): Uint8Array {
     if (bitmap.width !== bitmap.height) {
       throw new LibError('PVRTC requires a square image.');
@@ -272,6 +309,12 @@ export class PvrEncoder implements Encoder {
     return outputData;
   }
 
+  /**
+   * Encodes the image in RGBA 4bpp format
+   * @param {MemoryImage} bitmap - The image bitmap
+   * @returns {Uint8Array} The encoded image data
+   * @throws {LibError} If the image is not square or not power-of-two sized
+   */
   public encodeRgba4bpp(bitmap: MemoryImage): Uint8Array {
     if (bitmap.width !== bitmap.height) {
       throw new LibError('PVRTC requires a square image.');

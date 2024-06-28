@@ -1,25 +1,51 @@
 /** @format */
 
+/**
+ * Utility class for various bit manipulation operations.
+ */
 export class PvrBitUtility {
+  /**
+   * Checks if a number is a power of 2.
+   * @param {number} x - The number to check.
+   * @returns {boolean} True if the number is a power of 2, otherwise false.
+   */
   public static isPowerOf2(x: number): boolean {
     return (x & (x - 1)) === 0;
   }
 
+  /**
+   * Rotates the bits of a number to the right.
+   * @param {number} value - The number whose bits are to be rotated.
+   * @param {number} shift - The number of positions to rotate.
+   * @returns {number} The result of the bit rotation.
+   */
   public static rotateRight(value: number, shift: number): number {
     return (value >> shift) | (value << (32 - shift));
   }
 
+  /**
+   * Lookup table for scaling 5-bit values to 8-bit values.
+   */
   public static readonly bitScale5To8 = [
     0, 8, 16, 24, 32, 41, 49, 57, 65, 74, 82, 90, 98, 106, 115, 123, 131, 139,
     148, 156, 164, 172, 180, 189, 197, 205, 213, 222, 230, 238, 246, 255,
   ];
 
+  /**
+   * Lookup table for scaling 4-bit values to 8-bit values.
+   */
   public static readonly bitScale4To8 = [
     0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255,
   ];
 
+  /**
+   * Lookup table for scaling 3-bit values to 8-bit values.
+   */
   public static readonly bitScale3To8 = [0, 36, 72, 109, 145, 182, 218, 255];
 
+  /**
+   * Lookup table for scaling 8-bit values to 5-bit values using floor.
+   */
   public static readonly bitScale8To5Floor = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2,
     3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -36,6 +62,9 @@ export class PvrBitUtility {
     30, 30, 30, 30, 30, 30, 30, 31,
   ];
 
+  /**
+   * Lookup table for scaling 8-bit values to 4-bit values using floor.
+   */
   public static readonly bitScale8To4Floor = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
@@ -51,6 +80,9 @@ export class PvrBitUtility {
     14, 14, 14, 14, 14, 15,
   ];
 
+  /**
+   * Lookup table for scaling 8-bit values to 3-bit values using floor.
+   */
   public static readonly bitScale8To3Floor = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -65,6 +97,9 @@ export class PvrBitUtility {
     6, 6, 6, 6, 6, 7,
   ];
 
+  /**
+   * Lookup table for scaling 8-bit values to 5-bit values using ceil.
+   */
   public static readonly bitScale8To5Ceil = [
     0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
     4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6,
@@ -81,6 +116,9 @@ export class PvrBitUtility {
     30, 31, 31, 31, 31, 31, 31, 31, 31, 31,
   ];
 
+  /**
+   * Lookup table for scaling 8-bit values to 4-bit values using ceil.
+   */
   public static readonly bitScale8To4Ceil = [
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -96,6 +134,9 @@ export class PvrBitUtility {
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
   ];
 
+  /**
+   * Lookup table for scaling 8-bit values to 3-bit values using ceil.
+   */
   public static readonly bitScale8To3Ceil = [
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,

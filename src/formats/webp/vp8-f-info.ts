@@ -1,24 +1,30 @@
-/**
- * Filter specs
- *
- * @format
- */
+/** @format */
 
+/**
+ * Class representing VP8 filter information.
+ */
 export class VP8FInfo {
   /**
-   * uint8_t, filter limit in [3..189], or 0 if no filtering
+   * Filter limit in the range [3..189], or 0 if no filtering.
+   * @type {number}
    */
   public fLimit: number = 0;
+
   /**
-   * uint8_t, inner limit in [1..63]
+   * Inner limit in the range [1..63].
+   * @type {number}
    */
   public fInnerLevel: number = 0;
+
   /**
-   * uint8_t, do inner filtering?
+   * Indicates whether inner filtering is applied.
+   * @type {boolean}
    */
   public fInner: boolean = false;
+
   /**
-   * uint8_t, high edge variance threshold in [0..2]
+   * High edge variance threshold in the range [0..2].
+   * @type {number}
    */
   public hevThresh: number = 0;
 }

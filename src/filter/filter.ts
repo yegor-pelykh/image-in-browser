@@ -21,370 +21,684 @@ import { SolarizeMode } from './solarize-mode.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
 import { ContrastMode } from './contrast-mode.js';
 
+/**
+ * Interface representing a cache for contrast adjustments.
+ */
 interface ContrastCache {
+  /** The last contrast value used. */
   lastContrast: number;
+  /** The contrast data as a Uint8Array. */
   contrast: Uint8Array;
 }
 
+/**
+ * Options for adjusting the color of an image.
+ */
 export interface AdjustColorOptions {
+  /** The image to adjust. */
   image: MemoryImage;
+  /** The black color adjustment. */
   blacks?: Color;
+  /** The white color adjustment. */
   whites?: Color;
+  /** The midtone color adjustment. */
   mids?: Color;
+  /** The contrast adjustment value. */
   contrast?: number;
+  /** The saturation adjustment value. */
   saturation?: number;
+  /** The brightness adjustment value. */
   brightness?: number;
+  /** The gamma adjustment value. */
   gamma?: number;
+  /** The exposure adjustment value. */
   exposure?: number;
+  /** The hue adjustment value. */
   hue?: number;
+  /** The amount of adjustment to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for creating a billboard effect on an image.
+ */
 export interface BillboardOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The grid size for the effect. */
   grid?: number;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a bleach bypass effect to an image.
+ */
 export interface BleachBypassOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a bulge distortion effect to an image.
+ */
 export interface BulgeDistortionOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The X coordinate of the center of the bulge. */
   centerX?: number;
+  /** The Y coordinate of the center of the bulge. */
   centerY?: number;
+  /** The radius of the bulge. */
   radius?: number;
+  /** The scale of the bulge. */
   scale?: number;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for converting a bump map to a normal map.
+ */
 export interface BumpToNormalOptions {
+  /** The image to convert. */
   image: MemoryImage;
+  /** The strength of the conversion. */
   strength?: number;
 }
 
+/**
+ * Options for applying a chromatic aberration effect to an image.
+ */
 export interface ChromaticAberrationOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of shift for the chromatic aberration. */
   shift?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a color halftone effect to an image.
+ */
 export interface ColorHalftone {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The X coordinate of the center of the effect. */
   centerX?: number;
+  /** The Y coordinate of the center of the effect. */
   centerY?: number;
+  /** The angle of the halftone pattern. */
   angle?: number;
+  /** The size of the halftone dots. */
   size?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a color offset effect to an image.
+ */
 export interface ColorOffsetOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The red channel offset. */
   red?: number;
+  /** The green channel offset. */
   green?: number;
+  /** The blue channel offset. */
   blue?: number;
+  /** The alpha channel offset. */
   alpha?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for adjusting the contrast of an image.
+ */
 export interface ContrastOptions {
+  /** The image to adjust. */
   image: MemoryImage;
+  /** The contrast adjustment value. */
   contrast: number;
+  /** The mode of contrast adjustment. */
   mode?: ContrastMode;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a convolution filter to an image.
+ */
 export interface ConvolutionOptions {
+  /** The image to apply the filter to. */
   image: MemoryImage;
+  /** The convolution filter to apply. */
   filter: number[];
+  /** The divisor for the filter. */
   div?: number;
+  /** The offset for the filter. */
   offset?: number;
+  /** The amount of the filter to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for copying image channels.
+ */
 export interface CopyImageChannelsOptions {
+  /** The image to copy channels from. */
   image: MemoryImage;
+  /** The image to copy channels to. */
   from: MemoryImage;
+  /** Whether to scale the copied channels. */
   scaled?: boolean;
+  /** The red channel to copy. */
   red?: Channel;
+  /** The green channel to copy. */
   green?: Channel;
+  /** The blue channel to copy. */
   blue?: Channel;
+  /** The alpha channel to copy. */
   alpha?: Channel;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for dithering an image.
+ */
 export interface DitherImageOptions {
+  /** The image to dither. */
   image: MemoryImage;
+  /** The quantizer to use for dithering. */
   quantizer?: Quantizer;
+  /** The dithering kernel to use. */
   kernel?: DitherKernel;
+  /** Whether to use serpentine dithering. */
   serpentine?: boolean;
 }
 
+/**
+ * Options for applying a dot screen effect to an image.
+ */
 export interface DotScreenOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The angle of the dot screen pattern. */
   angle?: number;
+  /** The size of the dots. */
   size?: number;
+  /** The X coordinate of the center of the effect. */
   centerX?: number;
+  /** The Y coordinate of the center of the effect. */
   centerY?: number;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a drop shadow to an image.
+ */
 export interface DropShadowOptions {
+  /** The image to apply the shadow to. */
   image: MemoryImage;
+  /** The horizontal shadow offset. */
   hShadow: number;
+  /** The vertical shadow offset. */
   vShadow: number;
+  /** The blur radius of the shadow. */
   blur: number;
+  /** The color of the shadow. */
   shadowColor?: Color;
 }
 
+/**
+ * Options for applying an edge glow effect to an image.
+ */
 export interface EdgeGlowOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying an emboss effect to an image.
+ */
 export interface EmbossOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for adjusting the gamma of an image.
+ */
 export interface GammaOptions {
+  /** The image to adjust. */
   image: MemoryImage;
+  /** The gamma adjustment value. */
   gamma: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a Gaussian blur to an image.
+ */
 export interface GaussianBlurOptions {
+  /** The image to blur. */
   image: MemoryImage;
+  /** The radius of the blur. */
   radius: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for converting an image to grayscale.
+ */
 export interface GrayscaleOptions {
+  /** The image to convert. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for converting an HDR image to LDR.
+ */
 export interface HdrToLdrOptions {
+  /** The image to convert. */
   image: MemoryImage;
+  /** The exposure adjustment value. */
   exposure?: number;
 }
 
+/**
+ * Options for applying a hexagon pixelate effect to an image.
+ */
 export interface HexagonPixelateOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The X coordinate of the center of the effect. */
   centerX?: number;
+  /** The Y coordinate of the center of the effect. */
   centerY?: number;
+  /** The size of the hexagons. */
   size?: number;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for inverting the colors of an image.
+ */
 export interface InvertOptions {
+  /** The image to invert. */
   image: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a luminance threshold effect to an image.
+ */
 export interface LuminanceThresholdOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The luminance threshold value. */
   threshold?: number;
+  /** Whether to output the result as a color image. */
   outputColor?: boolean;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for converting an image to monochrome.
+ */
 export interface MonochromeOptions {
+  /** The image to convert. */
   image: MemoryImage;
+  /** The color to use for the monochrome conversion. */
   color?: Color;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for adding noise to an image.
+ */
 export interface NoiseOptions {
+  /** The image to add noise to. */
   image: MemoryImage;
+  /** The sigma value for the noise. */
   sigma: number;
+  /** The type of noise to add. */
   type?: NoiseType;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for normalizing the colors of an image.
+ */
 export interface NormalizeOptions {
+  /** The image to normalize. */
   image: MemoryImage;
+  /** The minimum value for normalization. */
   min: number;
+  /** The maximum value for normalization. */
   max: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a pixelate effect to an image.
+ */
 export interface PixelateOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The size of the pixels. */
   size: number;
+  /** The mode of pixelation. */
   mode?: PixelateMode;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for quantizing the colors of an image.
+ */
 export interface QuantizeOptions {
+  /** The image to quantize. */
   image: MemoryImage;
+  /** The number of colors to quantize to. */
   numberOfColors?: number;
+  /** The method of quantization. */
   method?: QuantizeMethod;
+  /** The dithering kernel to use. */
   dither?: DitherKernel;
+  /** Whether to use serpentine dithering. */
   ditherSerpentine?: boolean;
 }
 
+/**
+ * Options for applying a Reinhard tone mapping to an image.
+ */
 export interface ReinhardToneMapOptions {
+  /** The image to apply the tone mapping to. */
   image: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for remapping the colors of an image.
+ */
 export interface RemapColorsOptions {
+  /** The image to remap the colors of. */
   image: MemoryImage;
+  /** The red channel to remap. */
   red?: Channel;
+  /** The green channel to remap. */
   green?: Channel;
+  /** The blue channel to remap. */
   blue?: Channel;
+  /** The alpha channel to remap. */
   alpha?: Channel;
 }
 
+/**
+ * Options for scaling the RGBA values of an image.
+ */
 export interface ScaleRgbaOptions {
+  /** The image to scale. */
   image: MemoryImage;
+  /** The scale factor for the colors. */
   scale: Color;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a separable convolution filter to an image.
+ */
 export interface SeparableConvolutionOptions {
+  /** The image to apply the filter to. */
   image: MemoryImage;
+  /** The separable kernel to use for the filter. */
   kernel: SeparableKernel;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a sepia effect to an image.
+ */
 export interface SepiaOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a sketch effect to an image.
+ */
 export interface SketchOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for smoothing an image.
+ */
 export interface SmoothOptions {
+  /** The image to smooth. */
   image: MemoryImage;
+  /** The weight of the smoothing effect. */
   weight: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a Sobel filter to an image.
+ */
 export interface SobelOptions {
+  /** The image to apply the filter to. */
   image: MemoryImage;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a solarize effect to an image.
+ */
 export interface SolarizeOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The threshold for the solarize effect. */
   threshold: number;
+  /** The mode of the solarize effect. */
   mode?: SolarizeMode;
 }
 
+/**
+ * Options for applying a stretch distortion effect to an image.
+ */
 export interface StretchDistortionOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The X coordinate of the center of the effect. */
   centerX?: number;
+  /** The Y coordinate of the center of the effect. */
   centerY?: number;
+  /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying a vignette effect to an image.
+ */
 export interface VignetteOptions {
+  /** The image to apply the effect to. */
   image: MemoryImage;
+  /** The start radius of the vignette. */
   start?: number;
+  /** The end radius of the vignette. */
   end?: number;
+  /** The amount of the effect to apply. */
   amount?: number;
+  /** The color of the vignette. */
   color?: Color;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
 export abstract class Filter {
+  /**
+   * Cache for contrast values.
+   * @private
+   */
   private static _contrastCache?: ContrastCache;
+
+  /**
+   * Cache for Gaussian kernels, mapped by a number.
+   * @private
+   */
   private static readonly _gaussianKernelCache: Map<number, SeparableKernel> =
     new Map<number, SeparableKernel>();
 
   /**
-   * Adjust the color of the **image** using various color transformations.
+   * Adjust the color of the image using various color transformations.
    *
-   * **blacks** defines the black level of the image, as a color.
-   *
-   * **whites** defines the white level of the image, as a color.
-   *
-   * **mids** defines the mid level of the image, as a color.
-   *
-   * **contrast** increases (> 1) / decreases (< 1) the contrast of the image by
-   * pushing colors away/toward neutral gray, where at 0 the image is entirely
-   * neutral gray (0 contrast), 1, the image is not adjusted and > 1 the
-   * image increases contrast.
-   *
-   * **saturation** increases (> 1) / decreases (< 1) the saturation of the image
-   * by pushing colors away/toward their grayscale value, where 0 is grayscale
-   * and 1 is the original image, and > 1 the image becomes more saturated.
-   *
-   * **brightness** is a constant scalar of the image colors. At 0 the image
-   * is black, 1 unmodified, and > 1 the image becomes brighter.
-   *
-   * **gamma** is an exponential scalar of the image colors. At < 1 the image
-   * becomes brighter, and > 1 the image becomes darker. A **gamma** of 1/2.2
-   * will convert the image colors to linear color space.
-   *
-   * **exposure** is an exponential scalar of the image as rgb* pow(2, exposure).
-   * At 0, the image is unmodified; as the exposure increases, the image
-   * brightens.
-   *
-   * **hue** shifts the hue component of the image colors in degrees. A **hue** of
-   * 0 will have no affect, and a **hue** of 45 will shift the hue of all colors
-   * by 45 degrees.
-   *
-   * **amount** controls how much affect this filter has on the **image**, where
-   * 0 has no effect and 1 has full effect.
-   *
+   * @param {AdjustColorOptions} opt - The options for adjusting the color of the image.
+   * @param {MemoryImage} opt.image - The image to be adjusted.
+   * @param {MemoryImage} [opt.mask] - The mask to be applied to the image.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask to be used.
+   * @param {Color} [opt.blacks] - The black level of the image, as a color.
+   * @param {Color} [opt.whites] - The white level of the image, as a color.
+   * @param {Color} [opt.mids] - The mid level of the image, as a color.
+   * @param {number} [opt.contrast] - The contrast adjustment factor.
+   * @param {number} [opt.saturation] - The saturation adjustment factor.
+   * @param {number} [opt.brightness] - The brightness adjustment factor.
+   * @param {number} [opt.gamma] - The gamma adjustment factor.
+   * @param {number} [opt.exposure] - The exposure adjustment factor.
+   * @param {number} [opt.hue] - The hue adjustment factor.
+   * @param {number} [opt.amount] - The amount of effect to apply.
+   * @returns {MemoryImage} The adjusted image.
    */
   public static adjustColor(opt: AdjustColorOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -555,6 +869,14 @@ export abstract class Filter {
 
   /**
    * Apply the billboard filter to the image.
+   *
+   * @param {BillboardOptions} opt - Options for the billboard filter.
+   * @param {MemoryImage} opt.image - The image to apply the filter to.
+   * @param {number} [opt.grid=10] - The size of the grid for the billboard effect.
+   * @param {number} [opt.amount=1] - The amount of the billboard effect.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for the mask.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect.
+   * @returns {MemoryImage} The image with the billboard filter applied.
    */
   public static billboard(opt: BillboardOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -627,6 +949,16 @@ export abstract class Filter {
     return image;
   }
 
+  /**
+   * Applies a bleach bypass effect to the given image.
+   *
+   * @param {BleachBypassOptions} opt - The options for the bleach bypass effect.
+   * @param {MemoryImage} opt.image - The image to apply the effect to.
+   * @param {number} [opt.amount=1] - The amount of the effect to apply.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel of the mask to use.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect.
+   * @returns {MemoryImage} The image with the bleach bypass effect applied.
+   */
   public static bleachBypass(opt: BleachBypassOptions): MemoryImage {
     const image = opt.image.hasPalette
       ? opt.image.convert({
@@ -681,6 +1013,20 @@ export abstract class Filter {
     return image;
   }
 
+  /**
+   * Applies a bulge distortion effect to the given image.
+   *
+   * @param {BulgeDistortionOptions} opt - The options for the bulge distortion effect.
+   * @param {MemoryImage} opt.image - The image to apply the effect to.
+   * @param {number} [opt.scale=0.5] - The scale of the bulge effect.
+   * @param {Interpolation} [opt.interpolation=Interpolation.nearest] - The interpolation method to use.
+   * @param {number} [opt.centerX] - The x-coordinate of the center of the bulge.
+   * @param {number} [opt.centerY] - The y-coordinate of the center of the bulge.
+   * @param {number} [opt.radius] - The radius of the bulge effect.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel of the mask to use.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect.
+   * @returns {MemoryImage} The image with the bulge distortion effect applied.
+   */
   public static bulgeDistortion(opt: BulgeDistortionOptions): MemoryImage {
     const image = opt.image.hasPalette
       ? opt.image.convert({
@@ -742,6 +1088,11 @@ export abstract class Filter {
    * The red channel of the **image** is used as an input, 0 represents a low
    * height and 1 a high value. The optional **strength** parameter allows to set
    * the strength of the normal image.
+   *
+   * @param {BumpToNormalOptions} opt - The options for generating the normal map.
+   * @param {MemoryImage} opt.image - The image from which to generate the normal map.
+   * @param {number} [opt.strength=2] - The strength of the normal image.
+   * @returns {MemoryImage} The generated normal map as a MemoryImage.
    */
   public static bumpToNormal(opt: BumpToNormalOptions): MemoryImage {
     const strength = opt.strength ?? 2;
@@ -793,6 +1144,13 @@ export abstract class Filter {
 
   /**
    * Apply chromatic aberration filter to the image.
+   *
+   * @param {ChromaticAberrationOptions} opt - Options for the chromatic aberration filter.
+   * @param {MemoryImage} opt.image - The image to apply the filter to.
+   * @param {number} [opt.shift=5] - The amount of shift for the chromatic aberration effect. Default is 5.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for the mask. Default is Channel.luminance.
+   * @param {MemoryImage} [opt.mask] - The mask image to control the effect.
+   * @returns {MemoryImage} The image with the chromatic aberration filter applied.
    */
   public static chromaticAberration(
     opt: ChromaticAberrationOptions
@@ -834,6 +1192,17 @@ export abstract class Filter {
 
   /**
    * Apply color halftone filter to the image.
+   *
+   * @param {ColorHalftone} opt - The options for the color halftone filter.
+   * @param {MemoryImage} opt.image - The image to apply the filter to.
+   * @param {number} [opt.amount=1] - The amount of the effect to apply, default is 1.
+   * @param {number} [opt.angle=1] - The angle of the halftone pattern, default is 1.
+   * @param {number} [opt.size=5] - The size of the halftone dots, default is 5.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for the mask, default is luminance.
+   * @param {number} [opt.centerX] - The x-coordinate of the center of the halftone pattern, default is the image center.
+   * @param {number} [opt.centerY] - The y-coordinate of the center of the halftone pattern, default is the image center.
+   * @param {Mask} [opt.mask] - Optional mask to apply the effect selectively.
+   * @returns {MemoryImage} The image with the color halftone filter applied.
    */
   public static colorHalftone(opt: ColorHalftone): MemoryImage {
     const image = opt.image.hasPalette
@@ -925,8 +1294,18 @@ export abstract class Filter {
   }
 
   /**
-   * Add the **red**, **green**, **blue** and **alpha** values to the **image** image
-   * colors, a per-channel brightness.
+   * Add the red, green, blue, and alpha values to the image colors,
+   * applying a per-channel brightness adjustment.
+   *
+   * @param {ColorOffsetOptions} opt - Options for color offset.
+   * @param {MemoryImage} opt.image - The image to be processed.
+   * @param {number} [opt.red] - The red channel offset value.
+   * @param {number} [opt.green] - The green channel offset value.
+   * @param {number} [opt.blue] - The blue channel offset value.
+   * @param {number} [opt.alpha] - The alpha channel offset value.
+   * @param {MemoryImage} [opt.mask] - The mask image to be used for selective offset.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask image to be used.
+   * @returns {MemoryImage} The processed image with color offsets applied.
    */
   public static colorOffset(opt: ColorOffsetOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -961,11 +1340,15 @@ export abstract class Filter {
   }
 
   /**
-   * Set the contrast level for the **image**.
+   * Set the contrast level for the image.
    *
-   * **contrast** values below 100 will decrease the contrast of the image,
-   * and values above 100 will increase the contrast. A contrast of 100
-   * will have no affect.
+   * @param {ContrastOptions} opt - The options for contrast adjustment.
+   * @param {MemoryImage} opt.image - The image to be processed.
+   * @param {number} opt.contrast - The contrast level to be applied.
+   * @param {MemoryImage} [opt.mask] - Optional mask image.
+   * @param {Channel} [opt.maskChannel] - Optional mask channel.
+   * @param {ContrastMode} [opt.mode] - Optional contrast mode.
+   * @returns {MemoryImage} The processed image with adjusted contrast.
    */
   public static contrast(opt: ContrastOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1031,11 +1414,21 @@ export abstract class Filter {
   }
 
   /**
-   * Apply a 3x3 convolution filter to the **image**. **filter** should be a
+   * Apply a 3x3 convolution filter to the image. The filter should be a
    * list of 9 numbers.
    *
-   * The rgb channels will be divided by **div** and add **offset**, allowing
+   * The rgb channels will be divided by div and add offset, allowing
    * filters to normalize and offset the filtered pixel value.
+   *
+   * @param {ConvolutionOptions} opt - The options for the convolution filter.
+   * @param {MemoryImage} opt.image - The image to which the convolution filter will be applied.
+   * @param {number[]} opt.filter - A list of 9 numbers representing the 3x3 convolution filter.
+   * @param {number} [opt.div=1] - The divisor for the rgb channels. Default is 1.
+   * @param {number} [opt.offset=0] - The offset to add to the rgb channels. Default is 0.
+   * @param {number} [opt.amount=1] - The amount to apply the filter. Default is 1.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The mask channel to use. Default is Channel.luminance.
+   * @param {MemoryImage} [opt.mask] - Optional mask image.
+   * @returns {MemoryImage} The image after applying the convolution filter.
    */
   public static convolution(opt: ConvolutionOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1089,6 +1482,19 @@ export abstract class Filter {
   /**
    * Copy channels from the **from** image to the **image**. If **scaled** is
    * true, then the **from** image will be scaled to the **image** resolution.
+   *
+   * @param {CopyImageChannelsOptions} opt - The options for copying image channels.
+   * @param {MemoryImage} opt.image - The target image to copy channels to.
+   * @param {MemoryImage} opt.from - The source image to copy channels from.
+   * @param {boolean} [opt.scaled] - Whether the source image should be scaled to the target image resolution.
+   * @param {Channel} [opt.maskChannel] - The channel to use for masking.
+   * @param {number} [opt.red] - The red channel index to copy from the source image.
+   * @param {number} [opt.green] - The green channel index to copy from the source image.
+   * @param {number} [opt.blue] - The blue channel index to copy from the source image.
+   * @param {number} [opt.alpha] - The alpha channel index to copy from the source image.
+   * @param {MemoryImage} [opt.mask] - An optional mask image.
+   *
+   * @returns {MemoryImage} The modified target image with copied channels.
    */
   public static copyImageChannels(opt: CopyImageChannelsOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1150,6 +1556,13 @@ export abstract class Filter {
    * Dither an image to reduce banding patterns when reducing the number of
    * colors.
    * Derived from http://jsbin.com/iXofIji/2/edit
+   *
+   * @param {DitherImageOptions} opt - Options for dithering the image
+   * @param {MemoryImage} opt.image - The image to be dithered
+   * @param {Quantizer} [opt.quantizer] - Optional quantizer to use
+   * @param {DitherKernel} [opt.kernel] - Optional dithering kernel to use
+   * @param {boolean} [opt.serpentine] - Optional flag to use serpentine scanning
+   * @returns {MemoryImage} The dithered image
    */
   public static ditherImage(opt: DitherImageOptions): MemoryImage {
     const quantizer = opt.quantizer ?? new NeuralQuantizer(opt.image);
@@ -1228,6 +1641,17 @@ export abstract class Filter {
 
   /**
    * Apply the dot screen filter to the image.
+   *
+   * @param {DotScreenOptions} opt - The options for the dot screen filter.
+   * @param {MemoryImage} opt.image - The image to apply the filter to.
+   * @param {number} [opt.size=5.75] - The size of the dot pattern. Default is 5.75.
+   * @param {number} [opt.amount=1] - The amount of the effect to apply. Default is 1.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use as a mask. Default is Channel.luminance.
+   * @param {number} [opt.angle=180] - The angle of the dot pattern in degrees. Default is 180.
+   * @param {number} [opt.centerX] - The X coordinate of the center of the dot pattern. Default is the center of the image.
+   * @param {number} [opt.centerY] - The Y coordinate of the center of the dot pattern. Default is the center of the image.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect.
+   * @returns {MemoryImage} The image with the dot screen filter applied.
    */
   public static dotScreen(opt: DotScreenOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1281,6 +1705,14 @@ export abstract class Filter {
 
   /**
    * Create a drop-shadow effect for the image.
+   *
+   * @param {DropShadowOptions} opt - Options for the drop shadow effect.
+   * @param {MemoryImage} opt.image - The image to which the drop shadow will be applied.
+   * @param {number} opt.hShadow - The horizontal shadow offset.
+   * @param {number} opt.vShadow - The vertical shadow offset.
+   * @param {number} opt.blur - The blur radius for the shadow.
+   * @param {ColorRgba8} opt.shadowColor - The color of the shadow.
+   * @returns {MemoryImage} A new image with the drop shadow effect applied.
    */
   public static dropShadow(opt: DropShadowOptions): MemoryImage {
     const blur = opt.blur >= 0 ? opt.blur : 0;
@@ -1360,6 +1792,13 @@ export abstract class Filter {
 
   /**
    * Apply the edge glow filter to the image.
+   *
+   * @param {EdgeGlowOptions} opt - Options for the edge glow filter.
+   * @param {MemoryImage} opt.image - The image to which the filter will be applied.
+   * @param {number} [opt.amount=1] - The amount of edge glow to apply. Default is 1.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for the mask. Default is luminance.
+   * @param {MemoryImage} [opt.mask] - Optional mask image to control the effect.
+   * @returns {MemoryImage} The image with the edge glow filter applied.
    */
   public static edgeGlow(opt: EdgeGlowOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1462,6 +1901,13 @@ export abstract class Filter {
 
   /**
    * Apply an emboss convolution filter.
+   *
+   * @param {EmbossOptions} opt - Options for the emboss filter.
+   * @param {MemoryImage} opt.image - The image to apply the emboss filter to.
+   * @param {number} [opt.amount=1] - The amount of embossing to apply.
+   * @param {MemoryImage} [opt.mask] - The mask to apply to the image.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for the mask.
+   * @returns {MemoryImage} - The image with the emboss filter applied.
    */
   public static emboss(opt: EmbossOptions): MemoryImage {
     const amount = opt.amount ?? 1;
@@ -1479,7 +1925,14 @@ export abstract class Filter {
   }
 
   /**
-   * Apply gamma scaling
+   * Apply gamma scaling to an image.
+   *
+   * @param {GammaOptions} opt - The options for the gamma function.
+   * @param {MemoryImage} opt.image - The image to apply gamma scaling to.
+   * @param {number} opt.gamma - The gamma value to use for scaling.
+   * @param {MemoryImage} [opt.mask] - Optional mask image to apply selective gamma scaling.
+   * @param {Channel} [opt.maskChannel] - Optional channel to use from the mask image. Defaults to luminance.
+   * @returns {MemoryImage} The image with gamma scaling applied.
    */
   public static gamma(opt: GammaOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1520,9 +1973,16 @@ export abstract class Filter {
   }
 
   /**
-   * Apply gaussian blur to the **image**. **radius** determines how many pixels
+   * Apply gaussian blur to the image. The radius determines how many pixels
    * away from the current pixel should contribute to the blur, where 0 is no
-   * blur and the larger the **radius**, the stronger the blur.
+   * blur and the larger the radius, the stronger the blur.
+   *
+   * @param {GaussianBlurOptions} opt - Options for the Gaussian blur operation.
+   * @param {MemoryImage} opt.image - The image to which the blur will be applied.
+   * @param {number} opt.radius - The radius of the blur effect.
+   * @param {MemoryImage} [opt.mask] - Optional mask to apply the blur selectively.
+   * @param {Channel} [opt.maskChannel] - Optional channel to use for the mask.
+   * @returns {MemoryImage} The blurred image.
    */
   public static gaussianBlur(opt: GaussianBlurOptions): MemoryImage {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -1566,6 +2026,13 @@ export abstract class Filter {
 
   /**
    * Convert the image to grayscale.
+   *
+   * @param {GrayscaleOptions} opt - Options for the grayscale conversion.
+   * @param {MemoryImage} opt.image - The image to be converted.
+   * @param {number} [opt.amount=1] - The amount of grayscale effect to apply, where 1 is full grayscale.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking.
+   * @param {Mask} [opt.mask] - An optional mask to apply the grayscale effect selectively.
+   * @returns {MemoryImage} The grayscale image.
    */
   public static grayscale(opt: GrayscaleOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1625,6 +2092,11 @@ export abstract class Filter {
   /**
    * Convert a high dynamic range image to a low dynamic range image,
    * with optional exposure control.
+   *
+   * @param {HdrToLdrOptions} opt The options for the conversion.
+   * @param {MemoryImage} opt.image The image to be converted.
+   * @param {number} [opt.exposure] The exposure level for the conversion.
+   * @returns {MemoryImage} The converted low dynamic range image.
    */
   public static hdrToLdr(opt: HdrToLdrOptions): MemoryImage {
     const knee = (x: number, f: number): number => {
@@ -1721,6 +2193,15 @@ export abstract class Filter {
 
   /**
    * Apply the hexagon pixelate filter to the image.
+   * @param {HexagonPixelateOptions} opt - Options for the hexagon pixelate filter.
+   * @param {MemoryImage} opt.image - The image to apply the filter to.
+   * @param {number} [opt.size=5] - The size of the hexagons. Default is 5.
+   * @param {number} [opt.amount=1] - The amount of the effect. Default is 1.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking. Default is luminance.
+   * @param {MemoryImage} [opt.mask] - The mask image.
+   * @param {number} [opt.centerX] - The X coordinate of the center. Default is the center of the image.
+   * @param {number} [opt.centerY] - The Y coordinate of the center. Default is the center of the image.
+   * @returns {MemoryImage} The image with the hexagon pixelate filter applied.
    */
   public static hexagonPixelate(opt: HexagonPixelateOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1825,6 +2306,12 @@ export abstract class Filter {
 
   /**
    * Invert the colors of the **image**.
+   *
+   * @param {InvertOptions} opt - Options for the invert operation.
+   * @param {MemoryImage} opt.image - The image to be processed.
+   * @param {MemoryImage} [opt.mask] - Optional mask image to apply selective inversion.
+   * @param {Channel} [opt.maskChannel] - Optional channel to use for masking. Defaults to luminance.
+   * @returns {MemoryImage} The image with inverted colors.
    */
   public static invert(opt: InvertOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1868,6 +2355,19 @@ export abstract class Filter {
     return image;
   }
 
+  /**
+   * Applies a luminance threshold to an image.
+   *
+   * @param {LuminanceThresholdOptions} opt - Options for the luminance threshold operation.
+   * @param {MemoryImage} opt.image - The image to be processed.
+   * @param {number} [opt.threshold=0.5] - The luminance threshold value (default is 0.5).
+   * @param {boolean} [opt.outputColor=false] - Whether to output in color (default is false).
+   * @param {number} [opt.amount=1] - The amount of the effect to apply (default is 1).
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel of the mask to use (default is Channel.luminance).
+   *
+   * @returns {MemoryImage} The processed image.
+   */
   public static luminanceThreshold(
     opt: LuminanceThresholdOptions
   ): MemoryImage {
@@ -1913,7 +2413,13 @@ export abstract class Filter {
   /**
    * Apply the monochrome filter to the **image**.
    *
-   * **amount** controls the strength of the effect, in the range [0, 1].
+   * @param {MonochromeOptions} opt - Options for the monochrome filter.
+   * @param {MemoryImage} opt.image - The image to which the filter will be applied.
+   * @param {number} [opt.amount] - Controls the strength of the effect, in the range [0, 1]. Defaults to 1.
+   * @param {Channel} [opt.maskChannel] - The channel to use for the mask. Defaults to Channel.luminance.
+   * @param {Object} [opt.color] - The color to use for the monochrome effect.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect's application.
+   * @returns {MemoryImage} The image with the monochrome filter applied.
    */
   public static monochrome(opt: MonochromeOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -1953,10 +2459,14 @@ export abstract class Filter {
   }
 
   /**
-   * Add random noise to pixel values. **sigma** determines how strong the effect
-   * should be. **type** should be one of the following: _NoiseType.gaussian_,
-   * _NoiseType.uniform_, _NoiseType.saltAndPepper_, _NoiseType.poisson_,
-   * or _NoiseType.rice_.
+   * Add random noise to pixel values.
+   * @param {NoiseOptions} opt - The options for adding noise.
+   * @param {MemoryImage} opt.image - The image to which noise will be added.
+   * @param {NoiseType} [opt.type] - The type of noise to add.
+   * @param {number} [opt.sigma] - The standard deviation of the noise.
+   * @param {MemoryImage} [opt.mask] - The mask image to control where noise is applied.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask image to use.
+   * @returns {MemoryImage} The image with added noise.
    */
   public static noise(opt: NoiseOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2166,6 +2676,14 @@ export abstract class Filter {
   /**
    * Linearly normalize the colors of the image. All color values will be mapped
    * to the range **min**, **max** inclusive.
+   *
+   * @param {NormalizeOptions} opt - The options for normalization.
+   * @param {MemoryImage} opt.image - The image to be normalized.
+   * @param {number} opt.min - The minimum value for normalization.
+   * @param {number} opt.max - The maximum value for normalization.
+   * @param {MemoryImage} [opt.mask] - Optional mask image.
+   * @param {Channel} [opt.maskChannel] - Optional mask channel.
+   * @returns {MemoryImage} The normalized image.
    */
   public static normalize(opt: NormalizeOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2218,13 +2736,16 @@ export abstract class Filter {
   }
 
   /**
-   * Pixelate the **image**.
+   * Pixelate the image.
    *
-   * **size** determines the size of the pixelated blocks.
-   * If **mode** is **upperLeft** then the upper-left corner of the
-   * block will be used for the block color. Otherwise if **mode** is
-   * **average**, the average of all the pixels in the block will be
-   * used for the block color.
+   * @param {PixelateOptions} opt - The options for pixelation.
+   * @param {MemoryImage} opt.image - The image to be pixelated.
+   * @param {number} opt.size - The size of the pixelated blocks.
+   * @param {PixelateMode} opt.mode - The mode of pixelation, either 'upperLeft' or 'average'.
+   * @param {number} opt.amount - The amount of pixelation to apply.
+   * @param {Channel} opt.maskChannel - The mask channel to use for pixelation.
+   * @param {MemoryImage} [opt.mask] - An optional mask image.
+   * @returns {MemoryImage} The pixelated image.
    */
   public static pixelate(opt: PixelateOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2324,6 +2845,13 @@ export abstract class Filter {
 
   /**
    * Quantize the number of colors in image to 256.
+   * @param {QuantizeOptions} opt - Options for quantization.
+   * @param {MemoryImage} opt.image - The image to be quantized.
+   * @param {number} [opt.numberOfColors=256] - The number of colors to reduce the image to. Default is 256.
+   * @param {QuantizeMethod} [opt.method=QuantizeMethod.neuralNet] - The method to use for quantization. Default is QuantizeMethod.neuralNet.
+   * @param {DitherKernel} [opt.dither=DitherKernel.none] - The dithering kernel to use. Default is DitherKernel.none.
+   * @param {boolean} [opt.ditherSerpentine=false] - Whether to use serpentine dithering. Default is false.
+   * @returns {MemoryImage} The quantized image.
    */
   public static quantize(opt: QuantizeOptions): MemoryImage {
     const numberOfColors = opt.numberOfColors ?? 256;
@@ -2350,6 +2878,12 @@ export abstract class Filter {
 
   /**
    * Applies Reinhard tone mapping to the hdr image, in-place.
+   *
+   * @param {ReinhardToneMapOptions} opt - Options for Reinhard tone mapping.
+   * @param {MemoryImage} opt.image - The HDR image to be tone mapped.
+   * @param {MemoryImage} [opt.mask] - Optional mask image for selective tone mapping.
+   * @param {Channel} [opt.maskChannel] - Optional channel to use from the mask image.
+   * @returns {MemoryImage} The tone-mapped image.
    */
   public static reinhardToneMap(opt: ReinhardToneMapOptions): MemoryImage {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -2400,9 +2934,18 @@ export abstract class Filter {
 
   /**
    * Remap the color channels of the image.
+   *
    * **red**, **green**, **blue** and **alpha** should be set to one of the following:
    * _Channel.red_, _Channel.green_, _Channel.blue_, _Channel.alpha_, or
    * _Channel.luminance_.
+   *
+   * @param {RemapColorsOptions} opt - The options for remapping colors.
+   * @param {MemoryImage} opt.image - The image to be processed.
+   * @param {Channel} opt.red - The channel to map to red.
+   * @param {Channel} opt.green - The channel to map to green.
+   * @param {Channel} opt.blue - The channel to map to blue.
+   * @param {Channel} opt.alpha - The channel to map to alpha.
+   * @returns {MemoryImage} The image with remapped color channels.
    */
   public static remapColors(opt: RemapColorsOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2439,6 +2982,17 @@ export abstract class Filter {
     return image;
   }
 
+  /**
+   * Scales the RGBA values of an image.
+   *
+   * @param {ScaleRgbaOptions} opt - The options for scaling RGBA values.
+   * @param {MemoryImage} opt.image - The image to be scaled.
+   * @param {Channel} [opt.maskChannel] - The channel to be used as a mask. Defaults to luminance.
+   * @param {Scale} opt.scale - The scale factors for each channel.
+   * @param {Mask} [opt.mask] - An optional mask image.
+   *
+   * @returns {MemoryImage} The scaled image.
+   */
   public static scaleRgba(opt: ScaleRgbaOptions): MemoryImage {
     const image = opt.image.hasPalette
       ? opt.image.convert({
@@ -2475,6 +3029,13 @@ export abstract class Filter {
    * given **kernel**.
    *
    * **gaussianBlur** is an example of such a filter.
+   *
+   * @param {SeparableConvolutionOptions} opt - Options for the separable convolution operation.
+   * @param {MemoryImage} opt.image - The image to which the convolution filter will be applied.
+   * @param {Kernel} opt.kernel - The kernel to be used for the convolution filter.
+   * @param {Channel} [opt.maskChannel] - The channel to be used as a mask. Defaults to luminance if not provided.
+   * @param {MemoryImage} [opt.mask] - An optional mask to be applied during the convolution.
+   * @returns {MemoryImage} The image after applying the separable convolution filter.
    */
   public static separableConvolution(
     opt: SeparableConvolutionOptions
@@ -2511,7 +3072,12 @@ export abstract class Filter {
   /**
    * Apply sepia tone to the **image**.
    *
-   * **amount** controls the strength of the effect, in the range [0, 1].
+   * @param {SepiaOptions} opt - Options for the sepia effect.
+   * @param {MemoryImage} opt.image - The image to which the sepia effect will be applied.
+   * @param {number} opt.amount - The strength of the sepia effect, in the range [0, 1].
+   * @param {MemoryImage} [opt.mask] - The mask image used to control the application of the sepia effect.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask image to use.
+   * @returns {MemoryImage} The image with the sepia effect applied.
    */
   public static sepia(opt: SepiaOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2546,9 +3112,14 @@ export abstract class Filter {
   }
 
   /**
-   * Apply sketch filter to the **image**.
+   * Apply sketch filter to the image.
    *
-   * **amount** controls the strength of the effect, in the range [0, 1].
+   * @param {SketchOptions} opt - The options for the sketch filter.
+   * @param {MemoryImage} opt.image - The image to which the sketch filter will be applied.
+   * @param {number} opt.amount - The strength of the effect, in the range [0, 1].
+   * @param {MemoryImage} [opt.mask] - The mask image to control the effect application.
+   * @param {Channel} [opt.maskChannel] - The channel to be used from the mask image.
+   * @returns {MemoryImage} The image with the sketch filter applied.
    */
   public static sketch(opt: SketchOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2609,10 +3180,14 @@ export abstract class Filter {
   }
 
   /**
-   * Apply a smoothing convolution filter to the **image**.
+   * Apply a smoothing convolution filter to the image.
    *
-   * **weight** is the weight of the current pixel being filtered. If it's greater
-   * than 1, it will make the image sharper.
+   * @param {SmoothOptions} opt - The options for the smoothing operation.
+   * @param {MemoryImage} opt.image - The image to be processed.
+   * @param {number} opt.weight - The weight of the current pixel being filtered. If it's greater than 1, it will make the image sharper.
+   * @param {MemoryImage} [opt.mask] - Optional mask to apply during the filtering process.
+   * @param {Channel} [opt.maskChannel] - Optional channel to use for the mask. Defaults to luminance if not provided.
+   * @returns {MemoryImage} The processed image with the smoothing filter applied.
    */
   public static smooth(opt: SmoothOptions): MemoryImage {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -2630,6 +3205,13 @@ export abstract class Filter {
 
   /**
    * Apply Sobel edge detection filtering to the **image**.
+   *
+   * @param {SobelOptions} opt - Options for the Sobel filter.
+   * @param {MemoryImage} opt.image - The image to apply the Sobel filter to.
+   * @param {number} [opt.amount=1] - The amount of the Sobel effect to apply. Default is 1.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking. Default is Channel.luminance.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the effect.
+   * @returns {MemoryImage} The image with the Sobel filter applied.
    */
   public static sobel(opt: SobelOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2687,10 +3269,13 @@ export abstract class Filter {
   }
 
   /**
-   * Solarize the colors of the **image**.
-   * **threshold** should be an integer value from 1 to 254.
-   * If **mode** is _SolarizeMode.highlights_, bright objects become black,
-   * otherwise it will solarize shadows.
+   * Solarize the colors of the image.
+   *
+   * @param {SolarizeOptions} opt - Options for solarization.
+   * @param {MemoryImage} opt.image - The image to be solarized.
+   * @param {number} opt.threshold - The threshold value for solarization (1 to 254).
+   * @param {SolarizeMode} opt.mode - The mode of solarization (highlights or shadows).
+   * @returns {MemoryImage} The solarized image.
    */
   public static solarize(opt: SolarizeOptions): MemoryImage {
     const image = opt.image.hasPalette
@@ -2792,6 +3377,18 @@ export abstract class Filter {
     return image;
   }
 
+  /**
+   * Applies a stretch distortion effect to the given image.
+   *
+   * @param {StretchDistortionOptions} opt - Options for the stretch distortion.
+   * @param {MemoryImage} opt.image - The image to be distorted.
+   * @param {Interpolation} [opt.interpolation] - The interpolation method to use. Defaults to nearest.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask to use. Defaults to luminance.
+   * @param {number} [opt.centerX] - The X coordinate of the distortion center. Defaults to the center of the image.
+   * @param {number} [opt.centerY] - The Y coordinate of the distortion center. Defaults to the center of the image.
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control the distortion effect.
+   * @returns {MemoryImage} - The distorted image.
+   */
   public static stretchDistortion(opt: StretchDistortionOptions): MemoryImage {
     const image = opt.image.hasPalette
       ? opt.image.convert({
@@ -2852,13 +3449,17 @@ export abstract class Filter {
   }
 
   /**
-   * Apply a vignette filter to the **image**.
+   * Apply a vignette filter to the image.
    *
-   * **start** is the inner radius from the center of the image, where the fade to
-   * **color** starts to be applied; **end** is the outer radius of the
-   * vignette effect where the **color** is fully applied. The radius values are in
-   * normalized percentage of the image size [0, 1].
-   * **amount** controls the blend of the effect with the original image.
+   * @param {VignetteOptions} opt - The options for the vignette filter.
+   * @param {MemoryImage} opt.image - The image to which the vignette filter will be applied.
+   * @param {number} [opt.start] - The inner radius from the center of the image where the fade to color starts to be applied.
+   * @param {number} [opt.end] - The outer radius of the vignette effect where the color is fully applied.
+   * @param {number} [opt.amount] - Controls the blend of the effect with the original image.
+   * @param {Color} [opt.color] - The color to be used for the vignette effect.
+   * @param {MemoryImage} [opt.mask] - The mask to be used for the vignette effect.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask to be used.
+   * @returns {MemoryImage} The image with the vignette filter applied.
    */
   public static vignette(opt: VignetteOptions): MemoryImage {
     const image = opt.image.hasPalette

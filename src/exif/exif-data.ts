@@ -21,31 +21,65 @@ import { IfdSShortValue } from './ifd-value/ifd-sshort-value.js';
 import { IfdUndefinedValue } from './ifd-value/ifd-undefined-value.js';
 import { IfdValue } from './ifd-value/ifd-value.js';
 
+/**
+ * Class representing ExifData.
+ */
 export class ExifData extends IfdContainer {
+  /**
+   * Get the image IFD directory.
+   * @returns {IfdDirectory} The image IFD directory.
+   */
   public get imageIfd(): IfdDirectory {
     return this.get('ifd0');
   }
 
+  /**
+   * Get the thumbnail IFD directory.
+   * @returns {IfdDirectory} The thumbnail IFD directory.
+   */
   public get thumbnailIfd(): IfdDirectory {
     return this.get('ifd1');
   }
 
+  /**
+   * Get the Exif IFD directory.
+   * @returns {IfdDirectory} The Exif IFD directory.
+   */
   public get exifIfd(): IfdDirectory {
     return this.get('ifd0').sub.get('exif');
   }
 
+  /**
+   * Get the GPS IFD directory.
+   * @returns {IfdDirectory} The GPS IFD directory.
+   */
   public get gpsIfd(): IfdDirectory {
     return this.get('ifd0').sub.get('gps');
   }
 
+  /**
+   * Get the interoperability IFD directory.
+   * @returns {IfdDirectory} The interoperability IFD directory.
+   */
   public get interopIfd(): IfdDirectory {
     return this.get('ifd0').sub.get('interop');
   }
 
+  /**
+   * Get the total data size.
+   * @returns {number} The total data size.
+   */
   public get dataSize(): number {
     return 8 + (this.directories.get('ifd0')?.dataSize ?? 0);
   }
 
+  /**
+   * Write the IFD directory to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   * @param {IfdDirectory} ifd - The IFD directory.
+   * @param {number} dataOffset - The data offset.
+   * @returns {number} The new data offset.
+   */
   private writeDirectory(
     out: OutputBuffer,
     ifd: IfdDirectory,
@@ -87,6 +121,11 @@ export class ExifData extends IfdContainer {
     return offset;
   }
 
+  /**
+   * Write large values of the IFD directory to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   * @param {IfdDirectory} ifd - The IFD directory.
+   */
   private writeDirectoryLargeValues(
     out: OutputBuffer,
     ifd: IfdDirectory
@@ -99,6 +138,12 @@ export class ExifData extends IfdContainer {
     }
   }
 
+  /**
+   * Read an Exif entry from the input buffer.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer.
+   * @param {number} blockOffset - The block offset.
+   * @returns {ExifEntry} The Exif entry.
+   */
   private readEntry(
     block: InputBuffer<Uint8Array>,
     blockOffset: number
@@ -174,17 +219,32 @@ export class ExifData extends IfdContainer {
     return entry;
   }
 
-  public static from(other: ExifData) {
+  /**
+   * Create an ExifData instance from another ExifData instance.
+   * @param {ExifData} other - The other ExifData instance.
+   * @returns {ExifData} The new ExifData instance.
+   */
+  public static from(other: ExifData): ExifData {
     const dirs = new Map<string, IfdDirectory>(other.directories);
     return new ExifData(dirs);
   }
 
-  public static fromInputBuffer(input: InputBuffer<Uint8Array>) {
+  /**
+   * Create an ExifData instance from an input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @returns {ExifData} The new ExifData instance.
+   */
+  public static fromInputBuffer(input: InputBuffer<Uint8Array>): ExifData {
     const data = new ExifData();
     data.read(input);
     return data;
   }
 
+  /**
+   * Check if a tag exists in the Exif data.
+   * @param {number} tag - The tag number.
+   * @returns {boolean} True if the tag exists, false otherwise.
+   */
   public hasTag(tag: number): boolean {
     for (const directory of this.directories.values()) {
       if (directory.has(tag)) {
@@ -194,6 +254,11 @@ export class ExifData extends IfdContainer {
     return false;
   }
 
+  /**
+   * Get the value of a tag.
+   * @param {number} tag - The tag number.
+   * @returns {IfdValue | undefined} The value of the tag, or undefined if not found.
+   */
   public getTag(tag: number): IfdValue | undefined {
     for (const directory of this.directories.values()) {
       if (directory.has(tag)) {
@@ -203,10 +268,19 @@ export class ExifData extends IfdContainer {
     return undefined;
   }
 
+  /**
+   * Get the name of a tag.
+   * @param {number} tag - The tag number.
+   * @returns {string} The name of the tag.
+   */
   public getTagName(tag: number): string {
     return ExifImageTags.get(tag)?.name ?? '<unknown>';
   }
 
+  /**
+   * Write the Exif data to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   */
   public write(out: OutputBuffer): void {
     const saveEndian = out.bigEndian;
     out.bigEndian = true;
@@ -312,6 +386,11 @@ export class ExifData extends IfdContainer {
     out.bigEndian = saveEndian;
   }
 
+  /**
+   * Read the Exif data from the input buffer.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer.
+   * @returns {boolean} True if the read was successful, false otherwise.
+   */
   public read(block: InputBuffer<Uint8Array>): boolean {
     const saveEndian = block.bigEndian;
     block.bigEndian = true;
@@ -405,10 +484,20 @@ export class ExifData extends IfdContainer {
     return false;
   }
 
+  /**
+   * Creates and returns a clone of the current ExifData object.
+   *
+   * @returns {ExifData} a new ExifData object that is a copy of the current instance.
+   */
   public clone(): ExifData {
     return ExifData.from(this);
   }
 
+  /**
+   * Converts the directory structure into a string representation.
+   *
+   * @returns {string} A string representation of the directory structure.
+   */
   public toString(): string {
     let s = '';
     for (const [name, directory] of this.directories) {

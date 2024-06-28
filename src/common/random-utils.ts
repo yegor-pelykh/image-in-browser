@@ -1,16 +1,20 @@
 /** @format */
 
+/**
+ * Abstract class providing various random utility methods.
+ */
 export abstract class RandomUtils {
   /**
-   * Return a random number between [-1, 1].
+   * Returns a random number between [-1, 1].
+   * @returns {number} A random number between -1 and 1.
    */
   public static crand(): number {
     return 1 - 2 * Math.random();
   }
 
   /**
-   * Return a random number following a gaussian distribution and a standard
-   * deviation of 1.
+   * Returns a random number following a Gaussian distribution with a standard deviation of 1.
+   * @returns {number} A random number following a Gaussian distribution.
    */
   public static grand(): number {
     let x1 = 0;
@@ -25,7 +29,9 @@ export abstract class RandomUtils {
   }
 
   /**
-   * Return a random variable following a Poisson distribution of parameter **z**.
+   * Returns a random variable following a Poisson distribution with the given parameter.
+   * @param {number} z - The parameter of the Poisson distribution.
+   * @returns {number} A random variable following a Poisson distribution.
    */
   public static prand(z: number): number {
     if (z <= 1e-10) {
@@ -43,9 +49,11 @@ export abstract class RandomUtils {
   }
 
   /**
-   * Generates a non-negative random integer in the range from 0, inclusive, to **max**, exclusive.
+   * Generates a non-negative random integer in the range from 0, inclusive, to the specified max, exclusive.
+   * @param {number} max - The upper bound (exclusive) for the random integer.
+   * @returns {number} A non-negative random integer less than max.
    */
-  public static intrand(max: number) {
+  public static intrand(max: number): number {
     return Math.floor(Math.random() * max);
   }
 }

@@ -16,47 +16,144 @@ import { WebPInfo } from './webp-info.js';
 import { StringUtils } from '../../common/string-utils.js';
 import { ExifData } from '../../exif/exif-data.js';
 
+/**
+ * Class representing the VP8L decoder.
+ */
 export class VP8L {
+  /**
+   * The last pixel processed.
+   */
   private _lastPixel: number = 0;
+
+  /**
+   * The last row processed.
+   */
   private _lastRow: number = 0;
 
+  /**
+   * The size of the color cache.
+   */
   private _colorCacheSize: number = 0;
+
+  /**
+   * The color cache.
+   */
   private _colorCache?: VP8LColorCache;
 
+  /**
+   * The Huffman mask.
+   */
   private _huffmanMask: number = 0;
+
+  /**
+   * The number of bits for Huffman subsampling.
+   */
   private _huffmanSubsampleBits: number = 0;
+
+  /**
+   * The size of the Huffman image in the x dimension.
+   */
   private _huffmanXsize: number = 0;
+
+  /**
+   * The Huffman image.
+   */
   private _huffmanImage?: Uint32Array;
+
+  /**
+   * The number of Huffman tree groups.
+   */
   private _numHtreeGroups: number = 0;
+
+  /**
+   * The Huffman tree groups.
+   */
   private _htreeGroups: HuffmanTreeGroup[] = [];
+
+  /**
+   * The image transforms.
+   */
   protected _transforms: VP8LTransform[] = [];
+
+  /**
+   * The number of transforms seen.
+   */
   private _transformsSeen: number = 0;
 
+  /**
+   * The pixel data.
+   */
   protected _pixels?: Uint32Array;
+
+  /**
+   * The pixel data in 8-bit format.
+   */
   private _pixels8!: Uint8Array;
+
+  /**
+   * The ARGB cache.
+   */
   private _argbCache?: number;
 
+  /**
+   * The opaque data.
+   */
   protected _opaque?: Uint8Array;
 
+  /**
+   * The width of the input/output image.
+   */
   protected _ioWidth?: number;
+
+  /**
+   * The height of the input/output image.
+   */
   protected _ioHeight?: number;
 
+  /**
+   * The input buffer.
+   */
   private _input: InputBuffer<Uint8Array>;
+
+  /**
+   * The bit reader.
+   */
   private _br: VP8LBitReader;
 
+  /**
+   * The decoded image.
+   */
   private _image?: MemoryImage;
 
+  /**
+   * The WebP information.
+   */
   private _webp: WebPInfo;
+
+  /**
+   * Gets the WebP information.
+   */
   public get webp(): WebPInfo {
     return this._webp;
   }
 
+  /**
+   * Constructs a new VP8L decoder.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {WebPInfo} webp - The WebP information.
+   */
   constructor(input: InputBuffer<Uint8Array>, webp: WebPInfo) {
     this._input = input;
     this._webp = webp;
     this._br = new VP8LBitReader(input);
   }
 
+  /**
+   * Reads a transform from the bit reader.
+   * @param {number[]} transformSize - The size of the transform.
+   * @returns {boolean} True if the transform was read successfully, false otherwise.
+   * @throws {LibError} If an invalid WebP transform type is encountered.
+   */
   private readTransform(transformSize: number[]): boolean {
     let ok = true;
 
@@ -104,6 +201,10 @@ export class VP8L {
     return ok;
   }
 
+  /**
+   * Extracts paletted alpha rows.
+   * @param {number} row - The row to extract.
+   */
   private extractPalettedAlphaRows(row: number): void {
     const numRows = row - this._lastRow;
     const pIn = new InputBuffer<Uint8Array>({
@@ -118,6 +219,8 @@ export class VP8L {
 
   /**
    * Special method for paletted alpha data.
+   * @param {number} numRows - The number of rows.
+   * @param {InputBuffer<Uint8Array>} rows - The input buffer containing the rows.
    */
   private applyInverseTransformsAlpha(
     numRows: number,
@@ -140,6 +243,7 @@ export class VP8L {
   /**
    * Processes (transforms, scales & color-converts) the rows decoded after the
    * last call.
+   * @param {number} row - The row to process.
    */
   private processRows(row: number): void {
     // offset into _pixels
@@ -173,6 +277,11 @@ export class VP8L {
     this._lastRow = row;
   }
 
+  /**
+   * Applies inverse transforms to the pixel data.
+   * @param {number} numRows - The number of rows.
+   * @param {number} rows - The starting row.
+   */
   private applyInverseTransforms(numRows: number, rows: number): void {
     let n = this._transforms.length;
     const cachePixs = this._webp.width * numRows;
@@ -203,6 +312,14 @@ export class VP8L {
     }
   }
 
+  /**
+   * Reads Huffman codes from the bit reader.
+   * @param {number} xSize - The size in the x dimension.
+   * @param {number} ySize - The size in the y dimension.
+   * @param {number} colorCacheBits - The number of bits for the color cache.
+   * @param {boolean} allowRecursion - Whether recursion is allowed.
+   * @returns {boolean} True if the Huffman codes were read successfully, false otherwise.
+   */
   private readHuffmanCodes(
     xSize: number,
     ySize: number,
@@ -258,6 +375,12 @@ export class VP8L {
     return true;
   }
 
+  /**
+   * Reads a Huffman code from the bit reader.
+   * @param {number} alphabetSize - The size of the alphabet.
+   * @param {HuffmanTree} tree - The Huffman tree to populate.
+   * @returns {boolean} True if the Huffman code was read successfully, false otherwise.
+   */
   private readHuffmanCode(alphabetSize: number, tree: HuffmanTree): boolean {
     let ok = false;
     const simpleCode = this._br.readBits(1);
@@ -320,6 +443,13 @@ export class VP8L {
     return ok;
   }
 
+  /**
+   * Reads Huffman code lengths from the bit reader.
+   * @param {Int32Array} codeLengthCodeLengths - The lengths of the code length codes.
+   * @param {number} numSymbols - The number of symbols.
+   * @param {Int32Array} codeLengths - The array to populate with code lengths.
+   * @returns {boolean} True if the code lengths were read successfully, false otherwise.
+   */
   private readHuffmanCodeLengths(
     codeLengthCodeLengths: Int32Array,
     numSymbols: number,
@@ -382,6 +512,11 @@ export class VP8L {
     return true;
   }
 
+  /**
+   * Gets the copy distance for a given distance symbol.
+   * @param {number} distanceSymbol - The distance symbol.
+   * @returns {number} The copy distance.
+   */
   private getCopyDistance(distanceSymbol: number): number {
     if (distanceSymbol < 4) {
       return distanceSymbol + 1;
@@ -391,10 +526,21 @@ export class VP8L {
     return offset + this._br.readBits(extraBits) + 1;
   }
 
+  /**
+   * Gets the copy length for a given length symbol.
+   * @param {number} lengthSymbol - The length symbol.
+   * @returns {number} The copy length.
+   */
   private getCopyLength(lengthSymbol: number): number {
     return this.getCopyDistance(lengthSymbol);
   }
 
+  /**
+   * Converts a plane code to a distance.
+   * @param {number} xsize - The size in the x dimension.
+   * @param {number} planeCode - The plane code.
+   * @returns {number} The distance.
+   */
   private planeCodeToDistance(xsize: number, planeCode: number): number {
     if (planeCode > VP8L.codeToPlaneCodes) {
       return planeCode - VP8L.codeToPlaneCodes;
@@ -409,8 +555,12 @@ export class VP8L {
   }
 
   /**
-   * For security reason, we need to remap the color map to span
-   * the total possible bundled values, and not just the **numColors**.
+   * Expands the color map for a given number of colors and applies a transformation.
+   * @param {number} numColors - The number of colors to expand.
+   * @param {VP8LTransform} transform - The transformation to apply, which includes the data and bits for the transformation.
+   * @param {Uint32Array} transform.data - The data for the transformation.
+   * @param {number} transform.bits - The bits for the transformation.
+   * @returns {boolean} A boolean indicating whether the operation was successful.
    */
   private expandColorMap(numColors: number, transform: VP8LTransform): boolean {
     const finalNumColors = 1 << (8 >>> transform.bits);
@@ -436,6 +586,16 @@ export class VP8L {
     return true;
   }
 
+  /**
+   * Retrieves the meta index from the given image data.
+   *
+   * @param {Uint32Array | undefined} image - The image data array.
+   * @param {number} xsize - The width of the image.
+   * @param {number} bits - The number of bits to shift.
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @returns {number} - The meta index value.
+   */
   private getMetaIndex(
     image: Uint32Array | undefined,
     xsize: number,
@@ -449,6 +609,13 @@ export class VP8L {
     return image![xsize * (y >>> bits) + (x >>> bits)];
   }
 
+  /**
+   * Retrieves the HuffmanTreeGroup for the given position (x, y).
+   *
+   * @param {number} x - The x-coordinate of the position.
+   * @param {number} y - The y-coordinate of the position.
+   * @returns {HuffmanTreeGroup} The HuffmanTreeGroup corresponding to the given position.
+   */
   private getHtreeGroupForPos(x: number, y: number): HuffmanTreeGroup {
     const metaIndex = this.getMetaIndex(
       this._huffmanImage,
@@ -460,6 +627,16 @@ export class VP8L {
     return this._htreeGroups[metaIndex];
   }
 
+  /**
+   * Allocates internal buffers for 32-bit pixel storage.
+   *
+   * This method calculates the total number of pixels required for the image,
+   * including scratch buffers for top-prediction rows and temporary BGRA storage.
+   * It then allocates a Uint32Array to hold these pixels and sets up the necessary
+   * internal references.
+   *
+   * @returns {boolean} Always returns true indicating successful allocation.
+   */
   protected allocateInternalBuffers32b(): boolean {
     const numPixels = this._webp.width * this._webp.height;
     // Scratch buffer corresponding to top-prediction row for transforming the
@@ -477,16 +654,37 @@ export class VP8L {
     return true;
   }
 
+  /**
+   * Allocates internal buffers for 8-bit pixel data.
+   *
+   * This method initializes the internal buffers required for storing
+   * pixel data in an 8-bit format. It calculates the total number of
+   * pixels based on the width and height of the WebP image, pads the
+   * byte buffer to a multiple of 4, and then creates the necessary
+   * Uint8Array and Uint32Array buffers.
+   *
+   * @returns {boolean} Always returns true to indicate successful allocation.
+   */
   protected allocateInternalBuffers8b(): boolean {
     const totalNumPixels = this._webp.width * this._webp.height;
     this._argbCache = 0;
-    // pad the byteBuffer to a multiple of 4
+    // Pad the byteBuffer to a multiple of 4
     const n = totalNumPixels + (4 - (totalNumPixels % 4));
     this._pixels8 = new Uint8Array(n);
     this._pixels = new Uint32Array(this._pixels8.buffer);
     return true;
   }
 
+  /**
+   * Decodes an image stream and returns the decoded image data as a Uint32Array.
+   * If `isLevel0` is true, the function sets up the necessary parameters and returns undefined.
+   *
+   * @param {number} xsize - The width of the image.
+   * @param {number} ysize - The height of the image.
+   * @param {boolean} isLevel0 - Indicates if the current level is 0.
+   * @returns {Uint32Array | undefined} - The decoded image data or undefined if `isLevel0` is true.
+   * @throws {LibError} - Throws an error if an invalid transform, color cache, or Huffman codes are encountered.
+   */
   protected decodeImageStream(
     xsize: number,
     ysize: number,
@@ -572,6 +770,16 @@ export class VP8L {
     return data;
   }
 
+  /**
+   * Decodes image data from a given Uint32Array.
+   *
+   * @param {Uint32Array} data - The array to store the decoded image data.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {number} lastRow - The last row to decode.
+   * @param {(_: number) => void} [processFunc] - Optional function to process each row.
+   * @returns {boolean} - Returns true if decoding is successful, otherwise false.
+   */
   protected decodeImageData(
     data: Uint32Array,
     width: number,
@@ -718,8 +926,13 @@ export class VP8L {
   }
 
   /**
-   * Row-processing for the special case when alpha data contains only one
-   * transform (color indexing), and trivial non-green literals.
+   * Determines if the current instance is optimizable for 8-bit processing.
+   *
+   * This method checks if the color cache size is zero and if the Huffman trees
+   * for red, blue, and alpha channels in all Huffman tree groups contain only one symbol.
+   * If these conditions are met, the instance is considered optimizable for 8-bit processing.
+   *
+   * @returns {boolean} - Returns true if the instance is optimizable for 8-bit processing, otherwise false.
    */
   protected is8bOptimizable(): boolean {
     if (this._colorCacheSize > 0) {
@@ -743,7 +956,9 @@ export class VP8L {
   }
 
   /**
-   * Special row-processing that only stores the alpha data.
+   * Extracts alpha rows from the given row number.
+   *
+   * @param row - The row number to extract alpha rows from.
    */
   protected extractAlphaRows(row: number): void {
     const numRows = row - this._lastRow;
@@ -772,6 +987,14 @@ export class VP8L {
     this._lastRow = row;
   }
 
+  /**
+   * Decodes alpha data for an image.
+   *
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {number} lastRow - The last row to decode.
+   * @returns {boolean} A boolean indicating if the decoding was successful.
+   */
   protected decodeAlphaData(
     width: number,
     height: number,
@@ -859,6 +1082,14 @@ export class VP8L {
     return true;
   }
 
+  /**
+   * Decodes the header of a WebP image.
+   *
+   * This method reads the signature, format, dimensions, alpha presence, and version
+   * from the bit reader and validates them against expected values.
+   *
+   * @returns {boolean} True if the header is successfully decoded and valid, false otherwise.
+   */
   public decodeHeader(): boolean {
     const signature = this._br.readBits(8);
     if (signature !== VP8L.vp8lMagicByte) {
@@ -878,23 +1109,33 @@ export class VP8L {
     return true;
   }
 
+  /**
+   * Decodes the image data and returns a MemoryImage object.
+   *
+   * @returns {MemoryImage | undefined} The decoded MemoryImage object or undefined if decoding fails.
+   */
   public decode(): MemoryImage | undefined {
     this._lastPixel = 0;
 
+    // Decode the header of the image
     if (!this.decodeHeader()) {
       return undefined;
     }
 
+    // Decode the image stream
     this.decodeImageStream(this._webp.width, this._webp.height, true);
 
+    // Allocate internal buffers for 32-bit image processing
     this.allocateInternalBuffers32b();
 
+    // Create a new MemoryImage object with the decoded dimensions and 4 channels
     this._image = new MemoryImage({
       width: this._webp.width,
       height: this._webp.height,
       numChannels: 4,
     });
 
+    // Decode the image data into the pixel buffer
     if (
       !this.decodeImageData(
         this._pixels!,
@@ -907,6 +1148,7 @@ export class VP8L {
       return undefined;
     }
 
+    // If EXIF data is present, decode and attach it to the image
     if (this._webp.exifData.length > 0) {
       const input = new InputBuffer({
         buffer: StringUtils.getCodePoints(this._webp.exifData),
@@ -918,27 +1160,41 @@ export class VP8L {
   }
 
   /**
-   * Computes sampled size of **size** when sampling using **samplingBits**.
+   * Calculates the sub-sample size based on the given size and sampling bits.
+   *
+   * @param {number} size - The original size to be sub-sampled.
+   * @param {number} samplingBits - The number of bits used for sampling.
+   * @returns {number} The calculated sub-sample size.
    */
   protected static subSampleSize(size: number, samplingBits: number): number {
     return (size + (1 << samplingBits) - 1) >>> samplingBits;
   }
 
+  /** Green color channel index */
   public static readonly green = 0;
+  /** Red color channel index */
   public static readonly red = 1;
+  /** Blue color channel index */
   public static readonly blue = 2;
+  /** Alpha channel index */
   public static readonly alpha = 3;
+  /** Distance index */
   public static readonly dist = 4;
 
+  /** Number of ARGB cache rows */
   public static readonly numArgbCacheRows = 16;
 
+  /** Number of code length codes */
   public static readonly numCodeLengthCodes = 19;
 
+  /** Order of code length codes */
   public static readonly codeLengthCodeOrder: number[] = [
     17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
   ];
 
+  /** Number of plane codes */
   public static readonly codeToPlaneCodes = 120;
+  /** Mapping of codes to planes */
   public static readonly codeToPlane: number[] = [
     0x18, 0x07, 0x17, 0x19, 0x28, 0x06, 0x27, 0x29, 0x16, 0x1a, 0x26, 0x2a,
     0x38, 0x05, 0x37, 0x39, 0x15, 0x1b, 0x36, 0x3a, 0x25, 0x2b, 0x48, 0x04,
@@ -952,23 +1208,37 @@ export class VP8L {
     0x51, 0x5f, 0x40, 0x72, 0x7e, 0x61, 0x6f, 0x50, 0x71, 0x7f, 0x60, 0x70,
   ];
 
+  /** Code length literals */
   public static readonly codeLengthLiterals = 16;
+  /** Code length repeat code */
   public static readonly codeLengthRepeatCode = 16;
+  /** Extra bits for code length */
   public static readonly codeLengthExtraBits = [2, 3, 7];
+  /** Repeat offsets for code length */
   public static readonly codeLengthRepeatOffsets = [3, 3, 11];
 
+  /** ARGB value for black color */
   public static readonly argbBlack = 0xff000000;
+  /** Maximum cache bits */
   public static readonly maxCacheBits = 11;
+  /** Number of Huffman codes per meta code */
   public static readonly huffmanCodesPerMetaCode = 5;
 
+  /** Default code length */
   public static readonly defaultCodeLength = 8;
+  /** Maximum allowed code length */
   public static readonly maxAllowedCodeLength = 15;
 
+  /** Number of literal codes */
   public static readonly numLiteralCodes = 256;
+  /** Number of length codes */
   public static readonly numLengthCodes = 24;
+  /** Number of distance codes */
   public static readonly numDistanceCodes = 40;
+  /** Number of code length codes */
   public static readonly codeLengthCodes = 19;
 
+  /** Alphabet size for different contexts */
   public static readonly alphabetSize = [
     VP8L.numLiteralCodes + VP8L.numLengthCodes,
     VP8L.numLiteralCodes,
@@ -977,6 +1247,8 @@ export class VP8L {
     VP8L.numDistanceCodes,
   ];
 
+  /** Magic byte for VP8L */
   public static readonly vp8lMagicByte = 0x2f;
+  /** Version for VP8L */
   public static readonly vp8lVersion = 0;
 }

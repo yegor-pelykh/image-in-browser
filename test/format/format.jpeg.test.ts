@@ -13,7 +13,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for JPEG format handling.
+ */
 describe('Format: JPEG', () => {
+  /**
+   * Test to verify that EXIF data is present in the JPEG image.
+   */
   test('exif', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -32,6 +38,9 @@ describe('Format: JPEG', () => {
     expect(image.exifData.size).toBeGreaterThan(0);
   });
 
+  /**
+   * Test to decode a JPEG image, modify its EXIF data, and then re-encode it.
+   */
   test('decode / inject Exif', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -91,6 +100,9 @@ describe('Format: JPEG', () => {
     );
   });
 
+  /**
+   * Test to encode a JPEG image with default 4:4:4 chroma subsampling.
+   */
   test('encode (default 4:4:4 chroma)', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -117,6 +129,9 @@ describe('Format: JPEG', () => {
     );
   });
 
+  /**
+   * Test to encode a JPEG image with 4:2:0 chroma subsampling.
+   */
   test('encode (4:2:0 chroma)', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -144,6 +159,9 @@ describe('Format: JPEG', () => {
     );
   });
 
+  /**
+   * Test to verify that a progressive JPEG image is correctly decoded and re-encoded as PNG.
+   */
   test('progressive', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

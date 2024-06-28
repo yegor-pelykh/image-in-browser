@@ -3,7 +3,13 @@
 import { describe, expect, test } from 'vitest';
 import { ColorFloat32 } from '../../src';
 
+/**
+ * Test suite for the Color class.
+ */
 describe('Color', () => {
+  /**
+   * Test case for the ColorFloat32 class.
+   */
   test('ColorFloat32', () => {
     const c0 = new ColorFloat32(0);
     expect(c0.length).toBe(0);

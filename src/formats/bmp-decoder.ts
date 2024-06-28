@@ -8,25 +8,53 @@ import { BmpInfo } from './bmp/bmp-info.js';
 import { Decoder, DecoderDecodeOptions } from './decoder.js';
 import { ImageFormat } from './image-format.js';
 
+/**
+ * Class representing a BMP decoder.
+ */
 export class BmpDecoder implements Decoder {
+  /**
+   * Input buffer for the BMP data.
+   */
   protected _input?: InputBuffer<Uint8Array>;
+
+  /**
+   * Information about the BMP file.
+   */
   protected _info?: BmpInfo;
+
+  /**
+   * Flag to force RGBA format.
+   */
   protected _forceRgba: boolean;
 
+  /**
+   * Get the image format.
+   * @returns {ImageFormat} The image format.
+   */
   get format(): ImageFormat {
     return ImageFormat.bmp;
   }
 
+  /**
+   * Get the number of frames in the BMP image.
+   * @returns {number} The number of frames.
+   */
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;
   }
 
+  /**
+   * Create a BMP decoder.
+   * @param {boolean} [forceRgba=false] - Flag to force RGBA format.
+   */
   constructor(forceRgba = false) {
     this._forceRgba = forceRgba;
   }
 
   /**
-   * Is the given file a valid BMP image?
+   * Check if the given file is a valid BMP image.
+   * @param {Uint8Array} bytes - The file bytes.
+   * @returns {boolean} True if the file is a valid BMP image, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
     return BmpFileHeader.isValidFile(
@@ -36,6 +64,11 @@ export class BmpDecoder implements Decoder {
     );
   }
 
+  /**
+   * Start decoding the BMP file.
+   * @param {Uint8Array} bytes - The file bytes.
+   * @returns {BmpInfo | undefined} The BMP information or undefined if invalid.
+   */
   public startDecode(bytes: Uint8Array): BmpInfo | undefined {
     if (!this.isValidFile(bytes)) {
       return undefined;
@@ -48,7 +81,9 @@ export class BmpDecoder implements Decoder {
   }
 
   /**
-   * Decode a single frame.
+   * Decode a single frame from the BMP file.
+   * @param {number} _frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if there was an error.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
@@ -124,9 +159,12 @@ export class BmpDecoder implements Decoder {
   }
 
   /**
-   * Decode the file and extract a single image from it. If the file is
-   * animated, the specified **frameIndex** will be decoded. If there was a problem
-   * decoding the file, undefined is returned.
+   * Decode the BMP file and extract a single image from it.
+   * If the file is animated, the specified frameIndex will be decoded.
+   * @param {DecoderDecodeOptions} opt - The decode options.
+   * @param {Uint8Array} opt.bytes - The file bytes.
+   * @param {number} [opt.frameIndex=0] - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if there was an error.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;

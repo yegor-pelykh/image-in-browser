@@ -10,112 +10,232 @@ import { JpegData } from './jpeg-data.js';
 import { JpegFrame } from './jpeg-frame.js';
 import { JpegMarker } from './jpeg-marker.js';
 
+/**
+ * Type definition for the decode function.
+ *
+ * @param {JpegComponent} component - The JPEG component to decode.
+ * @param {Int32Array} block - The block of data to decode.
+ */
 export type DecodeFunction = (
   component: JpegComponent,
   block: Int32Array
 ) => void;
 
+/**
+ * Class representing a JPEG scan.
+ */
 export class JpegScan {
   private _input: InputBuffer<Uint8Array>;
+
+  /**
+   * Gets the input buffer.
+   * @returns {InputBuffer<Uint8Array>} The input buffer.
+   */
   public get input(): InputBuffer<Uint8Array> {
     return this._input;
   }
 
   private _frame: JpegFrame;
+
+  /**
+   * Gets the JPEG frame.
+   * @returns {JpegFrame} The JPEG frame.
+   */
   public get frame(): JpegFrame {
     return this._frame;
   }
 
   private _precision: number;
+
+  /**
+   * Gets the precision.
+   * @returns {number} The precision.
+   */
   public get precision(): number {
     return this._precision;
   }
 
   private _samplesPerLine: number;
+
+  /**
+   * Gets the samples per line.
+   * @returns {number} The samples per line.
+   */
   public get samplesPerLine(): number {
     return this._samplesPerLine;
   }
 
   private _scanLines: number;
+
+  /**
+   * Gets the scan lines.
+   * @returns {number} The scan lines.
+   */
   public get scanLines(): number {
     return this._scanLines;
   }
 
   private _mcusPerLine: number;
+
+  /**
+   * Gets the MCUs per line.
+   * @returns {number} The MCUs per line.
+   */
   public get mcusPerLine(): number {
     return this._mcusPerLine;
   }
 
   private _progressive: boolean;
+
+  /**
+   * Gets whether the scan is progressive.
+   * @returns {boolean} True if the scan is progressive, false otherwise.
+   */
   public get progressive(): boolean {
     return this._progressive;
   }
 
   private _maxH: number;
+
+  /**
+   * Gets the maximum horizontal samples.
+   * @returns {number} The maximum horizontal samples.
+   */
   public get maxH(): number {
     return this._maxH;
   }
 
   private _maxV: number;
+
+  /**
+   * Gets the maximum vertical samples.
+   * @returns {number} The maximum vertical samples.
+   */
   public get maxV(): number {
     return this._maxV;
   }
 
   private _components: Array<JpegComponent>;
+
+  /**
+   * Gets the components.
+   * @returns {Array<JpegComponent>} The components.
+   */
   public get components(): Array<JpegComponent> {
     return this._components;
   }
 
   private _resetInterval?: number;
+
+  /**
+   * Gets the reset interval.
+   * @returns {number | undefined} The reset interval.
+   */
   public get resetInterval(): number | undefined {
     return this._resetInterval;
   }
 
   private _spectralStart: number;
+
+  /**
+   * Gets the spectral start.
+   * @returns {number} The spectral start.
+   */
   public get spectralStart(): number {
     return this._spectralStart;
   }
 
   private _spectralEnd: number;
+
+  /**
+   * Gets the spectral end.
+   * @returns {number} The spectral end.
+   */
   public get spectralEnd(): number {
     return this._spectralEnd;
   }
 
   private _successivePrev: number;
+
+  /**
+   * Gets the successive previous value.
+   * @returns {number} The successive previous value.
+   */
   public get successivePrev(): number {
     return this._successivePrev;
   }
 
   private _successive: number;
+
+  /**
+   * Gets the successive value.
+   * @returns {number} The successive value.
+   */
   public get successive(): number {
     return this._successive;
   }
 
   private _bitsData = 0;
+
+  /**
+   * Gets the bits data.
+   * @returns {number} The bits data.
+   */
   public get bitsData(): number {
     return this._bitsData;
   }
 
   private _bitsCount = 0;
+
+  /**
+   * Gets the bits count.
+   * @returns {number} The bits count.
+   */
   public get bitsCount(): number {
     return this._bitsCount;
   }
 
   private _eobrun = 0;
+
+  /**
+   * Gets the EOB run.
+   * @returns {number} The EOB run.
+   */
   public get eobrun(): number {
     return this._eobrun;
   }
 
   private _successiveACState = 0;
+
+  /**
+   * Gets the successive AC state.
+   * @returns {number} The successive AC state.
+   */
   public get successiveACState(): number {
     return this._successiveACState;
   }
 
   private _successiveACNextValue = 0;
+
+  /**
+   * Gets the successive AC next value.
+   * @returns {number} The successive AC next value.
+   */
   public get successiveACNextValue(): number {
     return this._successiveACNextValue;
   }
 
+  /**
+   * Initializes a new instance of the JpegScan class.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   * @param {JpegFrame} frame - The JPEG frame.
+   * @param {Array<JpegComponent>} components - The components.
+   * @param {number} spectralStart - The spectral start.
+   * @param {number} spectralEnd - The spectral end.
+   * @param {number} successivePrev - The successive previous value.
+   * @param {number} successive - The successive value.
+   * @param {number} [resetInterval] - The reset interval.
+   */
   constructor(
     input: InputBuffer<Uint8Array>,
     frame: JpegFrame,
@@ -143,6 +263,10 @@ export class JpegScan {
     this._successive = successive;
   }
 
+  /**
+   * Reads a single bit from the input buffer.
+   * @returns {number | undefined} The bit read or undefined if end of stream.
+   */
   private readBit(): number | undefined {
     if (this.bitsCount > 0) {
       this._bitsCount--;
@@ -157,8 +281,6 @@ export class JpegScan {
     if (this._bitsData === 0xff) {
       const nextByte = this.input.read();
       if (nextByte !== 0) {
-        // const marker = ((this._bitsData << 8) | nextByte).toString(16);
-        // throw new LibError(`unexpected marker: ${marker}`);
         return undefined;
       }
     }
@@ -167,6 +289,11 @@ export class JpegScan {
     return (this._bitsData >>> 7) & 1;
   }
 
+  /**
+   * Decodes a Huffman encoded value.
+   * @param {Array<HuffmanNode | undefined>} tree - The Huffman tree.
+   * @returns {number | undefined} The decoded value or undefined if end of stream.
+   */
   private decodeHuffman(
     tree: Array<HuffmanNode | undefined>
   ): number | undefined {
@@ -183,6 +310,11 @@ export class JpegScan {
     return undefined;
   }
 
+  /**
+   * Receives a specified number of bits from the input buffer.
+   * @param {number} length - The number of bits to receive.
+   * @returns {number | undefined} The received bits or undefined if end of stream.
+   */
   private receive(length: number): number | undefined {
     let n = 0;
     let len = length;
@@ -197,6 +329,11 @@ export class JpegScan {
     return n;
   }
 
+  /**
+   * Receives and extends a specified number of bits from the input buffer.
+   * @param {number | undefined} length - The number of bits to receive and extend.
+   * @returns {number} The received and extended bits.
+   */
   private receiveAndExtend(length: number | undefined): number {
     if (length === undefined) {
       return 0;
@@ -214,6 +351,11 @@ export class JpegScan {
     return n + (-1 << (length ?? 0)) + 1;
   }
 
+  /**
+   * Decodes a baseline JPEG component.
+   * @param {JpegComponent} component - The JPEG component.
+   * @param {Int32Array} zz - The block of data to decode.
+   */
   private decodeBaseline(component: JpegComponent, zz: Int32Array): void {
     const t = this.decodeHuffman(component.huffmanTableDC);
     const diff = t === 0 ? 0 : this.receiveAndExtend(t);
@@ -246,6 +388,11 @@ export class JpegScan {
     }
   }
 
+  /**
+   * Decodes the first DC coefficient of a progressive JPEG component.
+   * @param {JpegComponent} component - The JPEG component.
+   * @param {Int32Array} zz - The block of data to decode.
+   */
   private decodeDCFirst(component: JpegComponent, zz: Int32Array): void {
     const t = this.decodeHuffman(component.huffmanTableDC);
     const diff = t === 0 ? 0 : this.receiveAndExtend(t) << this._successive;
@@ -253,10 +400,20 @@ export class JpegScan {
     zz[0] = component.pred;
   }
 
+  /**
+   * Decodes the successive DC coefficients of a progressive JPEG component.
+   * @param {JpegComponent} _ - The JPEG component (unused).
+   * @param {Int32Array} zz - The block of data to decode.
+   */
   private decodeDCSuccessive(_: JpegComponent, zz: Int32Array): void {
     zz[0] |= this.readBit()! << this._successive;
   }
 
+  /**
+   * Decodes the first AC coefficients of a progressive JPEG component.
+   * @param {JpegComponent} component - The JPEG component.
+   * @param {Int32Array} zz - The block of data to decode.
+   */
   private decodeACFirst(component: JpegComponent, zz: Int32Array): void {
     if (this._eobrun > 0) {
       this._eobrun--;
@@ -283,6 +440,12 @@ export class JpegScan {
     }
   }
 
+  /**
+   * Decodes the successive AC coefficients of a progressive JPEG component.
+   * @param {JpegComponent} component - The JPEG component.
+   * @param {Int32Array} zz - The block of data to decode.
+   * @throws {LibError} If there is an invalid progressive encoding.
+   */
   private decodeACSuccessive(component: JpegComponent, zz: Int32Array): void {
     let k = this._spectralStart;
     const e = this._spectralEnd;
@@ -357,6 +520,14 @@ export class JpegScan {
     }
   }
 
+  /**
+   * Decodes a MCU (Minimum Coded Unit) of a JPEG component.
+   * @param {JpegComponent} component - The JPEG component.
+   * @param {DecodeFunction} decodeFn - The decode function.
+   * @param {number} mcu - The MCU index.
+   * @param {number} row - The row index.
+   * @param {number} col - The column index.
+   */
   private decodeMcu(
     component: JpegComponent,
     decodeFn: DecodeFunction,
@@ -378,6 +549,12 @@ export class JpegScan {
     decodeFn.call(this, component, component.blocks[blockRow][blockCol]);
   }
 
+  /**
+   * Decodes a block of a JPEG component.
+   * @param {JpegComponent} component - The JPEG component.
+   * @param {DecodeFunction} decodeFn - The decode function.
+   * @param {number} mcu - The MCU index.
+   */
   private decodeBlock(
     component: JpegComponent,
     decodeFn: DecodeFunction,
@@ -388,6 +565,9 @@ export class JpegScan {
     decodeFn.call(this, component, component.blocks[blockRow][blockCol]);
   }
 
+  /**
+   * Decodes the JPEG scan.
+   */
   public decode(): void {
     const componentsLength = this._components.length;
     let component: JpegComponent | undefined = undefined;

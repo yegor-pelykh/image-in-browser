@@ -15,104 +15,120 @@ import { Quantizer } from './quantizer.js';
  * the given image.
  */
 export class NeuralQuantizer implements Quantizer {
-  // No. of learning cycles
+  /** Number of learning cycles */
   private static readonly _numCycles: number = 100;
 
-  // Alpha starts at 1
+  /** Alpha starts at 1 */
   private static readonly _alphaBiasShift: number = 10;
 
-  // Biased by 10 bits
+  /** Initial alpha value, biased by 10 bits */
   private static readonly _initAlpha: number =
     1 << NeuralQuantizer._alphaBiasShift;
 
+  /** Radius bias shift value */
   private static readonly _radiusBiasShift: number = 8;
 
+  /** Radius bias value */
   private static readonly _radiusBias: number =
     1 << NeuralQuantizer._radiusBiasShift;
 
+  /** Alpha radius bias shift value */
   private static readonly _alphaRadiusBiasShift: number =
     NeuralQuantizer._alphaBiasShift + NeuralQuantizer._radiusBiasShift;
 
+  /** Alpha radius bias value */
   private static readonly alphaRadiusBias: number =
     1 << NeuralQuantizer._alphaRadiusBiasShift;
 
-  // Factor of 1/30 each cycle
+  /** Radius decrement factor, 1/30 each cycle */
   private static readonly _radiusDec: number = 30;
 
+  /** Gamma value */
   private static readonly _gamma: number = 1024;
 
+  /** Beta value */
   private static readonly _beta: number = 1 / 1024;
 
+  /** Beta times gamma value */
   private static readonly _betaGamma: number =
     NeuralQuantizer._beta * NeuralQuantizer._gamma;
 
-  // Four primes near 500 - assume no image has a length so large
-  // that it is divisible by all four primes
-
+  /** Prime number 1, used for image length assumption */
   private static readonly _prime1 = 499;
 
+  /** Prime number 2, used for image length assumption */
   private static readonly _prime2 = 491;
 
+  /** Prime number 3, used for image length assumption */
   private static readonly _prime3 = 487;
 
+  /** Prime number 4, used for image length assumption */
   private static readonly _prime4 = 503;
 
+  /** Small image bytes calculation */
   private static readonly _smallImageBytes = 3 * NeuralQuantizer._prime4;
 
+  /** Network index array */
   private readonly _netIndex = new Int32Array(256);
 
+  /** Sampling factor */
   private _samplingFactor: number;
 
-  // Number of colors used
+  /** Number of colors used */
   private _netSize = 16;
 
-  // Number of reserved colors used
+  /** Number of reserved colors used */
   private _specials = 3;
 
-  // Reserved background color
+  /** Reserved background color */
   private _bgColor = 0;
 
+  /** Cut network size */
   private _cutNetSize = 0;
 
+  /** Maximum network position */
   private _maxNetPos = 0;
 
-  // For 256 cols, radius starts at 32
+  /** Initial radius value, starts at 32 for 256 colors */
   private _initRadius = 0;
 
+  /** Initial bias radius value */
   private _initBiasRadius = 0;
 
+  /** Radius power array */
   private _radiusPower!: Int32Array;
 
-  /**
-   * The network itself
-   */
+  /** The network itself */
   private _network!: number[];
 
+  /** Internal palette */
   private _paletteInternal!: PaletteUint32;
 
+  /** External palette */
   private _palette!: PaletteUint8;
+
+  /** Get the palette */
   public get palette(): PaletteUint8 {
     return this._palette;
   }
 
-  /**
-   * Bias array for learning
-   */
+  /** Bias array for learning */
   private _bias!: number[];
 
-  // Freq array for learning
+  /** Frequency array for learning */
   private _freq!: number[];
 
-  /**
-   * How many colors are in the **palette**?
-   */
+  /** How many colors are in the palette? */
   public get numColors(): number {
     return this._netSize;
   }
 
   /**
-   * 10 is a reasonable **samplingFactor** according to
+   * 10 is a reasonable samplingFactor according to
    * https://scientificgems.wordpress.com/stuff/neuquant-fast-high-quality-image-quantization/.
+   * @param {MemoryImage} image - The image to be quantized.
+   * @param {number} [numberOfColors=256] - The number of colors to quantize to.
+   * @param {number} [samplingFactor=10] - The sampling factor.
    */
   constructor(image: MemoryImage, numberOfColors = 256, samplingFactor = 10) {
     this._samplingFactor = samplingFactor;
@@ -120,17 +136,18 @@ export class NeuralQuantizer implements Quantizer {
     this.addImage(image);
   }
 
+  /**
+   * Initialize the quantizer with the given number of colors.
+   * @param {number} numberOfColors - The number of colors to initialize with.
+   */
   private initialize(numberOfColors: number): void {
-    // Number of colours used
     this._netSize = Math.max(numberOfColors, 4);
     this._cutNetSize = this._netSize - this._specials;
     this._maxNetPos = this._netSize - 1;
-    // For 256 cols, radius starts at 32
     this._initRadius = Math.floor(this._netSize / 8);
     this._initBiasRadius = this._initRadius * NeuralQuantizer._radiusBias;
     this._paletteInternal = new PaletteUint32(256, 4);
     this._palette = new PaletteUint8(256, 3);
-    // Number of reserved colors used
     this._specials = 3;
     this._bgColor = this._specials - 1;
     this._radiusPower = new Int32Array(this._netSize >>> 3);
@@ -139,18 +156,14 @@ export class NeuralQuantizer implements Quantizer {
     this._bias = new Array<number>(this._netSize).fill(0);
     this._freq = new Array<number>(this._netSize).fill(0);
 
-    // Black
     this._network[0] = 0.0;
     this._network[1] = 0.0;
     this._network[2] = 0.0;
 
-    // White
     this._network[3] = 255.0;
     this._network[4] = 255.0;
     this._network[5] = 255.0;
 
-    // RESERVED bgColor
-    // background
     const f = 1 / this._netSize;
     for (let i = 0; i < this._specials; ++i) {
       this._freq[i] = f;
@@ -171,6 +184,11 @@ export class NeuralQuantizer implements Quantizer {
     }
   }
 
+  /**
+   * Update the radius power.
+   * @param {number} rad - The radius.
+   * @param {number} alpha - The alpha value.
+   */
   private updateRadiusPower(rad: number, alpha: number): void {
     for (let i = 0; i < rad; i++) {
       this._radiusPower[i] = Math.trunc(
@@ -180,6 +198,13 @@ export class NeuralQuantizer implements Quantizer {
     }
   }
 
+  /**
+   * Find a special color in the network.
+   * @param {number} b - Blue component.
+   * @param {number} g - Green component.
+   * @param {number} r - Red component.
+   * @returns {number} The index of the special color.
+   */
   private specialFind(b: number, g: number, r: number): number {
     for (let i = 0, p = 0; i < this._specials; i++) {
       if (
@@ -194,14 +219,13 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /**
-   * Search for biased BGR values
+   * Search for biased BGR values.
+   * @param {number} b - Blue component.
+   * @param {number} g - Green component.
+   * @param {number} r - Red component.
+   * @returns {number} The index of the closest color.
    */
   private contest(b: number, g: number, r: number): number {
-    // Finds closest neuron (min dist) and updates freq
-    // finds best neuron (min dist-bias) and returns position
-    // for frequently chosen neurons, freq[i] is high and bias[i] is negative
-    // bias[i] = gamma*((1/netSize)-freq[i])
-
     let bestD = 1.0e30;
     let bestBiasDist = bestD;
     let bestPos = -1;
@@ -245,6 +269,14 @@ export class NeuralQuantizer implements Quantizer {
     return bestBiasPos;
   }
 
+  /**
+   * Move neuron i towards biased (b,g,r) by factor alpha.
+   * @param {number} alpha - The alpha value.
+   * @param {number} i - The neuron index.
+   * @param {number} b - Blue component.
+   * @param {number} g - Green component.
+   * @param {number} r - Red component.
+   */
   private alterSingle(
     alpha: number,
     i: number,
@@ -252,13 +284,21 @@ export class NeuralQuantizer implements Quantizer {
     g: number,
     r: number
   ): void {
-    // Move neuron i towards biased (b,g,r) by factor alpha
     const p = i * 3;
     this._network[p] -= alpha * (this._network[p] - b);
     this._network[p + 1] -= alpha * (this._network[p + 1] - g);
     this._network[p + 2] -= alpha * (this._network[p + 2] - r);
   }
 
+  /**
+   * Alter neighbors of neuron i.
+   * @param {number} _ - Unused parameter.
+   * @param {number} rad - The radius.
+   * @param {number} i - The neuron index.
+   * @param {number} b - Blue component.
+   * @param {number} g - Green component.
+   * @param {number} r - Red component.
+   */
   private alterNeighbors(
     _: number,
     rad: number,
@@ -305,6 +345,10 @@ export class NeuralQuantizer implements Quantizer {
     }
   }
 
+  /**
+   * Learn from the image.
+   * @param {MemoryImage} image - The image to learn from.
+   */
   private learn(image: MemoryImage): void {
     let biasRadius = this._initBiasRadius;
     const alphaDec = 30 + Math.floor((this._samplingFactor - 1) / 3);
@@ -360,7 +404,6 @@ export class NeuralQuantizer implements Quantizer {
       const blue = p.b;
 
       if (i === 0) {
-        // Remember background colour
         this._network[this._bgColor * 3] = blue;
         this._network[this._bgColor * 3 + 1] = green;
         this._network[this._bgColor * 3 + 2] = red;
@@ -370,11 +413,9 @@ export class NeuralQuantizer implements Quantizer {
       j = j < 0 ? this.contest(blue, green, red) : j;
 
       if (j >= this._specials) {
-        // Don't learn for specials
         const a = Number(alpha) / NeuralQuantizer._initAlpha;
         this.alterSingle(a, j, blue, green, red);
         if (rad > 0) {
-          // Alter neighbours
           this.alterNeighbors(a, rad, j, blue, green, red);
         }
       }
@@ -403,6 +444,9 @@ export class NeuralQuantizer implements Quantizer {
     }
   }
 
+  /**
+   * Fix the palette.
+   */
   private fix(): void {
     for (let i = 0, p = 0; i < this._netSize; i++) {
       for (let j = 0; j < 3; ++j, ++p) {
@@ -414,7 +458,7 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /**
-   * Insertion sort of network and building of netindex[0..255]
+   * Insertion sort of network and building of netindex[0..255].
    */
   private inxBuild(): void {
     let previousColor = 0;
@@ -422,14 +466,11 @@ export class NeuralQuantizer implements Quantizer {
 
     for (let i = 0; i < this._netSize; i++) {
       let smallPos = i;
-      // index on g
       let smallVal = this._paletteInternal.get(i, 1);
 
-      // find smallest in i..netSize-1
       for (let j = i + 1; j < this._netSize; j++) {
         if (this._paletteInternal.get(j, 1) < smallVal) {
           smallPos = j;
-          // index on g
           smallVal = this._paletteInternal.get(j, 1);
         }
       }
@@ -437,7 +478,6 @@ export class NeuralQuantizer implements Quantizer {
       const p = i;
       const q = smallPos;
 
-      // swap p (i) and q (smallPos) entries
       if (i !== smallPos) {
         let j = this._paletteInternal.get(q, 0);
         this._paletteInternal.set(q, 0, this._paletteInternal.get(p, 0));
@@ -456,7 +496,6 @@ export class NeuralQuantizer implements Quantizer {
         this._paletteInternal.set(p, 3, j);
       }
 
-      // smallVal entry is now in position i
       if (smallVal !== previousColor) {
         this._netIndex[previousColor] = (startPos + i) >>> 1;
         for (let j = previousColor + 1; j < smallVal; j++) {
@@ -469,11 +508,13 @@ export class NeuralQuantizer implements Quantizer {
 
     this._netIndex[previousColor] = (startPos + this._maxNetPos) >>> 1;
     for (let j = previousColor + 1; j < 256; j++) {
-      // really 256
       this._netIndex[j] = this._maxNetPos;
     }
   }
 
+  /**
+   * Copy the palette.
+   */
   private copyPalette(): void {
     for (let i = 0; i < this._netSize; ++i) {
       this._palette.setRgb(
@@ -487,6 +528,10 @@ export class NeuralQuantizer implements Quantizer {
 
   /**
    * Search for BGR values 0..255 and return color index
+   * @param {number} b - Blue component (0-255)
+   * @param {number} g - Green component (0-255)
+   * @param {number} r - Red component (0-255)
+   * @returns {number} The index of the closest color in the palette
    */
   private inxSearch(b: number, g: number, r: number): number {
     // Biggest possible dist is 256*3
@@ -564,6 +609,8 @@ export class NeuralQuantizer implements Quantizer {
 
   /**
    * Find the index of the closest color to **c** in the **palette**.
+   * @param {Color} c - The color to find the closest index for
+   * @returns {number} The index of the closest color in the palette
    */
   public getColorIndex(c: Color): number {
     const r = Math.trunc(c.r);
@@ -574,6 +621,10 @@ export class NeuralQuantizer implements Quantizer {
 
   /**
    * Find the index of the closest color to **r**,**g**,**b** in the **palette**.
+   * @param {number} r - Red component (0-255)
+   * @param {number} g - Green component (0-255)
+   * @param {number} b - Blue component (0-255)
+   * @returns {number} The index of the closest color in the palette
    */
   public getColorIndexRgb(r: number, g: number, b: number): number {
     return this.inxSearch(b, g, r);
@@ -581,6 +632,8 @@ export class NeuralQuantizer implements Quantizer {
 
   /**
    * Find the color closest to **c** in the **palette**.
+   * @param {Color} c - The color to find the closest match for
+   * @returns {Color} The closest color in the palette
    */
   public getQuantizedColor(c: Color): Color {
     const i = this.getColorIndex(c);
@@ -597,6 +650,8 @@ export class NeuralQuantizer implements Quantizer {
 
   /**
    * Convert the **image** to a palette image.
+   * @param {MemoryImage} image - The image to convert
+   * @returns {MemoryImage} The converted palette image
    */
   public getIndexImage(image: MemoryImage): MemoryImage {
     const target = new MemoryImage({
@@ -627,6 +682,7 @@ export class NeuralQuantizer implements Quantizer {
 
   /**
    * Add an image to the quantized color table.
+   * @param {MemoryImage} image - The image to add
    */
   public addImage(image: MemoryImage): void {
     this.learn(image);

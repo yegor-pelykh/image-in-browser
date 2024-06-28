@@ -15,11 +15,25 @@ import { TiffPhotometricType } from './tiff/tiff-photometric-type.js';
  * Encode a MemoryImage to the TIFF format.
  */
 export class TiffEncoder implements Encoder {
+  /**
+   * Indicates if the encoder supports animation.
+   */
   private _supportsAnimation = false;
+
+  /**
+   * Gets the value indicating whether the encoder supports animation.
+   * @returns {boolean} True if animation is supported; otherwise, false.
+   */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Gets the sample format for the given image.
+   * @param {MemoryImage} image - The image to get the sample format for.
+   * @returns {number} The sample format.
+   * @throws {LibError} If the format type is unknown.
+   */
   private getSampleFormat(image: MemoryImage): number {
     switch (image.formatType) {
       case FormatType.uint:
@@ -32,6 +46,12 @@ export class TiffEncoder implements Encoder {
     throw new LibError('Unknown TIFF format type.');
   }
 
+  /**
+   * Encodes the given image to the TIFF format.
+   * @param {EncoderEncodeOptions} opt - The encoding options.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @returns {Uint8Array} The encoded image.
+   */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     let image = opt.image;
 

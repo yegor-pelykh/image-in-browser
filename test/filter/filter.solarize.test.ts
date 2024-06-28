@@ -6,7 +6,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Filter functionality.
+ */
 describe('Filter', () => {
+  /**
+   * Test case for solarizing highlights in an image.
+   */
   test('solarize highlights', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -38,6 +44,9 @@ describe('Filter', () => {
     );
   });
 
+  /**
+   * Test case for solarizing shadows in an image.
+   */
   test('solarize shadows', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

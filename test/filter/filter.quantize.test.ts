@@ -12,13 +12,22 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Filter functionality.
+ */
 describe('Filter', () => {
+  /**
+   * Test case for the quantize method of the Filter.
+   */
   test('quantize', () => {
+    // Read input image file
     const input0 = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
+
+    // Decode the input PNG image
     const i0 = decodePng({
       data: input0,
     });
@@ -26,11 +35,15 @@ describe('Filter', () => {
     if (i0 === undefined) {
       return;
     }
+
+    // Quantize the image using the octree method
     const q0 = Filter.quantize({
       image: i0,
       numberOfColors: 32,
       method: QuantizeMethod.octree,
     });
+
+    // Encode the quantized image to PNG and write to file
     let output = encodePng({
       image: q0,
     });
@@ -41,15 +54,20 @@ describe('Filter', () => {
       output
     );
 
+    // Decode the input PNG image again
     const i0_ = decodePng({
       data: input0,
     })!;
+
+    // Quantize the image using the octree method with dithering
     const q0_ = Filter.quantize({
       image: i0_,
       numberOfColors: 32,
       method: QuantizeMethod.octree,
       dither: DitherKernel.floydSteinberg,
     });
+
+    // Encode the quantized image to PNG and write to file
     output = encodePng({
       image: q0_,
     });
@@ -60,13 +78,18 @@ describe('Filter', () => {
       output
     );
 
+    // Decode the input PNG image again
     const i1 = decodePng({
       data: input0,
     })!;
+
+    // Quantize the image using the default method
     const q1 = Filter.quantize({
       image: i1,
       numberOfColors: 32,
     });
+
+    // Encode the quantized image to PNG and write to file
     output = encodePng({
       image: q1,
     });
@@ -77,9 +100,12 @@ describe('Filter', () => {
       output
     );
 
+    // Decode the input PNG image again
     const i1_ = decodePng({
       data: input0,
     })!;
+
+    // Convert the image to grayscale and quantize using the default method with dithering
     const q1_ = Filter.quantize({
       image: Filter.grayscale({
         image: i1_,
@@ -87,6 +113,8 @@ describe('Filter', () => {
       numberOfColors: 2,
       dither: DitherKernel.floydSteinberg,
     });
+
+    // Encode the quantized image to PNG and write to file
     output = encodePng({
       image: q1_,
     });
@@ -97,11 +125,14 @@ describe('Filter', () => {
       output
     );
 
+    // Read another input image file
     const input2 = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'david.png'
     );
+
+    // Decode the input PNG image
     const i2 = decodePng({
       data: input2,
     });
@@ -109,11 +140,15 @@ describe('Filter', () => {
     if (i2 === undefined) {
       return;
     }
+
+    // Quantize the image using the binary method with dithering
     const q2 = Filter.quantize({
       image: i2,
       method: QuantizeMethod.binary,
       dither: DitherKernel.floydSteinberg,
     });
+
+    // Encode the quantized image to PNG and write to file
     output = encodePng({
       image: q2,
     });

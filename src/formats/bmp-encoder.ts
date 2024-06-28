@@ -2,7 +2,6 @@
 
 import { Format } from '../color/format.js';
 import { OutputBuffer } from '../common/output-buffer.js';
-import { MemoryImage } from '../image/image.js';
 import { PaletteUint8 } from '../image/palette-uint8.js';
 import { Pixel } from '../image/pixel.js';
 import { BmpCompressionMode } from './bmp/bmp-compression-mode.js';
@@ -10,14 +9,41 @@ import { BmpFileHeader } from './bmp/bmp-file-header.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 
 /**
- * Encode a BMP image.
+ * Class representing a BMP encoder.
+ * Implements the Encoder interface.
  */
 export class BmpEncoder implements Encoder {
+  /**
+   * Indicates whether the encoder supports animation.
+   * @private
+   */
   private _supportsAnimation = false;
+
+  /**
+   * Gets the value indicating whether the encoder supports animation.
+   * @returns {boolean} True if the encoder supports animation; otherwise, false.
+   */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Encodes an image into BMP format.
+   * @param {EncoderEncodeOptions} opt - The options for encoding.
+   * @param {Object} opt.image - The image to encode.
+   * @param {number} opt.image.numChannels - The number of channels in the image.
+   * @param {Object} [opt.image.palette] - The palette of the image, if any.
+   * @param {Format} opt.image.format - The format of the image.
+   * @param {boolean} opt.image.isHdrFormat - Indicates if the image is in HDR format.
+   * @param {boolean} opt.image.hasPalette - Indicates if the image has a palette.
+   * @param {number} opt.image.bitsPerChannel - The number of bits per channel in the image.
+   * @param {number} opt.image.rowStride - The row stride of the image.
+   * @param {number} opt.image.width - The width of the image.
+   * @param {number} opt.image.height - The height of the image.
+   * @param {number} opt.image.byteLength - The byte length of the image.
+   * @param {ArrayBuffer} [opt.image.buffer] - The buffer of the image, if any.
+   * @returns {Uint8Array} The encoded BMP image.
+   */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     let image = opt.image;
 

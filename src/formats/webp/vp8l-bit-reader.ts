@@ -3,23 +3,56 @@
 import { InputBuffer } from '../../common/input-buffer.js';
 import { LibError } from '../../error/lib-error.js';
 
+/**
+ * Class representing a VP8L Bit Reader.
+ */
 export class VP8LBitReader {
+  /**
+   * Input buffer for reading bits.
+   */
   private readonly _input: InputBuffer<Uint8Array>;
+  /**
+   * Buffer for storing bits.
+   */
   private readonly _buffer: Uint32Array;
+  /**
+   * 8-bit view of the buffer.
+   */
   private readonly _buffer8: Uint8Array;
 
+  /**
+   * Current bit position in the buffer.
+   */
   private _bitPos: number = 0;
+
+  /**
+   * Gets the current bit position.
+   * @returns {number} The current bit position.
+   */
   public get bitPos(): number {
     return this._bitPos;
   }
+
+  /**
+   * Sets the current bit position.
+   * @param {number} v - The new bit position.
+   */
   public set bitPos(v: number) {
     this._bitPos = v;
   }
 
+  /**
+   * Checks if end of stream is reached.
+   * @returns {boolean} True if end of stream is reached, otherwise false.
+   */
   public get isEOS(): boolean {
     return this._input.isEOS && this._bitPos >= VP8LBitReader.lBits;
   }
 
+  /**
+   * Creates an instance of VP8LBitReader.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   */
   constructor(input: InputBuffer<Uint8Array>) {
     this._input = input;
     this._buffer = new Uint32Array(2);
@@ -30,7 +63,7 @@ export class VP8LBitReader {
   }
 
   /**
-   * If not at EOS, reload up to lBits byte-by-byte
+   * If not at EOS, reload up to lBits byte-by-byte.
    */
   private shiftBytes(): void {
     while (this._bitPos >= 8 && !this._input.isEOS) {
@@ -44,7 +77,8 @@ export class VP8LBitReader {
   }
 
   /**
-   * Return the prefetched bits, so they can be looked up
+   * Return the prefetched bits, so they can be looked up.
+   * @returns {number} The prefetched bits.
    */
   public prefetchBits(): number {
     let b2 = 0;
@@ -62,7 +96,7 @@ export class VP8LBitReader {
   }
 
   /**
-   * Advances the read buffer by 4 bytes to make room for reading next 32 bits
+   * Advances the read buffer by 4 bytes to make room for reading next 32 bits.
    */
   public fillBitWindow(): void {
     if (this._bitPos >= VP8LBitReader.wBits) {
@@ -71,7 +105,10 @@ export class VP8LBitReader {
   }
 
   /**
-   * Reads the specified number of bits from Read Buffer
+   * Reads the specified number of bits from Read Buffer.
+   * @param {number} numBits - The number of bits to read.
+   * @returns {number} The bits read.
+   * @throws {LibError} If not enough data in input.
    */
   public readBits(numBits: number): number {
     if (!this.isEOS && numBits < VP8LBitReader.maxNumBitRead) {
@@ -85,22 +122,28 @@ export class VP8LBitReader {
   }
 
   /**
-   * The number of bytes used for the bit buffer
+   * The number of bytes used for the bit buffer.
    */
   private static readonly valueSize: number = 8;
+  /**
+   * Maximum number of bits that can be read.
+   */
   private static readonly maxNumBitRead: number = 25;
   /**
-   * Number of bits prefetched
+   * Number of bits prefetched.
    */
   private static readonly lBits: number = 64;
   /**
-   * Minimum number of bytes needed after **fillBitWindow**
+   * Minimum number of bytes needed after **fillBitWindow**.
    */
   private static readonly wBits: number = 32;
   /**
-   * Number of bytes needed to store wBits bits
+   * Number of bytes needed to store wBits bits.
    */
   private static readonly log8WBits: number = 4;
+  /**
+   * Bit masks for reading bits.
+   */
   private static readonly bitMask: number[] = [
     0, 1, 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047, 4095, 8191, 16383, 32767,
     65535, 131071, 262143, 524287, 1048575, 2097151, 4194303, 8388607, 16777215,

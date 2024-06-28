@@ -18,7 +18,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for ICO format encoding and decoding.
+ */
 describe('Format: ICO', () => {
+  /**
+   * Test case for encoding a palette-based PNG image to ICO format.
+   */
   test('encode palette', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -52,6 +58,9 @@ describe('Format: ICO', () => {
     );
   });
 
+  /**
+   * Test case for encoding multiple images to ICO format.
+   */
   test('encode', () => {
     const image = new MemoryImage({
       width: 64,
@@ -105,12 +114,18 @@ describe('Format: ICO', () => {
     );
   });
 
+  /**
+   * List of input ICO files for decoding tests.
+   */
   const inputFiles = TestUtils.listFiles(
     TestFolder.input,
     TestSection.ico,
     '.ico'
   );
 
+  /**
+   * Test case for decoding ICO files to PNG format.
+   */
   for (const f of inputFiles) {
     test(`decode ${f.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(f.path);

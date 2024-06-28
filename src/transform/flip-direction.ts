@@ -1,5 +1,8 @@
 /** @format */
 
+/**
+ * Enum representing the direction to flip an image.
+ */
 export enum FlipDirection {
   /**
    * Flip the image horizontally.

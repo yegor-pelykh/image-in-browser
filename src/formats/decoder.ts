@@ -8,7 +8,9 @@ import { ImageFormat } from './image-format.js';
  * Object interface for specifying Decoder.decode parameters.
  */
 export interface DecoderDecodeOptions {
+  /** The byte array of the image data to decode. */
   bytes: Uint8Array;
+  /** The index of the frame to decode, if the image is animated. */
   frameIndex?: number;
 }
 
@@ -31,12 +33,12 @@ export interface DecoderDecodeOptions {
  */
 export interface Decoder {
   /**
-   * Image format.
+   * Get the image format.
    */
   get format(): ImageFormat;
 
   /**
-   * How many frames are available to be decoded. **startDecode** should have
+   * Get the number of frames available to be decoded. **startDecode** should have
    * been called first. Non animated image files will have a single frame.
    */
   get numFrames(): number;
@@ -44,12 +46,16 @@ export interface Decoder {
   /**
    * A light-weight function to test if the given file is able to be decoded
    * by this Decoder.
+   * @param {Uint8Array} bytes - The byte array of the image data to test.
+   * @returns {boolean} True if the file is valid for this decoder, otherwise false.
    */
   isValidFile(bytes: Uint8Array): boolean;
 
   /**
    * Start decoding the data as an animation sequence, but don't actually
    * process the frames until they are requested with **decodeFrame**.
+   * @param {Uint8Array} bytes - The byte array of the image data to start decoding.
+   * @returns {DecodeInfo | undefined} DecodeInfo object if decoding starts successfully, otherwise undefined.
    */
   startDecode(bytes: Uint8Array): DecodeInfo | undefined;
 
@@ -59,6 +65,10 @@ export interface Decoder {
    * Otherwise if the image is animated and **frameIndex** is undefined, the returned
    * MemoryImage will include all frames. If there was a problem decoding the
    * MemoryImage, undefined will be returned.
+   * @param {DecoderDecodeOptions} opt - The options for decoding, including the byte array and optional frame index.
+   * @param {Uint8Array} opt.bytes - The byte array of the image data to decode.
+   * @param {number} [opt.frameIndex] - The optional index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding fails.
    */
   decode(opt: DecoderDecodeOptions): MemoryImage | undefined;
 
@@ -68,6 +78,8 @@ export interface Decoder {
    * Non animated image files will only have **frameIndex** 0. A MemoryImage
    * is returned, which provides the image, and top-left coordinates of the
    * image, as animated frames may only occupy a subset of the canvas.
+   * @param {number} frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding fails.
    */
   decodeFrame(frameIndex: number): MemoryImage | undefined;
 }

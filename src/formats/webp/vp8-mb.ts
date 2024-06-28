@@ -1,16 +1,18 @@
+/** @format */
+
 /**
  * Top/Left Contexts used for syntax-parsing
- *
- * @format
  */
-
 export class VP8MB {
   /**
-   * uint8_t, non-zero AC/DC coeffs (4bit for luma + 4bit for chroma)
+   * Non-zero AC/DC coefficients.
+   * 4 bits for luma and 4 bits for chroma.
    */
   public nz: number = 0;
+
   /**
-   * uint8_t, non-zero DC coeff (1bit)
+   * Non-zero DC coefficient.
+   * 1 bit.
    */
   public nzDc: number = 0;
 }

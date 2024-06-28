@@ -461,70 +461,172 @@ export { TrimMode } from './transform/trim-mode.js';
 export { TrimSide } from './transform/trim-side.js';
 
 // In-place exports
+
+/**
+ * Interface representing options for decoding.
+ */
 export interface DecodeOptions {
+  /**
+   * The data to be decoded.
+   */
   data: TypedArray;
 }
 
+/**
+ * Interface representing options for decoding multiple frames.
+ */
 export interface DecodeMultiframeOptions extends DecodeOptions {
+  /**
+   * The index of the frame to decode.
+   */
   frameIndex?: number;
 }
 
+/**
+ * Interface representing options for decoding the largest image.
+ */
 export interface DecodeImageLargestOptions extends DecodeMultiframeOptions {
+  /**
+   * Whether to decode the largest image.
+   */
   largest?: boolean;
 }
 
+/**
+ * Interface representing options for decoding an image by MIME type.
+ */
 export interface DecodeImageByMimeTypeOptions
   extends DecodeImageLargestOptions {
+  /**
+   * The MIME type of the image to decode.
+   */
   mimeType: string;
 }
 
+/**
+ * Interface representing options for decoding a named image.
+ */
 export interface DecodeNamedImageOptions extends DecodeImageLargestOptions {
+  /**
+   * The name of the image to decode.
+   */
   name: string;
 }
 
+/**
+ * Interface representing options for encoding.
+ */
 export interface EncodeOptions {
+  /**
+   * The image to be encoded.
+   */
   image: MemoryImage;
 }
 
+/**
+ * Interface representing options for encoding an image by MIME type.
+ */
 export interface EncodeImageByMimeTypeOptions extends EncodeOptions {
+  /**
+   * The MIME type of the image to encode.
+   */
   mimeType: string;
 }
 
+/**
+ * Interface representing options for encoding a named image.
+ */
 export interface EncodeNamedImageOptions extends EncodeOptions {
+  /**
+   * The name of the image to encode.
+   */
   name: string;
 }
 
+/**
+ * Interface representing options for encoding a JPG image.
+ */
 export interface EncodeJpgOptions extends EncodeOptions {
+  /**
+   * The quality of the JPG image.
+   */
   quality?: number;
+  /**
+   * The chroma subsampling of the JPG image.
+   */
   chroma?: JpegChroma;
 }
 
+/**
+ * Interface representing options for injecting EXIF data into a JPG image.
+ */
 export interface InjectJpgExifOptions extends DecodeOptions {
+  /**
+   * The EXIF data to inject.
+   */
   exifData: ExifData;
 }
 
+/**
+ * Interface representing options for encoding an animated image.
+ */
 export interface EncodeAnimatedOptions extends EncodeOptions {
+  /**
+   * Whether to encode a single frame.
+   */
   singleFrame?: boolean;
 }
 
+/**
+ * Interface representing options for encoding a PNG image.
+ */
 export interface EncodePngOptions extends EncodeAnimatedOptions {
+  /**
+   * The compression level of the PNG image.
+   */
   level?: CompressionLevel;
+  /**
+   * The filter type of the PNG image.
+   */
   filter?: PngFilterType;
 }
 
+/**
+ * Interface representing options for encoding a GIF image.
+ */
 export interface EncodeGifOptions extends EncodeAnimatedOptions {
+  /**
+   * The number of times the GIF should repeat.
+   */
   repeat?: number;
+  /**
+   * The sampling factor for the GIF image.
+   */
   samplingFactor?: number;
+  /**
+   * The dither kernel for the GIF image.
+   */
   dither?: DitherKernel;
+  /**
+   * Whether to use serpentine dithering for the GIF image.
+   */
   ditherSerpentine?: boolean;
 }
 
+/**
+ * Interface representing options for encoding ICO images.
+ */
 export interface EncodeIcoImagesOptions {
+  /**
+   * The images to be encoded into the ICO file.
+   */
   images: MemoryImage[];
 }
 
 /**
  * Return the Decoder that can decode image of the given **mimeType**.
+ * @param {string} mimeType - The MIME type of the image.
+ * @returns {Decoder | undefined} The corresponding Decoder or undefined if not found.
  */
 export function findDecoderForMimeType(mimeType: string): Decoder | undefined {
   const type = mimeType.toLowerCase();
@@ -569,6 +671,8 @@ export function findDecoderForMimeType(mimeType: string): Decoder | undefined {
 /**
  * Return the Decoder that can decode image with the given **name**,
  * by looking at the file extension.
+ * @param {string} name - The name of the image file.
+ * @returns {Decoder | undefined} The corresponding Decoder or undefined if not found.
  */
 export function findDecoderForNamedImage(name: string): Decoder | undefined {
   const n = name.toLowerCase();
@@ -615,6 +719,8 @@ export function findDecoderForNamedImage(name: string): Decoder | undefined {
 
 /**
  * Return the Encoder that can encode image with the given **mimeType**.
+ * @param {string} mimeType - The MIME type of the image.
+ * @returns {Encoder | undefined} The corresponding Encoder or undefined if not found.
  */
 export function findEncoderForMimeType(mimeType: string): Encoder | undefined {
   const type = mimeType.toLowerCase();
@@ -647,6 +753,8 @@ export function findEncoderForMimeType(mimeType: string): Encoder | undefined {
 /**
  * Return the Encoder that can encode image with the given **name**,
  * by looking at the file extension.
+ * @param {string} name - The name of the image file.
+ * @returns {Encoder | undefined} The corresponding Encoder or undefined if not found.
  */
 export function findEncoderForNamedImage(name: string): Encoder | undefined {
   const n = name.toLowerCase();
@@ -682,6 +790,8 @@ export function findEncoderForNamedImage(name: string): Encoder | undefined {
 
 /**
  * Find the ImageFormat for the given file data.
+ * @param {TypedArray} data - The image data as a TypedArray.
+ * @returns {ImageFormat} The corresponding ImageFormat.
  */
 export function findFormatForData(data: TypedArray): ImageFormat {
   const decoder = findDecoderForData(data);
@@ -693,6 +803,8 @@ export function findFormatForData(data: TypedArray): ImageFormat {
 
 /**
  * Find a Decoder for the given **format** type.
+ * @param {ImageFormat} format - The ImageFormat type.
+ * @returns {Decoder | undefined} The corresponding Decoder or undefined if not found.
  */
 export function findDecoderForFormat(format: ImageFormat): Decoder | undefined {
   switch (format) {
@@ -725,13 +837,16 @@ export function findDecoderForFormat(format: ImageFormat): Decoder | undefined {
 
 /**
  * Find a Decoder that is able to decode the given image **data**.
- * Use this is you don't know the type of image it is.
+ * Use this if you don't know the type of image it is.
  *
  * **WARNING:** Since this will check the image data against all known decoders,
  * it is much slower than using an explicit decoder.
+ *
+ * @param {TypedArray} data - The image data as a TypedArray.
+ * @returns {Decoder | undefined} The corresponding Decoder or undefined if not found.
  */
 export function findDecoderForData(data: TypedArray): Decoder | undefined {
-  // The letious decoders will be creating a Uint8List for their InputStream
+  // The various decoders will be creating a Uint8List for their InputStream
   // if the data isn't already that type, so do it once here to avoid having to
   // do it multiple times.
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
@@ -793,13 +908,18 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
 
   return undefined;
 }
-
 /**
  * Decode the given image file bytes by first identifying the format of the
  * file and using that decoder to decode the file into a single frame MemoryImage.
  *
  * **WARNING:** Since this will check the image data against all known decoders,
  * it is much slower than using an explicit decoder.
+ *
+ * @param {DecodeImageLargestOptions} opt - Options for decoding the image.
+ * @param {TypedArray} opt.data - The image file bytes.
+ * @param {boolean} opt.largest - Whether to decode the largest image in the file.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if no decoder is found.
  */
 export function decodeImage(
   opt: DecodeImageLargestOptions
@@ -821,6 +941,13 @@ export function decodeImage(
 /**
  * Decodes the given image file bytes, using the MIME type to
  * determine the decoder.
+ *
+ * @param {DecodeImageByMimeTypeOptions} opt - Options for decoding the image.
+ * @param {TypedArray} opt.data - The image file bytes.
+ * @param {string} opt.mimeType - The MIME type of the image.
+ * @param {boolean} opt.largest - Whether to decode the largest image in the file.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if no decoder is found.
  */
 export function decodeImageByMimeType(
   opt: DecodeImageByMimeTypeOptions
@@ -842,6 +969,13 @@ export function decodeImageByMimeType(
 /**
  * Decodes the given image file bytes, using the filename extension to
  * determine the decoder.
+ *
+ * @param {DecodeNamedImageOptions} opt - Options for decoding the image.
+ * @param {TypedArray} opt.data - The image file bytes.
+ * @param {string} opt.name - The filename of the image.
+ * @param {boolean} opt.largest - Whether to decode the largest image in the file.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if no decoder is found.
  */
 export function decodeNamedImage(
   opt: DecodeNamedImageOptions
@@ -864,6 +998,11 @@ export function decodeNamedImage(
  * Encode the MemoryImage to the format determined by the MIME type.
  * If a format wasn't able to be identified, undefined will be returned.
  * Otherwise the encoded format bytes of the image will be returned.
+ *
+ * @param {EncodeImageByMimeTypeOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {string} opt.mimeType - The MIME type to encode the image to.
+ * @returns {Uint8Array | undefined} The encoded image bytes or undefined if no encoder is found.
  */
 export function encodeImageByMimeType(
   opt: EncodeImageByMimeTypeOptions
@@ -881,6 +1020,11 @@ export function encodeImageByMimeType(
  * Encode the MemoryImage to the format determined by the file extension of **name**.
  * If a format wasn't able to be identified, undefined will be returned.
  * Otherwise the encoded format bytes of the image will be returned.
+ *
+ * @param {EncodeNamedImageOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {string} opt.name - The filename extension to determine the format.
+ * @returns {Uint8Array | undefined} The encoded image bytes or undefined if no encoder is found.
  */
 export function encodeNamedImage(
   opt: EncodeNamedImageOptions
@@ -896,6 +1040,10 @@ export function encodeNamedImage(
 
 /**
  * Decode a JPG formatted image.
+ *
+ * @param {DecodeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
@@ -906,6 +1054,12 @@ export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
 
 /**
  * Encode an image to the JPEG format.
+ *
+ * @param {EncodeJpgOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {number} [opt.quality] - The quality of the JPEG encoding (default is 100).
+ * @param {JpegChroma} [opt.chroma] - The chroma subsampling (default is yuv444).
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeJpg(opt: EncodeJpgOptions): Uint8Array {
   const quality = opt.quality ?? 100;
@@ -919,6 +1073,10 @@ export function encodeJpg(opt: EncodeJpgOptions): Uint8Array {
 /**
  * Decode only the ExifData from a JPEG file, returning undefined if it was
  * unable to.
+ *
+ * @param {DecodeOptions} opt - Options for decoding the ExifData.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @returns {ExifData | undefined} The decoded ExifData or undefined if decoding fails.
  */
 export function decodeJpgExif(opt: DecodeOptions): ExifData | undefined {
   const dataUint8 = new Uint8Array(opt.data);
@@ -929,6 +1087,11 @@ export function decodeJpgExif(opt: DecodeOptions): ExifData | undefined {
  * Inject ExifData into a JPEG file, replacing any existing EXIF data.
  * The new JPEG file bytes will be returned, otherwise undefined if there was an
  * issue.
+ *
+ * @param {InjectJpgExifOptions} opt - Options for injecting the ExifData.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {ExifData} opt.exifData - The ExifData to inject.
+ * @returns {Uint8Array | undefined} The new JPEG file bytes or undefined if injection fails.
  */
 export function injectJpgExif(
   opt: InjectJpgExifOptions
@@ -939,6 +1102,11 @@ export function injectJpgExif(
 
 /**
  * Decode a PNG formatted image.
+ *
+ * @param {DecodeMultiframeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodePng(
   opt: DecodeMultiframeOptions
@@ -952,6 +1120,13 @@ export function decodePng(
 
 /**
  * Encode an image to the PNG format.
+ *
+ * @param {EncodePngOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {boolean} [opt.singleFrame] - Whether to encode a single frame (default is false).
+ * @param {number} [opt.level] - The compression level (default is 6).
+ * @param {PngFilterType} [opt.filter] - The filter type (default is paeth).
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodePng(opt: EncodePngOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
@@ -968,6 +1143,10 @@ export function encodePng(opt: EncodePngOptions): Uint8Array {
 
 /**
  * Decode a PNM formatted image.
+ *
+ * @param {DecodeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodePnm(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
@@ -978,6 +1157,11 @@ export function decodePnm(opt: DecodeOptions): MemoryImage | undefined {
 
 /**
  * Decode a Targa formatted image.
+ *
+ * @param {DecodeMultiframeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeTga(
   opt: DecodeMultiframeOptions
@@ -991,6 +1175,10 @@ export function decodeTga(
 
 /**
  * Encode an image to the Targa format.
+ *
+ * @param {EncodeOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeTga(opt: EncodeOptions): Uint8Array {
   return new TgaEncoder().encode({
@@ -999,7 +1187,12 @@ export function encodeTga(opt: EncodeOptions): Uint8Array {
 }
 
 /**
- * Decode a WebP formatted image
+ * Decode a WebP formatted image.
+ *
+ * @param {DecodeMultiframeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeWebP(
   opt: DecodeMultiframeOptions
@@ -1013,6 +1206,11 @@ export function decodeWebP(
 
 /**
  * Decode a GIF formatted image (first frame for animations).
+ *
+ * @param {DecodeMultiframeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeGif(
   opt: DecodeMultiframeOptions
@@ -1035,6 +1233,15 @@ export function decodeGif(
  * image quality and quantization speed.
  * If you know that you have less than 256 colors in your frames
  * anyway, you should supply a very large **samplingFactor** for maximum performance.
+ *
+ * @param {EncodeGifOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {boolean} [opt.singleFrame=false] - Whether to encode a single frame (default is false).
+ * @param {number} [opt.repeat=0] - The number of times the animation should repeat (default is 0).
+ * @param {number} [opt.samplingFactor=10] - The sampling factor for quantization (default is 10).
+ * @param {DitherKernel} [opt.dither=DitherKernel.floydSteinberg] - The dither kernel to use (default is floydSteinberg).
+ * @param {boolean} [opt.ditherSerpentine=false] - Whether to use serpentine dithering (default is false).
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeGif(opt: EncodeGifOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
@@ -1055,6 +1262,11 @@ export function encodeGif(opt: EncodeGifOptions): Uint8Array {
 
 /**
  * Decode a TIFF formatted image.
+ *
+ * @param {DecodeMultiframeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeTiff(
   opt: DecodeMultiframeOptions
@@ -1068,6 +1280,11 @@ export function decodeTiff(
 
 /**
  * Encode an image to the TIFF format.
+ *
+ * @param {EncodeAnimatedOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {boolean} [opt.singleFrame=false] - Whether to encode a single frame (default is false).
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
@@ -1079,6 +1296,10 @@ export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {
 
 /**
  * Decode a Photoshop PSD formatted image.
+ *
+ * @param {DecodeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodePsd(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
@@ -1089,6 +1310,10 @@ export function decodePsd(opt: DecodeOptions): MemoryImage | undefined {
 
 /**
  * Decode a BMP formatted image.
+ *
+ * @param {DecodeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeBmp(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
@@ -1096,9 +1321,12 @@ export function decodeBmp(opt: DecodeOptions): MemoryImage | undefined {
     bytes: dataUint8,
   });
 }
-
 /**
  * Encode an image to the BMP format.
+ *
+ * @param {EncodeOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeBmp(opt: EncodeOptions): Uint8Array {
   return new BmpEncoder().encode({
@@ -1108,6 +1336,12 @@ export function encodeBmp(opt: EncodeOptions): Uint8Array {
 
 /**
  * Decode an ICO image.
+ *
+ * @param {DecodeImageLargestOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {boolean} opt.largest - Whether to decode the largest image in the file.
+ * @param {number} opt.frameIndex - The index of the frame to decode.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeIco(
   opt: DecodeImageLargestOptions
@@ -1125,6 +1359,11 @@ export function decodeIco(
 
 /**
  * Encode an image to the ICO format.
+ *
+ * @param {EncodeAnimatedOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {boolean} opt.singleFrame - Whether to encode a single frame (default is false).
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeIco(opt: EncodeAnimatedOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
@@ -1136,6 +1375,10 @@ export function encodeIco(opt: EncodeAnimatedOptions): Uint8Array {
 
 /**
  * Encode a list of images to the ICO format.
+ *
+ * @param {EncodeIcoImagesOptions} opt - Options for encoding the images.
+ * @param {MemoryImage[]} opt.images - The list of MemoryImages to encode.
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeIcoImages(opt: EncodeIcoImagesOptions): Uint8Array {
   return new IcoEncoder().encodeImages(opt.images);
@@ -1143,6 +1386,10 @@ export function encodeIcoImages(opt: EncodeIcoImagesOptions): Uint8Array {
 
 /**
  * Decode an PVR image.
+ *
+ * @param {DecodeOptions} opt - Options for decoding the image.
+ * @param {Uint8Array} opt.data - The image file bytes.
+ * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodePvr(opt: DecodeOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
@@ -1153,6 +1400,10 @@ export function decodePvr(opt: DecodeOptions): MemoryImage | undefined {
 
 /**
  * Encode an image to the PVR format.
+ *
+ * @param {EncodeOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodePvr(opt: EncodeOptions): Uint8Array {
   return new PvrEncoder().encode({

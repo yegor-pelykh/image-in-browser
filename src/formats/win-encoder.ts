@@ -6,25 +6,65 @@ import { MemoryImage } from '../image/image.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { PngEncoder } from './png-encoder.js';
 
+/**
+ * Abstract class representing a Windows Encoder.
+ */
 export abstract class WinEncoder implements Encoder {
+  /**
+   * Type of the encoder.
+   * @protected
+   */
   protected _type = 0;
+
+  /**
+   * Gets the type of the encoder.
+   * @returns {number} The type of the encoder.
+   */
   public get type(): number {
     return this._type;
   }
 
+  /**
+   * Indicates whether the encoder supports animation.
+   * @private
+   */
   private _supportsAnimation = true;
+
+  /**
+   * Gets whether the encoder supports animation.
+   * @returns {boolean} True if the encoder supports animation, otherwise false.
+   */
   get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Gets the color planes or X hot spot.
+   * @param {number} _index - The index.
+   * @returns {number} The color planes or X hot spot.
+   * @protected
+   */
   protected colorPlanesOrXHotSpot(_index: number): number {
     return 0;
   }
 
+  /**
+   * Gets the bits per pixel or Y hot spot.
+   * @param {number} _index - The index.
+   * @returns {number} The bits per pixel or Y hot spot.
+   * @protected
+   */
   protected bitsPerPixelOrYHotSpot(_index: number): number {
     return 0;
   }
 
+  /**
+   * Encodes the given image into a Uint8Array.
+   * @param {EncoderEncodeOptions} opt - The encoding options.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @param {boolean} [opt.singleFrame] - Whether to encode a single frame.
+   * @returns {Uint8Array} The encoded data.
+   */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const image = opt.image;
     const singleFrame = opt.singleFrame ?? false;
@@ -36,6 +76,11 @@ export abstract class WinEncoder implements Encoder {
     }
   }
 
+  /**
+   * Encodes the given images into a Uint8Array.
+   * @param {MemoryImage[]} images - The images to encode.
+   * @returns {Uint8Array} The encoded data.
+   */
   public encodeImages(images: MemoryImage[]): Uint8Array {
     const count = images.length;
 

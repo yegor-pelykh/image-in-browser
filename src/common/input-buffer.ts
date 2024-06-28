@@ -6,10 +6,17 @@ import { BitUtils } from './bit-utils.js';
 import { StringUtils } from './string-utils.js';
 import { TypedArray } from './typings.js';
 
+/**
+ * Interface for initializing InputBuffer with options.
+ */
 export interface InputBufferInitOptions<T extends TypedArray> {
+  /** The buffer to read from. */
   buffer: T;
+  /** Optional offset to start reading from. */
   offset?: number;
+  /** Optional length of the buffer to read. */
   length?: number;
+  /** Optional flag to indicate big-endian byte order. */
   bigEndian?: boolean;
 }
 
@@ -17,42 +24,63 @@ export interface InputBufferInitOptions<T extends TypedArray> {
  * A buffer that can be read as a stream of bytes.
  */
 export class InputBuffer<T extends TypedArray> {
+  /** The underlying buffer. */
   private _buffer: T;
+
+  /** Sets the buffer. */
   public set buffer(v: T) {
     this._buffer = v;
   }
+
+  /** Gets the buffer. */
   public get buffer(): T {
     return this._buffer;
   }
 
+  /** Flag indicating if the buffer is in big-endian byte order. */
   private _bigEndian: boolean;
+
+  /** Sets the big-endian flag. */
   public set bigEndian(v: boolean) {
     this._bigEndian = v;
   }
+
+  /** Gets the big-endian flag. */
   public get bigEndian(): boolean {
     return this._bigEndian;
   }
 
+  /** The current offset in the buffer. */
   private _offset: number;
+
+  /** Sets the offset. */
   public set offset(v: number) {
     this._offset = v;
   }
+
+  /** Gets the offset. */
   public get offset(): number {
     return this._offset;
   }
 
+  /** The start position of the buffer. */
   private _start: number;
+
+  /** Gets the start position. */
   public get start(): number {
     return this._start;
   }
 
+  /** The end position of the buffer. */
   private _end: number;
+
+  /** Gets the end position. */
   public get end(): number {
     return this._end;
   }
 
   /**
-   *  The current read position relative to the start of the buffer.
+   * The current read position relative to the start of the buffer.
    */
   public get position(): number {
     return this._offset - this._start;
@@ -73,7 +101,8 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Create a InputStream for reading from an Array<int>
+   * Create an InputStream for reading from an Array<int>.
+   * @param {InputBufferInitOptions<T>} opt Initialization options.
    */
   constructor(opt: InputBufferInitOptions<T>) {
     this._buffer = opt.buffer;
@@ -85,13 +114,17 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Create a copy of **other**.
+   * Create a copy of another InputBuffer.
+   * @param {InputBuffer<T>} other - The InputBuffer to copy.
+   * @param {number} [offset] - Optional offset to start copying from.
+   * @param {number} [length] - Optional length of the buffer to copy.
+   * @returns {InputBuffer<T>} - A new InputBuffer instance copied from the other buffer.
    */
   public static from<T extends TypedArray>(
     other: InputBuffer<T>,
     offset?: number,
     length?: number
-  ) {
+  ): InputBuffer<T> {
     const offsetFromOther = offset ?? 0;
     const result = new InputBuffer<T>({
       buffer: other._buffer,
@@ -116,6 +149,8 @@ export class InputBuffer<T extends TypedArray> {
 
   /**
    * Access the buffer relative from the current position.
+   * @param {number} index The index relative to the current position.
+   * @returns {number} The value at the specified index.
    */
   public get(index: number): number {
     return this._buffer[this._offset + index];
@@ -123,15 +158,21 @@ export class InputBuffer<T extends TypedArray> {
 
   /**
    * Set a buffer element relative to the current position.
+   *
+   * @param {number} index - The index relative to the current position.
+   * @param {number} value - The value to set.
+   * @returns {number} - The value that was set.
    */
-  public set(index: number, value: number) {
+  public set(index: number, value: number): number {
     return (this._buffer[this._offset + index] = value);
   }
 
   /**
-   * Copy data from **other** to this buffer, at **start** offset from the
-   * current read position, and **length** number of bytes. **offset** is
-   * the offset in **other** to start reading.
+   * Copy data from another buffer to this buffer.
+   * @param {number} start The start position in this buffer.
+   * @param {number} length The number of bytes to copy.
+   * @param {InputBuffer<T> | T} other The source buffer to copy from.
+   * @param {number} [offset] The offset in the source buffer to start copying from.
    */
   public memcpy(
     start: number,
@@ -159,8 +200,10 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Set a range of bytes in this buffer to **value**, at **start** offset from the
-   * current read position, and **length** number of bytes.
+   * Set a range of bytes in this buffer to a value.
+   * @param {number} start The start position in this buffer.
+   * @param {number} length The number of bytes to set.
+   * @param {number} value The value to set.
    */
   public memset(start: number, length: number, value: number): void {
     this._buffer.fill(
@@ -171,11 +214,11 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Return an InputBuffer to read a subset of this stream. It does not
-   * move the read position of this stream. **position** is specified relative
-   * to the start of the buffer. If **position** is not specified, the current
-   * read position is used. If **length** is not specified, the remainder of this
-   * stream is used.
+   * Return an InputBuffer to read a subset of this stream.
+   * @param {number} count The number of bytes to read.
+   * @param {number} [position] The position to start reading from.
+   * @param {number} offset The offset to start reading from.
+   * @returns {InputBuffer<T>} A new InputBuffer for the subset.
    */
   public subarray(
     count: number,
@@ -193,10 +236,10 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Returns the position of the given **value** within the buffer, starting
-   * from the current read position with the given **offset**. The position
-   * returned is relative to the start of the buffer, or -1 if the **value**
-   * was not found.
+   * Returns the position of the given value within the buffer.
+   * @param {number} value The value to search for.
+   * @param {number} offset The offset to start searching from.
+   * @returns {number} The position of the value, or -1 if not found.
    */
   public indexOf(value: number, offset = 0): number {
     const end = this.offset + this.length;
@@ -209,29 +252,35 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read **count** bytes from an **offset** of the current read position, without
-   * moving the read position.
+   * Read a specified number of bytes from an offset without moving the read position.
+   * @param {number} count The number of bytes to read.
+   * @param {number} offset The offset to start reading from.
+   * @returns {InputBuffer<T>} A new InputBuffer for the read bytes.
    */
   public peek(count: number, offset = 0): InputBuffer<T> {
     return this.subarray(count, undefined, offset);
   }
 
   /**
-   * Move the read position by **count** bytes.
+   * Move the read position by a specified number of bytes.
+   * @param {number} count The number of bytes to skip.
    */
   public skip(count: number): void {
     this._offset += count;
   }
 
   /**
-   * Read a single value.
+   * Read a single value from the buffer.
+   * @returns {number} The value read.
    */
   public read(): number {
     return this._buffer[this._offset++];
   }
 
   /**
-   * Read **count** bytes from the stream.
+   * Read a specified number of bytes from the stream.
+   * @param {number} count The number of bytes to read.
+   * @returns {InputBuffer<T>} A new InputBuffer for the read bytes.
    */
   public readRange(count: number): InputBuffer<T> {
     const bytes = this.subarray(count);
@@ -240,15 +289,18 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read 8-bit integer from the stream.
+   * Read an 8-bit integer from the stream.
+   * @returns {number} The 8-bit integer read.
    */
   public readInt8(): number {
     return BitUtils.uint8ToInt8(this.read());
   }
 
   /**
-   * Read a null-terminated string, or if **length** is provided, that number of
-   * bytes returned as a string.
+   * Read a null-terminated string, or a specified number of bytes as a string.
+   * @param {number} [length] The number of bytes to read as a string.
+   * @returns {string} The string read.
+   * @throws {LibError} If EOF is reached without finding string terminator.
    */
   public readString(length?: number): string {
     if (length === undefined) {
@@ -270,8 +322,9 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read one line of null-terminated string (looking for _\n_ char),
-   * or if **length** is provided, that number of bytes returned as a string.
+   * Read one line of a null-terminated string, or a specified number of bytes as a string.
+   * @param {number} length - The number of bytes to read as a string.
+   * @returns {string} The string read.
    */
   public readStringLine(length: number = 256): string {
     const codes: number[] = [];
@@ -287,6 +340,7 @@ export class InputBuffer<T extends TypedArray> {
 
   /**
    * Read a null-terminated UTF-8 string.
+   * @returns {string} The UTF-8 string read.
    */
   public readStringUtf8(): string {
     const codes: number[] = [];
@@ -303,7 +357,8 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read a 16-bit word from the stream.
+   * Read a 16-bit unsigned integer from the stream.
+   * @returns {number} The 16-bit unsigned integer read.
    */
   public readUint16(): number {
     const b1 = this._buffer[this._offset++] & 0xff;
@@ -315,14 +370,16 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read a 16-bit word from the stream.
+   * Read a 16-bit signed integer from the stream.
+   * @returns {number} The 16-bit signed integer read.
    */
   public readInt16(): number {
     return BitUtils.uint16ToInt16(this.readUint16());
   }
 
   /**
-   * Read a 24-bit word from the stream.
+   * Read a 24-bit unsigned integer from the stream.
+   * @returns {number} The 24-bit unsigned integer read.
    */
   public readUint24(): number {
     const b1 = this._buffer[this._offset++] & 0xff;
@@ -335,14 +392,16 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read a 32-bit word from the stream.
+   * Read a 32-bit unsigned integer from the stream.
+   * @returns {number} The 32-bit unsigned integer read.
    */
   public readUint32(): number {
     return BitUtils.int32ToUint32(this.readInt32());
   }
 
   /**
-   * Read a signed 32-bit integer from the stream.
+   * Read a 32-bit signed integer from the stream.
+   * @returns {number} The 32-bit signed integer read.
    */
   public readInt32(): number {
     const b1 = this._buffer[this._offset++] & 0xff;
@@ -355,21 +414,24 @@ export class InputBuffer<T extends TypedArray> {
   }
 
   /**
-   * Read a 32-bit float.
+   * Read a 32-bit float from the stream.
+   * @returns {number} The 32-bit float read.
    */
   public readFloat32(): number {
     return BitUtils.uint32ToFloat32(this.readUint32());
   }
 
   /**
-   * Read a 64-bit float.
+   * Read a 64-bit float from the stream.
+   * @returns {number} The 64-bit float read.
    */
   public readFloat64(): number {
     return BitUtils.uint64ToFloat64(this.readUint64());
   }
 
   /**
-   * Read a 64-bit word form the stream.
+   * Read a 64-bit unsigned integer from the stream.
+   * @returns {bigint} The 64-bit unsigned integer read.
    */
   public readUint64(): bigint {
     const b1 = this._buffer[this._offset++] & 0xff;
@@ -404,6 +466,12 @@ export class InputBuffer<T extends TypedArray> {
     );
   }
 
+  /**
+   * Convert the buffer to a Uint8Array.
+   * @param {number} offset - The offset to start from.
+   * @param {number} [length] - The length of the array.
+   * @returns {Uint8Array} The Uint8Array representation of the buffer.
+   */
   public toUint8Array(offset: number = 0, length?: number): Uint8Array {
     const correctedLength = length ?? this.length - offset;
     if (this._buffer instanceof Uint8Array) {
@@ -421,6 +489,11 @@ export class InputBuffer<T extends TypedArray> {
     );
   }
 
+  /**
+   * Convert the buffer to a Uint32Array.
+   * @param {number} offset - The offset to start from.
+   * @returns {Uint32Array} The Uint32Array representation of the buffer.
+   */
   public toUint32Array(offset: number = 0): Uint32Array {
     if (this._buffer instanceof Uint8Array) {
       return new Uint32Array(

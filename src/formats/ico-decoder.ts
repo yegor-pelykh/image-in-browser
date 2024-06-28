@@ -12,18 +12,41 @@ import { MemoryImage } from '../image/image.js';
 import { FrameType } from '../image/frame-type.js';
 import { ImageFormat } from './image-format.js';
 
+/**
+ * Class representing an ICO decoder.
+ */
 export class IcoDecoder implements Decoder {
+  /**
+   * Input buffer for the ICO file.
+   */
   private _input?: InputBuffer<Uint8Array>;
+
+  /**
+   * Information about the ICO file.
+   */
   private _info?: IcoInfo;
 
+  /**
+   * Gets the image format.
+   * @returns {ImageFormat} The image format.
+   */
   get format(): ImageFormat {
     return ImageFormat.ico;
   }
 
+  /**
+   * Gets the number of frames in the ICO file.
+   * @returns {number} The number of frames.
+   */
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;
   }
 
+  /**
+   * Checks if the provided bytes represent a valid ICO file.
+   * @param {Uint8Array} bytes - The bytes to check.
+   * @returns {boolean} True if the bytes represent a valid ICO file, false otherwise.
+   */
   public isValidFile(bytes: Uint8Array): boolean {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -32,6 +55,11 @@ export class IcoDecoder implements Decoder {
     return this._info !== undefined;
   }
 
+  /**
+   * Starts decoding the ICO file.
+   * @param {Uint8Array} bytes - The bytes of the ICO file.
+   * @returns {IcoInfo | undefined} The information about the ICO file, or undefined if invalid.
+   */
   public startDecode(bytes: Uint8Array): IcoInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -40,6 +68,13 @@ export class IcoDecoder implements Decoder {
     return this._info;
   }
 
+  /**
+   * Decodes the ICO file into a MemoryImage.
+   * @param {DecoderDecodeOptions} opt - The decode options.
+   * @param {Uint8Array} opt.bytes - The bytes of the ICO file.
+   * @param {number} [opt.frameIndex] - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding failed.
+   */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
@@ -69,6 +104,11 @@ export class IcoDecoder implements Decoder {
     return firstImage;
   }
 
+  /**
+   * Decodes a specific frame of the ICO file.
+   * @param {number} frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding failed.
+   */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (
       this._input === undefined ||
@@ -163,7 +203,9 @@ export class IcoDecoder implements Decoder {
   }
 
   /**
-   * Decodes the largest frame.
+   * Decodes the largest frame in the ICO file.
+   * @param {Uint8Array} bytes - The bytes of the ICO file.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding failed.
    */
   public decodeImageLargest(bytes: Uint8Array): MemoryImage | undefined {
     const info = this.startDecode(bytes);

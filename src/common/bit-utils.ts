@@ -1,45 +1,66 @@
 /** @format */
 
+/**
+ * Abstract class providing various bit manipulation utilities.
+ */
 export abstract class BitUtils {
+  /** Uint8Array used for binary conversion. */
   private static readonly _uint8 = new Uint8Array(1);
+  /** Int8Array view of the same buffer as _uint8 for conversion. */
   private static readonly _uint8ToInt8 = new Int8Array(BitUtils._uint8.buffer);
 
+  /** Int8Array used for binary conversion. */
   private static readonly _int8 = new Int8Array(1);
+  /** Uint8Array view of the same buffer as _int8 for conversion. */
   private static readonly _int8ToUint8 = new Uint8Array(BitUtils._int8.buffer);
 
+  /** Uint16Array used for binary conversion. */
   private static readonly _uint16 = new Uint16Array(1);
+  /** Int16Array view of the same buffer as _uint16 for conversion. */
   private static readonly _uint16ToInt16 = new Int16Array(
     BitUtils._uint16.buffer
   );
 
+  /** Int16Array used for binary conversion. */
   private static readonly _int16 = new Int16Array(1);
+  /** Uint16Array view of the same buffer as _int16 for conversion. */
   private static readonly _int16ToUint16 = new Uint16Array(
     BitUtils._int16.buffer
   );
 
+  /** Uint32Array used for binary conversion. */
   private static readonly _uint32 = new Uint32Array(1);
+  /** Int32Array view of the same buffer as _uint32 for conversion. */
   private static readonly _uint32ToInt32 = new Int32Array(
     BitUtils._uint32.buffer
   );
+  /** Float32Array view of the same buffer as _uint32 for conversion. */
   private static readonly _uint32ToFloat32 = new Float32Array(
     BitUtils._uint32.buffer
   );
 
+  /** Int32Array used for binary conversion. */
   private static readonly _int32 = new Int32Array(1);
+  /** Uint32Array view of the same buffer as _int32 for conversion. */
   private static readonly _int32ToUint32 = new Uint32Array(
     BitUtils._int32.buffer
   );
 
+  /** Float32Array used for binary conversion. */
   private static readonly _float32 = new Float32Array(1);
+  /** Uint32Array view of the same buffer as _float32 for conversion. */
   private static readonly _float32ToUint32 = new Uint32Array(
     BitUtils._float32.buffer
   );
 
+  /** BigUint64Array used for binary conversion. */
   private static readonly _uint64 = new BigUint64Array(1);
+  /** Float64Array view of the same buffer as _uint64 for conversion. */
   private static readonly _uint64ToFloat64 = new Float64Array(
     BitUtils._uint64.buffer
   );
 
+  /** Lookup table for reversing bytes. */
   private static readonly _reverseByteTable = [
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 0x10, 0x90, 0x50, 0xd0,
     0x30, 0xb0, 0x70, 0xf0, 0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
@@ -68,6 +89,8 @@ export abstract class BitUtils {
   /**
    * Count the consecutive zero bits (trailing) on the right in parallel
    * https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
+   * @param {number} v - The number to count trailing zero bits.
+   * @returns {number} The number of trailing zero bits.
    */
   public static countTrailingZeroBits(v: number): number {
     let c = 32;
@@ -81,22 +104,51 @@ export abstract class BitUtils {
     return c;
   }
 
+  /**
+   * Reverse the bits of a byte.
+   * @param {number} x - The byte to reverse.
+   * @returns {number} The reversed byte.
+   */
   public static reverseByte(x: number): number {
     return this._reverseByteTable[x];
   }
 
+  /**
+   * Signed shift right.
+   * @param {number} v - The value to shift.
+   * @param {number} n - The number of bits to shift.
+   * @returns {number} The shifted value.
+   */
   public static sshR(v: number, n: number): number {
     return v >> n;
   }
 
+  /**
+   * Unsigned shift right.
+   * @param {number} v - The value to shift.
+   * @param {number} n - The number of bits to shift.
+   * @returns {number} The shifted value.
+   */
   public static ushR(v: number, n: number): number {
     return v >>> n;
   }
 
+  /**
+   * Signed shift left.
+   * @param {number} v - The value to shift.
+   * @param {number} n - The number of bits to shift.
+   * @returns {number} The shifted value.
+   */
   public static sshL(v: number, n: number): number {
     return v << n;
   }
 
+  /**
+   * Unsigned shift left.
+   * @param {number} v - The value to shift.
+   * @param {number} n - The number of bits to shift.
+   * @returns {number} The shifted value.
+   */
   public static ushL(v: number, n: number): number {
     return (v << n) >>> 0;
   }
@@ -104,6 +156,8 @@ export abstract class BitUtils {
   /**
    * Binary conversion of a uint8 to an int8. This is equivalent in C to
    * typecasting an unsigned char to a char.
+   * @param {number} d - The uint8 value to convert.
+   * @returns {number} The converted int8 value.
    */
   public static uint8ToInt8(d: number): number {
     this._uint8[0] = d;
@@ -112,6 +166,8 @@ export abstract class BitUtils {
 
   /**
    * Binary conversion of an int8 to a uint8.
+   * @param {number} d - The int8 value to convert.
+   * @returns {number} The converted uint8 value.
    */
   public static int8ToUint8(d: number): number {
     this._int8[0] = d;
@@ -119,8 +175,10 @@ export abstract class BitUtils {
   }
 
   /**
-   *  Binary conversion of a uint16 to an int16. This is equivalent in C to
+   * Binary conversion of a uint16 to an int16. This is equivalent in C to
    * typecasting an unsigned short to a short.
+   * @param {number} d - The uint16 value to convert.
+   * @returns {number} The converted int16 value.
    */
   public static uint16ToInt16(d: number): number {
     this._uint16[0] = d;
@@ -129,7 +187,9 @@ export abstract class BitUtils {
 
   /**
    * Binary conversion of an int16 to a uint16. This is equivalent in C to
-   *  typecasting a short to an unsigned short.
+   * typecasting a short to an unsigned short.
+   * @param {number} d - The int16 value to convert.
+   * @returns {number} The converted uint16 value.
    */
   public static int16ToUint16(d: number): number {
     this._int16[0] = d;
@@ -138,7 +198,9 @@ export abstract class BitUtils {
 
   /**
    * Binary conversion of a uint32 to an int32. This is equivalent in C to
-   *  typecasting an unsigned int to signed int.
+   * typecasting an unsigned int to signed int.
+   * @param {number} d - The uint32 value to convert.
+   * @returns {number} The converted int32 value.
    */
   public static uint32ToInt32(d: number): number {
     this._uint32[0] = d;
@@ -146,8 +208,10 @@ export abstract class BitUtils {
   }
 
   /**
-   * Binary conversion of a uint32 to an float32. This is equivalent in C to
+   * Binary conversion of a uint32 to a float32. This is equivalent in C to
    * typecasting an unsigned int to float.
+   * @param {number} d - The uint32 value to convert.
+   * @returns {number} The converted float32 value.
    */
   public static uint32ToFloat32(d: number): number {
     this._uint32[0] = d;
@@ -155,8 +219,10 @@ export abstract class BitUtils {
   }
 
   /**
-   * Binary conversion of a uint64 to an float64. This is equivalent in C to
+   * Binary conversion of a uint64 to a float64. This is equivalent in C to
    * typecasting an unsigned long long to double.
+   * @param {bigint} d - The uint64 value to convert.
+   * @returns {number} The converted float64 value.
    */
   public static uint64ToFloat64(d: bigint): number {
     this._uint64[0] = d;
@@ -166,6 +232,8 @@ export abstract class BitUtils {
   /**
    * Binary conversion of an int32 to a uint32. This is equivalent in C to
    * typecasting an int to an unsigned int.
+   * @param {number} d - The int32 value to convert.
+   * @returns {number} The converted uint32 value.
    */
   public static int32ToUint32(d: number): number {
     this._int32[0] = d;
@@ -173,14 +241,21 @@ export abstract class BitUtils {
   }
 
   /**
-   * Binary conversion of a float32 to an uint32. This is equivalent in C to
+   * Binary conversion of a float32 to a uint32. This is equivalent in C to
    * typecasting a float to unsigned int.
+   * @param {number} d - The float32 value to convert.
+   * @returns {number} The converted uint32 value.
    */
   public static float32ToUint32(d: number): number {
     this._float32[0] = d;
     return this._float32ToUint32[0];
   }
 
+  /**
+   * Debug method to get a binary string representation of a 32-bit number.
+   * @param {number} value - The number to convert to binary string.
+   * @returns {string} The binary string representation of the number.
+   */
   public static debugBits32(value?: number): string {
     if (value === undefined) {
       return 'undefined';

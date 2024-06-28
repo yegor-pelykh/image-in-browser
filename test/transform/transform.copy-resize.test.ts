@@ -13,7 +13,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Transform module.
+ */
 describe('Transform', () => {
+  /**
+   * Test case for the copyResize function using nearest neighbor interpolation.
+   */
   test('copyResize nearest', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -47,6 +53,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function using average interpolation.
+   */
   test('copyResize average', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -81,6 +90,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function using linear interpolation.
+   */
   test('copyResize linear', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -115,6 +127,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function using cubic interpolation.
+   */
   test('copyResize cubic', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -149,6 +164,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio.
+   */
   test('copyResize maintainAspect', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -185,6 +203,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with a palette image.
+   */
   test('copyResize maintainAspect palette', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -221,6 +242,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with a different image size.
+   */
   test('copyResize maintainAspect 2', () => {
     const i0 = new MemoryImage({
       width: 100,
@@ -250,6 +274,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with another different image size.
+   */
   test('copyResize maintainAspect 3', () => {
     const i0 = new MemoryImage({
       width: 50,
@@ -279,6 +306,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with yet another different image size.
+   */
   test('copyResize maintainAspect 4', () => {
     const i0 = new MemoryImage({
       width: 100,
@@ -308,6 +338,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with another different image size.
+   */
   test('copyResize maintainAspect 5', () => {
     const i0 = new MemoryImage({
       width: 50,
@@ -337,6 +370,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with a tall image.
+   */
   test('copyResize maintainAspect 6', () => {
     const i0 = new MemoryImage({
       width: 50,
@@ -366,6 +402,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function maintaining aspect ratio with a wide image.
+   */
   test('copyResize maintainAspect 7', () => {
     const i0 = new MemoryImage({
       width: 100,
@@ -395,6 +434,9 @@ describe('Transform', () => {
     );
   });
 
+  /**
+   * Test case for the copyResize function with a palette image.
+   */
   test('copyResize palette', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

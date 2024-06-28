@@ -6,7 +6,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Test suite for the Filter module.
+ */
 describe('Filter', () => {
+  /**
+   * Test case for applying Gaussian noise to an image.
+   */
   test('noise gaussian', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -38,6 +44,9 @@ describe('Filter', () => {
     );
   });
 
+  /**
+   * Test case for applying uniform noise to an image.
+   */
   test('noise uniform', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -70,6 +79,9 @@ describe('Filter', () => {
     );
   });
 
+  /**
+   * Test case for applying salt and pepper noise to an image.
+   */
   test('noise saltAndPepper', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -102,6 +114,9 @@ describe('Filter', () => {
     );
   });
 
+  /**
+   * Test case for applying Poisson noise to an image.
+   */
   test('noise poisson', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -134,6 +149,9 @@ describe('Filter', () => {
     );
   });
 
+  /**
+   * Test case for applying Rice noise to an image.
+   */
   test('noise rice', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

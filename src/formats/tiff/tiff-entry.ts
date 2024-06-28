@@ -1,7 +1,6 @@
 /** @format */
 
 import { InputBuffer } from '../../common/input-buffer.js';
-import { LibError } from '../../error/lib-error.js';
 import { ExifImageTags } from '../../exif/exif-tag.js';
 import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type.js';
 import { IfdAsciiValue } from '../../exif/ifd-value/ifd-ascii-value.js';
@@ -16,59 +15,112 @@ import { IfdSLongValue } from '../../exif/ifd-value/ifd-slong-value.js';
 import { IfdSRationalValue } from '../../exif/ifd-value/ifd-srational-value.js';
 import { IfdSShortValue } from '../../exif/ifd-value/ifd-sshort-value.js';
 import { IfdValue } from '../../exif/ifd-value/ifd-value.js';
-import { TiffImage } from './tiff-image.js';
 
+/**
+ * Interface for initializing TiffEntry options.
+ */
 export interface TiffEntryInitOptions {
+  /** The tag number. */
   tag: number;
+  /** The type number. */
   type: number;
+  /** The count of values. */
   count: number;
+  /** The input buffer. */
   p: InputBuffer<Uint8Array>;
+  /** The value offset. */
   valueOffset: number;
 }
 
+/**
+ * Class representing a TIFF entry.
+ */
 export class TiffEntry {
+  /** The tag number. */
   private _tag: number;
+  /** The type of the value. */
+  private _type: IfdValueType;
+  /** The count of values. */
+  private _count: number;
+  /** The value offset. */
+  private _valueOffset: number;
+  /** The value of the entry. */
+  private _value: IfdValue | undefined;
+  /** The input buffer. */
+  private _p: InputBuffer<Uint8Array>;
+
+  /**
+   * Gets the tag number.
+   */
   public get tag(): number {
     return this._tag;
   }
 
-  private _type: IfdValueType;
+  /**
+   * Gets the type of the value.
+   */
   public get type(): IfdValueType {
     return this._type;
   }
 
-  private _count: number;
+  /**
+   * Gets the count of values.
+   */
   public get count(): number {
     return this._count;
   }
 
-  private _valueOffset: number;
+  /**
+   * Gets the value offset.
+   */
   public get valueOffset(): number {
     return this._valueOffset;
   }
 
-  private _value: IfdValue | undefined;
+  /**
+   * Gets the value of the entry.
+   */
   public get value(): IfdValue | undefined {
     return this._value;
   }
 
-  private _p: InputBuffer<Uint8Array>;
+  /**
+   * Gets the input buffer.
+   */
   public get p(): InputBuffer<Uint8Array> {
     return this._p;
   }
 
+  /**
+   * Checks if the entry is valid.
+   */
   public get isValid(): boolean {
     return this._type !== IfdValueType.none;
   }
 
+  /**
+   * Gets the size of the type.
+   */
   public get typeSize(): number {
     return this.isValid ? IfdValueTypeSize[this._type] : 0;
   }
 
+  /**
+   * Checks if the type is a string.
+   */
   public get isString(): boolean {
     return this._type === IfdValueType.ascii;
   }
 
+  /**
+   * Constructs a new TiffEntry.
+   * @param {TiffEntryInitOptions} opt - The initialization options.
+   * @param {number} opt.tag - The tag identifier for the TIFF entry.
+   * @param {number} opt.type - The data type of the TIFF entry.
+   * @param {number} opt.count - The number of values in the TIFF entry.
+   * @param {Pointer} opt.p - The pointer to the data for the TIFF entry.
+   * @param {number} opt.valueOffset - The offset to the value of the TIFF entry.
+   */
   constructor(opt: TiffEntryInitOptions) {
     this._tag = opt.tag;
     this._type = opt.type;
@@ -77,6 +129,10 @@ export class TiffEntry {
     this._valueOffset = opt.valueOffset;
   }
 
+  /**
+   * Reads the value of the entry.
+   * @returns {IfdValue | undefined} The value of the entry or undefined.
+   */
   public read(): IfdValue | undefined {
     if (this._value !== undefined) {
       return this._value;
@@ -115,6 +171,10 @@ export class TiffEntry {
     }
   }
 
+  /**
+   * Converts the entry to a string representation.
+   * @returns {string} The string representation of the entry.
+   */
   public toString(): string {
     const exifTag = ExifImageTags.get(this._tag);
     if (exifTag !== undefined) {

@@ -5,10 +5,20 @@ import { OutputBuffer } from '../../common/output-buffer.js';
 import { ExifData } from '../../exif/exif-data.js';
 import { JpegMarker } from './jpeg-marker.js';
 
+/**
+ * Utility class for handling JPEG operations, including reading and writing EXIF data.
+ */
 export class JpegUtils {
-  // Exif\0\0
+  /**
+   * EXIF signature constant.
+   */
   private static readonly _exifSignature = 0x45786966;
 
+  /**
+   * Reads EXIF data from the given input buffer.
+   * @param {InputBuffer<Uint8Array> | undefined} block - The input buffer containing the EXIF data.
+   * @returns {ExifData | undefined} The parsed EXIF data or undefined if the data is invalid.
+   */
   private readExifData(
     block: InputBuffer<Uint8Array> | undefined
   ): ExifData | undefined {
@@ -28,6 +38,11 @@ export class JpegUtils {
     return ExifData.fromInputBuffer(block);
   }
 
+  /**
+   * Writes the APP1 segment containing EXIF data to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   * @param {ExifData} exif - The EXIF data to write.
+   */
   private writeAPP1(out: OutputBuffer, exif: ExifData): void {
     if (exif.isEmpty) {
       return;
@@ -43,6 +58,11 @@ export class JpegUtils {
     out.writeBytes(exifBytes);
   }
 
+  /**
+   * Reads a block of data from the input buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer to read from.
+   * @returns {InputBuffer<Uint8Array> | undefined} The read block or undefined if the block length is invalid.
+   */
   private readBlock(
     input: InputBuffer<Uint8Array>
   ): InputBuffer<Uint8Array> | undefined {
@@ -53,6 +73,12 @@ export class JpegUtils {
     return input.readRange(length - 2);
   }
 
+  /**
+   * Skips a block of data in the input buffer and optionally writes it to the output buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer to read from.
+   * @param {OutputBuffer} [output] - The optional output buffer to write to.
+   * @returns {boolean} True if the block was successfully skipped, false otherwise.
+   */
   private skipBlock(
     input: InputBuffer<Uint8Array>,
     output?: OutputBuffer
@@ -70,6 +96,12 @@ export class JpegUtils {
     return true;
   }
 
+  /**
+   * Reads the next marker from the input buffer and optionally writes it to the output buffer.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer to read from.
+   * @param {OutputBuffer} [output] - The optional output buffer to write to.
+   * @returns {number} The next marker value.
+   */
   private nextMarker(
     input: InputBuffer<Uint8Array>,
     output?: OutputBuffer
@@ -98,6 +130,11 @@ export class JpegUtils {
     return c;
   }
 
+  /**
+   * Decodes EXIF data from the given JPEG data.
+   * @param {Uint8Array} data - The JPEG data to decode.
+   * @returns {ExifData | undefined} The parsed EXIF data or undefined if the data is invalid.
+   */
   public decodeExif(data: Uint8Array): ExifData | undefined {
     const input = new InputBuffer<Uint8Array>({
       buffer: data,
@@ -136,6 +173,12 @@ export class JpegUtils {
     return undefined;
   }
 
+  /**
+   * Injects EXIF data into the given JPEG data.
+   * @param {ExifData} exif - The EXIF data to inject.
+   * @param {Uint8Array} data - The JPEG data to inject into.
+   * @returns {Uint8Array | undefined} The modified JPEG data with the injected EXIF data or undefined if the data is invalid.
+   */
   public injectExif(exif: ExifData, data: Uint8Array): Uint8Array | undefined {
     const input = new InputBuffer<Uint8Array>({
       buffer: data,

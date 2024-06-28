@@ -14,6 +14,7 @@ import { JpegMarker } from './jpeg/jpeg-marker.js';
  * Object interface for specifying JpegEncoder.encode parameters.
  */
 export interface JpegEncoderEncodeOptions extends EncoderEncodeOptions {
+  /** Chroma (sub)sampling format for JPEG encoding. */
   chroma?: JpegChroma;
 }
 
@@ -21,7 +22,9 @@ export interface JpegEncoderEncodeOptions extends EncoderEncodeOptions {
  * JPEG Chroma (sub)sampling format.
  */
 export enum JpegChroma {
+  /** 4:4:4 chroma subsampling */
   yuv444,
+  /** 4:2:0 chroma subsampling */
   yuv420,
 }
 
@@ -29,6 +32,7 @@ export enum JpegChroma {
  * Encode an image to the JPEG format.
  */
 export class JpegEncoder implements Encoder {
+  /** Zigzag order for quantization table */
   private static readonly _zigzag: number[] = [
     0, 1, 5, 6, 14, 15, 27, 28, 2, 4, 7, 13, 16, 26, 29, 42, 3, 8, 12, 17, 25,
     30, 41, 43, 9, 11, 18, 24, 31, 40, 44, 53, 10, 19, 23, 32, 39, 45, 52, 54,
@@ -36,18 +40,22 @@ export class JpegEncoder implements Encoder {
     49, 57, 58, 62, 63,
   ];
 
+  /** Standard DC luminance number of codes */
   private static readonly _stdDcLuminanceNrCodes: number[] = [
     0, 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
   ];
 
+  /** Standard DC luminance values */
   private static readonly _stdDcLuminanceValues: number[] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
   ];
 
+  /** Standard AC luminance number of codes */
   private static readonly _stdAcLuminanceNrCodes: number[] = [
     0, 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d,
   ];
 
+  /** Standard AC luminance values */
   private static readonly _stdAcLuminanceValues: number[] = [
     0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06,
     0x13, 0x51, 0x61, 0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08,
@@ -65,18 +73,22 @@ export class JpegEncoder implements Encoder {
     0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa,
   ];
 
+  /** Standard DC chrominance number of codes */
   private static readonly _stdDcChrominanceNrCodes: number[] = [
     0, 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
   ];
 
+  /** Standard DC chrominance values */
   private static readonly _stdDcChrominanceValues: number[] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
   ];
 
+  /** Standard AC chrominance number of codes */
   private static readonly _stdAcChrominanceNrCodes: number[] = [
     0, 0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77,
   ];
 
+  /** Standard AC chrominance values */
   private static readonly _stdAcChrominanceValues: number[] = [
     0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41,
     0x51, 0x07, 0x61, 0x71, 0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
@@ -94,42 +106,68 @@ export class JpegEncoder implements Encoder {
     0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa,
   ];
 
+  /** Quantization table for Y component */
   private readonly _tableY = new Uint8Array(64);
+  /** Quantization table for UV components */
   private readonly _tableUv = new Uint8Array(64);
+  /** FDCT quantization table for Y component */
   private readonly _fdTableY = new Float32Array(64);
+  /** FDCT quantization table for UV components */
   private readonly _fdTableUv = new Float32Array(64);
 
+  /** Bit code array */
   private readonly _bitCode = ArrayUtils.fill<number[] | undefined>(
     65535,
     undefined
   );
+  /** Category array */
   private readonly _category = ArrayUtils.fill<number | undefined>(
     65535,
     undefined
   );
+  /** Output FDCT quantization array */
   private readonly _outputfDCTQuant = ArrayUtils.fill<number | undefined>(
     64,
     undefined
   );
+  /** DU array */
   private readonly _du = ArrayUtils.fill<number | undefined>(64, undefined);
 
+  /** RGB to YUV conversion table */
   private readonly _tableRgbYuv: Int32Array = new Int32Array(2048);
 
+  /** Y DC Huffman table */
   private _ydcHuffman: Array<Array<number> | undefined> | undefined;
+  /** UV DC Huffman table */
   private _uvdcHuffman: Array<Array<number> | undefined> | undefined;
+  /** Y AC Huffman table */
   private _yacHuffman!: Array<Array<number> | undefined>;
+  /** UV AC Huffman table */
   private _uvacHuffman!: Array<Array<number> | undefined>;
 
+  /** Current quality setting */
   private _currentQuality?: number;
 
+  /** Byte new value for bit writing */
   private _byteNew = 0;
+  /** Byte position for bit writing */
   private _bytePos = 7;
 
+  /** Flag indicating if animation is supported */
   private _supportsAnimation = false;
+
+  /**
+   * Gets the flag indicating if animation is supported.
+   * @returns {boolean} True if animation is supported, otherwise false.
+   */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Constructs a new JpegEncoder instance.
+   * @param {number} [quality=100] - The quality of the JPEG encoding.
+   */
   constructor(quality = 100) {
     this.initHuffmanTable();
     this.initCategoryNumber();
@@ -137,6 +175,12 @@ export class JpegEncoder implements Encoder {
     this.setQuality(quality);
   }
 
+  /**
+   * Computes the Huffman table.
+   * @param {number[]} nrcodes - Number of codes.
+   * @param {number[]} stdTable - Standard table.
+   * @returns {Array<Array<number> | undefined>} The computed Huffman table.
+   */
   private static computeHuffmanTable(
     nrcodes: number[],
     stdTable: number[]
@@ -161,6 +205,11 @@ export class JpegEncoder implements Encoder {
 
   /**
    * Downsamples from four input lists, storing average values into **duOut**.
+   * @param {Float32Array} duOut - Output array.
+   * @param {Float32Array} duIn1 - Input array 1.
+   * @param {Float32Array} duIn2 - Input array 2.
+   * @param {Float32Array} duIn3 - Input array 3.
+   * @param {Float32Array} duIn4 - Input array 4.
    */
   private static downsampleDU(
     duOut: Float32Array,
@@ -184,11 +233,20 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Writes a JPEG marker to the output buffer.
+   * @param {OutputBuffer} fp - The output buffer.
+   * @param {number} marker - The marker to write.
+   */
   private static writeMarker(fp: OutputBuffer, marker: number): void {
     fp.writeByte(0xff);
     fp.writeByte(marker & 0xff);
   }
 
+  /**
+   * Writes the APP0 marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   */
   private static writeAPP0(out: OutputBuffer): void {
     JpegEncoder.writeMarker(out, JpegMarker.app0);
     // Length
@@ -219,6 +277,11 @@ export class JpegEncoder implements Encoder {
     out.writeByte(0);
   }
 
+  /**
+   * Writes the APP1 marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   * @param {ExifData} exif - The EXIF data.
+   */
   private static writeAPP1(out: OutputBuffer, exif: ExifData): void {
     if (exif.isEmpty) {
       return;
@@ -237,6 +300,13 @@ export class JpegEncoder implements Encoder {
     out.writeBytes(exifBytes);
   }
 
+  /**
+   * Writes the Start of Frame (SOF0) marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {JpegChroma} chroma - The chroma subsampling format.
+   */
   private static writeSOF0(
     out: OutputBuffer,
     width: number,
@@ -272,6 +342,10 @@ export class JpegEncoder implements Encoder {
     out.writeByte(1);
   }
 
+  /**
+   * Writes the Start of Scan (SOS) marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   */
   private static writeSOS(out: OutputBuffer): void {
     JpegEncoder.writeMarker(out, JpegMarker.sos);
     // Length
@@ -298,6 +372,10 @@ export class JpegEncoder implements Encoder {
     out.writeByte(0);
   }
 
+  /**
+   * Writes the Define Huffman Table (DHT) marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   */
   private static writeDHT(out: OutputBuffer): void {
     JpegEncoder.writeMarker(out, JpegMarker.dht);
     // Length
@@ -340,6 +418,17 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Calculates the YUV values for a given block of the image.
+   * @param {MemoryImage} image - The image to process.
+   * @param {number} x - The x-coordinate of the block.
+   * @param {number} y - The y-coordinate of the block.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {Float32Array} ydu - The Y component of the block.
+   * @param {Float32Array} udu - The U component of the block.
+   * @param {Float32Array} vdu - The V component of the block.
+   */
   private calculateYUV(
     image: MemoryImage,
     x: number,
@@ -351,8 +440,10 @@ export class JpegEncoder implements Encoder {
     vdu: Float32Array
   ): void {
     for (let pos = 0; pos < 64; pos++) {
-      const row = pos >>> 3; // / 8
-      const col = pos & 7; // % 8
+      // / 8
+      const row = pos >>> 3;
+      // % 8
+      const col = pos & 7;
 
       let yy = y + row;
       let xx = x + col;
@@ -400,6 +491,9 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Initializes the Huffman tables.
+   */
   private initHuffmanTable(): void {
     this._ydcHuffman = JpegEncoder.computeHuffmanTable(
       JpegEncoder._stdDcLuminanceNrCodes,
@@ -419,6 +513,9 @@ export class JpegEncoder implements Encoder {
     );
   }
 
+  /**
+   * Initializes the category and bit code tables.
+   */
   private initCategoryNumber(): void {
     let nrLower = 1;
     let nrUpper = 2;
@@ -438,6 +535,9 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Initializes the RGB to YUV conversion table.
+   */
   private initRgbYuvTable(): void {
     for (let i = 0; i < 256; i++) {
       this._tableRgbYuv[i] = 19595 * i;
@@ -451,6 +551,10 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Sets the quality of the JPEG encoder.
+   * @param {number} quality - The quality value (1-100).
+   */
   private setQuality(quality: number): void {
     const q = MathUtils.clampInt(quality, 1, 100);
 
@@ -470,6 +574,10 @@ export class JpegEncoder implements Encoder {
     this._currentQuality = q;
   }
 
+  /**
+   * Initializes the quantization tables.
+   * @param {number} sf - The scaling factor.
+   */
   private initQuantTables(sf: number): void {
     const yqt: number[] = [
       16, 11, 10, 16, 24, 40, 51, 61, 12, 12, 14, 19, 26, 58, 60, 55, 14, 13,
@@ -492,7 +600,7 @@ export class JpegEncoder implements Encoder {
       17, 18, 24, 47, 99, 99, 99, 99, 18, 21, 26, 66, 99, 99, 99, 99, 24, 26,
       56, 99, 99, 99, 99, 99, 47, 66, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
       99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
-      99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+      99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
     ];
 
     for (let j = 0; j < 64; j++) {
@@ -524,7 +632,12 @@ export class JpegEncoder implements Encoder {
     }
   }
 
-  // DCT & quantization core
+  /**
+   * Performs the Discrete Cosine Transform (DCT) and quantization on the data.
+   * @param {Float32Array} data - The data to transform.
+   * @param {Float32Array} fdtbl - The quantization table.
+   * @returns {Array<number | undefined>} The quantized DCT coefficients.
+   */
   private fDCTQuant(
     data: Float32Array,
     fdtbl: Float32Array
@@ -677,6 +790,10 @@ export class JpegEncoder implements Encoder {
     return this._outputfDCTQuant;
   }
 
+  /**
+   * Writes the Define Quantization Table (DQT) marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   */
   private writeDQT(out: OutputBuffer): void {
     JpegEncoder.writeMarker(out, JpegMarker.dqt);
     // Length
@@ -691,6 +808,11 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Writes bits to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   * @param {number[]} bits - The bits to write.
+   */
   private writeBits(out: OutputBuffer, bits: number[]): void {
     const value = bits[0];
     let posval = bits[1] - 1;
@@ -713,11 +835,24 @@ export class JpegEncoder implements Encoder {
     }
   }
 
+  /**
+   * Resets the bit buffer.
+   */
   private resetBits(): void {
     this._byteNew = 0;
     this._bytePos = 7;
   }
 
+  /**
+   * Processes a data unit (DU) and writes the encoded data to the output buffer.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   * @param {Float32Array} cdu - The current data unit.
+   * @param {Float32Array} fdtbl - The quantization table.
+   * @param {number} dc - The DC coefficient.
+   * @param {Array<number[] | undefined>} htac - The AC Huffman table.
+   * @param {Array<number[] | undefined>} [htdc] - The DC Huffman table (optional).
+   * @returns {number} The new DC coefficient.
+   */
   private processDU(
     out: OutputBuffer,
     cdu: Float32Array,
@@ -789,6 +924,13 @@ export class JpegEncoder implements Encoder {
     return _dc;
   }
 
+  /**
+   * Encodes the image using the JPEG format.
+   * @param {JpegEncoderEncodeOptions} opt - The options for encoding.
+   * @param {Image} opt.image - The image to encode.
+   * @param {JpegChroma} [opt.chroma] - The chroma subsampling format (optional).
+   * @returns {Uint8Array} The encoded JPEG image as a Uint8Array.
+   */
   public encode(opt: JpegEncoderEncodeOptions): Uint8Array {
     const image = opt.image;
     const chroma = opt.chroma ?? JpegChroma.yuv444;

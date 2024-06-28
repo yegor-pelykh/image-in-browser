@@ -16,28 +16,55 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Information about a TIFF frame.
+ */
 type TiffFrameInfo = {
+  /** Width of the frame in pixels */
   width: number;
+  /** Height of the frame in pixels */
   height: number;
+  /** Photometric type of the frame */
   photometricType: TiffPhotometricType;
+  /** Compression type used for the frame */
   compression: number;
+  /** Number of bits per sample */
   bitsPerSample: number;
+  /** Number of samples per pixel */
   samplesPerPixel: number;
+  /** Type of the image */
   imageType: TiffImageType;
+  /** Indicates if the frame is tiled */
   tiled: boolean;
+  /** Width of the tile in pixels */
   tileWidth: number;
+  /** Height of the tile in pixels */
   tileHeight: number;
+  /** Predictor used for the frame */
   predictor: number;
 };
 
+/**
+ * Information about a TIFF file.
+ */
 type TiffFileInfo = {
+  /** Width of the file in pixels */
   width: number;
+  /** Height of the file in pixels */
   height: number;
+  /** Indicates if the file is big-endian */
   bigEndian: boolean;
+  /** Array of frames in the file */
   images: TiffFrameInfo[];
 };
 
+/**
+ * Test suite for TIFF format handling.
+ */
 describe('Format: TIFF', () => {
+  /**
+   * Test case for decoding a TIFF file with deflate compression and encoding it to PNG.
+   */
   test('deflate', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -63,6 +90,9 @@ describe('Format: TIFF', () => {
     );
   });
 
+  /**
+   * Test case for decoding a 16-bit colormap TIFF file and encoding it to PNG.
+   */
   test('16bit colormap', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -92,6 +122,9 @@ describe('Format: TIFF', () => {
     );
   });
 
+  /**
+   * Test case for encoding and decoding various TIFF images.
+   */
   test('encode', () => {
     const i0 = new MemoryImage({
       width: 256,
@@ -209,6 +242,9 @@ describe('Format: TIFF', () => {
     );
   });
 
+  /**
+   * Test case for decoding a CMYK TIFF file and encoding it to PNG.
+   */
   test('cmyk', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -240,6 +276,9 @@ describe('Format: TIFF', () => {
     );
   });
 
+  /**
+   * Test case for getting information from all TIFF files in the input folder.
+   */
   const resFiles = TestUtils.listFiles(
     TestFolder.input,
     TestSection.tiff,
@@ -280,6 +319,9 @@ describe('Format: TIFF', () => {
     });
   }
 
+  /**
+   * Test case for decoding all TIFF files in the input folder and re-encoding them to PNG and TIFF.
+   */
   for (const file of resFiles) {
     test(`decode ${file.nameExt}`, () => {
       const bytes = TestUtils.readFromFilePath(file.path);

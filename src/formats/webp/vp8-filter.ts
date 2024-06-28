@@ -1,25 +1,38 @@
 /**
- * eslint-disable no-implicit-coercion
- *
  * @format
  */
-
-/** @format */
 
 import { BitUtils } from '../../common/bit-utils.js';
 import { InputBuffer } from '../../common/input-buffer.js';
 import { VP8 } from './vp8.js';
 
+/**
+ * Class representing the VP8 filter operations.
+ */
 export class VP8Filter {
   constructor() {
     VP8Filter.initTables();
   }
 
+  /**
+   * Multiplies two numbers and shifts the result right by 16 bits.
+   * @param {number} a - The first number.
+   * @param {number} b - The second number.
+   * @returns {number} The result of the multiplication shifted right by 16 bits.
+   */
   private static mul(a: number, b: number): number {
     const c = a * b;
     return BitUtils.sshR(c, 16);
   }
 
+  /**
+   * Stores a value in the destination buffer after clipping.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   * @param {number} di - The destination index.
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @param {number} v - The value to store.
+   */
   private static store(
     dst: InputBuffer<Uint8Array>,
     di: number,
@@ -33,6 +46,14 @@ export class VP8Filter {
     );
   }
 
+  /**
+   * Stores values in the destination buffer for a 2x2 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   * @param {number} y - The y-coordinate.
+   * @param {number} dc - The DC value.
+   * @param {number} d - The D value.
+   * @param {number} c - The C value.
+   */
   private static store2(
     dst: InputBuffer<Uint8Array>,
     y: number,
@@ -46,6 +67,9 @@ export class VP8Filter {
     VP8Filter.store(dst, 0, 3, y, dc - d);
   }
 
+  /**
+   * Initializes the lookup tables used for filtering.
+   */
   private static initTables(): void {
     if (!this.tablesInitialized) {
       for (let i = -255; i <= 255; ++i) {
@@ -65,18 +89,40 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Clips a value to the range [0, 255].
+   * @param {number} v - The value to clip.
+   * @returns {number} The clipped value.
+   */
   private static clip8b(v: number): number {
     return (v & -256) === 0 ? v : v < 0 ? 0 : 255;
   }
 
+  /**
+   * Computes the average of three numbers.
+   * @param {number} a - The first number.
+   * @param {number} b - The second number.
+   * @param {number} c - The third number.
+   * @returns {number} The average of the three numbers.
+   */
   private static avg3(a: number, b: number, c: number): number {
     return BitUtils.sshR(a + 2 * b + c + 2, 2);
   }
 
+  /**
+   * Computes the average of two numbers.
+   * @param {number} a - The first number.
+   * @param {number} b - The second number.
+   * @returns {number} The average of the two numbers.
+   */
   private static avg2(a: number, b: number): number {
     return BitUtils.sshR(a + b + 1, 1);
   }
 
+  /**
+   * Vertical edge filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   */
   private static ve4(dst: InputBuffer<Uint8Array>): void {
     const top = -VP8.bps;
     const values: Uint8Array = new Uint8Array([
@@ -91,6 +137,10 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Horizontal edge filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   */
   private static he4(dst: InputBuffer<Uint8Array>): void {
     const a = dst.get(-1 - VP8.bps);
     const b = dst.get(-1);
@@ -108,6 +158,10 @@ export class VP8Filter {
     d2.toUint32Array()[0] = 0x01010101 * VP8Filter.avg3(d, e, e);
   }
 
+  /**
+   * DC edge filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   */
   private static dc4(dst: InputBuffer<Uint8Array>): void {
     // DC
     let dc = 4;
@@ -120,6 +174,11 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * True motion filtering for a block of given size.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   * @param {number} size - The size of the block.
+   */
   private static trueMotion(dst: InputBuffer<Uint8Array>, size: number): void {
     const top = -VP8.bps;
     const clip0 = 255 - dst.get(top - 1);
@@ -133,24 +192,43 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * True motion filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   */
   private static tm4(dst: InputBuffer<Uint8Array>): void {
     VP8Filter.trueMotion(dst, 4);
   }
 
+  /**
+   * True motion filtering for an 8x8 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   */
   private static tm8uv(dst: InputBuffer<Uint8Array>): void {
     VP8Filter.trueMotion(dst, 8);
   }
 
+  /**
+   * True motion filtering for a 16x16 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
+   */
   private static tm16(dst: InputBuffer<Uint8Array>): void {
     VP8Filter.trueMotion(dst, 16);
   }
 
+  /**
+   * Computes the destination index for a given x and y coordinate.
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @returns {number} The destination index.
+   */
   private static dst(x: number, y: number): number {
     return x + y * VP8.bps;
   }
 
   /**
-   * Down-right
+   * Down-right filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
    */
   private static rd4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
@@ -200,7 +278,8 @@ export class VP8Filter {
   }
 
   /**
-   * Down-Left
+   * Down-left filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
    */
   private static ld4(dst: InputBuffer<Uint8Array>): void {
     const a = dst.get(0 - VP8.bps);
@@ -249,7 +328,8 @@ export class VP8Filter {
   }
 
   /**
-   * Vertical-Right
+   * Vertical-right filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
    */
   private static vr4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
@@ -293,7 +373,8 @@ export class VP8Filter {
   }
 
   /**
-   * Vertical-Left
+   * Vertical-left filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
    */
   private static vl4(dst: InputBuffer<Uint8Array>): void {
     const a = dst.get(0 - VP8.bps);
@@ -337,7 +418,8 @@ export class VP8Filter {
   }
 
   /**
-   * Horizontal-Up
+   * Horizontal-up filtering for a 4x4 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
    */
   private static hu4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
@@ -379,7 +461,9 @@ export class VP8Filter {
   }
 
   /**
-   * Horizontal-Down
+   * Applies a horizontal-down filter to the destination buffer.
+   *
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer of type InputBuffer containing Uint8Array.
    */
   private static hd4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
@@ -422,6 +506,17 @@ export class VP8Filter {
     dst.set(VP8Filter.dst(1, 3), VP8Filter.avg3(l, k, j));
   }
 
+  /**
+   * Applies a filter to the input buffer based on specified thresholds and strides.
+   *
+   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the data to be filtered.
+   * @param {number} hstride - The horizontal stride, which determines the step size in the horizontal direction.
+   * @param {number} vstride - The vertical stride, which determines the step size in the vertical direction.
+   * @param {number} size - The number of elements to process in the buffer.
+   * @param {number} thresh - The threshold value used to determine if filtering is needed.
+   * @param {number} ithresh - The inner threshold value used in the filtering decision process.
+   * @param {number} hevThresh - The high edge variance threshold used to decide between different filtering methods.
+   */
   private filterLoop26(
     p: InputBuffer<Uint8Array>,
     hstride: number,
@@ -445,6 +540,16 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Filters a loop with specific parameters.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} hstride - Horizontal stride.
+   * @param {number} vstride - Vertical stride.
+   * @param {number} size - Size of the loop.
+   * @param {number} thresh - Threshold value.
+   * @param {number} ithresh - Inner threshold value.
+   * @param {number} hevThresh - HEV threshold value.
+   */
   private filterLoop24(
     p: InputBuffer<Uint8Array>,
     hstride: number,
@@ -469,7 +574,9 @@ export class VP8Filter {
   }
 
   /**
-   * 4 pixels in, 2 pixels out
+   * Applies a 2-pixel filter.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} step - Step size.
    */
   private doFilter2(p: InputBuffer<Uint8Array>, step: number): void {
     const p1 = p.get(-2 * step);
@@ -484,7 +591,9 @@ export class VP8Filter {
   }
 
   /**
-   * 4 pixels in, 4 pixels out
+   * Applies a 4-pixel filter.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} step - Step size.
    */
   private doFilter4(p: InputBuffer<Uint8Array>, step: number): void {
     const p1 = p.get(-2 * step);
@@ -502,7 +611,9 @@ export class VP8Filter {
   }
 
   /**
-   * 6 pixels in, 6 pixels out
+   * Applies a 6-pixel filter.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} step - Step size.
    */
   private doFilter6(p: InputBuffer<Uint8Array>, step: number): void {
     const p2 = p.get(-3 * step);
@@ -527,6 +638,13 @@ export class VP8Filter {
     p.set(2 * step, VP8Filter.clip1[255 + q2 - a3]);
   }
 
+  /**
+   * Determines if high edge variance (HEV) is present.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} step - Step size.
+   * @param {number} thresh - Threshold value.
+   * @returns {boolean} True if HEV is present, false otherwise.
+   */
   private hev(
     p: InputBuffer<Uint8Array>,
     step: number,
@@ -542,6 +660,13 @@ export class VP8Filter {
     );
   }
 
+  /**
+   * Determines if filtering is needed.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} step - Step size.
+   * @param {number} thresh - Threshold value.
+   * @returns {boolean} True if filtering is needed, false otherwise.
+   */
   private needsFilter(
     p: InputBuffer<Uint8Array>,
     step: number,
@@ -557,6 +682,14 @@ export class VP8Filter {
     );
   }
 
+  /**
+   * Determines if filtering is needed with additional parameters.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} step - Step size.
+   * @param {number} t - Threshold value.
+   * @param {number} it - Inner threshold value.
+   * @returns {boolean} True if filtering is needed, false otherwise.
+   */
   private needsFilter2(
     p: InputBuffer<Uint8Array>,
     step: number,
@@ -585,6 +718,12 @@ export class VP8Filter {
     );
   }
 
+  /**
+   * Applies a simple vertical filter on 16 pixels.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} threshold - Threshold value.
+   */
   public simpleVFilter16(
     p: InputBuffer<Uint8Array>,
     stride: number,
@@ -599,6 +738,12 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Applies a simple horizontal filter on 16 pixels.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} threshold - Threshold value.
+   */
   public simpleHFilter16(
     p: InputBuffer<Uint8Array>,
     stride: number,
@@ -613,6 +758,12 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Applies a simple vertical filter on 16 pixels with inner edges.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} threshold - Threshold value.
+   */
   public simpleVFilter16i(
     p: InputBuffer<Uint8Array>,
     stride: number,
@@ -625,6 +776,12 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Applies a simple horizontal filter on 16 pixels with inner edges.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} threshold - Threshold value.
+   */
   public simpleHFilter16i(
     p: InputBuffer<Uint8Array>,
     stride: number,
@@ -638,7 +795,12 @@ export class VP8Filter {
   }
 
   /**
-   * on macroblock edges
+   * Applies a vertical filter on macroblock edges.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter16(
     p: InputBuffer<Uint8Array>,
@@ -650,6 +812,14 @@ export class VP8Filter {
     this.filterLoop26(p, stride, 1, 16, thresh, iThreshold, hevThreshold);
   }
 
+  /**
+   * Applies a horizontal filter on macroblock edges.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
+   */
   public hFilter16(
     p: InputBuffer<Uint8Array>,
     stride: number,
@@ -661,7 +831,12 @@ export class VP8Filter {
   }
 
   /**
-   * on three inner edges
+   * Applies a vertical filter on three inner edges.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter16i(
     p: InputBuffer<Uint8Array>,
@@ -677,6 +852,14 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Applies a horizontal filter on three inner edges.
+   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
+   */
   public hFilter16i(
     p: InputBuffer<Uint8Array>,
     stride: number,
@@ -692,7 +875,13 @@ export class VP8Filter {
   }
 
   /**
-   * 8-pixels wide variant, for chroma filtering
+   * Applies an 8-pixel wide vertical filter for chroma filtering.
+   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
+   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter8(
     u: InputBuffer<Uint8Array>,
@@ -706,6 +895,15 @@ export class VP8Filter {
     this.filterLoop26(v, stride, 1, 8, thresh, iThreshold, hevThreshold);
   }
 
+  /**
+   * Applies an 8-pixel wide horizontal filter for chroma filtering.
+   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
+   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
+   */
   public hFilter8(
     u: InputBuffer<Uint8Array>,
     v: InputBuffer<Uint8Array>,
@@ -718,6 +916,15 @@ export class VP8Filter {
     this.filterLoop26(v, 1, stride, 8, thresh, iThreshold, hevThreshold);
   }
 
+  /**
+   * Applies an 8-pixel wide vertical filter on inner edges for chroma filtering.
+   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
+   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
+   */
   public vFilter8i(
     u: InputBuffer<Uint8Array>,
     v: InputBuffer<Uint8Array>,
@@ -732,6 +939,15 @@ export class VP8Filter {
     this.filterLoop24(v2, stride, 1, 8, thresh, iThreshold, hevThreshold);
   }
 
+  /**
+   * Applies an 8-pixel wide horizontal filter on inner edges for chroma filtering.
+   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
+   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {number} stride - Stride value.
+   * @param {number} thresh - Threshold value.
+   * @param {number} iThreshold - Inner threshold value.
+   * @param {number} hevThreshold - HEV threshold value.
+   */
   public hFilter8i(
     u: InputBuffer<Uint8Array>,
     v: InputBuffer<Uint8Array>,
@@ -746,6 +962,11 @@ export class VP8Filter {
     this.filterLoop24(v2, 1, stride, 8, thresh, iThreshold, hevThreshold);
   }
 
+  /**
+   * Transforms a block of data from the source buffer to the destination buffer.
+   * @param {InputBuffer<Int16Array>} src - The source buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public transformOne(
     src: InputBuffer<Int16Array>,
     dst: InputBuffer<Uint8Array>
@@ -809,6 +1030,13 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Transforms a block of data from the source buffer to the destination buffer.
+   * Optionally performs the transformation twice.
+   * @param {InputBuffer<Int16Array>} src - The source buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   * @param {boolean} doTwo - A boolean flag indicating whether to perform the transformation twice.
+   */
   public transform(
     src: InputBuffer<Int16Array>,
     dst: InputBuffer<Uint8Array>,
@@ -820,6 +1048,11 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Transforms UV components of a block of data from the source buffer to the destination buffer.
+   * @param {InputBuffer<Int16Array>} src - The source buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public transformUV(
     src: InputBuffer<Int16Array>,
     dst: InputBuffer<Uint8Array>
@@ -832,6 +1065,11 @@ export class VP8Filter {
     );
   }
 
+  /**
+   * Transforms DC components of a block of data from the source buffer to the destination buffer.
+   * @param {InputBuffer<Int16Array>} src - The source buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public transformDC(
     src: InputBuffer<Int16Array>,
     dst: InputBuffer<Uint8Array>
@@ -844,6 +1082,11 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Transforms DC and UV components of a block of data from the source buffer to the destination buffer.
+   * @param {InputBuffer<Int16Array>} src - The source buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public transformDCUV(
     src: InputBuffer<Int16Array>,
     dst: InputBuffer<Uint8Array>
@@ -869,7 +1112,9 @@ export class VP8Filter {
   }
 
   /**
-   * Simplified transform when only src.getByte(0), src.getByte(1) and src.getByte(4) are non-zero
+   * Simplified transform when only src.getByte(0), src.getByte(1) and src.getByte(4) are non-zero.
+   * @param {InputBuffer<Int16Array>} src - The source buffer containing Int16Array data.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public transformAC3(
     src: InputBuffer<Int16Array>,
@@ -886,6 +1131,10 @@ export class VP8Filter {
     VP8Filter.store2(dst, 3, a - d4, d1, c1);
   }
 
+  /**
+   * Performs a vertical edge filtering on a 16x16 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static ve16(dst: InputBuffer<Uint8Array>): void {
     // vertical
     for (let j = 0; j < 16; ++j) {
@@ -893,6 +1142,10 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Performs a horizontal edge filtering on a 16x16 block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static he16(dst: InputBuffer<Uint8Array>): void {
     // horizontal
     let di = 0;
@@ -902,12 +1155,21 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Fills a 16x16 block with a specified value.
+   * @param {number} v - The value to fill the block with.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static put16(v: number, dst: InputBuffer<Uint8Array>): void {
     for (let j = 0; j < 16; ++j) {
       dst.memset(j * VP8.bps, 16, v);
     }
   }
 
+  /**
+   * Computes the DC value for a 16x16 block and fills the block with it.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static dc16(dst: InputBuffer<Uint8Array>): void {
     let dc = 16;
     for (let j = 0; j < 16; ++j) {
@@ -917,7 +1179,8 @@ export class VP8Filter {
   }
 
   /**
-   * DC with top samples not available
+   * Computes the DC value for a 16x16 block with top samples not available and fills the block with it.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static dc16NoTop(dst: InputBuffer<Uint8Array>): void {
     let dc = 8;
@@ -928,7 +1191,8 @@ export class VP8Filter {
   }
 
   /**
-   * DC with left samples not available
+   * Computes the DC value for a 16x16 block with left samples not available and fills the block with it.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static dc16NoLeft(dst: InputBuffer<Uint8Array>): void {
     let dc = 8;
@@ -939,18 +1203,27 @@ export class VP8Filter {
   }
 
   /**
-   * DC with no top and left samples
+   * Fills a 16x16 block with a default value when no top and left samples are available.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static dc16NoTopLeft(dst: InputBuffer<Uint8Array>): void {
     VP8Filter.put16(0x80, dst);
   }
 
+  /**
+   * Performs a vertical edge filtering on an 8x8 UV block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static ve8uv(dst: InputBuffer<Uint8Array>): void {
     for (let j = 0; j < 8; ++j) {
       dst.memcpy(j * VP8.bps, 8, dst, -VP8.bps);
     }
   }
 
+  /**
+   * Performs a horizontal edge filtering on an 8x8 UV block.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static he8uv(dst: InputBuffer<Uint8Array>): void {
     let di = 0;
     for (let j = 0; j < 8; ++j) {
@@ -960,7 +1233,9 @@ export class VP8Filter {
   }
 
   /**
-   * helper for chroma-DC predictions
+   * Helper for chroma-DC predictions. Fills an 8x8 UV block with a specified value.
+   * @param {number} value - The value to fill the block with.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static put8x8uv(value: number, dst: InputBuffer<Uint8Array>): void {
     for (let j = 0; j < 8; ++j) {
@@ -968,6 +1243,10 @@ export class VP8Filter {
     }
   }
 
+  /**
+   * Computes the DC value for an 8x8 UV block and fills the block with it.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
+   */
   public static dc8uv(dst: InputBuffer<Uint8Array>): void {
     let dc0 = 8;
     for (let i = 0; i < 8; ++i) {
@@ -977,7 +1256,8 @@ export class VP8Filter {
   }
 
   /**
-   * DC with no left samples
+   * Computes the DC value for an 8x8 UV block with no left samples and fills the block with it.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static dc8uvNoLeft(dst: InputBuffer<Uint8Array>): void {
     let dc0 = 4;
@@ -988,7 +1268,8 @@ export class VP8Filter {
   }
 
   /**
-   * DC with no top samples
+   * Computes the DC value for an 8x8 UV block with no top samples and fills the block with it.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static dc8uvNoTop(dst: InputBuffer<Uint8Array>): void {
     let dc0 = 4;
@@ -999,42 +1280,56 @@ export class VP8Filter {
   }
 
   /**
-   * DC with nothing
+   * Fills an 8x8 UV block with a default value when no top and left samples are available.
+   * @param {InputBuffer<Uint8Array>} dst - The destination buffer to store Uint8Array data.
    */
   public static dc8uvNoTopLeft(dst: InputBuffer<Uint8Array>): void {
     VP8Filter.put8x8uv(0x80, dst);
   }
 
+  /**
+   * Constant value kC1 used in calculations.
+   */
   private static readonly kC1 = 20091 + ((1 << 16) >>> 0);
+
+  /**
+   * Constant value kC2 used in calculations.
+   */
   private static readonly kC2 = 35468;
 
   /**
-   * abs(i)
+   * Array representing the absolute values of integers.
    */
   private static abs0: Uint8Array = new Uint8Array(255 + 255 + 1);
 
   /**
-   * abs(i)>>1
+   * Array representing the absolute values of integers shifted right by 1.
    */
   private static abs1: Uint8Array = new Uint8Array(255 + 255 + 1);
 
   /**
-   * clips [-1020, 1020] to [-128, 127]
+   * Array that clips values in the range [-1020, 1020] to [-128, 127].
    */
   private static sclip1: Int8Array = new Int8Array(1020 + 1020 + 1);
 
   /**
-   * clips [-112, 112] to [-16, 15]
+   * Array that clips values in the range [-112, 112] to [-16, 15].
    */
   private static sclip2: Int8Array = new Int8Array(112 + 112 + 1);
 
   /**
-   * clips [-255,510] to [0,255]
+   * Array that clips values in the range [-255, 510] to [0, 255].
    */
   private static clip1: Uint8Array = new Uint8Array(255 + 510 + 1);
 
+  /**
+   * Flag indicating whether the tables have been initialized.
+   */
   private static tablesInitialized: boolean = false;
 
+  /**
+   * Array of prediction functions for Luma 4x4 blocks.
+   */
   public static readonly predLuma4 = [
     this.dc4,
     this.tm4,
@@ -1048,6 +1343,9 @@ export class VP8Filter {
     this.hu4,
   ];
 
+  /**
+   * Array of prediction functions for Luma 16x16 blocks.
+   */
   public static readonly predLuma16 = [
     this.dc16,
     this.tm16,
@@ -1058,6 +1356,9 @@ export class VP8Filter {
     this.dc16NoTopLeft,
   ];
 
+  /**
+   * Array of prediction functions for Chroma 8x8 blocks.
+   */
   public static readonly predChroma8 = [
     this.dc8uv,
     this.tm8uv,

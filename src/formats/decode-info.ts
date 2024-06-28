@@ -7,22 +7,22 @@ import { Color } from '../color/color.js';
  */
 export interface DecodeInfo {
   /**
-   * The width of the image canvas.
+   * Gets the width of the image canvas.
    */
   get width(): number;
 
   /**
-   * The height of the image canvas.
+   * Gets the height of the image canvas.
    */
   get height(): number;
 
   /**
-   * The suggested background color of the canvas.
+   * Gets the suggested background color of the canvas.
    */
   get backgroundColor(): Color | undefined;
 
   /**
-   * The number of frames that can be decoded.
+   * Gets the number of frames that can be decoded.
    */
   get numFrames(): number;
 }

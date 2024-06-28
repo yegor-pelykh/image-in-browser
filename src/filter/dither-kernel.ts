@@ -4,14 +4,23 @@
  * The pattern to use for dithering
  */
 export enum DitherKernel {
+  /** No dithering */
   none,
+  /** False Floyd-Steinberg dithering */
   falseFloydSteinberg,
+  /** Floyd-Steinberg dithering */
   floydSteinberg,
+  /** Stucki dithering */
   stucki,
+  /** Atkinson dithering */
   atkinson,
 }
 
+/**
+ * Array of dithering kernels
+ */
 export const DitherKernels = [
+  // None
   [
     [0, 0, 0],
     [0, 0, 0],
@@ -45,7 +54,7 @@ export const DitherKernels = [
     [2 / 42, 1, 2],
     [1 / 42, 2, 2],
   ],
-  //Atkinson:
+  // Atkinson
   [
     [1 / 8, 1, 0],
     [1 / 8, 2, 0],

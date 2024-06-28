@@ -2,28 +2,66 @@
 
 import { IfdValueType } from './ifd-value-type.js';
 
+/** Interface for initializing ExifTag options */
 export interface ExifTagInitOptions {
+  /** The name of the Exif tag */
   name: string;
+  /** The type of the Exif tag, optional */
   type?: IfdValueType;
+  /** The count of the Exif tag, optional */
   count?: number;
 }
 
+/**
+ * Represents an ExifTag with a name, type, and optional count.
+ */
 export class ExifTag {
+  /**
+   * The name of the ExifTag.
+   */
   private readonly _name: string;
+
+  /**
+   * Gets the name of the ExifTag.
+   * @returns {string} The name of the ExifTag.
+   */
   public get name(): string {
     return this._name;
   }
 
+  /**
+   * The type of the ExifTag.
+   */
   private readonly _type: IfdValueType;
+
+  /**
+   * Gets the type of the ExifTag.
+   * @returns {IfdValueType} The type of the ExifTag.
+   */
   public get type(): IfdValueType {
     return this._type;
   }
 
+  /**
+   * The count of the ExifTag, if available.
+   */
   private _count?: number;
+
+  /**
+   * Gets the count of the ExifTag.
+   * @returns {number | undefined} The count of the ExifTag, or undefined if not set.
+   */
   public get count(): number | undefined {
     return this._count;
   }
 
+  /**
+   * Initializes a new instance of the ExifTag class.
+   * @param {ExifTagInitOptions} opt - The initialization options for the ExifTag.
+   * @param {string} opt.name - The name of the ExifTag.
+   * @param {IfdValueType} opt.type - The type of the ExifTag.
+   * @param {number} [opt.count] - The count of the ExifTag.
+   */
   constructor(opt: ExifTagInitOptions) {
     this._name = opt.name;
     this._type = opt.type ?? IfdValueType.none;
@@ -31,6 +69,9 @@ export class ExifTag {
   }
 }
 
+/**
+ * Map that associates EXIF tag names with their corresponding IDs.
+ */
 export const ExifTagNameToID = new Map<string, number>([
   ['ProcessingSoftware', 0xb],
   ['SubfileType', 0xfe],
@@ -232,6 +273,9 @@ export const ExifTagNameToID = new Map<string, number>([
   ['GPSDifferential', 0x1e],
 ]);
 
+/**
+ * Map of Exif image tags
+ */
 export const ExifImageTags = new Map<number, ExifTag>([
   [
     0x000b,
@@ -1337,6 +1381,9 @@ export const ExifImageTags = new Map<number, ExifTag>([
   ],
 ]);
 
+/**
+ * Map containing Exif Interoperability Tags
+ */
 export const ExifInteropTags = new Map<number, ExifTag>([
   [
     0x0001,
@@ -1377,6 +1424,9 @@ export const ExifInteropTags = new Map<number, ExifTag>([
   ],
 ]);
 
+/**
+ * Map containing GPS Exif tags
+ */
 export const ExifGpsTags = new Map<number, ExifTag>([
   [
     0x0000,

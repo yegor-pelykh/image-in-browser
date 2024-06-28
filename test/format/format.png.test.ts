@@ -22,10 +22,16 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 
+/**
+ * Test suite for PNG format.
+ */
 describe('Format: PNG', () => {
   const buck24Hash = 817446904;
   let buck24Image: MemoryImage | undefined = undefined;
 
+  /**
+   * Test for PNG with luminance and alpha channels.
+   */
   test('luminanceAlpha', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -57,6 +63,9 @@ describe('Format: PNG', () => {
     );
   });
 
+  /**
+   * Test for flipping a PNG image horizontally.
+   */
   test('hungry_180', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -87,6 +96,9 @@ describe('Format: PNG', () => {
     );
   });
 
+  /**
+   * Test for creating a PNG animation with transparency.
+   */
   test('transparencyAnim', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,
@@ -143,6 +155,9 @@ describe('Format: PNG', () => {
     );
   });
 
+  /**
+   * Test suite for PNG with 1-bit depth grayscale.
+   */
   describe('b1_1', () => {
     const image = new MemoryImage({
       width: 32,
@@ -182,6 +197,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 1-bit depth grayscale and palette.
+   */
   describe('b1_1p', () => {
     const image = new MemoryImage({
       width: 32,
@@ -223,6 +241,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 2-bit depth grayscale.
+   */
   describe('b2_1', () => {
     const image = new MemoryImage({
       width: 32,
@@ -262,6 +283,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 2-bit depth grayscale and palette.
+   */
   describe('b2_1p', () => {
     const image = new MemoryImage({
       width: 32,
@@ -303,6 +327,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 4-bit depth grayscale.
+   */
   describe('b4_1', () => {
     const image = new MemoryImage({
       width: 32,
@@ -342,6 +369,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 4-bit depth grayscale and palette.
+   */
   describe('b4_1p', () => {
     const image = new MemoryImage({
       width: 32,
@@ -383,6 +413,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 8-bit depth RGB.
+   */
   describe('b8_3', () => {
     const image = new MemoryImage({
       width: 32,
@@ -422,6 +455,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 8-bit depth RGB and palette.
+   */
   describe('b8_3p', () => {
     const image = new MemoryImage({
       width: 32,
@@ -462,6 +498,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test suite for PNG with 16-bit depth RGB.
+   */
   describe('b16_3', () => {
     const image = new MemoryImage({
       width: 32,
@@ -502,6 +541,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test for decoding a PNG image.
+   */
   test('decode', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -528,6 +570,9 @@ describe('Format: PNG', () => {
     buck24Image = image;
   });
 
+  /**
+   * Test for encoding a PNG image with a palette.
+   */
   test('encode palette', () => {
     const palette = new PaletteUint8(256, 3);
     for (let i = 0; i < 256; ++i) {
@@ -567,6 +612,9 @@ describe('Format: PNG', () => {
     ImageTestUtils.testImageDataEquals(image, image2);
   });
 
+  /**
+   * Test for decoding a PNG image with a palette.
+   */
   test('decode palette', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -599,6 +647,9 @@ describe('Format: PNG', () => {
     );
   });
 
+  /**
+   * Test for encoding a PNG image with no filter.
+   */
   test('encode filter:none', () => {
     const data = encodePng({
       image: buck24Image!,
@@ -625,6 +676,9 @@ describe('Format: PNG', () => {
     expect(hash).toBe(buck24Hash);
   });
 
+  /**
+   * Test for encoding a PNG image with sub filter.
+   */
   test('encode filter:sub', () => {
     const data = encodePng({
       image: buck24Image!,
@@ -651,6 +705,9 @@ describe('Format: PNG', () => {
     expect(hash).toBe(buck24Hash);
   });
 
+  /**
+   * Test for encoding a PNG image with up filter.
+   */
   test('encode filter:up', () => {
     const data = encodePng({
       image: buck24Image!,
@@ -677,6 +734,9 @@ describe('Format: PNG', () => {
     expect(hash).toBe(buck24Hash);
   });
 
+  /**
+   * Test encoding a PNG image with the average filter.
+   */
   test('encode filter:average', () => {
     const data = encodePng({
       image: buck24Image!,
@@ -703,6 +763,9 @@ describe('Format: PNG', () => {
     expect(hash).toBe(buck24Hash);
   });
 
+  /**
+   * Test encoding a PNG image with the paeth filter.
+   */
   test('encode filter:paeth', () => {
     const data = encodePng({
       image: buck24Image!,
@@ -729,6 +792,9 @@ describe('Format: PNG', () => {
     expect(hash).toBe(buck24Hash);
   });
 
+  /**
+   * Test decoding an animated PNG image.
+   */
   test('decodeAnimation', () => {
     type TestExampleInfo = {
       fileName: string;
@@ -792,6 +858,9 @@ describe('Format: PNG', () => {
     }
   });
 
+  /**
+   * Test encoding an animated PNG image.
+   */
   test('encodeAnimation', () => {
     const anim = new MemoryImage({
       width: 480,
@@ -819,6 +888,9 @@ describe('Format: PNG', () => {
     );
   });
 
+  /**
+   * Test encoding an animation with multiple single-frame images.
+   */
   test('encodeAnimation with mulitple single frame Images', () => {
     const encoder = new PngEncoder();
     encoder.start(10);
@@ -847,6 +919,9 @@ describe('Format: PNG', () => {
     );
   });
 
+  /**
+   * Test encoding and decoding a PNG image with text data.
+   */
   test('textData', () => {
     const img = new MemoryImage({
       width: 16,
@@ -867,6 +942,9 @@ describe('Format: PNG', () => {
     expect(img2.textData?.get('foo')).toBe('bar');
   });
 
+  /**
+   * Test encoding and decoding a PNG image with an ICC profile.
+   */
   test('iccProfile', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -902,33 +980,9 @@ describe('Format: PNG', () => {
     expect(img2.iccProfile!.data.length).toBe(img.iccProfile!.data.length);
   });
 
-  // PngSuite File naming convention:
-  // filename:                                g04i2c08.png
-  //                                          || ||||
-  //  test feature (in this case gamma) ------+| ||||
-  //  parameter of test (here gamma-value) ----+ ||||
-  //  interlaced or non-interlaced --------------+|||
-  //  color-type (numerical) ---------------------+||
-  //  color-type (descriptive) --------------------+|
-  //  bit-depth ------------------------------------+
-  //
-  //  color-type:
-  //
-  //    0g - grayscale
-  //    2c - rgb color
-  //    3p - paletted
-  //    4a - grayscale + alpha channel
-  //    6a - rgb color + alpha channel
-  //    bit-depth:
-  //      01 - with color-type 0, 3
-  //      02 - with color-type 0, 3
-  //      04 - with color-type 0, 3
-  //      08 - with color-type 0, 2, 3, 4, 6
-  //      16 - with color-type 0, 2, 4, 6
-  //      interlacing:
-  //        n - non-interlaced
-  //        i - interlaced
-
+  /**
+   * Test decoding and encoding various PNG files from the PngSuite.
+   */
   const resFiles = TestUtils.listFiles(
     TestFolder.input,
     TestSection.png,

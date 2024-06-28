@@ -18,7 +18,13 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 
+/**
+ * Test suite for GIF format operations.
+ */
 describe('Format: GIF', () => {
+  /**
+   * Test case for anim_palette GIF.
+   */
   test('anim_palette', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,
@@ -45,6 +51,9 @@ describe('Format: GIF', () => {
     );
   });
 
+  /**
+   * Test case for hand_anim GIF.
+   */
   test('hand_anim', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,
@@ -71,6 +80,9 @@ describe('Format: GIF', () => {
     );
   });
 
+  /**
+   * Test case for resizing hand_anim GIF.
+   */
   test('hand_anim resize', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,
@@ -121,6 +133,9 @@ describe('Format: GIF', () => {
     );
   });
 
+  /**
+   * Test case for transparency animation using PNGs.
+   */
   test('transparencyAnim', () => {
     const input1 = TestUtils.readFromFile(
       TestFolder.input,
@@ -178,6 +193,9 @@ describe('Format: GIF', () => {
     );
   });
 
+  /**
+   * Test case for resizing cars GIF.
+   */
   test('resizing', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -209,6 +227,9 @@ describe('Format: GIF', () => {
     );
   });
 
+  /**
+   * Test case for converting animated GIF to PNG.
+   */
   test('convert animated', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -255,6 +276,9 @@ describe('Format: GIF', () => {
     );
   });
 
+  /**
+   * Test case for encoding animation with fixed number of frames.
+   */
   test('encodeAnimation', () => {
     const anim = new MemoryImage({
       width: 480,
@@ -294,6 +318,9 @@ describe('Format: GIF', () => {
     expect(anim2.loopCount).toBe(10);
   });
 
+  /**
+   * Test case for encoding animation with variable FPS.
+   */
   test('encodeAnimation with variable FPS', () => {
     const anim = new MemoryImage({
       width: 480,
@@ -336,6 +363,9 @@ describe('Format: GIF', () => {
     expect(anim2.frames[2].frameDuration).toBe(3000);
   });
 
+  /**
+   * Test case for encoding small GIF.
+   */
   test('encode_small_gif', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -364,6 +394,9 @@ describe('Format: GIF', () => {
     }
   });
 
+  /**
+   * Test case for encoding and decoding all GIF files in the input folder.
+   */
   const inputFiles = TestUtils.listFiles(
     TestFolder.input,
     TestSection.gif,

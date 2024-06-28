@@ -7,17 +7,29 @@ import { LibError } from '../error/lib-error.js';
  * The format of a color or image.
  */
 export enum Format {
+  /** 1-bit unsigned integer */
   uint1,
+  /** 2-bit unsigned integer */
   uint2,
+  /** 4-bit unsigned integer */
   uint4,
+  /** 8-bit unsigned integer */
   uint8,
+  /** 16-bit unsigned integer */
   uint16,
+  /** 32-bit unsigned integer */
   uint32,
+  /** 8-bit signed integer */
   int8,
+  /** 16-bit signed integer */
   int16,
+  /** 32-bit signed integer */
   int32,
+  /** 16-bit floating point */
   float16,
+  /** 32-bit floating point */
   float32,
+  /** 64-bit floating point */
   float64,
 }
 
@@ -25,11 +37,25 @@ export enum Format {
  * The format type of a color or image.
  */
 export enum FormatType {
+  /**
+   * Unsigned integer format.
+   */
   uint,
+
+  /**
+   * Signed integer format.
+   */
   int,
+
+  /**
+   * Floating point format.
+   */
   float,
 }
 
+/**
+ * A map that associates each Format with its corresponding FormatType.
+ */
 export const FormatToFormatType = new Map<Format, FormatType>([
   [Format.uint1, FormatType.uint],
   [Format.uint2, FormatType.uint],
@@ -45,6 +71,9 @@ export const FormatToFormatType = new Map<Format, FormatType>([
   [Format.float64, FormatType.float],
 ]);
 
+/**
+ * A map that associates each Format with its corresponding size in bytes.
+ */
 export const FormatSize = new Map<Format, number>([
   [Format.uint1, 1],
   [Format.uint2, 1],
@@ -60,6 +89,9 @@ export const FormatSize = new Map<Format, number>([
   [Format.float64, 8],
 ]);
 
+/**
+ * A map that associates each Format with its maximum value.
+ */
 export const FormatMaxValue = new Map<Format, number>([
   [Format.uint1, 0x1],
   [Format.uint2, 0x3],
@@ -76,13 +108,19 @@ export const FormatMaxValue = new Map<Format, number>([
 ]);
 
 /**
- * Calculates the row stride for an image with specified **width**, **numChannels** and **format**.
+ * Calculates the row stride (the number of bytes per row) for an image based on its width,
+ * number of channels, and pixel format.
+ *
+ * @param {number} width - The width of the image in pixels.
+ * @param {number} numChannels - The number of color channels per pixel.
+ * @param {Format} format - The pixel format of the image.
+ * @returns {number} - The row stride in bytes.
  */
 export function getRowStride(
   width: number,
   numChannels: number,
   format: Format
-) {
+): number {
   return format === Format.uint1
     ? Math.ceil((width * numChannels) / 8)
     : format === Format.uint2
@@ -93,7 +131,13 @@ export function getRowStride(
 }
 
 /**
- * Convert a value from the **from** format to the **to** format.
+ * Converts a numeric value from one format to another.
+ *
+ * @param {number} value - The numeric value to be converted.
+ * @param {Format} from - The format of the input value.
+ * @param {Format} to - The format to which the value should be converted.
+ * @returns {number} - The converted numeric value.
+ * @throws {LibError} If the format conversion is unknown.
  */
 export function convertFormatValue(
   value: number,

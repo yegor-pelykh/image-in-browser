@@ -12,8 +12,17 @@ import { FileInfo } from './file-info';
 import { TestFolder } from './test-folder';
 import { TestSection } from './test-section';
 
+/**
+ * Utility class for handling test-related file operations.
+ */
 export abstract class TestUtils {
-  private static getTestFolder(folder: TestFolder) {
+  /**
+   * Gets the folder name based on the TestFolder enum.
+   * @param {TestFolder} folder - The test folder enum value.
+   * @returns {string} The corresponding folder name as a string.
+   * @throws {Error} Will throw an error if the folder is unknown.
+   */
+  private static getTestFolder(folder: TestFolder): string {
     switch (folder) {
       case TestFolder.input:
         return '_input';
@@ -23,7 +32,13 @@ export abstract class TestUtils {
     throw new Error('Unknown test folder specified');
   }
 
-  private static getTestSection(section: TestSection) {
+  /**
+   * Gets the section name based on the TestSection enum.
+   * @param {TestSection} section - The test section enum value.
+   * @returns {string} The corresponding section name as a string.
+   * @throws {Error} Will throw an error if the section is unknown.
+   */
+  private static getTestSection(section: TestSection): string {
     switch (section) {
       case TestSection.apng:
         return 'apng';
@@ -65,6 +80,13 @@ export abstract class TestUtils {
     throw new Error('Unknown test section specified');
   }
 
+  /**
+   * Prepares the path for a given folder, section, and optional file name.
+   * @param {TestFolder} folder - The test folder enum value.
+   * @param {TestSection} section - The test section enum value.
+   * @param {string} [fileName] - Optional file name.
+   * @returns {string} The prepared path as a string.
+   */
   public static preparePath(
     folder: TestFolder,
     section: TestSection,
@@ -83,6 +105,13 @@ export abstract class TestUtils {
     return fileName !== undefined ? join(dirPath, fileName) : dirPath;
   }
 
+  /**
+   * Lists files in a given folder and format, optionally filtering by file extension.
+   * @param {TestFolder} folder - The test folder enum value.
+   * @param {TestSection} format - The test section enum value.
+   * @param {string} [endsWith] - Optional file extension to filter by.
+   * @returns {FileInfo[]} An array of FileInfo objects.
+   */
   public static listFiles(
     folder: TestFolder,
     format: TestSection,
@@ -103,10 +132,22 @@ export abstract class TestUtils {
       });
   }
 
+  /**
+   * Reads the content of a file from a given file path.
+   * @param {string} filePath - The path to the file.
+   * @returns {Buffer} The file content as a Buffer.
+   */
   public static readFromFilePath(filePath: string): Buffer {
     return readFileSync(filePath);
   }
 
+  /**
+   * Reads the content of a file from a given folder, section, and file name.
+   * @param {TestFolder} folder - The test folder enum value.
+   * @param {TestSection} section - The test section enum value.
+   * @param {string} fileName - The name of the file.
+   * @returns {Buffer} The file content as a Buffer.
+   */
   public static readFromFile(
     folder: TestFolder,
     section: TestSection,
@@ -116,12 +157,19 @@ export abstract class TestUtils {
     return this.readFromFilePath(path);
   }
 
+  /**
+   * Writes data to a file in a given folder, section, and file name.
+   * @param {TestFolder} folder - The test folder enum value.
+   * @param {TestSection} section - The test section enum value.
+   * @param {string} fileName - The name of the file.
+   * @param {string | NodeJS.ArrayBufferView} data - The data to write, either as a string or ArrayBufferView.
+   */
   public static writeToFile(
     folder: TestFolder,
     section: TestSection,
     fileName: string,
     data: string | NodeJS.ArrayBufferView
-  ) {
+  ): void {
     const path = this.preparePath(folder, section, fileName);
     writeFileSync(path, data);
   }

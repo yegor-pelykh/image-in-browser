@@ -14,10 +14,18 @@ import { PsdColorMode } from './psd-color-mode.js';
 import { PsdImageResource } from './psd-image-resource.js';
 import { PsdLayer } from './psd-layer.js';
 
+/**
+ * Represents a PSD image and provides methods to decode and render it.
+ */
 export class PsdImage implements DecodeInfo {
-  // '8BPS'
+  /**
+   * PSD file signature '8BPS'.
+   */
   public static readonly psdSignature: number = 0x38425053;
-  // '8BIM'
+
+  /**
+   * Resource block signature '8BIM'.
+   */
   public static readonly resourceBlockSignature: number = 0x3842494d;
 
   private _input: InputBuffer<Uint8Array> | undefined;
@@ -25,8 +33,6 @@ export class PsdImage implements DecodeInfo {
     return this._input;
   }
 
-  // private _imageResourceData: InputBuffer<Uint8Array> | undefined;
-  // private _layerAndMaskData: InputBuffer<Uint8Array> | undefined;
   private _imageData: InputBuffer<Uint8Array> | undefined;
 
   private _width: number = 0;
@@ -44,7 +50,9 @@ export class PsdImage implements DecodeInfo {
     return this._backgroundColor;
   }
 
-  // The number of frames that can be decoded.
+  /**
+   * The number of frames that can be decoded.
+   */
   private readonly _numFrames: number = 1;
   public get numFrames(): number {
     return this._numFrames;
@@ -104,6 +112,10 @@ export class PsdImage implements DecodeInfo {
     return this._signature === PsdImage.psdSignature;
   }
 
+  /**
+   * Constructs a PsdImage instance from the given byte array.
+   * @param {Uint8Array} bytes - The byte array representing the PSD file.
+   */
   constructor(bytes: Uint8Array) {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -129,18 +141,44 @@ export class PsdImage implements DecodeInfo {
     this._imageData = this._input.readRange(this._input.length);
   }
 
+  /**
+   * Blends two values using the lighten blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendLighten(a: number, b: number): number {
     return Math.max(a, b);
   }
 
+  /**
+   * Blends two values using the darken blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendDarken(a: number, b: number): number {
     return Math.min(a, b);
   }
 
+  /**
+   * Blends two values using the multiply blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendMultiply(a: number, b: number): number {
     return (a * b) >> 8;
   }
 
+  /**
+   * Blends two values using the overlay blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @param {number} aAlpha - The alpha value of the first value.
+   * @param {number} bAlpha - The alpha value of the second value.
+   * @returns {number} The blended value.
+   */
   private static blendOverlay(
     a: number,
     b: number,
@@ -162,6 +200,12 @@ export class PsdImage implements DecodeInfo {
     return MathUtils.clampInt255(z * 255);
   }
 
+  /**
+   * Blends two values using the color burn blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendColorBurn(a: number, b: number): number {
     if (b === 0) {
       // We don't want to divide by zero
@@ -171,14 +215,32 @@ export class PsdImage implements DecodeInfo {
     return MathUtils.clampInt255(c);
   }
 
+  /**
+   * Blends two values using the linear burn blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendLinearBurn(a: number, b: number): number {
     return MathUtils.clampInt255(a + b - 255);
   }
 
+  /**
+   * Blends two values using the screen blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendScreen(a: number, b: number): number {
     return MathUtils.clampInt255(255 - (255 - b) * (255 - a));
   }
 
+  /**
+   * Blends two values using the color dodge blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendColorDodge(a: number, b: number): number {
     if (b === 255) {
       return 255;
@@ -186,10 +248,22 @@ export class PsdImage implements DecodeInfo {
     return MathUtils.clampInt255((a / 255 / (1 - b / 255)) * 255);
   }
 
+  /**
+   * Blends two values using the linear dodge blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendLinearDodge(a: number, b: number): number {
     return b + a > 255 ? 0xff : a + b;
   }
 
+  /**
+   * Blends two values using the soft light blend mode.
+   * @param {number} a - The first value.
+   * @param {number} b - The second value.
+   * @returns {number} The blended value.
+   */
   private static blendSoftLight(a: number, b: number): number {
     const aa = a / 255;
     const bb = b / 255;
@@ -198,6 +272,12 @@ export class PsdImage implements DecodeInfo {
     );
   }
 
+  /**
+   * Blends two values using the hard light blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendHardLight(bottom: number, top: number): number {
     const a = top / 255;
     const b = bottom / 255;
@@ -208,6 +288,12 @@ export class PsdImage implements DecodeInfo {
     }
   }
 
+  /**
+   * Blends two values using the vivid light blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendVividLight(bottom: number, top: number): number {
     if (top < 128) {
       return this.blendColorBurn(bottom, 2 * top);
@@ -216,6 +302,12 @@ export class PsdImage implements DecodeInfo {
     }
   }
 
+  /**
+   * Blends two values using the linear light blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendLinearLight(bottom: number, top: number): number {
     if (top < 128) {
       return this.blendLinearBurn(bottom, 2 * top);
@@ -224,28 +316,69 @@ export class PsdImage implements DecodeInfo {
     }
   }
 
+  /**
+   * Blends two values using the pin light blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendPinLight(bottom: number, top: number): number {
     return top < 128
       ? this.blendDarken(bottom, 2 * top)
       : this.blendLighten(bottom, 2 * (top - 128));
   }
 
+  /**
+   * Blends two values using the hard mix blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendHardMix(bottom: number, top: number): number {
     return top < 255 - bottom ? 0 : 255;
   }
 
+  /**
+   * Blends two values using the difference blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendDifference(bottom: number, top: number): number {
     return Math.abs(top - bottom);
   }
 
+  /**
+   * Blends two values using the exclusion blend mode.
+   * @param {number} bottom - The bottom value.
+   * @param {number} top - The top value.
+   * @returns {number} The blended value.
+   */
   private static blendExclusion(bottom: number, top: number): number {
     return Math.round(top + bottom - (2 * top * bottom) / 255);
   }
 
+  /**
+   * Reads a channel value from the data.
+   * @param {Uint8Array} data - The data array.
+   * @param {number} si - The start index.
+   * @param {number} ns - The number of samples.
+   * @returns {number} The channel value.
+   */
   private static ch(data: Uint8Array, si: number, ns: number): number {
     return ns === 1 ? data[si] : ((data[si] << 8) | data[si + 1]) >> 8;
   }
 
+  /**
+   * Creates an image from the given channels.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @param {PsdChannel[]} channelList - The list of channels.
+   * @param {PsdColorMode} [colorMode] - The color mode.
+   * @param {number} [bitDepth] - The bit depth.
+   * @returns {MemoryImage} The created image.
+   * @throws {LibError} If the bit depth is unsupported or the color mode is unhandled.
+   */
   public static createImageFromChannels(
     width: number,
     height: number,
@@ -345,6 +478,21 @@ export class PsdImage implements DecodeInfo {
     return output;
   }
 
+  /**
+   * Blends two pixels using the specified blend mode and opacity.
+   *
+   * @param {number} ar - The red component of the first pixel.
+   * @param {number} ag - The green component of the first pixel.
+   * @param {number} ab - The blue component of the first pixel.
+   * @param {number} aa - The alpha component of the first pixel.
+   * @param {number} br - The red component of the second pixel.
+   * @param {number} bg - The green component of the second pixel.
+   * @param {number} bb - The blue component of the second pixel.
+   * @param {number} ba - The alpha component of the second pixel.
+   * @param {number} blendMode - The blend mode to use.
+   * @param {number} opacity - The opacity to use.
+   * @param {Pixel} p - The pixel to store the result.
+   */
   private blend(
     ar: number,
     ag: number,
@@ -484,6 +632,13 @@ export class PsdImage implements DecodeInfo {
     p.a = Math.trunc(aa * (1 - da) + a * da);
   }
 
+  /**
+   * Reads the header information from the input stream and initializes
+   * the corresponding properties of the class. This includes reading
+   * the signature, version, channels, dimensions, depth, and color mode.
+   * If the version is not 1 or the padding is not all zeros, the signature
+   * is set to 0 to indicate an invalid header.
+   */
   private readHeader(): void {
     this._signature = this._input!.readUint32();
     this._version = this._input!.readUint16();
@@ -510,9 +665,13 @@ export class PsdImage implements DecodeInfo {
     this._colorMode = this._input!.readUint16() as PsdColorMode;
   }
 
-  private readColorModeData(): void {
-    // TODO: support indexed and duotone images.
-  }
+  /**
+   * Reads the color mode data.
+   *
+   * This method currently does not support indexed and duotone images.
+   * TODO: Add support for indexed and duotone images.
+   */
+  private readColorModeData(): void {}
 
   /*
   private readImageResources(): void {
@@ -599,6 +758,10 @@ export class PsdImage implements DecodeInfo {
   }
   */
 
+  /**
+   * Reads and merges image data.
+   * This method handles different compression types and constructs the merged image.
+   */
   private readMergeImageData(): void {
     this._imageData!.rewind();
     const compression = this._imageData!.readUint16();
@@ -637,8 +800,12 @@ export class PsdImage implements DecodeInfo {
     );
   }
 
-  // Decode the raw psd structure without rendering the output image.
-  // Use renderImage to render the output image.
+  /**
+   * Decode the raw psd structure without rendering the output image.
+   * Use renderImage to render the output image.
+   *
+   * @returns {boolean} Returns true if the decoding is successful, otherwise false.
+   */
   public decode(): boolean {
     if (!this.isValid || this._input === undefined) {
       return false;
@@ -665,6 +832,12 @@ export class PsdImage implements DecodeInfo {
     return true;
   }
 
+  /**
+   * Decodes an image and returns a MemoryImage object.
+   * If the decoding process fails, it returns undefined.
+   *
+   * @returns {MemoryImage | undefined} The decoded MemoryImage object or undefined if decoding fails.
+   */
   public decodeImage(): MemoryImage | undefined {
     if (!this.decode()) {
       return undefined;
@@ -673,6 +846,11 @@ export class PsdImage implements DecodeInfo {
     return this.renderImage();
   }
 
+  /**
+   * Renders the composite image by blending all visible layers.
+   *
+   * @returns {MemoryImage} The final merged image.
+   */
   public renderImage(): MemoryImage {
     if (this._mergedImage !== undefined) {
       return this._mergedImage!;

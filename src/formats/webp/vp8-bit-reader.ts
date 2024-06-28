@@ -2,16 +2,39 @@
 
 import { InputBuffer } from '../../common/input-buffer.js';
 
+/**
+ * Class representing a VP8 bit reader.
+ */
 export class VP8BitReader {
+  /**
+   * The input buffer.
+   */
   private _input: InputBuffer<Uint8Array>;
-  // current range minus 1. In [127, 254] interval.
+
+  /**
+   * Current range minus 1. In [127, 254] interval.
+   */
   private _range: number;
-  // current value
+
+  /**
+   * Current value.
+   */
   private _value: number;
-  // number of valid bits left
+
+  /**
+   * Number of valid bits left.
+   */
   private _bits: number;
+
+  /**
+   * End of file flag.
+   */
   private _eof: boolean = false;
 
+  /**
+   * Creates an instance of VP8BitReader.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer.
+   */
   constructor(input: InputBuffer<Uint8Array>) {
     this._input = input;
     this._range = 255 - 1;
@@ -20,6 +43,9 @@ export class VP8BitReader {
     this._bits = -8;
   }
 
+  /**
+   * Loads the final bytes from the input buffer.
+   */
   private loadFinalBytes(): void {
     // Only read 8bits at a time
     if (!this._input.isEOS) {
@@ -34,6 +60,9 @@ export class VP8BitReader {
     }
   }
 
+  /**
+   * Loads new bytes from the input buffer.
+   */
   private loadNewBytes(): void {
     // Read 8 bits at a time if possible
     if (this._input.length >= 1) {
@@ -47,6 +76,11 @@ export class VP8BitReader {
     }
   }
 
+  /**
+   * Updates the bit based on the split value.
+   * @param {number} split - The split value.
+   * @returns {number} The updated bit.
+   */
   private bitUpdate(split: number): number {
     // Make sure we have a least BITS bits in 'value_'
     if (this._bits < 0) {
@@ -65,12 +99,20 @@ export class VP8BitReader {
     }
   }
 
+  /**
+   * Shifts the range and bits.
+   */
   private shift(): void {
     const shift = VP8BitReader.log2Range[this._range];
     this._range = VP8BitReader.newRange[this._range];
     this._bits -= shift;
   }
 
+  /**
+   * Gets a bit based on the probability.
+   * @param {number} prob - The probability.
+   * @returns {number} The bit.
+   */
   public getBit(prob: number): number {
     const split = (this._range * prob) >>> 8;
     const bit = this.bitUpdate(split);
@@ -80,6 +122,11 @@ export class VP8BitReader {
     return bit;
   }
 
+  /**
+   * Gets a value based on the number of bits.
+   * @param {number} bits - The number of bits.
+   * @returns {number} The value.
+   */
   public getValue(bits: number): number {
     let _bits = bits;
     let v = 0;
@@ -89,10 +136,19 @@ export class VP8BitReader {
     return v;
   }
 
+  /**
+   * Gets a single bit value.
+   * @returns {number} The bit value.
+   */
   public get(): number {
     return this.getValue(1);
   }
 
+  /**
+   * Gets a signed value based on the input value.
+   * @param {number} v - The input value.
+   * @returns {number} The signed value.
+   */
   public getSigned(v: number): number {
     const split = this._range >>> 1;
     const bit = this.bitUpdate(split);
@@ -100,13 +156,18 @@ export class VP8BitReader {
     return bit !== 0 ? -v : v;
   }
 
+  /**
+   * Gets a signed value based on the number of bits.
+   * @param {number} bits - The number of bits.
+   * @returns {number} The signed value.
+   */
   public getSignedValue(bits: number): number {
     const value = this.getValue(bits);
     return this.get() === 1 ? -value : value;
   }
 
   /**
-   * Read a bit with proba 'prob'. Speed-critical function!
+   * Log2 range values.
    */
   private static readonly log2Range = [
     7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -117,6 +178,9 @@ export class VP8BitReader {
     1, 1, 0,
   ];
 
+  /**
+   * New range values.
+   */
   private static readonly newRange = [
     127, 127, 191, 127, 159, 191, 223, 127, 143, 159, 175, 191, 207, 223, 239,
     127, 135, 143, 151, 159, 167, 175, 183, 191, 199, 207, 215, 223, 231, 239,

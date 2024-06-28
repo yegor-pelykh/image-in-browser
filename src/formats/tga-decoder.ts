@@ -12,17 +12,37 @@ import { TgaInfo } from './tga/tga-info.js';
  * Decode a TGA image. This only supports the 24-bit and 32-bit uncompressed format.
  */
 export class TgaDecoder implements Decoder {
+  /**
+   * Input buffer for the TGA image.
+   */
   private _input: InputBuffer<Uint8Array> | undefined = undefined;
+
+  /**
+   * Information about the TGA image.
+   */
   private _info: TgaInfo | undefined = undefined;
 
+  /**
+   * Get the image format.
+   * @returns {ImageFormat} The image format.
+   */
   get format(): ImageFormat {
     return ImageFormat.tga;
   }
 
+  /**
+   * Get the number of frames in the image.
+   * @returns {number} The number of frames.
+   */
   public get numFrames(): number {
     return this._info !== undefined ? 1 : 0;
   }
 
+  /**
+   * Decode the color map of the TGA image.
+   * @param {Uint8Array} colorMap - The color map data.
+   * @param {Palette} palette - The palette to store the decoded colors.
+   */
   private decodeColorMap(colorMap: Uint8Array, palette: Palette): void {
     if (this._info === undefined || this._input === undefined) {
       return;
@@ -59,6 +79,10 @@ export class TgaDecoder implements Decoder {
     }
   }
 
+  /**
+   * Decode the RLE compressed TGA image.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
+   */
   private decodeRle(): MemoryImage | undefined {
     if (this._info === undefined || this._input === undefined) {
       return undefined;
@@ -195,6 +219,10 @@ export class TgaDecoder implements Decoder {
     return image;
   }
 
+  /**
+   * Decode the RGB TGA image.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
+   */
   private decodeRgb(): MemoryImage | undefined {
     if (this._info === undefined || this._input === undefined) {
       return undefined;
@@ -255,6 +283,8 @@ export class TgaDecoder implements Decoder {
 
   /**
    * Is the given file a valid TGA image?
+   * @param {Uint8Array} bytes - The file data.
+   * @returns {boolean} True if the file is a valid TGA image, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
     const input = new InputBuffer<Uint8Array>({
@@ -266,6 +296,11 @@ export class TgaDecoder implements Decoder {
     return this._info.isValid();
   }
 
+  /**
+   * Start decoding the TGA image.
+   * @param {Uint8Array} bytes - The file data.
+   * @returns {TgaInfo | undefined} The TGA image information or undefined if decoding fails.
+   */
   public startDecode(bytes: Uint8Array): TgaInfo | undefined {
     this._info = new TgaInfo();
     this._input = new InputBuffer<Uint8Array>({ buffer: bytes });
@@ -289,6 +324,13 @@ export class TgaDecoder implements Decoder {
     return this._info;
   }
 
+  /**
+   * Decode the TGA image.
+   * @param {DecoderDecodeOptions} opt - The decode options.
+   * @param {Uint8Array} opt.bytes - The file data.
+   * @param {number} [opt.frameIndex] - The frame index to decode.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
+   */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
@@ -299,6 +341,11 @@ export class TgaDecoder implements Decoder {
     return this.decodeFrame(opt.frameIndex ?? 0);
   }
 
+  /**
+   * Decode a specific frame of the TGA image.
+   * @param {number} _frameIndex - The frame index to decode.
+   * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
+   */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined || this._input === undefined) {
       return undefined;

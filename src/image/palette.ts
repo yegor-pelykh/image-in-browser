@@ -2,95 +2,152 @@
 
 import { Format } from '../color/format.js';
 
+/**
+ * Interface representing a color palette.
+ */
 export interface Palette {
   /**
-   * The size of the palette data in bytes.
+   * Gets the size of the palette data in bytes.
    */
   get byteLength(): number;
+
   /**
-   * The byte buffer storage of the palette data.
+   * Gets the byte buffer storage of the palette data.
    */
   get buffer(): ArrayBufferLike;
+
   /**
-   * The number of colors stored in the palette.
+   * Gets the number of colors stored in the palette.
    */
   get numColors(): number;
+
   /**
-   * The number of channels per color.
+   * Gets the number of channels per color.
    */
   get numChannels(): number;
-  get maxChannelValue(): number;
+
   /**
-   * The format of the color data.
+   * Gets the maximum value for any channel.
+   */
+  get maxChannelValue(): number;
+
+  /**
+   * Gets the format of the color data.
    */
   get format(): Format;
+
   /**
-   * Set the RGB color of a palette entry at **index**. If the palette has fewer
-   * channels than are set, the unsupported channels will be ignored.
+   * Sets the RGB color of a palette entry at the specified index.
+   * If the palette has fewer channels than are set, the unsupported channels will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} r - The red channel value.
+   * @param {number} g - The green channel value.
+   * @param {number} b - The blue channel value.
    */
   setRgb(index: number, r: number, g: number, b: number): void;
+
   /**
-   * Set the RGBA color of a palette entry at **index**. If the palette has fewer
-   * channels than are set, the unsupported channels will be ignored.
+   * Sets the RGBA color of a palette entry at the specified index.
+   * If the palette has fewer channels than are set, the unsupported channels will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} r - The red channel value.
+   * @param {number} g - The green channel value.
+   * @param {number} b - The blue channel value.
+   * @param {number} a - The alpha channel value.
    */
   setRgba(index: number, r: number, g: number, b: number, a: number): void;
+
   /**
-   * Set a specific **channel** **value** of the palette entry at **index**. If the
-   * palette has fewer channels than **channel**, the value will be ignored.
+   * Sets a specific channel value of the palette entry at the specified index.
+   * If the palette has fewer channels than the specified channel, the value will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} channel - The channel to set.
+   * @param {number} value - The value to set.
    */
   set(index: number, channel: number, value: number): void;
+
   /**
-   * Get the the value of a specific **channel** of the palette entry at **index**.
-   * If the palette has fewer colors than **index** or fewer channels than
-   * **channel**, 0 will be returned.
+   * Gets the value of a specific channel of the palette entry at the specified index.
+   * If the palette has fewer colors than the specified index or fewer channels than the specified channel, 0 will be returned.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} channel - The channel to get.
+   * @returns {number} The value of the specified channel.
    */
   get(index: number, channel: number): number;
+
   /**
-   * Get the red channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, 0 will be returned.
+   * Gets the red channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, 0 will be returned.
+   * @param {number} index - The index of the palette entry.
+   * @returns {number} The red channel value.
    */
   getRed(index: number): number;
+
   /**
-   * Set the red channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, it will be ignored.
+   * Sets the red channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, it will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} value - The red channel value to set.
    */
   setRed(index: number, value: number): void;
+
   /**
-   * Get the green channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, 0 will be returned.
+   * Gets the green channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, 0 will be returned.
+   * @param {number} index - The index of the palette entry.
+   * @returns {number} The green channel value.
    */
   getGreen(index: number): number;
+
   /**
-   * Set the green channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, it will be ignored.
+   * Sets the green channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, it will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} value - The green channel value to set.
    */
   setGreen(index: number, value: number): void;
+
   /**
-   * Get the blue channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, 0 will be returned.
+   * Gets the blue channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, 0 will be returned.
+   * @param {number} index - The index of the palette entry.
+   * @returns {number} The blue channel value.
    */
   getBlue(index: number): number;
+
   /**
-   * Set the blue channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, it will be ignored.
+   * Sets the blue channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, it will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} value - The blue channel value to set.
    */
   setBlue(index: number, value: number): void;
+
   /**
-   * Get the alpha channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, 0 will be returned.
+   * Gets the alpha channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, 0 will be returned.
+   * @param {number} index - The index of the palette entry.
+   * @returns {number} The alpha channel value.
    */
   getAlpha(index: number): number;
+
   /**
-   * Set the alpha channel of the palette entry at **index**. If the palette has
-   * fewer colors or channels, it will be ignored.
+   * Sets the alpha channel of the palette entry at the specified index.
+   * If the palette has fewer colors or channels, it will be ignored.
+   * @param {number} index - The index of the palette entry.
+   * @param {number} value - The alpha channel value to set.
    */
   setAlpha(index: number, value: number): void;
+
   /**
-   * Create a copy of the Palette.
+   * Creates a copy of the Palette.
+   * @returns {Palette} A new Palette instance.
    */
   clone(): Palette;
+
   /**
-   * A Uint8Array view of the palette buffer storage.
+   * Gets a Uint8Array view of the palette buffer storage.
+   * @returns {Uint8Array} A Uint8Array representing the palette buffer.
    */
   toUint8Array(): Uint8Array;
 }

@@ -3,8 +3,15 @@
 import { describe, expect, test } from 'vitest';
 import { Format, MemoryImage } from '../../src';
 
-describe('Image', () => {
+/**
+ * Test suite for the MemoryImage class.
+ */
+describe('MemoryImage', () => {
+  /**
+   * Test case for 8-bit integer format images with different numbers of channels.
+   */
   test('int8', () => {
+    // Test for single channel (grayscale) image
     const i1 = new MemoryImage({
       width: 2,
       height: 2,
@@ -27,6 +34,7 @@ describe('Image', () => {
     expect(i1.getPixel(0, 1).equals([-75])).toBeTruthy();
     expect(i1.getPixel(1, 1).equals([-115])).toBeTruthy();
 
+    // Test for two-channel image
     const i2 = new MemoryImage({
       width: 2,
       height: 2,
@@ -47,6 +55,7 @@ describe('Image', () => {
     expect(i2.getPixel(0, 1).equals([-58, 52])).toBeTruthy();
     expect(i2.getPixel(1, 1).equals([110, 84])).toBeTruthy();
 
+    // Test for three-channel image
     const i3 = new MemoryImage({
       width: 2,
       height: 2,
@@ -67,6 +76,7 @@ describe('Image', () => {
     expect(i3.getPixel(0, 1).equals([-58, 52, 5])).toBeTruthy();
     expect(i3.getPixel(1, 1).equals([110, 84, 94])).toBeTruthy();
 
+    // Test for four-channel image
     const i4 = new MemoryImage({
       width: 2,
       height: 2,

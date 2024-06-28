@@ -8,11 +8,26 @@ import { Encoder, EncoderEncodeOptions } from './encoder.js';
  * Encode a TGA image. This only supports the 24-bit uncompressed format.
  */
 export class TgaEncoder implements Encoder {
+  /**
+   * Indicates whether the encoder supports animation.
+   * @private
+   */
   private _supportsAnimation = false;
+
+  /**
+   * Gets the value indicating whether the encoder supports animation.
+   * @returns {boolean} True if the encoder supports animation, otherwise false.
+   */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
   }
 
+  /**
+   * Encodes the given image into a TGA format.
+   * @param {EncoderEncodeOptions} opt - The options for encoding.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @returns {Uint8Array} The encoded image in TGA format.
+   */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const image = opt.image;
 

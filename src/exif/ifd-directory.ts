@@ -21,38 +21,72 @@ import { TypedArray } from '../common/typings.js';
 import { StringUtils } from '../common/string-utils.js';
 import { ArrayUtils } from '../common/array-utils.js';
 
+/**
+ * Represents a directory of IFD (Image File Directory) entries.
+ */
 export class IfdDirectory {
+  /**
+   * Map to store IFD values.
+   */
   private readonly _data: Map<number, IfdValue>;
 
+  /**
+   * Container for sub-IFD directories.
+   */
   private readonly _sub = new IfdContainer();
+
+  /**
+   * Gets the sub-IFD container.
+   */
   public get sub(): IfdContainer {
     return this._sub;
   }
 
+  /**
+   * Gets an iterator for the keys in the IFD directory.
+   */
   public get keys(): IterableIterator<number> {
     return this._data.keys();
   }
 
+  /**
+   * Gets an iterator for the values in the IFD directory.
+   */
   public get values(): IterableIterator<IfdValue> {
     return this._data.values();
   }
 
+  /**
+   * Gets an iterator for the entries in the IFD directory.
+   */
   public get entries(): IterableIterator<[number, IfdValue]> {
     return this._data.entries();
   }
 
+  /**
+   * Gets the number of entries in the IFD directory.
+   */
   public get size(): number {
     return this._data.size;
   }
 
+  /**
+   * Checks if the IFD directory is empty.
+   */
   public get isEmpty(): boolean {
     return this._data.size === 0 && this._sub.isEmpty;
   }
 
+  /**
+   * Checks if the IFD directory has a user comment.
+   */
   public get hasUserComment(): boolean {
     return this._data.has(0x9286);
   }
 
+  /**
+   * Gets the user comment from the IFD directory.
+   */
   public get userComment(): string | undefined {
     const data = this._data.get(0x9286)?.toData();
     return data !== undefined
@@ -60,6 +94,9 @@ export class IfdDirectory {
       : undefined;
   }
 
+  /**
+   * Sets the user comment in the IFD directory.
+   */
   public set userComment(v: string | undefined) {
     if (v === undefined) {
       this._data.delete(0x9286);
@@ -69,14 +106,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has an image description.
+   */
   public get hasImageDescription(): boolean {
     return this._data.has(0x010e);
   }
 
+  /**
+   * Gets the image description from the IFD directory.
+   */
   public get imageDescription(): string | undefined {
     return this._data.get(0x010e)?.toString();
   }
 
+  /**
+   * Sets the image description in the IFD directory.
+   */
   public set imageDescription(v: string | undefined) {
     if (v === undefined) {
       this._data.delete(0x010e);
@@ -85,14 +131,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has a make value.
+   */
   public get hasMake(): boolean {
     return this._data.has(0x010f);
   }
 
+  /**
+   * Gets the make value from the IFD directory.
+   */
   public get make(): string | undefined {
     return this._data.get(0x010f)?.toString();
   }
 
+  /**
+   * Sets the make value in the IFD directory.
+   */
   public set make(v: string | undefined) {
     if (v === undefined) {
       this._data.delete(0x010f);
@@ -101,14 +156,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has a model value.
+   */
   public get hasModel(): boolean {
     return this._data.has(0x0110);
   }
 
+  /**
+   * Gets the model value from the IFD directory.
+   */
   public get model(): string | undefined {
     return this._data.get(0x0110)?.toString();
   }
 
+  /**
+   * Sets the model value in the IFD directory.
+   */
   public set model(v: string | undefined) {
     if (v === undefined) {
       this._data.delete(0x0110);
@@ -117,14 +181,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has an orientation value.
+   */
   public get hasOrientation(): boolean {
     return this._data.has(0x0112);
   }
 
+  /**
+   * Gets the orientation value from the IFD directory.
+   */
   public get orientation(): number | undefined {
     return this._data.get(0x0112)?.toInt();
   }
 
+  /**
+   * Sets the orientation value in the IFD directory.
+   */
   public set orientation(v: number | undefined) {
     if (v === undefined) {
       this._data.delete(0x0112);
@@ -133,42 +206,69 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has a resolutionX value.
+   */
   public get hasResolutionX(): boolean {
     return this._data.has(0x011a);
   }
 
+  /**
+   * Gets the resolutionX value from the IFD directory.
+   */
   public get resolutionX(): Rational | undefined {
     return this._data.get(0x011a)?.toRational();
   }
 
+  /**
+   * Sets the resolutionX value in the IFD directory.
+   */
   public set resolutionX(v: Rational | undefined) {
     if (!this.setRational(0x011a, v)) {
       this._data.delete(0x011a);
     }
   }
 
+  /**
+   * Checks if the IFD directory has a resolutionY value.
+   */
   public get hasResolutionY(): boolean {
     return this._data.has(0x011b);
   }
 
+  /**
+   * Gets the resolutionY value from the IFD directory.
+   */
   public get resolutionY(): Rational | undefined {
     return this._data.get(0x011b)?.toRational();
   }
 
+  /**
+   * Sets the resolutionY value in the IFD directory.
+   */
   public set resolutionY(v: Rational | undefined) {
     if (!this.setRational(0x011b, v)) {
       this._data.delete(0x011b);
     }
   }
 
+  /**
+   * Checks if the IFD directory has a resolution unit value.
+   */
   public get hasResolutionUnit(): boolean {
     return this._data.has(0x0128);
   }
 
+  /**
+   * Gets the resolution unit value from the IFD directory.
+   */
   public get resolutionUnit(): number | undefined {
     return this._data.get(0x0128)?.toInt();
   }
 
+  /**
+   * Sets the resolution unit value in the IFD directory.
+   */
   public set resolutionUnit(v: number | undefined) {
     if (v === undefined) {
       this._data.delete(0x0128);
@@ -177,14 +277,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has an image width value.
+   */
   public get hasImageWidth(): boolean {
     return this._data.has(0x0100);
   }
 
+  /**
+   * Gets the image width value from the IFD directory.
+   */
   public get imageWidth(): number | undefined {
     return this._data.get(0x0100)?.toInt();
   }
 
+  /**
+   * Sets the image width value in the IFD directory.
+   */
   public set imageWidth(v: number | undefined) {
     if (v === undefined) {
       this._data.delete(0x0100);
@@ -193,14 +302,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has an image height value.
+   */
   public get hasImageHeight(): boolean {
     return this._data.has(0x0101);
   }
 
+  /**
+   * Gets the image height value from the IFD directory.
+   */
   public get imageHeight(): number | undefined {
     return this._data.get(0x0101)?.toInt();
   }
 
+  /**
+   * Sets the image height value in the IFD directory.
+   */
   public set imageHeight(v: number | undefined) {
     if (v === undefined) {
       this._data.delete(0x0101);
@@ -209,14 +327,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has a software value.
+   */
   public get hasSoftware(): boolean {
     return this._data.has(0x0131);
   }
 
+  /**
+   * Gets the software value from the IFD directory.
+   */
   public get software(): string | undefined {
     return this._data.get(0x0131)?.toString();
   }
 
+  /**
+   * Sets the software value in the IFD directory.
+   */
   public set software(v: string | undefined) {
     if (v === undefined) {
       this._data.delete(0x0131);
@@ -225,14 +352,23 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Checks if the IFD directory has a copyright value.
+   */
   public get hasCopyright(): boolean {
     return this._data.has(0x8298);
   }
 
+  /**
+   * Gets the copyright value from the IFD directory.
+   */
   public get copyright(): string | undefined {
     return this._data.get(0x8298)?.toString();
   }
 
+  /**
+   * Sets the copyright value in the IFD directory.
+   */
   public set copyright(v: string | undefined) {
     if (v === undefined) {
       this._data.delete(0x8298);
@@ -242,8 +378,8 @@ export class IfdDirectory {
   }
 
   /**
-   * The size in bytes of the data written by this directory. Can be used to
-   * calculate end-of-block offsets.
+   * Gets the size in bytes of the data written by this directory.
+   * Can be used to calculate end-of-block offsets.
    */
   public get dataSize(): number {
     const numEntries = this.size;
@@ -268,10 +404,20 @@ export class IfdDirectory {
     return dataOffset;
   }
 
+  /**
+   * Constructs an IfdDirectory instance.
+   * @param {Map<number, IfdValue>} [data] - Optional map of IFD values.
+   */
   constructor(data?: Map<number, IfdValue>) {
     this._data = data ?? new Map<number, IfdValue>();
   }
 
+  /**
+   * Sets a rational value in the IFD directory.
+   * @param {number} tag - The tag number.
+   * @param {Rational | number[] | TypedArray | unknown} value - The rational value.
+   * @returns {boolean} True if the value was set, false otherwise.
+   */
   private setRational(
     tag: number,
     value: Rational | number[] | TypedArray | unknown
@@ -290,10 +436,20 @@ export class IfdDirectory {
     return false;
   }
 
+  /**
+   * Creates an IfdDirectory instance from another instance.
+   * @param {IfdDirectory} other - The other IfdDirectory instance.
+   * @returns {IfdDirectory} A new IfdDirectory instance.
+   */
   public static from(other: IfdDirectory): IfdDirectory {
     return new IfdDirectory(new Map<number, IfdValue>(other._data));
   }
 
+  /**
+   * Checks if a value is an array of rational numbers.
+   * @param {unknown} value - The value to check.
+   * @returns {boolean} True if the value is an array of rational numbers, false otherwise.
+   */
   public static isArrayOfRationalNumbers(value: unknown): boolean {
     return (
       Array.isArray(value) &&
@@ -303,10 +459,20 @@ export class IfdDirectory {
     );
   }
 
+  /**
+   * Checks if the IFD directory has a specific tag.
+   * @param {number} tag - The tag number.
+   * @returns {boolean} True if the tag exists, false otherwise.
+   */
   public has(tag: number): boolean {
     return this._data.has(tag);
   }
 
+  /**
+   * Gets the value associated with a specific tag.
+   * @param {number | string} tag - The tag number or name.
+   * @returns {IfdValue | undefined} The IFD value or undefined if not found.
+   */
   public getValue(tag: number | string): IfdValue | undefined {
     let _tag: string | number | undefined = tag;
     if (typeof _tag === 'string') {
@@ -318,6 +484,11 @@ export class IfdDirectory {
     return undefined;
   }
 
+  /**
+   * Sets a value in the IFD directory.
+   * @param {number | string} tag - The tag number or name.
+   * @param {Rational[] | number[] | TypedArray | Rational | IfdValue | number | undefined} value - The value to set.
+   */
   public setValue(
     tag: number | string,
     value:
@@ -483,6 +654,10 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Copies data from another IfdDirectory instance.
+   * @param {IfdDirectory} other - The IfdDirectory instance to copy from.
+   */
   public copyFrom(other: IfdDirectory): void {
     other._data.forEach((value, tag) => this._data.set(tag, value.clone()));
     for (const [tag, value] of other._sub.entries) {
@@ -490,6 +665,10 @@ export class IfdDirectory {
     }
   }
 
+  /**
+   * Creates a clone of the current IfdDirectory instance.
+   * @returns {IfdDirectory} A new IfdDirectory instance that is a clone of the current instance.
+   */
   public clone(): IfdDirectory {
     return IfdDirectory.from(this);
   }

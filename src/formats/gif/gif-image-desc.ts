@@ -3,32 +3,53 @@
 import { InputBuffer } from '../../common/input-buffer.js';
 import { GifColorMap } from './gif-color-map.js';
 
+/**
+ * Represents the description of a GIF image.
+ */
 export class GifImageDesc {
+  /**
+   * The x-coordinate of the image.
+   */
   private readonly _x: number;
   public get x(): number {
     return this._x;
   }
 
+  /**
+   * The y-coordinate of the image.
+   */
   private readonly _y: number;
   public get y(): number {
     return this._y;
   }
 
+  /**
+   * The width of the image.
+   */
   private readonly _width: number;
   public get width(): number {
     return this._width;
   }
 
+  /**
+   * The height of the image.
+   */
   private readonly _height: number;
   public get height(): number {
     return this._height;
   }
 
+  /**
+   * Indicates whether the image is interlaced.
+   */
   private readonly _interlaced: boolean;
   public get interlaced(): boolean {
     return this._interlaced;
   }
 
+  /**
+   * The color map of the image.
+   */
   private _colorMap?: GifColorMap;
   public get colorMap(): GifColorMap | undefined {
     return this._colorMap;
@@ -37,6 +58,9 @@ export class GifImageDesc {
     this._colorMap = v;
   }
 
+  /**
+   * The duration of the frame in milliseconds.
+   */
   private _duration = 80;
   public set duration(v: number) {
     this._duration = v;
@@ -45,6 +69,9 @@ export class GifImageDesc {
     return this._duration;
   }
 
+  /**
+   * The disposal method of the frame.
+   */
   private _disposal: number = 0;
   public set disposal(v: number) {
     this._disposal = v;
@@ -61,6 +88,10 @@ export class GifImageDesc {
     return this._inputPosition;
   }
 
+  /**
+   * Initializes a new instance of the GifImageDesc class.
+   * @param {InputBuffer<Uint8Array>} input - The input buffer containing the GIF image data.
+   */
   constructor(input: InputBuffer<Uint8Array>) {
     this._x = input.readUint16();
     this._y = input.readUint16();

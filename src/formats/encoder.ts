@@ -6,7 +6,15 @@ import { MemoryImage } from '../image/image.js';
  * Object interface for specifying Encoder.encode parameters.
  */
 export interface EncoderEncodeOptions {
+  /**
+   * The image to be encoded.
+   */
   image: MemoryImage;
+
+  /**
+   * If true, only a single frame of the image will be encoded.
+   * If false or undefined, all frames of the image will be encoded if the encoder supports animation.
+   */
   singleFrame?: boolean;
 }
 
@@ -20,10 +28,12 @@ export interface Encoder {
   get supportsAnimation(): boolean;
 
   /**
-   * Encode an **image** to an image format.
-   * If **singleFrame** is true, only the one MemoryImage will be encoded;
-   * otherwise if image has animation, all frames of the **image** will be
-   * encoded if the encoder supports animation.
+   * Encode an image to an image format.
+   *
+   * @param {EncoderEncodeOptions} opt - The options for encoding the image.
+   * @param {ImageData} opt.image - The image to be encoded.
+   * @param {boolean} opt.singleFrame - If true, only a single frame of the image will be encoded. If false or undefined, all frames of the image will be encoded if the encoder supports animation.
+   * @returns {Uint8Array} A Uint8Array containing the encoded image data.
    */
   encode(opt: EncoderEncodeOptions): Uint8Array;
 }

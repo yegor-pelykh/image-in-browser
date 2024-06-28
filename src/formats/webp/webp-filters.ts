@@ -2,7 +2,18 @@
 
 import { InputBuffer } from '../../common/input-buffer.js';
 
+/**
+ * Class representing WebP filters.
+ */
 export class WebPFilters {
+  /**
+   * Predicts a line of pixels.
+   * @param {InputBuffer<Uint8Array>} src - Source input buffer.
+   * @param {InputBuffer<Uint8Array>} pred - Prediction input buffer.
+   * @param {InputBuffer<Uint8Array>} dst - Destination input buffer.
+   * @param {number} length - Length of the line.
+   * @param {boolean} inverse - Whether to apply inverse prediction.
+   */
   private static predictLine(
     src: InputBuffer<Uint8Array>,
     pred: InputBuffer<Uint8Array>,
@@ -21,6 +32,17 @@ export class WebPFilters {
     }
   }
 
+  /**
+   * Applies horizontal filter to the image data.
+   * @param {Uint8Array} src - Source image data.
+   * @param {number} width - Width of the image.
+   * @param {number} _height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to process.
+   * @param {boolean} inverse - Whether to apply inverse filter.
+   * @param {Uint8Array} _out - Output image data.
+   */
   private static doHorizontalFilter(
     src: Uint8Array,
     width: number,
@@ -78,6 +100,17 @@ export class WebPFilters {
     }
   }
 
+  /**
+   * Applies vertical filter to the image data.
+   * @param {Uint8Array} src - Source image data.
+   * @param {number} width - Width of the image.
+   * @param {number} _height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to process.
+   * @param {boolean} inverse - Whether to apply inverse filter.
+   * @param {Uint8Array} out - Output image data.
+   */
   private static doVerticalFilter(
     src: Uint8Array,
     width: number,
@@ -130,6 +163,13 @@ export class WebPFilters {
     }
   }
 
+  /**
+   * Predicts a gradient value.
+   * @param {number} a - First value.
+   * @param {number} b - Second value.
+   * @param {number} c - Third value.
+   * @returns {number} The predicted gradient value.
+   */
   private static gradientPredictor(a: number, b: number, c: number): number {
     const g = a + b - c;
     return (g & ~0xff) === 0
@@ -140,6 +180,17 @@ export class WebPFilters {
           255;
   }
 
+  /**
+   * Applies gradient filter to the image data.
+   * @param {Uint8Array} src - Source image data.
+   * @param {number} width - Width of the image.
+   * @param {number} _height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to process.
+   * @param {boolean} inverse - Whether to apply inverse filter.
+   * @param {Uint8Array} out - Output image data.
+   */
   private static doGradientFilter(
     src: Uint8Array,
     width: number,
@@ -198,6 +249,14 @@ export class WebPFilters {
     }
   }
 
+  /**
+   * Applies horizontal filter to the image data.
+   * @param {Uint8Array} data - Source image data.
+   * @param {number} width - Width of the image.
+   * @param {number} height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {Uint8Array} filteredData - Output filtered image data.
+   */
   private static horizontalFilter(
     data: Uint8Array,
     width: number,
@@ -217,6 +276,15 @@ export class WebPFilters {
     );
   }
 
+  /**
+   * Applies horizontal unfilter to the image data.
+   * @param {number} width - Width of the image.
+   * @param {number} height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to process.
+   * @param {Uint8Array} data - Image data to be unfiltered.
+   */
   private static horizontalUnfilter(
     width: number,
     height: number,
@@ -237,6 +305,14 @@ export class WebPFilters {
     );
   }
 
+  /**
+   * Applies vertical filter to the image data.
+   * @param {Uint8Array} data - Source image data.
+   * @param {number} width - Width of the image.
+   * @param {number} height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {Uint8Array} filteredData - Output filtered image data.
+   */
   private static verticalFilter(
     data: Uint8Array,
     width: number,
@@ -256,6 +332,15 @@ export class WebPFilters {
     );
   }
 
+  /**
+   * Applies vertical unfilter to the image data.
+   * @param {number} width - Width of the image.
+   * @param {number} height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to process.
+   * @param {Uint8Array} data - Image data to be unfiltered.
+   */
   private static verticalUnfilter(
     width: number,
     height: number,
@@ -276,6 +361,14 @@ export class WebPFilters {
     );
   }
 
+  /**
+   * Applies gradient filter to the image data.
+   * @param {Uint8Array} data - Source image data.
+   * @param {number} width - Width of the image.
+   * @param {number} height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {Uint8Array} filteredData - Output filtered image data.
+   */
   private static gradientFilter(
     data: Uint8Array,
     width: number,
@@ -295,6 +388,15 @@ export class WebPFilters {
     );
   }
 
+  /**
+   * Applies gradient unfilter to the image data.
+   * @param {number} width - Width of the image.
+   * @param {number} height - Height of the image.
+   * @param {number} stride - Stride of the image.
+   * @param {number} row - Starting row.
+   * @param {number} numRows - Number of rows to process.
+   * @param {Uint8Array} data - Image data to be unfiltered.
+   */
   private static gradientUnfilter(
     width: number,
     height: number,
@@ -315,16 +417,44 @@ export class WebPFilters {
     );
   }
 
-  // Filters
+  /**
+   * No filter.
+   */
   public static readonly filterNone = 0;
+
+  /**
+   * Horizontal filter.
+   */
   public static readonly filterHorizontal = 1;
+
+  /**
+   * Vertical filter.
+   */
   public static readonly filterVertical = 2;
+
+  /**
+   * Gradient filter.
+   */
   public static readonly fitlerGradient = 3;
-  // End marker
+
+  /**
+   * End marker for filters.
+   */
   public static readonly fitlerLast = this.fitlerGradient + 1;
+
+  /**
+   * Best filter.
+   */
   public static readonly fitlerBest = 5;
+
+  /**
+   * Fast filter.
+   */
   public static readonly filterFast = 6;
 
+  /**
+   * Array of filter functions.
+   */
   public static readonly filters = [
     /**
      * WEBP_FILTER_NONE
@@ -344,6 +474,9 @@ export class WebPFilters {
     this.gradientFilter,
   ];
 
+  /**
+   * Array of unfilter functions.
+   */
   public static readonly unfilters = [
     /**
      * WEBP_FILTER_NONE

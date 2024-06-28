@@ -14,153 +14,303 @@ import { Pixel } from '../image/pixel.js';
 import { BlendMode } from './blend-mode.js';
 import { CircleQuadrant } from './circle-quadrant.js';
 
+/**
+ * Type definition for a function that tests a pixel during a flood fill operation.
+ */
 type FillFloodTestPixel = (y: number, x: number) => boolean;
+
+/**
+ * Type definition for a function that marks a pixel during a flood fill operation.
+ */
 type FillFloodMarkPixel = (y: number, x: number) => void;
 
+/**
+ * Options for drawing a line using Xiaolin Wu's algorithm.
+ */
 interface DrawLineWuOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The line to draw. */
   line: Line;
+  /** The color to use for drawing. */
   color: Color;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for drawing a line.
+ */
 export interface DrawLineOptions extends DrawLineWuOptions {
+  /** Whether to use antialiasing. */
   antialias?: boolean;
+  /** The thickness of the line. */
   thickness?: number;
 }
 
+/**
+ * Options for drawing an antialiased circle.
+ */
 interface DrawAntialiasCircleOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The x-coordinate of the circle's center. */
   x: number;
+  /** The y-coordinate of the circle's center. */
   y: number;
+  /** The radius of the circle. */
   radius: number;
+  /** The color to use for drawing. */
   color: Color;
+  /** The quadrants of the circle to draw. */
   quadrants?: CircleQuadrant;
+  /** The mask image. */
   mask?: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
 }
 
+/**
+ * Options for drawing a circle.
+ */
 export interface DrawCircleOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The center point of the circle. */
   center: Point;
+  /** The radius of the circle. */
   radius: number;
+  /** The color to use for drawing. */
   color: Color;
+  /** Whether to use antialiasing. */
   antialias?: boolean;
+  /** The mask image. */
   mask?: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
 }
 
+/**
+ * Options for drawing a pixel.
+ */
 export interface DrawPixelOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The position of the pixel. */
   pos: Point;
+  /** The color to use for drawing. */
   color: Color;
+  /** The filter color to apply. */
   filter?: Color;
+  /** The alpha value to use. */
   alpha?: number;
+  /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
   linearBlend?: boolean;
+  /** The mask image. */
   mask?: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
 }
 
+/**
+ * Options for drawing a polygon.
+ */
 export interface DrawPolygonOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The vertices of the polygon. */
   vertices: Point[];
+  /** The color to use for drawing. */
   color: Color;
+  /** Whether to use antialiasing. */
   antialias?: boolean;
+  /** The thickness of the polygon's edges. */
   thickness?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for drawing a rectangle.
+ */
 export interface DrawRectOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The rectangle to draw. */
   rect: Rectangle;
+  /** The color to use for drawing. */
   color: Color;
+  /** The thickness of the rectangle's edges. */
   thickness?: number;
+  /** The radius for rounded corners. */
   radius?: number;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for filling a circle.
+ */
 export interface FillCircleOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The center point of the circle. */
   center: Point;
+  /** The radius of the circle. */
   radius: number;
+  /** The color to use for filling. */
   color: Color;
+  /** Whether to use antialiasing. */
   antialias?: boolean;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for flood filling an area.
+ */
 export interface FillFloodOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The starting point for the flood fill. */
   start: Point;
+  /** The color to use for filling. */
   color: Color;
+  /** The threshold for color comparison. */
   threshold?: number;
+  /** Whether to compare alpha values. */
   compareAlpha?: boolean;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for creating a mask using flood fill.
+ */
 export interface MaskFloodOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The starting point for the flood fill. */
   start: Point;
+  /** The threshold for color comparison. */
   threshold?: number;
+  /** Whether to compare alpha values. */
   compareAlpha?: boolean;
+  /** The value to fill the mask with. */
   fillValue?: number;
 }
 
+/**
+ * Options for filling a polygon.
+ */
 export interface FillPolygonOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The vertices of the polygon. */
   vertices: Point[];
+  /** The color to use for filling. */
   color: Color;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for filling a rectangle.
+ */
 export interface FillRectOptions {
+  /** The image to draw on. */
   image: MemoryImage;
+  /** The rectangle to fill. */
   rect: Rectangle;
+  /** The color to use for filling. */
   color: Color;
+  /** The radius for rounded corners. */
   radius?: number;
+  /** Whether to use alpha blending. */
   alphaBlend?: boolean;
+  /** The mask image. */
   mask?: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
 }
 
+/**
+ * Options for filling an image.
+ */
 export interface FillOptions {
+  /** The image to fill. */
   image: MemoryImage;
+  /** The color to use for filling. */
   color: Color;
+  /** The channel to use for masking. */
   maskChannel?: Channel.luminance;
+  /** The mask image. */
   mask?: MemoryImage;
 }
 
+/**
+ * Options for compositing an image.
+ */
 export interface CompositeImageOptions {
+  /** The destination image. */
   dst: MemoryImage;
+  /** The source image. */
   src: MemoryImage;
+  /** The x-coordinate in the destination image. */
   dstX?: number;
+  /** The y-coordinate in the destination image. */
   dstY?: number;
+  /** The width of the destination area. */
   dstW?: number;
+  /** The height of the destination area. */
   dstH?: number;
+  /** The x-coordinate in the source image. */
   srcX?: number;
+  /** The y-coordinate in the source image. */
   srcY?: number;
+  /** The width of the source area. */
   srcW?: number;
+  /** The height of the source area. */
   srcH?: number;
+  /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
   linearBlend?: boolean;
+  /** Whether to center the source image in the destination image. */
   center?: boolean;
+  /** The mask image. */
   mask?: MemoryImage;
+  /** The channel to use for masking. */
   maskChannel?: Channel;
 }
 
+/**
+ * Abstract class for drawing operations.
+ */
 export abstract class Draw {
   /**
-   * Calculate the pixels that make up the circumference of a circle on the
-   * given **image**, centered at **center** and the given **radius**.
+   * Calculates the circumference points of a circle on a given image.
    *
-   * The returned array of points is sorted, first by the **center.x** coordinate, and
-   * second by the **center.y** coordinate.
+   * @param {MemoryImage} image - The image on which the circle is to be drawn.
+   * @param {Point} center - The center point of the circle.
+   * @param {number} radius - The radius of the circle.
+   * @returns {Point[]} An array of points representing the circumference of the circle.
+   *         Returns an empty array if the radius is negative or if the circle
+   *         would be completely outside the bounds of the image.
    */
   private static calculateCircumference(
     image: MemoryImage,
@@ -233,9 +383,32 @@ export abstract class Draw {
     return points;
   }
 
+  /**
+   * Draws an anti-aliased circle on the provided image.
+   *
+   * @param {DrawAntialiasCircleOptions} opt - The options for drawing the circle.
+   * @param {MemoryImage} opt.image - The image on which to draw the circle.
+   * @param {number} opt.x - The x-coordinate of the circle's center.
+   * @param {number} opt.y - The y-coordinate of the circle's center.
+   * @param {number} opt.radius - The radius of the circle.
+   * @param {Color} opt.color - The color of the circle.
+   * @param {CircleQuadrant} [opt.quadrants] - The quadrants of the circle to draw.
+   * @param {Channel} [opt.maskChannel] - The mask channel to use.
+   * @param {MemoryImage} [opt.mask] - The mask to apply.
+   * @returns {MemoryImage} The image with the drawn circle.
+   */
   private static drawAntialiasCircle(
     opt: DrawAntialiasCircleOptions
   ): MemoryImage {
+    /**
+     * Draws a pixel in four quadrants of the circle.
+     *
+     * @param {number} x - The x-coordinate of the circle's center.
+     * @param {number} y - The y-coordinate of the circle's center.
+     * @param {number} dx - The x offset from the center.
+     * @param {number} dy - The y offset from the center.
+     * @param {number} alpha - The alpha value for the pixel.
+     */
     const drawPixel4 = (
       x: number,
       y: number,
@@ -311,8 +484,12 @@ export abstract class Draw {
     return opt.image;
   }
 
-  // Xiaolin Wu's line algorithm,
-  // https://en.wikipedia.org/wiki/Xiaolin_Wu's_line_algorithm
+  /**
+   * Draws a line on an image using Wu's line algorithm, which provides anti-aliased lines.
+   *
+   * @param {DrawLineWuOptions} opt - The options for drawing the line, including the image, line coordinates, color, and mask options.
+   * @returns {MemoryImage} The image with the line drawn on it.
+   */
   private static drawLineWu(opt: DrawLineWuOptions): MemoryImage {
     const line = opt.line.clone();
     const steep = Math.abs(line.dy) > Math.abs(line.dx);
@@ -467,13 +644,25 @@ export abstract class Draw {
     return opt.image;
   }
 
+  /**
+   * Sets the alpha value of a given color.
+   *
+   * @param {Color} c - The color object whose alpha value is to be set.
+   * @param {number} a - The alpha value to set (typically between 0 and 1).
+   * @returns {Color} The color object with the updated alpha value.
+   */
   private static setAlpha(c: Color, a: number): Color {
     c.a = a;
     return c;
   }
 
   /**
-   * Compare colors from a 3 or 4 dimensional color space
+   * Calculates the distance between two colors.
+   *
+   * @param {number[]} c1 - The first color represented as an array of numbers [R, G, B, A].
+   * @param {number[]} c2 - The second color represented as an array of numbers [R, G, B, A].
+   * @param {boolean} compareAlpha - A boolean indicating whether to include the alpha channel in the comparison.
+   * @returns {number} The distance between the two colors.
    */
   private static colorDistance(
     c1: number[],
@@ -495,6 +684,17 @@ export abstract class Draw {
     }
   }
 
+  /**
+   * Tests the color distance between a pixel in an image and a reference color.
+   *
+   * @param {MemoryImage} src - The source image from which the pixel is taken.
+   * @param {number} x - The x-coordinate of the pixel.
+   * @param {number} y - The y-coordinate of the pixel.
+   * @param {number[]} refColor - The reference color to compare against, in LAB color space.
+   *                   If it contains an alpha value, it should be included as the fourth element.
+   * @param {number} threshold - The threshold distance to determine if the pixel color is sufficiently different from the reference color.
+   * @returns {boolean} `true` if the color distance is greater than the threshold, otherwise `false`.
+   */
   private static testPixelLabColorDistance(
     src: MemoryImage,
     x: number,
@@ -511,6 +711,17 @@ export abstract class Draw {
     return Draw.colorDistance(pixelColor, refColor, compareAlpha) > threshold;
   }
 
+  /**
+   * Fills a rectangular block in the image starting from the specified coordinates.
+   * This function uses a flood fill algorithm to fill contiguous areas of the image.
+   *
+   * @param {MemoryImage} src - The source image to be filled.
+   * @param {number} x - The starting x-coordinate for the fill operation.
+   * @param {number} y - The starting y-coordinate for the fill operation.
+   * @param {FillFloodTestPixel} array - A function that tests if a pixel should be filled.
+   * @param {FillFloodMarkPixel} mark - A function that marks a pixel as filled.
+   * @param {Uint8Array} visited - A Uint8Array that keeps track of visited pixels.
+   */
   private static fill4Core(
     src: MemoryImage,
     x: number,
@@ -618,8 +829,17 @@ export abstract class Draw {
     } while (lastRowLength !== 0 && ++_y < src.height);
   }
 
-  // Adam Milazzo (2015). A More Efficient Flood Fill.
-  // http://www.adammil.net/blog/v126_A_More_Efficient_Flood_Fill.html
+  /**
+   * Fills a region in the given MemoryImage starting from the specified coordinates (x, y).
+   * The function attempts to move as far as possible to the upper-left corner before filling.
+   *
+   * @param src The source MemoryImage to be filled.
+   * @param x The x-coordinate to start filling from.
+   * @param y The y-coordinate to start filling from.
+   * @param array A function that tests if a pixel should be filled.
+   * @param mark A function that marks a pixel as filled.
+   * @param visited A Uint8Array that keeps track of visited pixels.
+   */
   private static fill4(
     src: MemoryImage,
     x: number,
@@ -635,8 +855,8 @@ export abstract class Draw {
       return;
     }
 
-    // at this point, we know array(y,x) is clear, and we want to move as far as
-    // possible to the upper-left. moving up is much more important than moving
+    // At this point, we know array(y,x) is clear, and we want to move as far as
+    // possible to the upper-left. Moving up is much more important than moving
     // left, so we could try to make this smarter by sometimes moving to the
     // right if doing so would allow us to move further up, but it doesn't seem
     // worth the complexity
@@ -656,6 +876,20 @@ export abstract class Draw {
     Draw.fill4Core(src, _x, _y, array, mark, visited);
   }
 
+  /**
+   * Composites an image directly onto another image with optional masking.
+   *
+   * @param src - The source image to composite from.
+   * @param dst - The destination image to composite to.
+   * @param dstX - The x-coordinate in the destination image where compositing starts.
+   * @param dstY - The y-coordinate in the destination image where compositing starts.
+   * @param dstW - The width of the area to composite.
+   * @param dstH - The height of the area to composite.
+   * @param xCache - A cache of x-coordinates for the source image.
+   * @param yCache - A cache of y-coordinates for the source image.
+   * @param maskChannel - The channel of the mask image to use for compositing.
+   * @param mask - An optional mask image to control compositing.
+   */
   private static imgDirectComposite(
     src: MemoryImage,
     dst: MemoryImage,
@@ -697,6 +931,22 @@ export abstract class Draw {
     }
   }
 
+  /**
+   * Composites an image onto another image at a specified position and size.
+   *
+   * @param src - The source image to composite from.
+   * @param dst - The destination image to composite onto.
+   * @param dstX - The x-coordinate in the destination image where the composite starts.
+   * @param dstY - The y-coordinate in the destination image where the composite starts.
+   * @param dstW - The width of the area in the destination image to composite onto.
+   * @param dstH - The height of the area in the destination image to composite onto.
+   * @param xCache - An array of x-coordinates for caching.
+   * @param yCache - An array of y-coordinates for caching.
+   * @param blend - The blend mode to use for compositing.
+   * @param linearBlend - Whether to use linear blending.
+   * @param maskChannel - The channel to use for masking.
+   * @param mask - An optional mask image.
+   */
   private static imgComposite(
     src: MemoryImage,
     dst: MemoryImage,
@@ -729,8 +979,17 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a circle into the **image** with a center of **center** and
-   * the given **radius** and **color**.
+   * Draws a circle on the provided image with the specified options.
+   *
+   * @param {DrawCircleOptions} opt - The options for drawing the circle, including:
+   * @param {MemoryImage} opt.image - The image on which to draw the circle.
+   * @param {Point} opt.center - The center point of the circle.
+   * @param {number} opt.radius - The radius of the circle.
+   * @param {Color} opt.color - The color of the circle.
+   * @param {MemoryImage} [opt.mask] - An optional mask to apply.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask to use (default is luminance).
+   * @param {boolean} [opt.antialias] - Whether to apply antialiasing (default is false).
+   * @returns {MemoryImage} The image with the drawn circle.
    */
   public static drawCircle(opt: DrawCircleOptions): MemoryImage {
     const antialias = opt.antialias ?? false;
@@ -765,8 +1024,17 @@ export abstract class Draw {
   }
 
   /**
-   * Draw and fill a circle into the **image** with a **center**
-   * and the given **radius** and **color**.
+   * Fills a circle on the given image with the specified options.
+   *
+   * @param {FillCircleOptions} opt - The options for filling the circle.
+   * @param {MemoryImage} opt.image - The image to draw on.
+   * @param {Point} opt.center - The center point of the circle.
+   * @param {number} opt.radius - The radius of the circle.
+   * @param {Color} opt.color - The color to fill the circle with.
+   * @param {boolean} [opt.antialias=false] - Whether to apply antialiasing (optional, default is false).
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking (optional, default is luminance).
+   * @param {MemoryImage} [opt.mask] - The mask to apply (optional).
+   * @returns {MemoryImage} The image with the filled circle.
    */
   public static fillCircle(opt: FillCircleOptions): MemoryImage {
     const antialias = opt.antialias ?? false;
@@ -814,10 +1082,17 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a line into **image**.
+   * Draws a line on the given image based on the provided options.
    *
-   * If **antialias** is true then the line is drawn with smooth edges.
-   * **thickness** determines how thick the line should be drawn, in pixels.
+   * @param {DrawLineOptions} opt The options for drawing the line.
+   * @param {MemoryImage} opt.image The image on which the line will be drawn.
+   * @param {Line} opt.line The line coordinates.
+   * @param {Color} opt.color The color of the line.
+   * @param {number} [opt.thickness=1] The thickness of the line.
+   * @param {boolean} [opt.antialias=false] Whether to apply antialiasing.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] The mask channel to use.
+   * @param {MemoryImage} [opt.mask] The mask to apply.
+   * @returns {MemoryImage} The modified image with the drawn line.
    */
   public static drawLine(opt: DrawLineOptions): MemoryImage {
     const line = opt.line.clone();
@@ -825,6 +1100,7 @@ export abstract class Draw {
     const thickness = opt.thickness ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
+    // Clip the line to the image boundaries.
     if (
       !ImageUtils.clipLine(
         new Rectangle(0, 0, opt.image.width - 1, opt.image.height - 1),
@@ -1251,10 +1527,19 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a single pixel into the image, applying alpha and opacity blending.
-   * If **filter** is provided, the color c will be scaled by the **filter**
-   * color. If **alpha** is provided, it will be used in place of the
-   * color alpha, as a normalized color value [0, 1].
+   * Draws a pixel on the given image with various blending modes and options.
+   *
+   * @param {DrawPixelOptions} opt The options for drawing the pixel, including:
+   * @param {MemoryImage} opt.image The image to draw on.
+   * @param {Position} opt.pos The position to draw the pixel.
+   * @param {Color} opt.color The color of the pixel.
+   * @param {BlendMode} [opt.blend=BlendMode.alpha] The blending mode to use (default is BlendMode.alpha).
+   * @param {boolean} [opt.linearBlend=false] Whether to use linear blending (default is false).
+   * @param {MemoryImage} [opt.mask] An optional mask image.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] The channel of the mask to use (default is Channel.luminance).
+   * @param {Color} [opt.filter] An optional color filter.
+   * @param {number} [opt.alpha] An optional alpha value.
+   * @returns {MemoryImage} The modified image with the pixel drawn.
    */
   public static drawPixel(opt: DrawPixelOptions): MemoryImage {
     const blend = opt.blend ?? BlendMode.alpha;
@@ -1572,7 +1857,17 @@ export abstract class Draw {
   }
 
   /**
-   * Fill a polygon defined by the given **vertices**.
+   * Draws a polygon on the given image based on the provided options.
+   *
+   * @param {DrawPolygonOptions} opt The options for drawing the polygon.
+   * @param {MemoryImage} opt.image The image on which to draw the polygon.
+   * @param {Array<Point>} opt.vertices An array of points representing the vertices of the polygon.
+   * @param {Color} opt.color The color to use for the polygon.
+   * @param {boolean} [opt.antialias=false] Optional. Whether to apply antialiasing. Defaults to false.
+   * @param {number} [opt.thickness=1] Optional. The thickness of the polygon lines. Defaults to 1.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] Optional. The channel to use for masking. Defaults to luminance.
+   * @param {MemoryImage} [opt.mask] Optional. A mask to apply when drawing.
+   * @returns {MemoryImage} The image with the polygon drawn on it.
    */
   public static drawPolygon(opt: DrawPolygonOptions): MemoryImage {
     const antialias = opt.antialias ?? false;
@@ -1653,7 +1948,17 @@ export abstract class Draw {
   }
 
   /**
-   * Draw a rectangle in the **image** with the **color**.
+   * Draw a rectangle in the image with the specified options.
+   *
+   * @param {DrawRectOptions} opt - Options for drawing the rectangle.
+   * @param {MemoryImage} opt.image - The image on which to draw the rectangle.
+   * @param {Rectangle} opt.rect - The rectangle dimensions and position.
+   * @param {Color} opt.color - The color of the rectangle.
+   * @param {number} [opt.thickness=1] - The thickness of the rectangle's border. Defaults to 1.
+   * @param {number} [opt.radius=0] - The radius for rounded corners. Defaults to 0.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking. Defaults to Channel.luminance.
+   * @param {MemoryImage} [opt.mask] - An optional mask to apply when drawing.
+   * @returns {MemoryImage} The modified image with the drawn rectangle.
    */
   public static drawRect(opt: DrawRectOptions): MemoryImage {
     const rect = opt.rect;
@@ -1796,8 +2101,17 @@ export abstract class Draw {
   }
 
   /**
-   * Fill the 4-connected shape containing **start** in the **image** with the
-   * given **color**.
+   * Fills an area of an image with a specified color using the flood fill algorithm.
+   *
+   * @param {FillFloodOptions} opt - Options for the flood fill operation.
+   * @param {MemoryImage} opt.image - The image to be filled.
+   * @param {Pixel} opt.start - The starting pixel coordinates for the flood fill.
+   * @param {Pixel} opt.color - The color to fill the area with.
+   * @param {number} [opt.threshold=0] - The color distance threshold for the fill.
+   * @param {boolean} [opt.compareAlpha=false] - Whether to compare the alpha channel.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking.
+   * @param {MemoryImage} [opt.mask] - An optional mask image.
+   * @returns {MemoryImage} The modified image after the flood fill operation.
    */
   public static fillFlood(opt: FillFloodOptions): MemoryImage {
     const threshold = opt.threshold ?? 0;
@@ -1868,7 +2182,15 @@ export abstract class Draw {
   }
 
   /**
-   * Fill a polygon defined by the given **vertices**.
+   * Fills a polygon on the given image with the specified options.
+   *
+   * @param {FillPolygonOptions} opt - The options for filling the polygon.
+   * @param {MemoryImage} opt.image - The image to draw on.
+   * @param {Array<Point>} opt.vertices - An array of points representing the vertices of the polygon.
+   * @param {Color} opt.color - The color to fill the polygon with.
+   * @param {MemoryImage} [opt.mask] - An optional mask to apply.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask to use (default is luminance).
+   * @returns {MemoryImage} - The modified image with the polygon filled.
    */
   public static fillPolygon(opt: FillPolygonOptions): MemoryImage {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -1997,7 +2319,18 @@ export abstract class Draw {
   }
 
   /**
-   * Fill a rectangle **rect** in the **image** with the given **color**.
+   * Fills a rectangular area of an image with a specified color, with options for
+   * alpha blending, masking, and rounded corners.
+   *
+   * @param {FillRectOptions} opt - The options for filling the rectangle.
+   * @param {MemoryImage} opt.image - The image to be modified.
+   * @param {Rectangle} opt.rect - The rectangle area to fill.
+   * @param {Color} opt.color - The color to fill the rectangle with.
+   * @param {number} [opt.radius] - The radius for rounded corners (optional).
+   * @param {boolean} [opt.alphaBlend] - Whether to use alpha blending (optional).
+   * @param {MemoryImage} [opt.mask] - An optional mask image to control blending.
+   * @param {Channel} [opt.maskChannel] - The channel of the mask image to use (optional).
+   * @returns {MemoryImage} - The modified image.
    */
   public static fillRect(opt: FillRectOptions): MemoryImage {
     const radius = opt.radius ?? 0;
@@ -2100,7 +2433,14 @@ export abstract class Draw {
   }
 
   /**
-   * Set all of the pixels of an **image** to the given **color**.
+   * Fills the given image with the specified color, optionally using a mask.
+   *
+   * @param {FillOptions} opt - The options for filling the image.
+   * @param {MemoryImage} opt.image - The MemoryImage to be filled.
+   * @param {Color} opt.color - The color to fill the image with.
+   * @param {MemoryImage} [opt.mask] - (Optional) A mask image to control the fill operation.
+   * @param {Channel} [opt.maskChannel] - (Optional) The channel of the mask image to use (default is luminance).
+   * @returns {MemoryImage} - The filled MemoryImage.
    */
   public static fill(opt: FillOptions): MemoryImage {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -2124,8 +2464,15 @@ export abstract class Draw {
   }
 
   /**
-   * Create a mask describing the 4-connected shape containing **start** in the
-   * **image**.
+   * Create a mask describing the 4-connected shape containing **start** in the **image**.
+   *
+   * @param {MaskFloodOptions} opt - Options for the maskFlood function.
+   * @param {MemoryImage} opt.image - The image in which the mask will be created.
+   * @param {Point} opt.start - The starting point for the flood fill.
+   * @param {number} [opt.threshold] - The color distance threshold for the flood fill.
+   * @param {boolean} [opt.compareAlpha] - Whether to compare the alpha channel in the color distance calculation.
+   * @param {number} [opt.fillValue] - The value to fill the mask with.
+   * @returns {Uint8Array} A Uint8Array representing the mask.
    */
   public static maskFlood(opt: MaskFloodOptions): Uint8Array {
     const threshold = opt.threshold ?? 0;
@@ -2182,20 +2529,35 @@ export abstract class Draw {
   }
 
   /**
-   * Composite the image **src** onto the image **dst**.
+   * Overlay the image **src** onto the image **dst**.
    *
-   * In other words, compositeImage will take an rectangular area from src of
-   * width **srcW** and height **srcH** at position (**srcX**,**srcY**) and place it
-   * in a rectangular area of **dst** of width **dstW** and height **dstH** at
-   * position (**dstX**,**dstY**).
+   * Specifically, compositeImage will take a rectangular section from **src** with
+   * dimensions **srcW** by **srcH** starting at (**srcX**, **srcY**) and place it
+   * into a rectangular section of **dst** with dimensions **dstW** by **dstH** starting
+   * at (**dstX**, **dstY**).
    *
-   * If the source and destination coordinates and width and heights differ,
-   * appropriate stretching or shrinking of the image fragment will be performed.
-   * The coordinates refer to the upper left corner. This function can be used to
-   * copy regions within the same image (if **dst** is the same as **src**)
-   * but if the regions overlap the results will be unpredictable.
+   * If the source and destination coordinates and dimensions differ, the image fragment
+   * will be appropriately stretched or shrunk. The coordinates refer to the upper left corner.
+   * This function can also be used to copy regions within the same image (if **dst** is the same as **src**),
+   * but overlapping regions may produce unpredictable results.
    *
-   * if **center** is true, the **src** will be centered in **dst**.
+   * If **center** is true, the **src** will be centered within **dst**.
+   *
+   * @param {CompositeImageOptions} opt - Options for compositing the image.
+   * @param {MemoryImage} opt.dst - The destination image.
+   * @param {number} [opt.dstX=0] - The x-coordinate in the destination image.
+   * @param {number} [opt.dstY=0] - The y-coordinate in the destination image.
+   * @param {number} [opt.srcX=0] - The x-coordinate in the source image.
+   * @param {number} [opt.srcY=0] - The y-coordinate in the source image.
+   * @param {number} [opt.srcW=opt.src.width] - The width of the source image area.
+   * @param {number} [opt.srcH=opt.src.height] - The height of the source image area.
+   * @param {number} [opt.dstW] - The width of the destination image area.
+   * @param {number} [opt.dstH] - The height of the destination image area.
+   * @param {BlendMode} [opt.blend=BlendMode.alpha] - The blending mode to use.
+   * @param {boolean} [opt.linearBlend=false] - Whether to use linear blending.
+   * @param {boolean} [opt.center=false] - Whether to center the source image in the destination.
+   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for the mask.
+   * @param {ImageMask} [opt.mask] - The mask to apply during compositing.
    */
   public static compositeImage(opt: CompositeImageOptions): MemoryImage {
     let dst = opt.dst;

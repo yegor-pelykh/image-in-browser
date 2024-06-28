@@ -1,68 +1,139 @@
 /** @format */
 
+/**
+ * Represents various blend modes in a PSD file.
+ */
 export class PsdBlendMode {
-  // 'pass'
+  /**
+   * 'pass'
+   */
   public static readonly passThrough: number = 0x70617373;
-  // 'norm'
+  /**
+   * 'norm'
+   */
   public static readonly normal: number = 0x6e6f726d;
-  // 'diss'
+  /**
+   * 'diss'
+   */
   public static readonly dissolve: number = 0x64697373;
-  // 'dark'
+  /**
+   * 'dark'
+   */
   public static readonly darken: number = 0x6461726b;
-  // 'mul '
+  /**
+   * 'mul '
+   */
   public static readonly multiply: number = 0x6d756c20;
-  // 'idiv'
+  /**
+   * 'idiv'
+   */
   public static readonly colorBurn: number = 0x69646976;
-  // 'lbrn'
+  /**
+   * 'lbrn'
+   */
   public static readonly linearBurn: number = 0x6c62726e;
-  // 'dkCl'
+  /**
+   * 'dkCl'
+   */
   public static readonly darkenColor: number = 0x646b436c;
-  // 'lite'
+  /**
+   * 'lite'
+   */
   public static readonly lighten: number = 0x6c697465;
-  // 'scrn'
+  /**
+   * 'scrn'
+   */
   public static readonly screen: number = 0x7363726e;
-  // 'div '
+  /**
+   * 'div '
+   */
   public static readonly colorDodge: number = 0x64697620;
-  // 'lddg'
+  /**
+   * 'lddg'
+   */
   public static readonly linearDodge: number = 0x6c646467;
-  // 'lgCl'
+  /**
+   * 'lgCl'
+   */
   public static readonly lighterColor: number = 0x6c67436c;
-  // 'over'
+  /**
+   * 'over'
+   */
   public static readonly overlay: number = 0x6f766572;
-  // 'sLit'
+  /**
+   * 'sLit'
+   */
   public static readonly softLight: number = 0x734c6974;
-  // 'hLit'
+  /**
+   * 'hLit'
+   */
   public static readonly hardLight: number = 0x684c6974;
-  // 'vLit'
+  /**
+   * 'vLit'
+   */
   public static readonly vividLight: number = 0x764c6974;
-  // lLit'
+  /**
+   * 'lLit'
+   */
   public static readonly linearLight: number = 0x6c4c6974;
-  // 'pLit'
+  /**
+   * 'pLit'
+   */
   public static readonly pinLight: number = 0x704c6974;
-  // 'hMix'
+  /**
+   * 'hMix'
+   */
   public static readonly hardMix: number = 0x684d6978;
-  // 'diff'
+  /**
+   * 'diff'
+   */
   public static readonly difference: number = 0x64696666;
-  // 'smud'
+  /**
+   * 'smud'
+   */
   public static readonly exclusion: number = 0x736d7564;
-  // 'fsub'
+  /**
+   * 'fsub'
+   */
   public static readonly subtract: number = 0x66737562;
-  // 'fdiv'
+  /**
+   * 'fdiv'
+   */
   public static readonly divide: number = 0x66646976;
-  // 'hue '
+  /**
+   * 'hue '
+   */
   public static readonly hue: number = 0x68756520;
-  // 'sat '
+  /**
+   * 'sat '
+   */
   public static readonly saturation: number = 0x73617420;
-  // 'colr'
+  /**
+   * 'colr'
+   */
   public static readonly color: number = 0x636f6c72;
-  // 'lum '
+  /**
+   * 'lum '
+   */
   public static readonly luminosity: number = 0x6c756d20;
 
+  /**
+   * The current blend mode value.
+   */
   private _value: number;
+
+  /**
+   * Gets the current blend mode value.
+   * @returns {number} The current blend mode value.
+   */
   public get value(): number {
     return this._value;
   }
 
+  /**
+   * Initializes a new instance of the PsdBlendMode class.
+   * @param {number} value - The blend mode value to initialize with.
+   */
   constructor(value: number) {
     this._value = value;
   }

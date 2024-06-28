@@ -17,7 +17,13 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
-describe('Image', () => {
+/**
+ * Test suite for the MemoryImage class.
+ */
+describe('MemoryImage', () => {
+  /**
+   * Test the creation of an empty MemoryImage.
+   */
   test('empty', () => {
     const i0 = new MemoryImage();
     expect(i0.isValid).toBeFalsy();
@@ -26,6 +32,9 @@ describe('Image', () => {
     expect(i1.isValid).toBeFalsy();
   });
 
+  /**
+   * Test the rowStride calculation for different formats.
+   */
   test('rowStride', () => {
     for (const format of ArrayUtils.getNumEnumValues(Format)) {
       const img = new MemoryImage({
@@ -38,6 +47,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test resizing a MemoryImage and preserving the palette.
+   */
   test('fromResized', () => {
     const i1 = new MemoryImage({
       width: 20,
@@ -77,6 +89,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test creating a MemoryImage from raw bytes.
+   */
   test('fromBytes', () => {
     const w = 256;
     const h = 256;
@@ -130,6 +145,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test creating a MemoryImage from raw bytes with different channel orders.
+   */
   test('fromBytes order', () => {
     const w = 256;
     const h = 256;
@@ -171,6 +189,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test pixel iteration over a MemoryImage.
+   */
   test('Pixel iteration', () => {
     const image = new MemoryImage({
       width: 10,
@@ -192,6 +213,9 @@ describe('Image', () => {
     expect(ctrWhile).toBe(100);
   });
 
+  /**
+   * Test the getPixel iterator of a MemoryImage.
+   */
   test('getPixel iterator', () => {
     const i0 = new MemoryImage({
       width: 10,
@@ -212,6 +236,9 @@ describe('Image', () => {
     } while (((itr = p.next()), !itr.done));
   });
 
+  /**
+   * Test the getRange method of a MemoryImage.
+   */
   test('getRange', () => {
     const i0 = new MemoryImage({
       width: 10,
@@ -232,6 +259,9 @@ describe('Image', () => {
     }
   });
 
+  /**
+   * Test converting an image with alpha channel to 1-bit per pixel BMP format.
+   */
   test('alpha_bmp_1bpp', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -273,6 +303,9 @@ describe('Image', () => {
     );
   });
 
+  /**
+   * Test getting bytes from an image with RGB to ARGB channel order conversion.
+   */
   test('GetBytes rgb -> argb', () => {
     const i1 = new MemoryImage({
       width: 1,

@@ -4,15 +4,26 @@ import { Palette } from '../image/palette.js';
 import { Channel } from './channel.js';
 import { Format } from './format.js';
 
+/**
+ * Options for converting a color.
+ */
 export interface ColorConvertOptions {
+  /**
+   * The desired format for the color conversion.
+   */
   format?: Format;
+  /**
+   * The number of channels in the converted color.
+   */
   numChannels?: number;
+  /**
+   * The alpha value to use if the converted color has an alpha channel.
+   */
   alpha?: number;
 }
 
 /**
- * The abstract Color class is the base class for all specific color classes
- * and Pixel classes.
+ * The abstract Color interface is the base for all specific color and Pixel classes.
  */
 export interface Color {
   /**
@@ -28,11 +39,11 @@ export interface Color {
    */
   get maxIndexValue(): number;
   /**
-   * The Format of the color.
+   * The format of the color.
    */
   get format(): Format;
   /**
-   *  True if the format is low dynamic range.
+   * True if the format is low dynamic range.
    */
   get isLdrFormat(): boolean;
   /**
@@ -44,7 +55,7 @@ export interface Color {
    */
   get hasPalette(): boolean;
   /**
-   * The palette used by the color, or undefined.
+   * The palette used by the color, or undefined if no palette is used.
    */
   get palette(): Palette | undefined;
   /**
@@ -53,42 +64,42 @@ export interface Color {
   get index(): number;
   set index(i: number);
   /**
-   * Red channel.
+   * Red channel value.
    */
   get r(): number;
   set r(r: number);
   /**
-   * Green channel.
+   * Green channel value.
    */
   get g(): number;
   set g(g: number);
   /**
-   * Blue channel.
+   * Blue channel value.
    */
   get b(): number;
   set b(b: number);
   /**
-   * Alpha channel.
+   * Alpha channel value.
    */
   get a(): number;
   set a(a: number);
   /**
-   * Normalized [0, 1] red.
+   * Normalized [0, 1] red channel value.
    */
   get rNormalized(): number;
   set rNormalized(v: number);
   /**
-   * Normalized [0, 1] green.
+   * Normalized [0, 1] green channel value.
    */
   get gNormalized(): number;
   set gNormalized(v: number);
   /**
-   * Normalized [0, 1] blue.
+   * Normalized [0, 1] blue channel value.
    */
   get bNormalized(): number;
   set bNormalized(v: number);
   /**
-   * Normalized [0, 1] alpha.
+   * Normalized [0, 1] alpha channel value.
    */
   get aNormalized(): number;
   set aNormalized(v: number);
@@ -96,35 +107,38 @@ export interface Color {
    * The luminance (grayscale) of the color.
    */
   get luminance(): number;
+  /**
+   * Normalized [0, 1] luminance value.
+   */
   get luminanceNormalized(): number;
   /**
-   * Gets a channel from the color by its index or Channel enum.
+   * Gets a channel value from the color by its index or Channel enum.
    * If the channel isn't available, 0 will be returned.
    */
   getChannel(channel: number | Channel): number;
   /**
-   * Sets a channel to the color by its index.
+   * Sets a channel value in the color by its index or Channel enum.
    */
   setChannel(channel: number | Channel, value: number): void;
   /**
-   * Get the normalized [0, 1] value of A channel from the color. If the
-   * channel isn't available, 0 will be returned.
+   * Gets the normalized [0, 1] value of a channel from the color.
+   * If the channel isn't available, 0 will be returned.
    */
   getChannelNormalized(channel: number | Channel): number;
   /**
-   * The the values of this color to the given Color.
+   * Sets the values of this color to the given Color.
    */
   set(color: Color): void;
   /**
-   * Set the individual **r**, **g**, **b** channels of the color.
+   * Sets the individual **r**, **g**, **b** channels of the color.
    */
   setRgb(r: number, g: number, b: number): void;
   /**
-   * Set the individual **r**, **g**, **b**, **a** channels of the color.
+   * Sets the individual **r**, **g**, **b**, **a** channels of the color.
    */
   setRgba(r: number, g: number, b: number, a: number): void;
   /**
-   * Converts the color to an array of channels.
+   * Converts the color to an array of channel values.
    */
   toArray(): number[];
   /**
@@ -132,8 +146,8 @@ export interface Color {
    */
   clone(): Color;
   /**
-   * Convert the **format** and/or the **numChannels** of the color. If
-   * **numChannels** is 4 and the current color does not have an alpha value,
+   * Converts the **format** and/or the **numChannels** of the color.
+   * If **numChannels** is 4 and the current color does not have an alpha value,
    * then **alpha** can specify what value to use for the new alpha channel.
    * If **alpha** is not given, then **maxChannelValue** will be used.
    */

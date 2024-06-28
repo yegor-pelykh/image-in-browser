@@ -1,5 +1,8 @@
 /** @format */
 
+/**
+ * Enum representing different channel orders.
+ */
 export enum ChannelOrder {
   rgba,
   bgra,
@@ -12,7 +15,7 @@ export enum ChannelOrder {
 }
 
 /**
- * The number of channels for each ChannelOrder.
+ * Map representing the length of each channel order.
  */
 export const ChannelOrderLength = new Map<ChannelOrder, number>([
   [ChannelOrder.rgba, 4],

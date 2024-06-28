@@ -8,11 +8,29 @@ import { MemoryImage } from '../../image/image.js';
 import { JpegComponentData } from './jpeg-component-data.js';
 import { JpegData } from './jpeg-data.js';
 
+/**
+ * Abstract class for JPEG quantization and inverse DCT operations.
+ */
 export abstract class JpegQuantize {
+  /**
+   * Offset for DCT clipping.
+   */
   private static readonly _dctClipOffset = 256;
+
+  /**
+   * Length for DCT clipping.
+   */
   private static readonly _dctClipLength = 768;
+
+  /**
+   * DCT clipping array.
+   */
   private static readonly _dctClip = JpegQuantize.createDctClip();
 
+  /**
+   * Creates the DCT clipping array.
+   * @returns {Uint8Array} The DCT clipping array.
+   */
   private static createDctClip(): Uint8Array {
     const result = new Uint8Array(JpegQuantize._dctClipLength);
     let i = 0;
@@ -28,12 +46,19 @@ export abstract class JpegQuantize {
     return result;
   }
 
-  // Quantize the coefficients and apply IDCT.
-  //
-  // A port of poppler's IDCT method which in turn is taken from:
-  // Christoph Loeffler, Adriaan Ligtenberg, George S. Moschytz,
-  // "Practical Fast 1-D DCT Algorithms with 11 Multiplications",
-  // IEEE Intl. Conf. on Acoustics, Speech & Signal Processing, 1989, 988-991.
+  /**
+   * Quantizes the coefficients and applies the Inverse Discrete Cosine Transform (IDCT).
+   *
+   * A port of poppler's IDCT method which in turn is taken from:
+   * Christoph Loeffler, Adriaan Ligtenberg, George S. Moschytz,
+   * "Practical Fast 1-D DCT Algorithms with 11 Multiplications",
+   * IEEE Intl. Conf. on Acoustics, Speech & Signal Processing, 1989, 988-991.
+   *
+   * @param {Int16Array} quantizationTable - The quantization table.
+   * @param {Int32Array} coefBlock - The coefficient block.
+   * @param {Uint8Array} dataOut - The output data array.
+   * @param {Int32Array} dataIn - The input data array.
+   */
   public static quantizeAndInverse(
     quantizationTable: Int16Array,
     coefBlock: Int32Array,
@@ -43,22 +68,14 @@ export abstract class JpegQuantize {
     const p = dataIn;
 
     // IDCT constants (20.12 fixed point format)
-    // cos(pi/16)*4096
-    const cos1 = 4017;
-    // sin(pi/16)*4096
-    const sin1 = 799;
-    // cos(3*pi/16)*4096
-    const cos3 = 3406;
-    // sin(3*pi/16)*4096
-    const sin3 = 2276;
-    // cos(6*pi/16)*4096
-    const cos6 = 1567;
-    // sin(6*pi/16)*4096
-    const sin6 = 3784;
-    // sqrt(2)*4096
-    const sqrt2 = 5793;
-    // sqrt(2) / 2
-    const sqrt102 = 2896;
+    const cos1 = 4017; // cos(pi/16)*4096
+    const sin1 = 799; // sin(pi/16)*4096
+    const cos3 = 3406; // cos(3*pi/16)*4096
+    const sin3 = 2276; // sin(3*pi/16)*4096
+    const cos6 = 1567; // cos(6*pi/16)*4096
+    const sin6 = 3784; // sin(6*pi/16)*4096
+    const sqrt2 = 5793; // sqrt(2)*4096
+    const sqrt102 = 2896; // sqrt(2) / 2
 
     // de-quantize
     for (let i = 0; i < 64; i++) {
@@ -231,6 +248,12 @@ export abstract class JpegQuantize {
     }
   }
 
+  /**
+   * Converts a JPEG data object to a MemoryImage object.
+   *
+   * @param {JpegData} jpeg - The JPEG data object.
+   * @returns {MemoryImage} The resulting MemoryImage object.
+   */
   public static getImageFromJpeg(jpeg: JpegData): MemoryImage {
     const orientation = jpeg.exifData.imageIfd.hasOrientation
       ? jpeg.exifData.imageIfd.orientation!

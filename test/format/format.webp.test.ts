@@ -9,16 +9,48 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
+/**
+ * Contains information about a WebP file.
+ */
 type WebPFileInfo = {
+  /**
+   * The format of the WebP file.
+   */
   format: WebPFormat;
+
+  /**
+   * The width of the WebP file in pixels.
+   */
   width: number;
+
+  /**
+   * The height of the WebP file in pixels.
+   */
   height: number;
+
+  /**
+   * Indicates whether the WebP file has an alpha channel.
+   */
   hasAlpha: boolean;
+
+  /**
+   * Indicates whether the WebP file contains animation.
+   */
   hasAnimation: boolean;
+
+  /**
+   * The number of frames in the WebP file, if it is animated.
+   */
   numFrames?: number;
 };
 
+/**
+ * Test suite for WEBP format handling.
+ */
 describe('Format: WEBP', () => {
+  /**
+   * Test for reading EXIF data from a WEBP image.
+   */
   test('exif', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -38,6 +70,9 @@ describe('Format: WEBP', () => {
     ).toBeTruthy();
   });
 
+  /**
+   * Test for decoding and processing animated lossy WEBP images.
+   */
   test('animated_lossy', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -64,6 +99,9 @@ describe('Format: WEBP', () => {
     }
   });
 
+  /**
+   * Test for decoding a lossless WEBP image and comparing it to a PNG.
+   */
   test("decode lossless 'test.webp'", () => {
     const inputWebp = TestUtils.readFromFile(
       TestFolder.input,
@@ -104,6 +142,9 @@ describe('Format: WEBP', () => {
     ImageTestUtils.testImageEquals(webp, png);
   });
 
+  /**
+   * Test for validating the decoding of a WEBP image.
+   */
   test('validate', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -151,6 +192,9 @@ describe('Format: WEBP', () => {
   );
 
   for (const file of resFiles) {
+    /**
+     * Test for retrieving information from a WEBP file.
+     */
     test(`get info - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(file.path);
       const webpDecoder = new WebPDecoder(input);
@@ -174,6 +218,9 @@ describe('Format: WEBP', () => {
       }
     });
 
+    /**
+     * Test for decoding a WEBP file and saving it as a PNG.
+     */
     test(`decode - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFile(
         TestFolder.input,
@@ -200,6 +247,9 @@ describe('Format: WEBP', () => {
     });
   }
 
+  /**
+   * Test for decoding a transparent animated WEBP image.
+   */
   test('decode transparent animation', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

@@ -1,27 +1,27 @@
 /** @format */
 
 /**
- * A channel of a color
+ * Enum representing different color channels.
  */
 export enum Channel {
   /**
-   * Red channel
+   * Red color channel.
    */
   red,
   /**
-   * Green channel
+   * Green color channel.
    */
   green,
   /**
-   * Blue channel
+   * Blue color channel.
    */
   blue,
   /**
-   * Alpha channel
+   * Alpha (transparency) channel.
    */
   alpha,
   /**
-   * Luminance is not an actual channel, it is the brightness value of the color.
+   * Luminance channel.
    */
   luminance,
 }
