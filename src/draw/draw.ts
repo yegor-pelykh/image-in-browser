@@ -2587,7 +2587,7 @@ export abstract class Draw {
       dstY = Math.trunc(height / 2);
     }
 
-    if (dst.hasPalette) {
+    if (blend !== BlendMode.direct && dst.hasPalette) {
       dst = dst.convert({
         numChannels: dst.numChannels,
       });
