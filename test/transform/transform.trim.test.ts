@@ -18,7 +18,7 @@ describe('Transform', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
-      'trim.png'
+      'logo.png'
     );
 
     // Decode the PNG file into an image object
@@ -51,8 +51,8 @@ describe('Transform', () => {
     );
 
     // Validate the dimensions of the trimmed image
-    expect(trimmed.width).toBe(64);
-    expect(trimmed.height).toBe(56);
+    expect(trimmed.width).toBe(465);
+    expect(trimmed.height).toBe(150);
 
     // Trim the image using the transparent mode
     trimmed = Transform.trim({
@@ -74,8 +74,8 @@ describe('Transform', () => {
     );
 
     // Validate the dimensions of the trimmed image
-    expect(trimmed.width).toBe(img.width);
-    expect(trimmed.height).toBe(img.height);
+    expect(trimmed.width).toBe(465);
+    expect(trimmed.height).toBe(150);
 
     // Trim the image using the bottomRightColor mode
     trimmed = Transform.trim({
@@ -97,7 +97,7 @@ describe('Transform', () => {
     );
 
     // Validate the dimensions of the trimmed image
-    expect(trimmed.width).toBe(64);
-    expect(trimmed.height).toBe(56);
+    expect(trimmed.width).toBe(465);
+    expect(trimmed.height).toBe(150);
   });
 });
