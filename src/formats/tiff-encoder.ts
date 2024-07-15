@@ -50,6 +50,7 @@ export class TiffEncoder implements Encoder {
    * Encodes the given image to the TIFF format.
    * @param {EncoderEncodeOptions} opt - The encoding options.
    * @param {MemoryImage} opt.image - The image to encode.
+   * @param {boolean} [opt.skipExif] - Whether to skip embedding EXIF metadata (optional).
    * @returns {Uint8Array} The encoded image.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {

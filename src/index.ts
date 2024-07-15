@@ -1009,6 +1009,7 @@ export function decodeNamedImage(
  * @param {EncodeImageByMimeTypeOptions} opt - Options for encoding the image.
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
  * @param {string} opt.mimeType - The MIME type to encode the image to.
+ * @param {boolean} [opt.skipExif=false] - Whether to skip embedding EXIF metadata (default is false).
  * @returns {Uint8Array | undefined} The encoded image bytes or undefined if no encoder is found.
  */
 export function encodeImageByMimeType(
@@ -1033,6 +1034,7 @@ export function encodeImageByMimeType(
  * @param {EncodeNamedImageOptions} opt - Options for encoding the image.
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
  * @param {string} opt.name - The filename extension to determine the format.
+ * @param {boolean} [opt.skipExif=false] - Whether to skip embedding EXIF metadata (default is false).
  * @returns {Uint8Array | undefined} The encoded image bytes or undefined if no encoder is found.
  */
 export function encodeNamedImage(
@@ -1068,6 +1070,7 @@ export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
  *
  * @param {EncodeJpgOptions} opt - Options for encoding the image.
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {boolean} [opt.skipExif=false] - Whether to skip embedding EXIF metadata (default is false).
  * @param {number} [opt.quality] - The quality of the JPEG encoding (default is 100).
  * @param {JpegChroma} [opt.chroma] - The chroma subsampling (default is yuv444).
  * @returns {Uint8Array} The encoded image bytes.
@@ -1297,6 +1300,7 @@ export function decodeTiff(
  * @param {EncodeAnimatedOptions} opt - Options for encoding the image.
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
  * @param {boolean} [opt.singleFrame=false] - Whether to encode a single frame (default is false).
+ * @param {boolean} [opt.skipExif=false] - Whether to skip embedding EXIF metadata (default is false).
  * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {

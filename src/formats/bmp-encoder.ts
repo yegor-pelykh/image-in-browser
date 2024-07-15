@@ -30,18 +30,7 @@ export class BmpEncoder implements Encoder {
   /**
    * Encodes an image into BMP format.
    * @param {EncoderEncodeOptions} opt - The options for encoding.
-   * @param {Object} opt.image - The image to encode.
-   * @param {number} opt.image.numChannels - The number of channels in the image.
-   * @param {Object} [opt.image.palette] - The palette of the image, if any.
-   * @param {Format} opt.image.format - The format of the image.
-   * @param {boolean} opt.image.isHdrFormat - Indicates if the image is in HDR format.
-   * @param {boolean} opt.image.hasPalette - Indicates if the image has a palette.
-   * @param {number} opt.image.bitsPerChannel - The number of bits per channel in the image.
-   * @param {number} opt.image.rowStride - The row stride of the image.
-   * @param {number} opt.image.width - The width of the image.
-   * @param {number} opt.image.height - The height of the image.
-   * @param {number} opt.image.byteLength - The byte length of the image.
-   * @param {ArrayBuffer} [opt.image.buffer] - The buffer of the image, if any.
+   * @param {MemoryImage} opt.image - The image to encode.
    * @returns {Uint8Array} The encoded BMP image.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {

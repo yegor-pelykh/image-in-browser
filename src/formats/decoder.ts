@@ -5,12 +5,17 @@ import { DecodeInfo } from './decode-info.js';
 import { ImageFormat } from './image-format.js';
 
 /**
- * Object interface for specifying Decoder.decode parameters.
+ * Options for decoding image data.
  */
 export interface DecoderDecodeOptions {
-  /** The byte array of the image data to decode. */
+  /**
+   * The byte array containing the image data to be decoded.
+   */
   bytes: Uint8Array;
-  /** The index of the frame to decode, if the image is animated. */
+
+  /**
+   * Optional. The index of the specific frame to decode.
+   */
   frameIndex?: number;
 }
 
@@ -60,14 +65,9 @@ export interface Decoder {
   startDecode(bytes: Uint8Array): DecodeInfo | undefined;
 
   /**
-   * Decode the file and extract a single image from it. If the file is
-   * animated, and **frameIndex** is specified, that particular frame will be decoded.
-   * Otherwise if the image is animated and **frameIndex** is undefined, the returned
-   * MemoryImage will include all frames. If there was a problem decoding the
-   * MemoryImage, undefined will be returned.
-   * @param {DecoderDecodeOptions} opt - The options for decoding, including the byte array and optional frame index.
+   * Decodes the provided image file.
+   * @param {DecodeImageOptions} opt - The options for decoding, including the byte array and optional frame index.
    * @param {Uint8Array} opt.bytes - The byte array of the image data to decode.
-   * @param {number} [opt.frameIndex] - The optional index of the frame to decode.
    * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding fails.
    */
   decode(opt: DecoderDecodeOptions): MemoryImage | undefined;

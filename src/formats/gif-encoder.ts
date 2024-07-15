@@ -693,7 +693,6 @@ export class GifEncoder implements Encoder {
 
   /**
    * Encode a single frame image.
-   *
    * @param {EncoderEncodeOptions} opt - The options for encoding.
    * @param {MemoryImage} opt.image - The image to encode.
    * @param {boolean} [opt.singleFrame] - Optional flag to encode a single frame.

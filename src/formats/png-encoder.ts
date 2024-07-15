@@ -668,11 +668,9 @@ export class PngEncoder implements Encoder {
 
   /**
    * Encode **image** to the PNG format.
-   *
    * @param {EncoderEncodeOptions} opt - The encoding options.
    * @param {MemoryImage} opt.image - The image to encode.
-   * @param {boolean} [opt.singleFrame] - Whether to encode a single frame (default is false).
-   *
+   * @param {boolean} [opt.singleFrame] - Optional flag to encode a single frame.
    * @returns {Uint8Array} The encoded PNG bytes.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {

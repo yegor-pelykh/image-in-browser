@@ -62,7 +62,7 @@ export abstract class WinEncoder implements Encoder {
    * Encodes the given image into a Uint8Array.
    * @param {EncoderEncodeOptions} opt - The encoding options.
    * @param {MemoryImage} opt.image - The image to encode.
-   * @param {boolean} [opt.singleFrame] - Whether to encode a single frame.
+   * @param {boolean} [opt.singleFrame] - Optional flag to encode a single frame.
    * @returns {Uint8Array} The encoded data.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {

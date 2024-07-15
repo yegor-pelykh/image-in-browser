@@ -929,7 +929,8 @@ export class JpegEncoder implements Encoder {
   /**
    * Encodes the image using the JPEG format.
    * @param {JpegEncoderEncodeOptions} opt - The options for encoding.
-   * @param {Image} opt.image - The image to encode.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @param {boolean} [opt.skipExif] - Whether to skip embedding EXIF metadata (optional).
    * @param {JpegChroma} [opt.chroma] - The chroma subsampling format (optional).
    * @returns {Uint8Array} The encoded JPEG image as a Uint8Array.
    */

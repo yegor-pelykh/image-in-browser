@@ -3,7 +3,7 @@
 import { MemoryImage } from '../image/image.js';
 
 /**
- * Object interface for specifying Encoder.encode parameters.
+ * Options for encoding an image.
  */
 export interface EncoderEncodeOptions {
   /**
@@ -12,8 +12,9 @@ export interface EncoderEncodeOptions {
   image: MemoryImage;
 
   /**
-   * If true, only a single frame of the image will be encoded.
-   * If false or undefined, all frames of the image will be encoded if the encoder supports animation.
+   * Flag to indicate if only a single frame should be encoded.
+   * - true: Encode only the first frame.
+   * - false or undefined: Encode all frames if the encoder supports animation.
    */
   singleFrame?: boolean;
 
