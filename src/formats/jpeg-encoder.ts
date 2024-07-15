@@ -11,14 +11,6 @@ import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
 
 /**
- * Object interface for specifying JpegEncoder.encode parameters.
- */
-export interface JpegEncoderEncodeOptions extends EncoderEncodeOptions {
-  /** Chroma (sub)sampling format for JPEG encoding. */
-  chroma?: JpegChroma;
-}
-
-/**
  * JPEG Chroma (sub)sampling format.
  */
 export enum JpegChroma {
@@ -26,6 +18,16 @@ export enum JpegChroma {
   yuv444,
   /** 4:2:0 chroma subsampling */
   yuv420,
+}
+
+/**
+ * Interface representing the options for the JpegEncoder.encode method.
+ */
+export interface JpegEncoderEncodeOptions extends EncoderEncodeOptions {
+  /**
+   * Chroma subsampling format used in JPEG encoding.
+   */
+  chroma?: JpegChroma;
 }
 
 /**
@@ -932,6 +934,7 @@ export class JpegEncoder implements Encoder {
    * @returns {Uint8Array} The encoded JPEG image as a Uint8Array.
    */
   public encode(opt: JpegEncoderEncodeOptions): Uint8Array {
+    const skipExif = opt.skipExif ?? false;
     const image = opt.image;
     const chroma = opt.chroma ?? JpegChroma.yuv444;
 
@@ -942,7 +945,9 @@ export class JpegEncoder implements Encoder {
     // Add JPEG headers
     JpegEncoder.writeMarker(fp, JpegMarker.soi);
     JpegEncoder.writeAPP0(fp);
-    JpegEncoder.writeAPP1(fp, image.exifData);
+    if (!skipExif) {
+      JpegEncoder.writeAPP1(fp, image.exifData);
+    }
     this.writeDQT(fp);
     JpegEncoder.writeSOF0(fp, image.width, image.height, chroma);
     JpegEncoder.writeDHT(fp);

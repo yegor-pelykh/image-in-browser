@@ -16,6 +16,13 @@ export interface EncoderEncodeOptions {
    * If false or undefined, all frames of the image will be encoded if the encoder supports animation.
    */
   singleFrame?: boolean;
+
+  /**
+   * Determines if EXIF metadata should be skipped during encoding.
+   * - true: EXIF metadata will be skipped.
+   * - false or undefined: EXIF metadata will be included in the encoded image.
+   */
+  skipExif?: boolean;
 }
 
 /**

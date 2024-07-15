@@ -53,6 +53,7 @@ export class TiffEncoder implements Encoder {
    * @returns {Uint8Array} The encoded image.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    const skipExif = opt.skipExif ?? false;
     let image = opt.image;
 
     const out = new OutputBuffer();
@@ -61,7 +62,7 @@ export class TiffEncoder implements Encoder {
     // structure).
 
     const exif = new ExifData();
-    if (image.exifData.size > 0) {
+    if (image.exifData.size > 0 && !skipExif) {
       exif.imageIfd.copyFrom(image.exifData.imageIfd);
     }
 

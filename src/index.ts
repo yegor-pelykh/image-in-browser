@@ -521,6 +521,13 @@ export interface EncodeOptions {
    * The image to be encoded.
    */
   image: MemoryImage;
+
+  /**
+   * Determines if EXIF metadata should be skipped during encoding.
+   * - true: EXIF metadata will be skipped.
+   * - false or undefined: EXIF metadata will be included in the encoded image.
+   */
+  skipExif?: boolean;
 }
 
 /**
@@ -1007,12 +1014,14 @@ export function decodeNamedImage(
 export function encodeImageByMimeType(
   opt: EncodeImageByMimeTypeOptions
 ): Uint8Array | undefined {
+  const skipExif = opt.skipExif ?? false;
   const encoder = findEncoderForMimeType(opt.mimeType);
   if (encoder === undefined) {
     return undefined;
   }
   return encoder.encode({
     image: opt.image,
+    skipExif: skipExif,
   });
 }
 
@@ -1029,12 +1038,14 @@ export function encodeImageByMimeType(
 export function encodeNamedImage(
   opt: EncodeNamedImageOptions
 ): Uint8Array | undefined {
+  const skipExif = opt.skipExif ?? false;
   const encoder = findEncoderForNamedImage(opt.name);
   if (encoder === undefined) {
     return undefined;
   }
   return encoder.encode({
     image: opt.image,
+    skipExif: skipExif,
   });
 }
 
@@ -1062,11 +1073,13 @@ export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
  * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodeJpg(opt: EncodeJpgOptions): Uint8Array {
+  const skipExif = opt.skipExif ?? false;
   const quality = opt.quality ?? 100;
   const chroma = opt.chroma ?? JpegChroma.yuv444;
   return new JpegEncoder(quality).encode({
     image: opt.image,
     chroma: chroma,
+    skipExif: skipExif,
   });
 }
 
@@ -1288,9 +1301,11 @@ export function decodeTiff(
  */
 export function encodeTiff(opt: EncodeAnimatedOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
+  const skipExif = opt.skipExif ?? false;
   return new TiffEncoder().encode({
     image: opt.image,
     singleFrame: singleFrame,
+    skipExif: skipExif,
   });
 }
 
