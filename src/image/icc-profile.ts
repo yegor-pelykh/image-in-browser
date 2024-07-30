@@ -94,7 +94,7 @@ export class IccProfile {
    * @returns {Uint8Array} The uncompressed data.
    */
   public decompressed(): Uint8Array {
-    if (this._compression === IccProfileCompression.deflate) {
+    if (this._compression === IccProfileCompression.none) {
       return this._data;
     }
     this._data = inflate(this._data);
