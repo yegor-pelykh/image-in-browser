@@ -1114,22 +1114,24 @@ export abstract class Draw {
 
     // Drawing a single point.
     if (line.dx === 0 && line.dy === 0) {
-      opt.thickness === 1
-        ? Draw.drawPixel({
-            image: opt.image,
-            pos: new Point(line.x1, line.y1),
-            color: opt.color,
-            maskChannel: opt.maskChannel,
-            mask: opt.mask,
-          })
-        : Draw.fillCircle({
-            image: opt.image,
-            center: new Point(line.x1, line.y1),
-            radius: radius,
-            color: opt.color,
-            maskChannel: opt.maskChannel,
-            mask: opt.mask,
-          });
+      if (opt.thickness === 1) {
+        Draw.drawPixel({
+          image: opt.image,
+          pos: new Point(line.x1, line.y1),
+          color: opt.color,
+          maskChannel: opt.maskChannel,
+          mask: opt.mask,
+        });
+      } else {
+        Draw.fillCircle({
+          image: opt.image,
+          center: new Point(line.x1, line.y1),
+          radius: radius,
+          color: opt.color,
+          maskChannel: opt.maskChannel,
+          mask: opt.mask,
+        });
+      }
       return opt.image;
     }
 
