@@ -12,8 +12,10 @@ import {
   LibError,
   MemoryImage,
   PaletteUint8,
+  PngDecoder,
   PngEncoder,
   PngFilterType,
+  PngPhysicalPixelDimensions,
   Point,
   Transform,
 } from '../../src';
@@ -940,6 +942,55 @@ describe('Format: PNG', () => {
     }
     expect(img2.width).toBe(img.width);
     expect(img2.textData?.get('foo')).toBe('bar');
+  });
+
+  /**
+   * Test case for verifying the pHYs (physical pixel dimensions) chunk
+   * in PNG encoding and decoding.
+   */
+  test('pHYs', () => {
+    const img = new MemoryImage({
+      width: 16,
+      height: 16,
+    });
+    const phys1 = new PngPhysicalPixelDimensions(
+      1000,
+      1000,
+      PngPhysicalPixelDimensions.unitMeter
+    );
+    const png1 = new PngEncoder({
+      pixelDimensions: phys1,
+    }).encode({
+      image: img,
+    });
+    const dec1 = new PngDecoder();
+    dec1.decode({
+      bytes: png1,
+    });
+    expect(dec1).toBeDefined();
+    if (dec1 === undefined) {
+      return;
+    }
+
+    const equals = dec1.info.pixelDimensions?.equals(phys1) ?? false;
+    expect(equals).toBeTruthy();
+
+    const phys2 = PngPhysicalPixelDimensions.fromDPI(144, 288);
+    const png2 = new PngEncoder({
+      pixelDimensions: phys2,
+    }).encode({
+      image: img,
+    });
+    const dec2 = new PngDecoder();
+    dec2.decode({
+      bytes: png2,
+    });
+
+    const equals2 = dec2.info.pixelDimensions?.equals(phys1) ?? false;
+    expect(equals2).toBeFalsy();
+
+    const equals3 = dec2.info.pixelDimensions?.equals(phys2) ?? false;
+    expect(equals3).toBeTruthy();
   });
 
   /**

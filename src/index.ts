@@ -230,6 +230,7 @@ export { PngDisposeMode } from './formats/png/png-dispose-mode.js';
 export { PngFilterType } from './formats/png/png-filter-type.js';
 export { PngFrame, PngFrameInitOptions } from './formats/png/png-frame.js';
 export { PngInfo, PngInfoInitOptions } from './formats/png/png-info.js';
+export { PngPhysicalPixelDimensions } from './formats/png/png-physical-pixel-dimensions.js';
 
 export { PnmFormat } from './formats/pnm/pnm-format.js';
 export { PnmInfo } from './formats/pnm/pnm-info.js';

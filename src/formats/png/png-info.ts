@@ -4,6 +4,7 @@ import { Color } from '../../color/color.js';
 import { DecodeInfo } from '../decode-info.js';
 import { PngColorType } from './png-color-type.js';
 import { PngFrame } from './png-frame.js';
+import { PngPhysicalPixelDimensions } from './png-physical-pixel-dimensions.js';
 
 /**
  * Interface for initializing PNG information options.
@@ -214,6 +215,16 @@ export class PngInfo implements DecodeInfo {
   /** Gets the text data of the PNG image. */
   public get textData(): Map<string, string> {
     return this._textData;
+  }
+
+  private _pixelDimensions: PngPhysicalPixelDimensions | undefined;
+  /** Gets the physical pixel dimensions of the PNG image. */
+  public get pixelDimensions(): PngPhysicalPixelDimensions | undefined {
+    return this._pixelDimensions;
+  }
+  /** Sets the physical pixel dimensions of the PNG image. */
+  public set pixelDimensions(v: PngPhysicalPixelDimensions | undefined) {
+    this._pixelDimensions = v;
   }
 
   private _repeat = 0;

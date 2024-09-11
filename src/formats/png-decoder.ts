@@ -25,6 +25,7 @@ import { PngFilterType } from './png/png-filter-type.js';
 import { Pixel } from '../image/pixel.js';
 import { ImageFormat } from './image-format.js';
 import { Rectangle } from '../common/rectangle.js';
+import { PngPhysicalPixelDimensions } from './png/png-physical-pixel-dimensions.js';
 
 /**
  * Decode a PNG encoded image.
@@ -543,6 +544,20 @@ export class PngDecoder implements Decoder {
             this._input.skip(4);
           }
           break;
+        case 'pHYs': {
+          const physData = InputBuffer.from(this._input.readRange(chunkSize));
+          const x = physData.readUint32();
+          const y = physData.readUint32();
+          const unit = physData.read();
+          this._info.pixelDimensions = new PngPhysicalPixelDimensions(
+            x,
+            y,
+            unit
+          );
+          // CRC
+          this._input.skip(4);
+          break;
+        }
         case 'IHDR': {
           const hdr = InputBuffer.from(this._input.readRange(chunkSize));
           const hdrBytes: Uint8Array = hdr.toUint8Array();

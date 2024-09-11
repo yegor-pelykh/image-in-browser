@@ -6,4 +6,6 @@
       "source.fixAll.eslint": "explicit"
     },
     "files.eol": "\n",
+    "pieces.cloudCapabilities": "Blended",
+    "pieces.telemetry": true,
 }

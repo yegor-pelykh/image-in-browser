@@ -14,6 +14,7 @@ import { NeuralQuantizer } from '../image/neural-quantizer.js';
 import { PngColorType } from './png/png-color-type.js';
 import { Palette } from '../image/palette.js';
 import { IccProfile } from '../image/icc-profile.js';
+import { PngPhysicalPixelDimensions } from './png/png-physical-pixel-dimensions.js';
 
 /**
  * Options for initializing the PNG encoder.
@@ -27,6 +28,11 @@ export interface PngEncoderInitOptions {
    * The compression level to use.
    */
   level?: CompressionLevel;
+  /**
+   * The physical pixel dimensions of the image.
+   * This provides information about the intended display size of the image in physical units.
+   */
+  pixelDimensions?: PngPhysicalPixelDimensions;
 }
 
 /**
@@ -85,6 +91,18 @@ export class PngEncoder implements Encoder {
   }
 
   /**
+   * Physical pixel dimensions of the PNG.
+   */
+  private _pixelDimensions: PngPhysicalPixelDimensions | undefined;
+
+  /**
+   * Gets the physical pixel dimensions of the PNG.
+   */
+  public get pixelDimensions(): PngPhysicalPixelDimensions | undefined {
+    return this._pixelDimensions;
+  }
+
+  /**
    * Constructor for PngEncoder.
    * @param {PngEncoderInitOptions} [opt] - Initialization options for the encoder.
    * @param {PngFilterType} [opt.filter] - The filter type to use for encoding. Defaults to PngFilterType.paeth.
@@ -93,6 +111,7 @@ export class PngEncoder implements Encoder {
   constructor(opt?: PngEncoderInitOptions) {
     this._filter = opt?.filter ?? PngFilterType.paeth;
     this._level = opt?.level ?? 6;
+    this._pixelDimensions = opt?.pixelDimensions;
   }
 
   /**
@@ -610,6 +629,16 @@ export class PngEncoder implements Encoder {
       for (const [key, value] of _image.textData) {
         this.writeTextChunk(key, value);
       }
+    }
+
+    if (this._pixelDimensions !== undefined) {
+      const phys = new OutputBuffer({
+        bigEndian: true,
+      });
+      phys.writeUint32(this._pixelDimensions.xPxPerUnit);
+      phys.writeUint32(this._pixelDimensions.yPxPerUnit);
+      phys.writeByte(this._pixelDimensions.unitSpecifier);
+      PngEncoder.writeChunk(this._output, 'pHYs', phys.getBytes());
     }
 
     if (this._isAnimated) {
