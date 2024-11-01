@@ -1,7 +1,14 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodeBmp, encodeBmp, Format, MemoryImage } from '../../src';
+import {
+  decodeBmp,
+  DitherKernel,
+  encodeBmp,
+  Filter,
+  Format,
+  MemoryImage,
+} from '../../src';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
@@ -71,6 +78,56 @@ describe('Format: BMP', () => {
       ImageTestUtils.testImageEquals(image1, image2);
     });
   }
+
+  /**
+   * Test case for uint1 format BMP image.
+   */
+  test('uint1', () => {
+    // Create a new image
+    let image = new MemoryImage({
+      width: 256,
+      height: 256,
+    });
+
+    // Iterate over each pixel in the image
+    for (const p of image) {
+      // Set the red channel to the x-coordinate modulo 255
+      p.r = p.x % 255;
+      // Set the green channel to the y-coordinate modulo 255
+      p.g = p.y % 255;
+    }
+
+    // Apply a grayscale filter to the image
+    image = Filter.grayscale({
+      image: image,
+    });
+
+    // Quantize the image to 2 colors using the Floyd-Steinberg dithering algorithm
+    image = Filter.quantize({
+      image: image,
+      numberOfColors: 2,
+      dither: DitherKernel.floydSteinberg,
+    });
+
+    // Convert the image format to uint1 with a palette
+    image = image.convert({
+      format: Format.uint1,
+      withPalette: true,
+    });
+
+    // Encode the image to BMP format
+    const output = encodeBmp({
+      image: image,
+    });
+
+    // Write the encoded BMP file
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.bmp,
+      'bmp_1.bmp',
+      output
+    );
+  });
 
   /**
    * Test case for uint4 format BMP image.

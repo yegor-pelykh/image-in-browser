@@ -1589,9 +1589,12 @@ export class MemoryImage implements Iterable<Pixel> {
     const format = opt.format ?? this.format;
     const numChannels = opt.numChannels ?? this.numChannels;
     const alpha = opt.alpha ?? FormatMaxValue.get(format);
-    let withPalette = opt.withPalette ?? false;
+    const withPalette = opt.withPalette ?? false;
     const skipAnimation = opt.skipAnimation ?? false;
 
+    // Commented out because it causes problems converting
+    // a uint8 image with palette to a uint1 image with palette
+    /*
     if (
       (withPalette &&
         (numChannels >= 4 ||
@@ -1605,6 +1608,7 @@ export class MemoryImage implements Iterable<Pixel> {
     ) {
       withPalette = false;
     }
+    */
 
     if (
       format === this.format &&

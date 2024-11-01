@@ -159,10 +159,11 @@ export class BmpEncoder implements Encoder {
       rowPaddingSize > 0
         ? new Uint8Array(rowPaddingSize).fill(0xff)
         : undefined;
+    const implicitPaletteSize = bpp >= 1 && bpp <= 8 ? 1 << bpp : 0;
     const imageFileSize = fileStride * image.height;
     const headerInfoSize = bpp > 8 ? 124 : 40;
     const headerSize = headerInfoSize + 14;
-    const paletteSize = (image.palette?.numColors ?? 0) * 4;
+    const paletteSize = implicitPaletteSize * 4;
     const origImageOffset = headerSize + paletteSize;
     const imageOffset = origImageOffset;
     const gapSize = imageOffset - origImageOffset;
@@ -248,11 +249,21 @@ export class BmpEncoder implements Encoder {
 
     if (bpp === 1 || bpp === 2 || bpp === 4 || bpp === 8) {
       if (palette !== undefined) {
-        const l = palette.numColors;
-        for (let pi = 0; pi < l; ++pi) {
+        const l =
+          palette.numColors > implicitPaletteSize
+            ? implicitPaletteSize
+            : palette.numColors;
+        let pi: number = 0;
+        for (pi = 0; pi < l; ++pi) {
           out.writeByte(Math.trunc(palette.getBlue(pi)));
           out.writeByte(Math.trunc(palette.getGreen(pi)));
           out.writeByte(Math.trunc(palette.getRed(pi)));
+          out.writeByte(0);
+        }
+        for (; pi < implicitPaletteSize; ++pi) {
+          out.writeByte(0);
+          out.writeByte(0);
+          out.writeByte(0);
           out.writeByte(0);
         }
       } else {
