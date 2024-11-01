@@ -893,6 +893,9 @@ export class TiffImage {
 
       for (let y = 0, py = outY; y < this._tileHeight; ++y, ++py) {
         for (let x = 0, px = outX; x < this._tileWidth; ++x, ++px) {
+          if (byteData.isEOS) {
+            break;
+          }
           if (this._samplesPerPixel === 1) {
             if (this._sampleFormat === TiffFormat.float) {
               let sample = 0;
