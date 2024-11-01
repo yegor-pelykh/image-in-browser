@@ -436,7 +436,7 @@ export abstract class Transform {
         const c4x = x1 + rad - 1;
         const c4y = y2 - rad + 1;
 
-        const iter = image.getRange(x1, y1, width, height);
+        const iter = frame.getRange(x1, y1, width, height);
         let iterRes: IteratorResult<Pixel> | undefined = undefined;
         while (((iterRes = iter.next()), !iterRes.done)) {
           const p = iterRes.value;
