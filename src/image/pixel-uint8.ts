@@ -454,7 +454,7 @@ export class PixelUint8 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    */
   public set(color: Color): void {
     if (this._image.hasPalette) {
-      this._index = color.index;
+      this.index = color.index;
     } else {
       this.r = color.r;
       this.g = color.g;
