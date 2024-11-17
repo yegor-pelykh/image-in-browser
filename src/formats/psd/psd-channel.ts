@@ -78,7 +78,7 @@ export class PsdChannel {
   /** The length of the data. */
   private _dataLength: number | undefined;
   /** The data of the channel. */
-  private _data!: Uint8Array;
+  private _data: Uint8Array | undefined;
 
   /**
    * Gets the ID of the channel.
@@ -97,7 +97,7 @@ export class PsdChannel {
   /**
    * Gets the data of the channel.
    */
-  public get data(): Uint8Array {
+  public get data(): Uint8Array | undefined {
     return this._data;
   }
 
@@ -235,6 +235,9 @@ export class PsdChannel {
       let n = src.readInt8();
       if (n < 0) {
         n = 1 - n;
+        if (src.isEOS) {
+          break;
+        }
         const b = src.read();
         if (_dstIndex + n > dst.length) {
           n = dst.length - _dstIndex;
@@ -247,6 +250,7 @@ export class PsdChannel {
         if (_dstIndex + n > dst.length) {
           n = dst.length - _dstIndex;
         }
+        n = Math.min(n, src.length);
         for (let i = 0; i < n; ++i) {
           dst[_dstIndex++] = src.read();
         }
@@ -267,6 +271,9 @@ export class PsdChannel {
    * @throws {LibError} If the compression type is unsupported.
    */
   public readPlane(opt: ReadPlaneOptions): void {
+    if (opt.input.length < 2) {
+      return;
+    }
     const planeNumber = opt.planeNumber ?? 0;
     const compression = opt.compression ?? opt.input.readUint16();
 

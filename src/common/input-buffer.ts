@@ -109,8 +109,10 @@ export class InputBuffer<T extends TypedArray> {
     this._bigEndian = opt.bigEndian ?? false;
     this._offset = opt.offset ?? 0;
     this._start = this._offset;
-    this._end =
-      opt.length !== undefined ? this._start + opt.length : this._buffer.length;
+    this._end = Math.min(
+      this._buffer.length,
+      opt.length === undefined ? this._buffer.length : this._offset + opt.length
+    );
   }
 
   /**
@@ -133,10 +135,12 @@ export class InputBuffer<T extends TypedArray> {
       length: length,
     });
     result._start = other._start;
-    result._end =
-      length !== undefined
-        ? other.offset + offsetFromOther + length
-        : other._end;
+    result._end = Math.min(
+      other.buffer.length,
+      length === undefined
+        ? other._end
+        : other.offset + offsetFromOther + length
+    );
     return result;
   }
 
