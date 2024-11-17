@@ -1,7 +1,14 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, encodePng, Rectangle, Transform } from '../../src';
+import {
+  decodeGif,
+  decodePng,
+  encodeGif,
+  encodePng,
+  Rectangle,
+  Transform,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
@@ -80,6 +87,60 @@ describe('Transform', () => {
       TestSection.transform,
       'copyCrop_rounded.png',
       output
+    );
+  });
+
+  /**
+   * Test case for the copyCrop function and animated image.
+   */
+  test('copyCrop animated', () => {
+    // Read the input GIF file from the specified input folder and section
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'homer.gif'
+    );
+
+    // Decode the GIF data into an image object
+    const g1 = decodeGif({
+      data: input,
+    });
+
+    // Ensure the image was successfully decoded
+    expect(g1).toBeDefined();
+    if (g1 === undefined) {
+      return;
+    }
+
+    // Perform a crop operation on the image with a specified rectangle and radius
+    const g2 = Transform.copyCrop({
+      image: g1,
+      rect: new Rectangle(0, 0, 500, 375),
+      radius: 100,
+    });
+
+    // Encode the cropped image back into a GIF format
+    const output1 = encodeGif({
+      image: g2,
+    });
+    // Write the encoded GIF to the output folder
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.transform,
+      'copyCrop_radius.gif',
+      output1
+    );
+
+    // Encode the cropped image into a PNG format
+    const output2 = encodePng({
+      image: g2,
+    });
+    // Write the encoded PNG to the output folder
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.transform,
+      'copyCrop_radius.png',
+      output2
     );
   });
 });
