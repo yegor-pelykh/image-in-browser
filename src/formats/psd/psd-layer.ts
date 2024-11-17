@@ -173,11 +173,11 @@ export class PsdLayer {
     return this._parent;
   }
 
-  private _layerImage!: MemoryImage;
+  private _layerImage: MemoryImage | undefined;
   /**
    * Gets the image of the layer.
    */
-  public get layerImage(): MemoryImage {
+  public get layerImage(): MemoryImage | undefined {
     return this._layerImage;
   }
 

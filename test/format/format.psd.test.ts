@@ -1,7 +1,7 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePsd, encodePng } from '../../src';
+import { decodePsd, encodePng, PsdDecoder } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
@@ -26,32 +26,63 @@ describe('Format: PSD', () => {
      * @param {string} file.nameExt - The name of the file with extension.
      */
     test(file.nameExt, () => {
-      // Read the input file
+      // Read the input file from the specified file path
       const input = TestUtils.readFromFilePath(file.path);
 
-      // Decode the PSD file
-      const psd = decodePsd({
-        data: input,
+      // Create a new instance of PsdDecoder to handle PSD file decoding
+      const decoder = new PsdDecoder();
+
+      // Decode the input bytes into a PSD object
+      const psd = decoder.decode({
+        bytes: input,
       });
 
       // Ensure the PSD file is decoded properly
       expect(psd).toBeDefined();
       if (psd === undefined) {
+        // Exit the test if the PSD is not defined
         return;
       }
 
-      // Encode the PSD file to PNG format
+      // Encode the decoded PSD file into PNG format
       const png = encodePng({
         image: psd,
       });
 
-      // Write the PNG file to the output folder
+      // Write the encoded PNG file to the output folder
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.psd,
         `${file.name}.png`,
         png
       );
+
+      // Initialize a layer index counter
+      let li = 0;
+
+      // Iterate over each layer in the PSD file
+      for (const layer of decoder.info!.layers) {
+        // Get the image data for the current layer
+        const layerImg = layer.layerImage;
+
+        // If the layer image data is defined, encode it to PNG
+        if (layerImg !== undefined) {
+          const pngLayer = encodePng({
+            image: psd,
+          });
+
+          // Write the encoded layer PNG file to the output folder
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.psd,
+            `${file.name}_${li}_${layer.name}.png`,
+            pngLayer
+          );
+        }
+
+        // Increment the layer index counter
+        ++li;
+      }
     });
   }
 });

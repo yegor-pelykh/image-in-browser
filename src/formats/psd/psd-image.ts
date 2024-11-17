@@ -881,7 +881,7 @@ export class PsdImage implements DecodeInfo {
       for (let y = 0, sy = layer.top!; y < layer.height; ++y, ++sy) {
         const dy = layer.top! + y;
         for (let x = 0, sx = layer.left!; x < layer.width; ++x, ++sx) {
-          const srcP = src.getPixel(x, y);
+          const srcP = src!.getPixel(x, y);
           const br = Math.trunc(srcP.r);
           const bg = Math.trunc(srcP.g);
           const bb = Math.trunc(srcP.b);
