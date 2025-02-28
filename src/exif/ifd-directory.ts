@@ -378,6 +378,131 @@ export class IfdDirectory {
   }
 
   /**
+   * Checks if the IFD directory has a GPS Latitude Reference.
+   */
+  public get hasGPSLatitudeRef(): boolean {
+    return this._data.has(0x0001);
+  }
+
+  /**
+   * Gets the GPS Latitude Reference value from the IFD directory.
+   */
+  public get gpsLatitudeRef(): string | undefined {
+    return this._data.get(0x0001)?.toString();
+  }
+
+  /**
+   * Sets the GPS Latitude Reference value in the IFD directory.
+   */
+  public set gpsLatitudeRef(v: string | undefined) {
+    if (v === undefined) {
+      this._data.delete(0x0001);
+    } else {
+      this._data.set(0x0001, new IfdAsciiValue(v));
+    }
+  }
+
+  /**
+   * Checks if the IFD directory has a GPS Latitude.
+   */
+  public get hasGPSLatitude(): boolean {
+    return this._data.has(0x0002);
+  }
+
+  /**
+   * Gets the GPS Latitude value from the IFD directory.
+   */
+  public get gpsLatitude(): number | undefined {
+    return this._data.get(0x0002)?.toDouble();
+  }
+
+  /**
+   * Sets the GPS Latitude value in the IFD directory.
+   */
+  public set gpsLatitude(v: number | undefined) {
+    if (v === undefined) {
+      this._data.delete(0x0002);
+    } else {
+      this._data.set(0x0002, new IfdDoubleValue(v));
+    }
+  }
+
+  /**
+   * Checks if the IFD directory has a GPS Longitude Reference.
+   */
+  public get hasGPSLongitudeRef(): boolean {
+    return this._data.has(0x0003);
+  }
+
+  /**
+   * Gets the GPS Longitude Reference value from the IFD directory.
+   */
+  public get gpsLongitudeRef(): string | undefined {
+    return this._data.get(0x0003)?.toString();
+  }
+
+  /**
+   * Sets the GPS Longitude Reference value in the IFD directory.
+   */
+  public set gpsLongitudeRef(v: string | undefined) {
+    if (v === undefined) {
+      this._data.delete(0x0003);
+    } else {
+      this._data.set(0x0003, new IfdAsciiValue(v));
+    }
+  }
+
+  /**
+   * Checks if the IFD directory has a GPS Longitude.
+   */
+  public get hasGPSLongitude(): boolean {
+    return this._data.has(0x0004);
+  }
+
+  /**
+   * Gets the GPS Longitude value from the IFD directory.
+   */
+  public get gpsLongitude(): number | undefined {
+    return this._data.get(0x0004)?.toDouble();
+  }
+
+  /**
+   * Sets the GPS Longitude value in the IFD directory.
+   */
+  public set gpsLongitude(v: number | undefined) {
+    if (v === undefined) {
+      this._data.delete(0x0004);
+    } else {
+      this._data.set(0x0004, new IfdDoubleValue(v));
+    }
+  }
+
+  /**
+   * Checks if the IFD directory has a GPS Date.
+   */
+  public get hasGPSDate(): boolean {
+    return this._data.has(0x001d);
+  }
+
+  /**
+   * Gets the GPS Date value from the IFD directory.
+   */
+  public get gpsDate(): string | undefined {
+    return this._data.get(0x001d)?.toString();
+  }
+
+  /**
+   * Sets the GPS Date value in the IFD directory.
+   */
+  public set gpsDate(v: string | undefined) {
+    if (v === undefined) {
+      this._data.delete(0x001d);
+    } else {
+      this._data.set(0x001d, new IfdAsciiValue(v));
+    }
+  }
+
+  /**
    * Gets the size in bytes of the data written by this directory.
    * Can be used to calculate end-of-block offsets.
    */
@@ -652,6 +777,13 @@ export class IfdDirectory {
         }
       }
     }
+  }
+
+  public setGpsLocation(latitude: number, longitude: number) {
+    this.gpsLatitude = Math.abs(latitude);
+    this.gpsLongitude = Math.abs(longitude);
+    this.gpsLatitudeRef = latitude < 0 ? 'S' : 'N';
+    this.gpsLongitudeRef = longitude < 0 ? 'W' : 'E';
   }
 
   /**
