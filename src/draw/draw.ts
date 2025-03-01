@@ -2255,58 +2255,28 @@ export abstract class Draw {
     xMax = Math.min(xMax, opt.image.width - 1);
     yMax = Math.min(yMax, opt.image.height - 1);
 
-    const inter = ArrayUtils.fill<number>(40, 0);
-    const vi = ArrayUtils.generate<number>(numVertices + 1, (i) =>
-      i < numVertices ? i : 0
-    );
-
-    for (let yi = yMin, y = yMin + 0.5; yi <= yMax; ++yi, ++y) {
-      let c = 0;
-      for (let i = 0; i < numVertices; ++i) {
-        const v1 = opt.vertices[vi[i]];
-        const v2 = opt.vertices[vi[i + 1]];
-
-        let x1 = v1.x;
-        let y1 = v1.y;
-        let x2 = v2.x;
-        let y2 = v2.y;
-        if (y2 < y1) {
-          let temp = x1;
-          x1 = x2;
-          x2 = temp;
-          temp = y1;
-          y1 = y2;
-          y2 = temp;
-        }
-
-        if (y <= y2 && y >= y1) {
-          let x = 0;
-          if (y1 - y2 === 0) {
-            x = x1;
-          } else {
-            x = ((x2 - x1) * (y - y1)) / (y2 - y1);
-            x += x1;
-          }
-          if (x <= xMax && x >= xMin) {
-            inter[c++] = x;
+    // Function to fill a complex polygon using the ray casting algorithm
+    for (let yi = yMin, y = yMin + 0.5; yi <= yMax; ++yi, y += 1.0) {
+      for (let xi = xMin, x = xMin + 0.5; xi <= xMax; ++xi, x += 1.0) {
+        let intersections = 0;
+        for (let vi = 0; vi < numVertices; ++vi) {
+          const v1 = opt.vertices[vi];
+          const v2 = opt.vertices[(vi + 1) % numVertices];
+          // Ray casting: cast a ray to the right (x increasing)
+          if ((v1.y <= y && v2.y > y) || (v2.y <= y && v1.y > y)) {
+            // Ray intersects the edge (vertical check)
+            const vt = (y - v1.y) / (v2.y - v1.y);
+            if (x < v1.x + vt * (v2.x - v1.x)) {
+              // Horizontal check
+              intersections++;
+            }
           }
         }
-      }
-
-      for (let i = 0; i < c; i += 2) {
-        let x1f = inter[i];
-        let x2f = inter[i + 1];
-        if (x1f > x2f) {
-          const t = x1f;
-          x1f = x2f;
-          x2f = t;
-        }
-        const x1 = Math.floor(x1f);
-        const x2 = Math.ceil(x2f);
-        for (let x = x1; x <= x2; ++x) {
+        // Even number of intersections means inside
+        if ((intersections & 0x1) === 1) {
           Draw.drawPixel({
             image: opt.image,
-            pos: new Point(x, yi),
+            pos: new Point(xi, yi),
             color: opt.color,
             maskChannel: maskChannel,
             mask: opt.mask,
