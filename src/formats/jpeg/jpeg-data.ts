@@ -373,6 +373,7 @@ export class JpegData {
 
     if (this._frame !== undefined) {
       info.setSize(this._frame.samplesPerLine, this._frame.scanLines);
+      info.numComponents = this._frame.components.size;
       this._frame = undefined;
     }
 

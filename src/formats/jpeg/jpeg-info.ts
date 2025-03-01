@@ -65,6 +65,27 @@ export class JpegInfo implements DecodeInfo {
   }
 
   /**
+   * The number of components in the image
+   * @private
+   */
+  private _numComponents: number = 0;
+
+  /**
+   * Gets the number of components in the image
+   * @returns {number} The number of components in the image
+   */
+  public get numComponents(): number {
+    return this._numComponents;
+  }
+
+  /**
+   * Sets the number of components in the image
+   */
+  public set numComponents(v: number) {
+    this._numComponents = v;
+  }
+
+  /**
    * Sets the size of the JPEG image.
    * @param {number} width - The width of the image.
    * @param {number} height - The height of the image.
