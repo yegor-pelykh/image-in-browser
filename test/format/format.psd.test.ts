@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for PSD format.
  */
-describe('Format: PSD', () => {
+describe('Format: PSD', TestUtils.testOptions, () => {
   /**
    * List all PSD files in the input test folder.
    */

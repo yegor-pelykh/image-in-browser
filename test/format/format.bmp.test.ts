@@ -17,7 +17,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for BMP format.
  */
-describe('Format: BMP', () => {
+describe('Format: BMP', TestUtils.testOptions, () => {
   /**
    * List of input BMP files for testing.
    */

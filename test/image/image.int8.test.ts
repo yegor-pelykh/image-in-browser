@@ -1,12 +1,13 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
+import { TestUtils } from '../_utils/test-utils';
 import { Format, MemoryImage } from '../../src';
 
 /**
  * Test suite for the MemoryImage class.
  */
-describe('MemoryImage', () => {
+describe('MemoryImage', TestUtils.testOptions, () => {
   /**
    * Test case for 8-bit integer format images with different numbers of channels.
    */

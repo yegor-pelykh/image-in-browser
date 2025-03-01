@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for drawing operations.
  */
-describe('Draw', () => {
+describe('Draw', TestUtils.testOptions, () => {
   /**
    * Test case for drawing circles on an image.
    */

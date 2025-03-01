@@ -15,7 +15,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Transform functionality.
  */
-describe('Transform', () => {
+describe('Transform', TestUtils.testOptions, () => {
   /**
    * Test case for the copyRectify function.
    */

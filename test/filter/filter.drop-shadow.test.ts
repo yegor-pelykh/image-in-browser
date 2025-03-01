@@ -16,7 +16,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Filter functionality.
  */
-describe('Filter', () => {
+describe('Filter', TestUtils.testOptions, () => {
   /**
    * Test case for the dropShadow filter.
    */

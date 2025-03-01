@@ -1,6 +1,7 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
+import { TestUtils } from '../_utils/test-utils';
 import {
   ExifData,
   IfdAsciiValue,
@@ -19,7 +20,7 @@ import {
 /**
  * Test suite for Exif data handling.
  */
-describe('Exif', () => {
+describe('Exif', TestUtils.testOptions, () => {
   /**
    * Test case for writing and reading Exif data.
    */

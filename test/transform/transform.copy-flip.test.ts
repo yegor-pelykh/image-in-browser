@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Transform module.
  */
-describe('Transform', () => {
+describe('Transform', TestUtils.testOptions, () => {
   /**
    * Test case for the copyFlip function.
    */

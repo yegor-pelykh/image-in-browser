@@ -21,7 +21,7 @@ import { ImageTestUtils } from '../_utils/image-test-utils';
 /**
  * Test suite for GIF format operations.
  */
-describe('Format: GIF', () => {
+describe('Format: GIF', TestUtils.testOptions, () => {
   /**
    * Test case for anim_palette GIF.
    */

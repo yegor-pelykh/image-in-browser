@@ -1,12 +1,13 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
+import { TestUtils } from '../_utils/test-utils';
 import { ColorUint16 } from '../../src';
 
 /**
  * Test suite for Color related functionalities.
  */
-describe('Color', () => {
+describe('Color', TestUtils.testOptions, () => {
   /**
    * Test case for ColorUint16 class.
    */

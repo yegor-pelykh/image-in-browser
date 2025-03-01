@@ -61,7 +61,7 @@ type TiffFileInfo = {
 /**
  * Test suite for TIFF format handling.
  */
-describe('Format: TIFF', () => {
+describe('Format: TIFF', TestUtils.testOptions, () => {
   /**
    * Test case for decoding a TIFF file with deflate compression and encoding it to PNG.
    */

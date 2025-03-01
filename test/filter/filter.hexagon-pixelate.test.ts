@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Filter module.
  */
-describe('Filter', () => {
+describe('Filter', TestUtils.testOptions, () => {
   /**
    * Test case for the hexagonPixelate filter.
    */

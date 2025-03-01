@@ -27,7 +27,7 @@ import { ImageTestUtils } from '../_utils/image-test-utils';
 /**
  * Test suite for PNG format.
  */
-describe('Format: PNG', () => {
+describe('Format: PNG', TestUtils.testOptions, () => {
   const buck24Hash = 817446904;
   let buck24Image: MemoryImage | undefined = undefined;
 
@@ -160,388 +160,442 @@ describe('Format: PNG', () => {
   /**
    * Test suite for PNG with 1-bit depth grayscale.
    */
-  describe('b1_1', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint1,
-      numChannels: 1,
-    });
-    for (const p of image) {
-      const c = p.x < 32 - p.y ? 1 : 0;
-      p.r = c;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b1_1_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b1_1_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b1_1',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint1,
+        numChannels: 1,
       });
+      for (const p of image) {
+        const c = p.x < 32 - p.y ? 1 : 0;
+        p.r = c;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b1_1_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b1_1_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 1-bit depth grayscale and palette.
    */
-  describe('b1_1p', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint1,
-      withPalette: true,
-    });
-    image.palette!.setRgb(0, 255, 0, 0);
-    image.palette!.setRgb(1, 0, 255, 0);
-
-    for (const p of image) {
-      const c = p.x < 32 - p.y ? 1 : 0;
-      p.index = c;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b1_1p_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b1_1p_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b1_1p',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint1,
+        withPalette: true,
       });
+      image.palette!.setRgb(0, 255, 0, 0);
+      image.palette!.setRgb(1, 0, 255, 0);
+
+      for (const p of image) {
+        const c = p.x < 32 - p.y ? 1 : 0;
+        p.index = c;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b1_1p_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b1_1p_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 2-bit depth grayscale.
    */
-  describe('b2_1', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint2,
-      numChannels: 1,
-    });
-
-    for (const p of image) {
-      const c = p.x < 32 - p.y ? 3 : 0;
-      p.r = c;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b2_1_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b2_1_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b2_1',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint2,
+        numChannels: 1,
       });
+
+      for (const p of image) {
+        const c = p.x < 32 - p.y ? 3 : 0;
+        p.r = c;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b2_1_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b2_1_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 2-bit depth grayscale and palette.
    */
-  describe('b2_1p', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint2,
-      withPalette: true,
-    });
-
-    for (let i = 0; i < 4; ++i) {
-      image.palette!.setRgb(i, i * 85, i * 85, i * 85);
-    }
-    for (const p of image) {
-      p.r = p.x >>> 3;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b2_1p_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b2_1p_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b2_1p',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint2,
+        withPalette: true,
       });
+
+      for (let i = 0; i < 4; ++i) {
+        image.palette!.setRgb(i, i * 85, i * 85, i * 85);
+      }
+      for (const p of image) {
+        p.r = p.x >>> 3;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b2_1p_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b2_1p_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 4-bit depth grayscale.
    */
-  describe('b4_1', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint4,
-      numChannels: 1,
-    });
-
-    for (const p of image) {
-      const c = p.x < 32 - p.y ? 31 : 0;
-      p.r = c;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b4_1_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b4_1_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b4_1',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint4,
+        numChannels: 1,
       });
+
+      for (const p of image) {
+        const c = p.x < 32 - p.y ? 31 : 0;
+        p.r = c;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b4_1_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b4_1_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 4-bit depth grayscale and palette.
    */
-  describe('b4_1p', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint4,
-      withPalette: true,
-    });
-
-    for (let i = 0; i < 16; ++i) {
-      image.palette!.setRgb(i, i * 17, i * 17, i * 17);
-    }
-    for (const p of image) {
-      p.r = p.x >>> 1;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b4_1p_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b4_1p_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b4_1p',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint4,
+        withPalette: true,
       });
+
+      for (let i = 0; i < 16; ++i) {
+        image.palette!.setRgb(i, i * 17, i * 17, i * 17);
+      }
+      for (const p of image) {
+        p.r = p.x >>> 1;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b4_1p_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b4_1p_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 8-bit depth RGB.
    */
-  describe('b8_3', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-    });
-
-    for (const p of image) {
-      const c = p.x < 32 - p.y ? 255 : 0;
-      p.r = c;
-      p.g = c;
-      p.b = c;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b8_3_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b8_3_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b8_3',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
       });
+
+      for (const p of image) {
+        const c = p.x < 32 - p.y ? 255 : 0;
+        p.r = c;
+        p.g = c;
+        p.b = c;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b8_3_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b8_3_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 8-bit depth RGB and palette.
    */
-  describe('b8_3p', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      withPalette: true,
-    });
-
-    for (let i = 0; i < 256; ++i) {
-      image.palette!.setRgb(i, i, i, i);
-    }
-    for (const p of image) {
-      p.r = p.x * 8;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b8_3p_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b8_3p_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        // ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b8_3p',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        withPalette: true,
       });
+
+      for (let i = 0; i < 256; ++i) {
+        image.palette!.setRgb(i, i, i, i);
+      }
+      for (const p of image) {
+        p.r = p.x * 8;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b8_3p_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b8_3p_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          // ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test suite for PNG with 16-bit depth RGB.
    */
-  describe('b16_3', () => {
-    const image = new MemoryImage({
-      width: 32,
-      height: 32,
-      format: Format.uint16,
-    });
-
-    for (const p of image) {
-      const c = p.x * 2114;
-      p.r = c;
-      p.g = c;
-      p.b = c;
-    }
-
-    for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
-      test(`b16_3_${PngFilterType[filter]}`, () => {
-        const png = encodePng({
-          image,
-          filter: filter as PngFilterType,
-        });
-        TestUtils.writeToFile(
-          TestFolder.output,
-          TestSection.png,
-          `b16_3_${PngFilterType[filter]}.png`,
-          png
-        );
-
-        const image2 = decodePng({
-          data: png,
-        });
-        expect(image2).toBeDefined();
-        if (image2 === undefined) {
-          return;
-        }
-
-        ImageTestUtils.testImageEquals(image, image2);
+  describe(
+    'b16_3',
+    {
+      timeout: 30000,
+    },
+    () => {
+      const image = new MemoryImage({
+        width: 32,
+        height: 32,
+        format: Format.uint16,
       });
+
+      for (const p of image) {
+        const c = p.x * 2114;
+        p.r = c;
+        p.g = c;
+        p.b = c;
+      }
+
+      for (const filter of ArrayUtils.getNumEnumValues(PngFilterType)) {
+        test(`b16_3_${PngFilterType[filter]}`, () => {
+          const png = encodePng({
+            image,
+            filter: filter as PngFilterType,
+          });
+          TestUtils.writeToFile(
+            TestFolder.output,
+            TestSection.png,
+            `b16_3_${PngFilterType[filter]}.png`,
+            png
+          );
+
+          const image2 = decodePng({
+            data: png,
+          });
+          expect(image2).toBeDefined();
+          if (image2 === undefined) {
+            return;
+          }
+
+          ImageTestUtils.testImageEquals(image, image2);
+        });
+      }
     }
-  });
+  );
 
   /**
    * Test for decoding a PNG image.

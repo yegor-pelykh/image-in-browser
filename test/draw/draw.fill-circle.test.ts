@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for Draw functionalities.
  */
-describe('Draw', () => {
+describe('Draw', TestUtils.testOptions, () => {
   /**
    * Test case for the fillCircle function.
    */

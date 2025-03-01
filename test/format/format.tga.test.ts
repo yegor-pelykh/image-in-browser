@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for TGA format.
  */
-describe('Format: TGA', () => {
+describe('Format: TGA', TestUtils.testOptions, () => {
   /**
    * List all TGA files in the input test folder.
    */

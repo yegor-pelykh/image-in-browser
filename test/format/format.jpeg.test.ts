@@ -16,7 +16,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for JPEG format handling.
  */
-describe('Format: JPEG', () => {
+describe('Format: JPEG', TestUtils.testOptions, () => {
   /**
    * Test to verify that EXIF data is present in the JPEG image.
    */
