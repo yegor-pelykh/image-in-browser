@@ -1,5 +1,6 @@
 /** @format */
 
+import { ColorRgb8 } from '../color/color-rgb8.js';
 import { Color } from '../color/color.js';
 import { Format } from '../color/format.js';
 import { ArrayUtils } from '../common/array-utils.js';
@@ -107,6 +108,8 @@ export class JpegEncoder implements Encoder {
     0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xf2, 0xf3, 0xf4,
     0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa,
   ];
+
+  private static readonly _backgroundColor = new ColorRgb8(255, 255, 255);
 
   /** Quantization table for Y component */
   private readonly _tableY = new Uint8Array(64);
@@ -466,7 +469,15 @@ export class JpegEncoder implements Encoder {
           format: Format.uint8,
         });
       }
-
+      if (p.length > 3) {
+        const backgroundColor =
+          image.backgroundColor ?? JpegEncoder._backgroundColor;
+        const a = p.aNormalized;
+        const invA = 1 - a;
+        p.r = Math.round(p.r * a + backgroundColor.r * invA);
+        p.g = Math.round(p.g * a + backgroundColor.r * invA);
+        p.b = Math.round(p.b * a + backgroundColor.r * invA);
+      }
       const r = Math.trunc(p.r);
       const g = Math.trunc(p.g);
       const b = Math.trunc(p.b);
