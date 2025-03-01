@@ -891,6 +891,8 @@ export class TiffImage {
         );
       }
 
+      const rgb: number[] = [0, 0, 0];
+
       for (let y = 0, py = outY; y < this._tileHeight; ++y, ++py) {
         for (let x = 0, px = outX; x < this._tileWidth; ++x, ++px) {
           if (byteData.isEOS) {
@@ -1126,10 +1128,10 @@ export class TiffImage {
               }
 
               if (this._photometricType === TiffPhotometricType.cmyk) {
-                const rgba = ColorUtils.cmykToRgb(r, g, b, a);
-                r = rgba[0];
-                g = rgba[1];
-                b = rgba[2];
+                ColorUtils.cmykToRgb(r, g, b, a, rgb);
+                r = rgb[0];
+                g = rgb[1];
+                b = rgb[2];
                 a = Math.trunc(image.maxChannelValue);
               }
 

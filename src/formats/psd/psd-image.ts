@@ -417,6 +417,8 @@ export class PsdImage implements DecodeInfo {
     const channel2 = channels.get(2);
     const channel_1 = channels.get(-1);
 
+    const rgb: number[] = [0, 0, 0];
+
     let si = -ns;
     for (const p of output) {
       si += ns;
@@ -471,7 +473,7 @@ export class PsdImage implements DecodeInfo {
           );
           const alpha =
             numChannels >= 5 ? this.ch(channel_1!.data, si, ns) : 255;
-          const rgb = ColorUtils.cmykToRgb(255 - c, 255 - m, 255 - y, 255 - k);
+          ColorUtils.cmykToRgb(255 - c, 255 - m, 255 - y, 255 - k, rgb);
           p.r = rgb[0];
           p.g = rgb[1];
           p.b = rgb[2];

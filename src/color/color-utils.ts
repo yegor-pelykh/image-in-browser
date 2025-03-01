@@ -506,23 +506,22 @@ export abstract class ColorUtils {
    * @param {number} m - The magenta component (0-255).
    * @param {number} y - The yellow component (0-255).
    * @param {number} k - The black component (0-255).
-   * @returns {number[]} An array containing the RGB values [red, green, blue], each ranging from 0 to 255.
+   * @param {number[]} rgb - Array to return RGB values [red, green, blue], each ranging from 0 to 255.
    */
   public static cmykToRgb(
     c: number,
     m: number,
     y: number,
-    k: number
-  ): number[] {
+    k: number,
+    rgb: number[]
+  ): void {
     const _c = c / 255;
     const _m = m / 255;
     const _y = y / 255;
     const _k = k / 255;
-    return [
-      Math.round(255 * (1 - _c) * (1 - _k)),
-      Math.round(255 * (1 - _m) * (1 - _k)),
-      Math.round(255 * (1 - _y) * (1 - _k)),
-    ];
+    rgb[0] = Math.round(255 * (1 - _c) * (1 - _k));
+    rgb[1] = Math.round(255 * (1 - _m) * (1 - _k));
+    rgb[2] = Math.round(255 * (1 - _y) * (1 - _k));
   }
 
   /**
