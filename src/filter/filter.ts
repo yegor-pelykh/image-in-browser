@@ -769,10 +769,8 @@ export abstract class Filter {
       mb = 1 / (1 + 2 * (mb - 0.5));
     }
 
-    const invSaturation =
-      saturation !== undefined ? 1 - MathUtils.clamp(saturation, 0, 2) : 0;
-    const invContrast =
-      contrast !== undefined ? 1 - MathUtils.clamp(contrast, 0, 2) : 0;
+    const invSaturation = saturation !== undefined ? 1 - saturation : 0;
+    const invContrast = contrast !== undefined ? 1 - contrast : 0;
 
     if (exposure !== undefined) {
       exposure = Math.pow(2, exposure);
@@ -816,7 +814,6 @@ export abstract class Filter {
 
         if (saturation !== undefined) {
           const lum = r * lumCoeffR + g * lumCoeffG + b * lumCoeffB;
-
           r = lum * invSaturation + r * saturation;
           g = lum * invSaturation + g * saturation;
           b = lum * invSaturation + b * saturation;
@@ -858,9 +855,9 @@ export abstract class Filter {
         g = MathUtils.mix(og, g, blend);
         b = MathUtils.mix(ob, b, blend);
 
-        p.rNormalized = r;
-        p.gNormalized = g;
-        p.bNormalized = b;
+        p.rNormalized = MathUtils.clamp(r, 0, 1);
+        p.gNormalized = MathUtils.clamp(g, 0, 1);
+        p.bNormalized = MathUtils.clamp(b, 0, 1);
       }
     }
 
