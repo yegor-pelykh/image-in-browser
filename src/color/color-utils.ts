@@ -386,10 +386,18 @@ export abstract class ColorUtils {
     let _h = h;
 
     if (s === 0) {
-      rgb[0] = MathUtils.clamp(v, 0, 1);
-      rgb[1] = MathUtils.clamp(v, 0, 1);
-      rgb[2] = MathUtils.clamp(v, 0, 1);
+      const g = MathUtils.clamp(v, 0, 1);
+      rgb[0] = g;
+      rgb[1] = g;
+      rgb[2] = g;
       return;
+    }
+
+    while (h < 0) {
+      _h += 360;
+    }
+    while (h > 360) {
+      _h -= 360;
     }
 
     _h /= 60;

@@ -720,13 +720,11 @@ export abstract class Filter {
         ? MathUtils.clamp(opt.exposure, 0, 1000)
         : undefined;
     const amount = MathUtils.clamp(opt.amount ?? 1, 0, 1000);
-    let hue = opt.hue;
 
     if (amount === 0) {
       return opt.image;
     }
 
-    const degToRad = 0.0174532925;
     const avgLumR = 0.5;
     const avgLumG = 0.5;
     const avgLumB = 0.5;
@@ -768,19 +766,6 @@ export abstract class Filter {
       exposure = Math.pow(2, exposure);
     }
 
-    let hueR = 0;
-    let hueG = 0;
-    let hueB = 0;
-    if (hue !== undefined) {
-      hue *= degToRad;
-      const s = Math.sin(hue);
-      const c = Math.cos(hue);
-
-      hueR = (2 * c) / 3.0;
-      hueG = (-Math.sqrt(3.0) * s - c) / 3.0;
-      hueB = (Math.sqrt(3.0) * s - c + 1.0) / 3.0;
-    }
-
     const hsv: number[] = [0, 0, 0];
 
     for (const frame of image.frames) {
@@ -806,9 +791,10 @@ export abstract class Filter {
           b *= tb;
         }
 
-        if (opt.saturation !== undefined) {
+        if (opt.saturation !== undefined || opt.hue !== undefined) {
           ColorUtils.rgbToHsv(r, g, b, hsv);
-          hsv[1] *= opt.saturation;
+          hsv[0] += opt.hue ?? 0;
+          hsv[1] *= opt.saturation ?? 1;
           ColorUtils.hsvToRgb(hsv[0], hsv[1], hsv[2], hsv);
           r = hsv[0];
           g = hsv[1];
@@ -831,16 +817,6 @@ export abstract class Filter {
           r *= exposure;
           g *= exposure;
           b *= exposure;
-        }
-
-        if (hue !== undefined && hue !== 0.0) {
-          const hr = r * hueR + g * hueG + b * hueB;
-          const hg = r * hueB + g * hueR + b * hueG;
-          const hb = r * hueG + g * hueB + b * hueR;
-
-          r = hr;
-          g = hg;
-          b = hb;
         }
 
         const msk =
