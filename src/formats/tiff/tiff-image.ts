@@ -113,6 +113,18 @@ export class TiffImage {
   }
 
   /**
+   * Channels per pixel in the image.
+   */
+  private _channelsPerPixel = 1;
+
+  /**
+   * Gets the channels per pixel in the image.
+   */
+  public get channelsPerPixel(): number {
+    return this._channelsPerPixel;
+  }
+
+  /**
    * Sample format of the image.
    */
   private _sampleFormat: TiffFormat = TiffFormat.uint;
@@ -472,6 +484,8 @@ export class TiffImage {
       this._isWhiteZero = true;
     }
 
+    this._channelsPerPixel = this._samplesPerPixel;
+
     if (this.hasTag(ExifTagNameToID.get('TileOffsets')!)) {
       this._tiled = true;
       // Image is in tiled format
@@ -596,6 +610,16 @@ export class TiffImage {
           } else if (this._bitsPerSample === 8 && this._samplesPerPixel === 3) {
             this._imageType = TiffImageType.yCbCrSub;
           }
+        }
+        break;
+      case TiffPhotometricType.cmyk:
+        if (this._bitsPerSample % 8 === 0) {
+          this._imageType = TiffImageType.generic;
+        }
+        if (this._samplesPerPixel === 4) {
+          this._channelsPerPixel = 3;
+        } else if (this._samplesPerPixel === 5) {
+          this._channelsPerPixel = 4;
         }
         break;
       default:
@@ -1074,6 +1098,7 @@ export class TiffImage {
               let g = 0;
               let b = 0;
               let a = 0;
+              let alpha = image.maxChannelValue;
               if (this._bitsPerSample === 8) {
                 r =
                   this._sampleFormat === TiffFormat.int
@@ -1091,6 +1116,12 @@ export class TiffImage {
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt8()
                     : byteData.read();
+                if (this._samplesPerPixel === 5) {
+                  alpha =
+                    this._sampleFormat === TiffFormat.int
+                      ? byteData.readInt8()
+                      : byteData.read();
+                }
               } else if (this._bitsPerSample === 16) {
                 r =
                   this._sampleFormat === TiffFormat.int
@@ -1108,6 +1139,12 @@ export class TiffImage {
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt16()
                     : byteData.readUint16();
+                if (this._samplesPerPixel === 5) {
+                  alpha =
+                    this._sampleFormat === TiffFormat.int
+                      ? byteData.readInt16()
+                      : byteData.readUint16();
+                }
               } else if (this._bitsPerSample === 32) {
                 r =
                   this._sampleFormat === TiffFormat.int
@@ -1125,6 +1162,12 @@ export class TiffImage {
                   this._sampleFormat === TiffFormat.int
                     ? byteData.readInt32()
                     : byteData.readUint32();
+                if (this._samplesPerPixel === 5) {
+                  alpha =
+                    this._sampleFormat === TiffFormat.int
+                      ? byteData.readInt32()
+                      : byteData.readUint32();
+                }
               }
 
               if (this._photometricType === TiffPhotometricType.cmyk) {
@@ -1132,7 +1175,7 @@ export class TiffImage {
                 r = rgb[0];
                 g = rgb[1];
                 b = rgb[2];
-                a = Math.trunc(image.maxChannelValue);
+                a = alpha;
               }
 
               if (px < this._width && py < this._height) {
@@ -1245,7 +1288,7 @@ export class TiffImage {
     const hasPalette =
       this._colorMap !== undefined &&
       this._photometricType === TiffPhotometricType.palette;
-    const numChannels = hasPalette ? 3 : this._samplesPerPixel;
+    const numChannels = hasPalette ? 3 : this._channelsPerPixel;
 
     const image = new MemoryImage({
       width: this._width,
