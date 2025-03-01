@@ -388,11 +388,11 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number} - The value of the specified channel.
    */
   public getChannel(channel: number | Channel): number {
-    if (this.palette !== undefined) {
-      return this.palette.get(this.data[this._index], channel);
+    if (channel === Channel.luminance) {
+      return this.luminance;
     } else {
-      if (channel === Channel.luminance) {
-        return this.luminance;
+      if (this.palette !== undefined) {
+        return this.palette.get(this.data[this._index], channel);
       } else {
         return channel < this.numChannels
           ? this.data[this._index + channel]
