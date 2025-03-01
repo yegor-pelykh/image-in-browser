@@ -276,16 +276,20 @@ export abstract class ColorUtils {
    * @param {number} hue - The hue of the color, a number between 0 and 1.
    * @param {number} saturation - The saturation of the color, a number between 0 and 1.
    * @param {number} lightness - The lightness of the color, a number between 0 and 1.
-   * @returns {number[]} An array containing the RGB values [red, green, blue], each ranging from 0 to 255.
+   * @param {number[]} rgb - Array to return RGB values [red, green, blue], each ranging from 0 to 255.
    */
   public static hslToRgb(
     hue: number,
     saturation: number,
-    lightness: number
-  ): number[] {
+    lightness: number,
+    rgb: number[]
+  ): void {
     if (saturation === 0) {
       const gray = Math.trunc(lightness * 255);
-      return [gray, gray, gray];
+      rgb[0] = gray;
+      rgb[1] = gray;
+      rgb[2] = gray;
+      return;
     }
 
     const hue2rgb = (p: number, q: number, t: number): number => {
@@ -318,73 +322,115 @@ export abstract class ColorUtils {
     const g = hue2rgb(p, q, hue);
     const b = hue2rgb(p, q, hue - 1 / 3);
 
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    rgb[0] = Math.round(r * 255);
+    rgb[1] = Math.round(g * 255);
+    rgb[2] = Math.round(b * 255);
   }
 
   /**
-   * Converts an HSV color value to RGB.
+   * Converts RGB (Red, Green, Blue) color values to HSV (Hue, Saturation, Value).
    *
-   * @param {number} hue - The hue of the color, a value between 0 and 1.
-   * @param {number} saturation - The saturation of the color, a value between 0 and 1.
-   * @param {number} brightness - The brightness of the color, a value between 0 and 1.
-   * @returns {number[]} An array containing the RGB representation of the color, with each value between 0 and 255.
-   * @throws {LibError} If the hue value is invalid.
+   * @param {number} r - The red color value, a number between 0 and 255.
+   * @param {number} g - The green color value, a number between 0 and 255.
+   * @param {number} b - The blue color value, a number between 0 and 255.
+   * @param {number[]} hsv - Array to return HSV values [hue, saturation, value], where hue is in degrees (0 to 360), and saturation and value are between 0 and 1.
    */
-  public static hsvToRgb(
-    hue: number,
-    saturation: number,
-    brightness: number
-  ): number[] {
-    if (saturation === 0) {
-      const gray = Math.round(brightness * 255);
-      return [gray, gray, gray];
+  public static rgbToHsv(r: number, g: number, b: number, hsv: number[]): void {
+    const minCh = Math.min(r, Math.min(g, b));
+    const maxCh = Math.max(r, Math.max(g, b));
+    const delta = maxCh - minCh;
+
+    if (maxCh === 0 || delta === 0) {
+      hsv[0] = 0;
+      hsv[1] = 0;
+      hsv[2] = 0;
+      return;
     }
 
-    const h = (hue - Math.floor(hue)) * 6;
-    const f = h - Math.floor(h);
-    const p = brightness * (1 - saturation);
-    const q = brightness * (1 - saturation * f);
-    const t = brightness * (1 - saturation * (1 - f));
+    let h: number = 0;
+    let s: number = 0;
+    let v: number = 0;
 
-    switch (Math.trunc(h)) {
+    v = maxCh;
+    s = delta / maxCh;
+
+    if (r === maxCh) {
+      // between yellow & magenta
+      h = (g - b) / delta;
+    } else if (g === maxCh) {
+      // between cyan & yellow
+      h = 2 + (b - r) / delta;
+    } else {
+      // between magenta & cyan
+      h = 4 + (r - g) / delta;
+    }
+    // degrees
+    h *= 60;
+    if (h < 0) {
+      h += 360;
+    }
+    hsv[0] = h;
+    hsv[1] = s;
+    hsv[2] = v;
+  }
+
+  /**
+   * Converts HSV (Hue, Saturation, Value) color values to RGB (Red, Green, Blue).
+   *
+   * @param {number} h - The hue of the color, in degrees (0 to 360).
+   * @param {number} s - The saturation of the color, a number between 0 and 1.
+   * @param {number} v - The value of the color, a number between 0 and 1.
+   * @param {number[]} rgb - Array to return RGB values [red, green, blue], each ranging from 0 to 255.
+   */
+  public static hsvToRgb(h: number, s: number, v: number, rgb: number[]): void {
+    let _h = h;
+
+    if (s === 0) {
+      rgb[0] = MathUtils.clamp(v, 0, 1);
+      rgb[1] = MathUtils.clamp(v, 0, 1);
+      rgb[2] = MathUtils.clamp(v, 0, 1);
+      return;
+    }
+
+    _h /= 60;
+    const i = Math.floor(_h);
+    const f = _h - i;
+    const p = MathUtils.clamp(v * (1 - s), 0, 1);
+    const q = MathUtils.clamp(v * (1 - s * f), 0, 1);
+    const t = MathUtils.clamp(v * (1 - s * (1 - f)), 0, 1);
+
+    switch (i) {
       case 0:
-        return [
-          Math.round(brightness * 255),
-          Math.round(t * 255),
-          Math.round(p * 255),
-        ];
+        rgb[0] = v;
+        rgb[1] = t;
+        rgb[2] = p;
+        return;
       case 1:
-        return [
-          Math.round(q * 255),
-          Math.round(brightness * 255),
-          Math.round(p * 255),
-        ];
+        rgb[0] = q;
+        rgb[1] = v;
+        rgb[2] = p;
+        return;
       case 2:
-        return [
-          Math.round(p * 255),
-          Math.round(brightness * 255),
-          Math.round(t * 255),
-        ];
+        rgb[0] = p;
+        rgb[1] = v;
+        rgb[2] = t;
+        return;
       case 3:
-        return [
-          Math.round(p * 255),
-          Math.round(q * 255),
-          Math.round(brightness * 255),
-        ];
+        rgb[0] = p;
+        rgb[1] = q;
+        rgb[2] = v;
+        return;
       case 4:
-        return [
-          Math.round(t * 255),
-          Math.round(p * 255),
-          Math.round(brightness * 255),
-        ];
-      case 5:
-        return [
-          Math.round(brightness * 255),
-          Math.round(p * 255),
-          Math.round(q * 255),
-        ];
+        rgb[0] = t;
+        rgb[1] = p;
+        rgb[2] = v;
+        return;
       default:
-        throw new LibError('Invalid hue.');
+        // case 5
+        rgb[0] = v;
+        rgb[1] = p;
+        rgb[2] = q;
+        return;
     }
   }
 

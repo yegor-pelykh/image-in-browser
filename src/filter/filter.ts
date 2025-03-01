@@ -711,10 +711,6 @@ export abstract class Filter {
       opt.contrast !== undefined
         ? MathUtils.clamp(opt.contrast, 0, 2)
         : undefined;
-    const saturation =
-      opt.saturation !== undefined
-        ? MathUtils.clamp(opt.saturation, 0, 2)
-        : undefined;
     const brightness =
       opt.brightness !== undefined ? opt.brightness : undefined;
     const gamma =
@@ -734,9 +730,6 @@ export abstract class Filter {
     const avgLumR = 0.5;
     const avgLumG = 0.5;
     const avgLumB = 0.5;
-    const lumCoeffR = 0.2125;
-    const lumCoeffG = 0.7154;
-    const lumCoeffB = 0.0721;
 
     const useBlacksWhitesMids =
       opt.blacks !== undefined ||
@@ -769,7 +762,6 @@ export abstract class Filter {
       mb = 1 / (1 + 2 * (mb - 0.5));
     }
 
-    const invSaturation = saturation !== undefined ? 1 - saturation : 0;
     const invContrast = contrast !== undefined ? 1 - contrast : 0;
 
     if (exposure !== undefined) {
@@ -788,6 +780,8 @@ export abstract class Filter {
       hueG = (-Math.sqrt(3.0) * s - c) / 3.0;
       hueB = (Math.sqrt(3.0) * s - c + 1.0) / 3.0;
     }
+
+    const hsv: number[] = [0, 0, 0];
 
     for (const frame of image.frames) {
       for (const p of frame) {
@@ -812,11 +806,13 @@ export abstract class Filter {
           b *= tb;
         }
 
-        if (saturation !== undefined) {
-          const lum = r * lumCoeffR + g * lumCoeffG + b * lumCoeffB;
-          r = lum * invSaturation + r * saturation;
-          g = lum * invSaturation + g * saturation;
-          b = lum * invSaturation + b * saturation;
+        if (opt.saturation !== undefined) {
+          ColorUtils.rgbToHsv(r, g, b, hsv);
+          hsv[1] *= opt.saturation;
+          ColorUtils.hsvToRgb(hsv[0], hsv[1], hsv[2], hsv);
+          r = hsv[0];
+          g = hsv[1];
+          b = hsv[2];
         }
 
         if (contrast !== undefined) {
