@@ -20,7 +20,7 @@ import { TestUtils } from '../_utils/test-utils';
  */
 describe('Draw', () => {
   /**
-   * Test case for the compositeImage function.
+   * Test case for the compositeImage function with synthesized images.
    */
   test('compositeImage', () => {
     // Create two MemoryImage instances with specified dimensions
@@ -176,5 +176,65 @@ describe('Draw', () => {
         output
       );
     }
+  });
+
+  /**
+   * Test case for the compositeImage function with image files.
+   */
+  test('compositeImage2', () => {
+    const maskBytes = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'logo.png'
+    );
+    const mask = decodePng({
+      data: maskBytes,
+    });
+    expect(mask).toBeDefined();
+    if (mask === undefined) {
+      return;
+    }
+
+    const fgBytes = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'colors.png'
+    );
+    const fg = decodePng({
+      data: fgBytes,
+    });
+    expect(fg).toBeDefined();
+    if (fg === undefined) {
+      return;
+    }
+
+    const bgBytes = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'buck_24.png'
+    );
+    const bg = decodePng({
+      data: bgBytes,
+    });
+    expect(bg).toBeDefined();
+    if (bg === undefined) {
+      return;
+    }
+
+    Draw.compositeImage({
+      dst: bg,
+      src: fg,
+      mask: mask,
+    });
+
+    const output = encodePng({
+      image: bg,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.draw,
+      `compositeImage2.png`,
+      output
+    );
   });
 });

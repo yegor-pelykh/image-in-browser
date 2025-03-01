@@ -1559,10 +1559,8 @@ export abstract class Draw {
       }
     }
 
-    const msk =
-      opt.mask
-        ?.getPixel(opt.pos.x, opt.pos.y)
-        .getChannelNormalized(maskChannel) ?? 1;
+    const maskPixel = opt.mask?.getPixelSafe(opt.pos.x, opt.pos.y);
+    const msk = maskPixel?.getChannelNormalized(maskChannel) ?? 1;
 
     let overlayR =
       opt.filter !== undefined
