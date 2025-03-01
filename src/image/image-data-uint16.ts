@@ -17,28 +17,26 @@ import { ColorUint16 } from '../color/color-uint16.js';
  * Class representing memory image data with 16-bit unsigned integer channels.
  */
 export class MemoryImageDataUint16 implements MemoryImageData, Iterable<Pixel> {
-  /**
-   * The width of the image.
-   */
-  private readonly _width: number;
-
-  /**
-   * Gets the width of the image.
-   */
+  /** The width of the image. */
+  private _width: number;
+  /** Gets the width of the image. */
   public get width(): number {
     return this._width;
   }
+  /** Sets the width of the image. */
+  public set width(v: number) {
+    this._width = v;
+  }
 
-  /**
-   * The height of the image.
-   */
-  private readonly _height: number;
-
-  /**
-   * Gets the height of the image.
-   */
+  /** The height of the image. */
+  private _height: number;
+  /** Gets the height of the image. */
   public get height(): number {
     return this._height;
+  }
+  /** Sets the height of the image. */
+  public set height(v: number) {
+    this._height = v;
   }
 
   /**

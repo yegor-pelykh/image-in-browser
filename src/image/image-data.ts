@@ -21,10 +21,10 @@ export interface MemoryImageDataGetBytesOptions {
  */
 export interface MemoryImageData extends Iterable<Pixel> {
   /** The width of the image. */
-  get width(): number;
+  width: number;
 
   /** The height of the image. */
-  get height(): number;
+  height: number;
 
   /** The number of channels in the image. */
   get numChannels(): number;

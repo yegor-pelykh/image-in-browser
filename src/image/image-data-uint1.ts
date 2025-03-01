@@ -22,28 +22,26 @@ export class MemoryImageDataUint1 implements MemoryImageData, Iterable<Pixel> {
    */
   private pixel?: PixelUint1;
 
-  /**
-   * Image width.
-   */
-  private readonly _width: number;
-
-  /**
-   * Gets the image width.
-   */
+  /** The width of the image. */
+  private _width: number;
+  /** Gets the width of the image. */
   public get width(): number {
     return this._width;
   }
+  /** Sets the width of the image. */
+  public set width(v: number) {
+    this._width = v;
+  }
 
-  /**
-   * Image height.
-   */
-  private readonly _height: number;
-
-  /**
-   * Gets the image height.
-   */
+  /** The height of the image. */
+  private _height: number;
+  /** Gets the height of the image. */
   public get height(): number {
     return this._height;
+  }
+  /** Sets the height of the image. */
+  public set height(v: number) {
+    this._height = v;
   }
 
   /**

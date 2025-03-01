@@ -21,17 +21,25 @@ import { MathUtils } from '../common/math-utils.js';
  */
 export class MemoryImageDataUint8 implements MemoryImageData, Iterable<Pixel> {
   /** The width of the image. */
-  private readonly _width: number;
+  private _width: number;
   /** Gets the width of the image. */
   public get width(): number {
     return this._width;
   }
+  /** Sets the width of the image. */
+  public set width(v: number) {
+    this._width = v;
+  }
 
   /** The height of the image. */
-  private readonly _height: number;
+  private _height: number;
   /** Gets the height of the image. */
   public get height(): number {
     return this._height;
+  }
+  /** Sets the height of the image. */
+  public set height(v: number) {
+    this._height = v;
   }
 
   /** The pixel data of the image. */

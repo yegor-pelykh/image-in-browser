@@ -457,6 +457,7 @@ export {
   FlipOptions,
   TransformOptions,
   TrimOptions,
+  ResizeOptions,
 } from './transform/transform.js';
 export { TrimMode } from './transform/trim-mode.js';
 export { TrimSide } from './transform/trim-side.js';

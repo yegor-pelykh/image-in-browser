@@ -19,20 +19,26 @@ import { ColorUint4 } from '../color/color-uint4.js';
 export class MemoryImageDataUint4 implements MemoryImageData, Iterable<Pixel> {
   private _pixel?: PixelUint4;
 
-  /**
-   * The width of the image.
-   */
-  private readonly _width: number;
+  /** The width of the image. */
+  private _width: number;
+  /** Gets the width of the image. */
   public get width(): number {
     return this._width;
   }
+  /** Sets the width of the image. */
+  public set width(v: number) {
+    this._width = v;
+  }
 
-  /**
-   * The height of the image.
-   */
-  private readonly _height: number;
+  /** The height of the image. */
+  private _height: number;
+  /** Gets the height of the image. */
   public get height(): number {
     return this._height;
+  }
+  /** Sets the height of the image. */
+  public set height(v: number) {
+    this._height = v;
   }
 
   /**

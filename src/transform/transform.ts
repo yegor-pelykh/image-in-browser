@@ -160,6 +160,22 @@ export interface TrimOptions extends TransformOptions {
 }
 
 /**
+ * Interface for resize options.
+ */
+export interface ResizeOptions extends TransformOptions {
+  /** The width to resize to. */
+  width?: number;
+  /** The height to resize to. */
+  height?: number;
+  /** Whether to maintain the aspect ratio. */
+  maintainAspect?: boolean;
+  /** The background color to use. */
+  backgroundColor?: Color;
+  /** The interpolation method to use. */
+  interpolation?: Interpolation;
+}
+
+/**
  * Abstract class for image transformations.
  */
 export abstract class Transform {
@@ -1453,5 +1469,218 @@ export abstract class Transform {
     }
 
     return firstFrame!;
+  }
+
+  /**
+   * Resizes the image to the specified width and height.
+   *
+   * @param {ResizeOptions} opt - The options for resizing the image.
+   * @param {MemoryImage} opt.image - The image to be resized.
+   * @param {number} opt.width - The desired width of the resized image.
+   * @param {number} opt.height - The desired height of the resized image.
+   * @param {boolean} [opt.maintainAspect] - Whether to maintain the aspect ratio.
+   * @param {Interpolation} [opt.interpolation] - The interpolation method to use.
+   * @param {Color} [opt.backgroundColor] - The background color to use if maintaining aspect ratio.
+   * @returns {MemoryImage} The resized image.
+   * @throws {LibError} If both width and height are undefined.
+   */
+  public static resize(opt: ResizeOptions): MemoryImage {
+    let src = opt.image;
+    let width = opt.width;
+    let height = opt.height;
+    let maintainAspect = opt.maintainAspect;
+    let interpolation = opt.interpolation ?? Interpolation.nearest;
+
+    if (width === undefined && height === undefined) {
+      throw new LibError('Invalid size');
+    }
+
+    // You can't interpolate index pixels
+    if (src.hasPalette) {
+      interpolation = Interpolation.nearest;
+    }
+
+    if (
+      src.exifData.imageIfd.hasOrientation &&
+      src.exifData.imageIfd.orientation !== 1
+    ) {
+      src = Transform.bakeOrientation({
+        image: src,
+      });
+    }
+
+    let x1 = 0;
+    let y1 = 0;
+    let x2 = 0;
+    let y2 = 0;
+
+    // this block sets [width] and [height] if null or negative.
+    if (
+      width !== undefined &&
+      height !== undefined &&
+      maintainAspect === true
+    ) {
+      x1 = 0;
+      x2 = width;
+      const srcAspect = src.height / src.width;
+      const h = Math.trunc(width * srcAspect);
+      const dy = Math.trunc((height - h) / 2);
+      y1 = dy;
+      y2 = y1 + h;
+      if (y1 < 0 || y2 > height) {
+        y1 = 0;
+        y2 = height;
+        const srcAspect = src.width / src.height;
+        const w = Math.trunc(height * srcAspect);
+        const dx = Math.trunc((width - w) / 2);
+        x1 = dx;
+        x2 = x1 + w;
+      }
+    } else {
+      maintainAspect = false;
+    }
+
+    if (height === undefined || height <= 0) {
+      height = Math.round(width! * (src.height / src.width));
+    }
+    if (width === undefined || width <= 0) {
+      width = Math.round(height * (src.width / src.height));
+    }
+
+    const w = maintainAspect ? x2 - x1 : width;
+    const h = maintainAspect ? y2 - y1 : height;
+
+    if (!maintainAspect) {
+      x1 = 0;
+      x2 = width;
+      y1 = 0;
+      y2 = height;
+    }
+
+    if (width === src.width && height === src.height) {
+      return src;
+    }
+
+    if (width * height > src.width * src.height) {
+      return Transform.copyResize({
+        image: src,
+        width: width,
+        height: height,
+        maintainAspect: maintainAspect,
+        backgroundColor: opt.backgroundColor,
+        interpolation: interpolation,
+      });
+    }
+
+    const scaleX = new Int32Array(w);
+    const dx = src.width / w;
+    for (let x = 0; x < w; ++x) {
+      scaleX[x] = Math.trunc(x * dx);
+    }
+
+    const origWidth = src.width;
+    const origHeight = src.height;
+
+    const numFrames = src.numFrames;
+    for (let i = 0; i < numFrames; ++i) {
+      const frame = src.frames[i];
+      const dst = frame;
+
+      const dy = frame.height / h;
+      const dx = frame.width / w;
+
+      if (maintainAspect && opt.backgroundColor !== undefined) {
+        dst.clear(opt.backgroundColor);
+      }
+
+      if (interpolation === Interpolation.average) {
+        for (let y = 0; y < h; ++y) {
+          const ay1 = Math.trunc(y * dy);
+          let ay2 = Math.trunc((y + 1) * dy);
+          if (ay2 === ay1) {
+            ay2++;
+          }
+
+          for (let x = 0; x < w; ++x) {
+            const ax1 = Math.trunc(x * dx);
+            let ax2 = Math.trunc((x + 1) * dx);
+            if (ax2 === ax1) {
+              ax2++;
+            }
+
+            let r: number = 0;
+            let g: number = 0;
+            let b: number = 0;
+            let a: number = 0;
+            let np: number = 0;
+            for (let sy = ay1; sy < ay2; ++sy) {
+              for (let sx = ax1; sx < ax2; ++sx, ++np) {
+                const s = frame.getPixel(sx, sy);
+                r += s.r;
+                g += s.g;
+                b += s.b;
+                a += s.a;
+              }
+            }
+            const c = dst.getColor(r / np, g / np, b / np, a / np);
+
+            dst.data!.width = width;
+            dst.data!.height = height;
+            dst.setPixel(x1 + x, y1 + y, c);
+            dst.data!.width = origWidth;
+            dst.data!.height = origHeight;
+          }
+        }
+      } else if (interpolation === Interpolation.nearest) {
+        if (frame.hasPalette) {
+          for (let y = 0; y < h; ++y) {
+            const y2 = Math.trunc(y * dy);
+            for (let x = 0; x < w; ++x) {
+              const p = frame.getPixelIndex(scaleX[x], y2);
+              dst.data!.width = width;
+              dst.data!.height = height;
+              dst.setPixelIndex(x1 + x, y1 + y, p);
+              dst.data!.width = origWidth;
+              dst.data!.height = origHeight;
+            }
+          }
+        } else {
+          for (let y = 0; y < h; ++y) {
+            const y2 = Math.trunc(y * dy);
+            for (let x = 0; x < w; ++x) {
+              const p = frame.getPixel(scaleX[x], y2);
+              dst.data!.width = width;
+              dst.data!.height = height;
+              dst.setPixel(x1 + x, y1 + y, p);
+              dst.data!.width = origWidth;
+              dst.data!.height = origHeight;
+            }
+          }
+        }
+      } else {
+        // Copy the pixels from this image to the new image.
+        for (let y = 0; y < h; ++y) {
+          const sy2 = y * dy;
+          for (let x = 0; x < w; ++x) {
+            const sx2 = x * dx;
+            const p = frame.getPixelInterpolate(
+              x1 + sx2,
+              y1 + sy2,
+              interpolation
+            );
+            dst.data!.width = width;
+            dst.data!.height = height;
+            dst.setPixel(x, y, p);
+            dst.data!.width = origWidth;
+            dst.data!.height = origHeight;
+          }
+        }
+      }
+
+      dst.data!.width = width;
+      dst.data!.height = height;
+    }
+
+    return src;
   }
 }

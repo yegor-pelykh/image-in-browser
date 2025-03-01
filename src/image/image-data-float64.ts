@@ -20,18 +20,26 @@ import { ColorFloat64 } from '../color/color-float64.js';
 export class MemoryImageDataFloat64
   implements MemoryImageData, Iterable<Pixel>
 {
-  /** Width of the image */
-  private readonly _width: number;
-  /** Getter for the width of the image */
+  /** The width of the image. */
+  private _width: number;
+  /** Gets the width of the image. */
   public get width(): number {
     return this._width;
   }
+  /** Sets the width of the image. */
+  public set width(v: number) {
+    this._width = v;
+  }
 
-  /** Height of the image */
-  private readonly _height: number;
-  /** Getter for the height of the image */
+  /** The height of the image. */
+  private _height: number;
+  /** Gets the height of the image. */
   public get height(): number {
     return this._height;
+  }
+  /** Sets the height of the image. */
+  public set height(v: number) {
+    this._height = v;
   }
 
   /** Data array containing pixel values */
