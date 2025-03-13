@@ -726,7 +726,15 @@ export abstract class Transform {
         if (xPos + p.x >= newWidth! || yPos + p.y >= newHeight!) {
           continue;
         }
-        expandedCanvasFrame.setPixel(xPos + p.x, yPos + p.y, p);
+        if (p.a === p.maxChannelValue) {
+          expandedCanvasFrame.setPixel(xPos + p.x, yPos + p.y, p);
+        } else {
+          Draw.drawPixel({
+            image: expandedCanvasFrame,
+            pos: new Point(xPos + p.x, yPos + p.y),
+            color: p,
+          });
+        }
       }
     }
 

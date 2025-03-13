@@ -194,4 +194,40 @@ describe('Transform', TestUtils.testOptions, () => {
       })
     ).toThrowError(LibError);
   });
+
+  /**
+   * Test the copyExpandCanvas function with an alpha image.
+   * The function should expand the canvas and fill the background with white color.
+   */
+  test('copyExpandCanvas - alpha image', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'alpha.png'
+    );
+    const image = decodePng({
+      data: input,
+    });
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    const expandedCanvas = Transform.copyExpandCanvas({
+      image: image,
+      newWidth: image.width * 2,
+      newHeight: image.height * 2,
+      backgroundColor: new ColorRgb8(255, 255, 255),
+    });
+
+    const output = encodePng({
+      image: expandedCanvas,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.transform,
+      'copyExpandCanvas_alpha.png',
+      output
+    );
+  });
 });
