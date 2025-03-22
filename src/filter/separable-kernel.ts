@@ -83,6 +83,12 @@ export class SeparableKernel {
     maskChannel: Channel,
     mask?: MemoryImage
   ): void {
+    const srcPixel = src.getPixelSafe(0, 0);
+    const dstPixel = dst.getPixelSafe(0, 0);
+    if (!srcPixel.isValid || !dstPixel.isValid) {
+      return;
+    }
+
     for (let x = 0; x < width; x++) {
       let r = 0;
       let g = 0;
@@ -93,24 +99,34 @@ export class SeparableKernel {
         const c = this._coefficients[j2];
         const gr = this.reflect(width, x + j);
 
-        const sc = horizontal ? src.getPixel(gr, y) : src.getPixel(y, gr);
+        if (horizontal) {
+          srcPixel.setPosition(gr, y);
+        } else {
+          srcPixel.setPosition(y, gr);
+        }
 
-        r += c * sc.r;
-        g += c * sc.g;
-        b += c * sc.b;
-        a += c * sc.a;
+        r += c * srcPixel.r;
+        g += c * srcPixel.g;
+        b += c * srcPixel.b;
+        a += c * srcPixel.a;
       }
 
-      const p = horizontal ? dst.getPixel(x, y) : dst.getPixel(y, x);
-
-      const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel);
-      if (msk === undefined) {
-        p.setRgba(r, g, b, a);
+      if (horizontal) {
+        dstPixel.setPosition(x, y);
       } else {
-        p.r = MathUtils.mix(p.r, r, msk);
-        p.g = MathUtils.mix(p.g, g, msk);
-        p.b = MathUtils.mix(p.b, b, msk);
-        p.a = MathUtils.mix(p.a, a, msk);
+        dstPixel.setPosition(y, x);
+      }
+
+      const msk = mask
+        ?.getPixel(dstPixel.x, dstPixel.y)
+        .getChannelNormalized(maskChannel);
+      if (msk === undefined) {
+        dstPixel.setRgba(r, g, b, a);
+      } else {
+        dstPixel.r = MathUtils.mix(dstPixel.r, r, msk);
+        dstPixel.g = MathUtils.mix(dstPixel.g, g, msk);
+        dstPixel.b = MathUtils.mix(dstPixel.b, b, msk);
+        dstPixel.a = MathUtils.mix(dstPixel.a, a, msk);
       }
     }
   }
