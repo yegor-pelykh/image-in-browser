@@ -25,6 +25,7 @@ describe('Draw', TestUtils.testOptions, () => {
     const i0 = new MemoryImage({
       width: 256,
       height: 256,
+      numChannels: 4,
     });
 
     // Draw a filled rectangle with solid red color.
@@ -67,11 +68,13 @@ describe('Draw', TestUtils.testOptions, () => {
     expect(p.r).toBe(255);
     expect(p.g).toBe(0);
     expect(p.b).toBe(0);
+    expect(p.a).toBe(255);
 
     // Verify the color of the pixel at (195, 195) is a blend of green and the background.
     p = i0.getPixel(195, 195);
     expect(p.r).toBe(0);
     expect(p.g).toBe(128);
     expect(p.b).toBe(0);
+    expect(p.a).toBe(128);
   });
 });

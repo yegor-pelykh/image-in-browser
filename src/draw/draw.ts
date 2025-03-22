@@ -2365,10 +2365,17 @@ export abstract class Draw {
 
         const m =
           opt.mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel) ?? 1;
-        p.r = MathUtils.mix(p.r, opt.color.r, a * m);
-        p.g = MathUtils.mix(p.g, opt.color.g, a * m);
-        p.b = MathUtils.mix(p.b, opt.color.b, a * m);
-        p.a *= 1 - opt.color.a * m;
+        const am = a * m;
+
+        const pr = MathUtils.mix(p.r, opt.color.r, am);
+        const pg = MathUtils.mix(p.g, opt.color.g, am);
+        const pb = MathUtils.mix(p.b, opt.color.b, am);
+        const pa = p.a * (1.0 - am) + opt.color.a;
+
+        p.r = pr;
+        p.g = pg;
+        p.b = pb;
+        p.a = pa;
       }
 
       return opt.image;
@@ -2392,10 +2399,11 @@ export abstract class Draw {
         const p = it.value;
         const m =
           opt.mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel) ?? 1;
+        const am = opt.color.a * m;
         p.r = MathUtils.mix(p.r, opt.color.r, a * m);
         p.g = MathUtils.mix(p.g, opt.color.g, a * m);
         p.b = MathUtils.mix(p.b, opt.color.b, a * m);
-        p.a *= 1 - opt.color.a * m;
+        p.a = p.a * (1 - am) + am;
       }
     }
 
