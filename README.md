@@ -59,6 +59,16 @@ For comprehensive documentation on how to use the package, please visit our [**W
 
 Please note that while **image-in-browser** is a versatile library, its performance may not match that of native libraries, as it is entirely written in TypeScript. Keep this in mind when planning your projects.
 
+<h1 id="testing">🧪 Testing</h1>
+
+The project includes a comprehensive suite of tests to ensure functionality and reliability. To run the tests, use the following command:
+
+```bash
+npm run test:all
+```
+
+This will execute all test cases defined in the project.
+
 <h1 id="contributing">🤝 Contributing</h1>
 
 We believe that contributions are the heart of the open-source community! Your input can help make **image-in-browser** even better.
@@ -73,6 +83,10 @@ To contribute:
 7. Open a Pull Request
 
 Your support is greatly appreciated!
+
+<h1 id="license">📜 License</h1>
+
+This project is licensed under the MIT License. See the [**LICENSE.md**](/LICENSE.md) file for details.
 
 <h1 id="useful-links">🔗 Useful Links</h1>
 
