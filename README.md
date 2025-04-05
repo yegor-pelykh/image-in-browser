@@ -1,83 +1,81 @@
-📋 Table of contents
-=================
+📋 Table of Contents
+====================
 
-- [**Overview**](#overview)
+- [**Introduction**](#introduction)
 - [**Supported Image Formats**](#supported-image-formats)
-- [**Examples of using**](#examples-of-using)
+- [**Usage Examples**](#usage-examples)
 - [**Documentation**](#documentation)
-- [**Performance Warning**](#performance-warning)
+- [**Performance Considerations**](#performance-considerations)
 - [**Contributing**](#contributing)
-- [**Links**](#links)
+- [**Useful Links**](#useful-links)
 
-<h1 id="overview">📜 Overview</h1>
+<h1 id="introduction">🌟 Introduction</h1>
 
-**image-in-browser** is an NPM package providing the ability to load, manipulate and save images of various image file formats.
+Welcome to **image-in-browser**! This powerful NPM package allows you to effortlessly load, manipulate, and save images in a variety of formats, all within your browser or Node.js environment—no server-side setup required!
 
-- works both in Node.js and in the browser (no need for server-side Node.js)
-- written entirely in Typescript with transpiling into Javascript
-- doesn't have any dependencies on other packages
-- is a full-fledged modern ES (ECMAScript) module
+Key Features:
+- Fully compatible with both Node.js and browser environments
+- Developed entirely in TypeScript, compiled to JavaScript
+- No external dependencies—lightweight and efficient
+- A modern ES (ECMAScript) module for seamless integration
 
-This library may be especially useful when you need to work with static or animated images directly in the browser code when the code is isolated from the system it's running on.
+Whether you're working with static images or animated graphics, this library is perfect for projects where you want to keep your code isolated from the underlying system.
 
 <h1 id="supported-image-formats">🖼️ Supported Image Formats</h1>
 
-The following formats are currently supported for encoding / decoding:
+**image-in-browser** supports a wide range of image formats for both reading and writing:
 
-**Read / Write**
-
+**Read / Write Formats:**
 - **BMP**
-- **GIF, animated GIF**
+- **GIF (including animated GIFs)**
 - **ICO**
 - **JPG**
-- **PNG, animated APNG**
+- **PNG (including animated APNG)**
 - **TGA**
 - **PVR**
 - **TIFF**
 
-**Read Only**
-
-- **PNM, PBM, PGM, PPM**
+**Read Only Formats:**
+- **PNM (PBM, PGM, PPM)**
 - **PSD**
-- **WEBP, animated WEBP**
+- **WEBP (including animated WEBP)**
 
-**Write Only**
-
+**Write Only Format:**
 - **CUR**
 
-<h1 id="examples-of-using">🆘 Examples of using</h1>
+<h1 id="usage-examples">💡 Usage Examples</h1>
 
-You can see examples of using this library by checking out the repository that was specifically created for publishing code examples there:
+Want to see **image-in-browser** in action? Check out our dedicated repository for practical examples and code snippets:
 
 [**image-in-browser.examples**](https://github.com/yegor-pelykh/image-in-browser.examples) (_GitHub_)
 
-It will be supplemented and updated over time.
+This repository will continue to grow, providing you with more examples over time.
 
-<h1 id="documentation">📰 Documentation</h1>
+<h1 id="documentation">📚 Documentation</h1>
 
-To view the documentation for the package, please go to the [**Wiki**](https://github.com/yegor-pelykh/image-in-browser/wiki).
+For comprehensive documentation on how to use the package, please visit our [**Wiki**](https://github.com/yegor-pelykh/image-in-browser/wiki).
 
-<h1 id="performance-warning">🏭 Performance Warning</h1>
+<h1 id="performance-considerations">⚙️ Performance Considerations</h1>
 
-Since this library is written entirely in Typescript and is not a native executable library, its performance will not be as fast as a the native library.
+Please note that while **image-in-browser** is a versatile library, its performance may not match that of native libraries, as it is entirely written in TypeScript. Keep this in mind when planning your projects.
 
-<h1 id="contributing">🔧 Contributing</h1>
+<h1 id="contributing">🤝 Contributing</h1>
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
+We believe that contributions are the heart of the open-source community! Your input can help make **image-in-browser** even better.
 
 To contribute:
-- Fork the project
-- Create your feature branch (git checkout -b feature/AmazingFeature)
-- **!** Run the script `npm run build` to bring the code up to project standards
-- **!** Fix all errors and warnings associated with your changes
-- Commit your changes (git commit -m 'Add some AmazingFeature')
-- Push to the branch (git push origin feature/AmazingFeature)
-- Open a Pull Request
+1. Fork the project
+2. Create your feature branch (e.g., `git checkout -b feature/AmazingFeature`)
+3. **Important!** Run `npm run build` to ensure your code meets project standards
+4. **Important!** Address any errors or warnings that arise from your changes
+5. Commit your changes (e.g., `git commit -m 'Add some AmazingFeature'`)
+6. Push to your branch (e.g., `git push origin feature/AmazingFeature`)
+7. Open a Pull Request
 
-I will be very grateful for your support.
+Your support is greatly appreciated!
 
-<h1 id="links">🔗 Links</h1>
+<h1 id="useful-links">🔗 Useful Links</h1>
 
-Link to NPM repository:
+Check out our NPM repository for more information:
 
 <a href="https://nodei.co/npm/image-in-browser/"><img src="https://nodei.co/npm/image-in-browser.png"></a>
