@@ -16,7 +16,7 @@ Welcome to **image-in-browser**! This powerful NPM package allows you to effortl
 Key Features:
 - Fully compatible with both Node.js and browser environments
 - Developed entirely in TypeScript, compiled to JavaScript
-- No external dependencies—lightweight and efficient
+- No external dependencies — lightweight and efficient
 - A modern ES (ECMAScript) module for seamless integration
 
 Whether you're working with static images or animated graphics, this library is perfect for projects where you want to keep your code isolated from the underlying system.
