@@ -5,6 +5,7 @@ import {
   JpegChroma,
   decodeJpg,
   decodeJpgExif,
+  decodePng,
   encodeJpg,
   encodePng,
   injectJpgExif,
@@ -17,6 +18,60 @@ import { TestUtils } from '../_utils/test-utils';
  * Test suite for JPEG format handling.
  */
 describe('Format: JPEG', TestUtils.testOptions, () => {
+  // Test to verify the decoding of a PNG image with an ICC profile and its conversion to JPEG
+  test('png icc_profile', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'iCCP.png'
+    );
+    const image = decodePng({
+      data: input,
+    });
+
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    const output = encodeJpg({
+      image: image,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.jpeg,
+      'png_icc_profile_data.jpg',
+      output
+    );
+  });
+
+  // Test to verify the decoding and re-encoding of a JPEG image with an ICC profile
+  test('icc_profile', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'icc_profile_data.jpg'
+    );
+    const image = decodeJpg({
+      data: input,
+    });
+
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    const output = encodeJpg({
+      image: image,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.jpeg,
+      'icc_profile_data.jpg',
+      output
+    );
+  });
+
   /**
    * Test to verify that EXIF data is present in the JPEG image.
    */

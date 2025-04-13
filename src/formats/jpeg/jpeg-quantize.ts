@@ -522,6 +522,10 @@ export abstract class JpegQuantize {
         throw new LibError('Unsupported color mode');
     }
 
+    if (jpeg.iccProfile !== undefined) {
+      image.iccProfile = jpeg.iccProfile;
+    }
+
     return image;
   }
 }

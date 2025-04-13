@@ -7,6 +7,7 @@ import { ArrayUtils } from '../common/array-utils.js';
 import { MathUtils } from '../common/math-utils.js';
 import { OutputBuffer } from '../common/output-buffer.js';
 import { ExifData } from '../exif/exif-data.js';
+import { IccProfile } from '../image/icc-profile.js';
 import { MemoryImage } from '../image/image.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
@@ -283,11 +284,11 @@ export class JpegEncoder implements Encoder {
   }
 
   /**
-   * Writes the APP1 marker to the output buffer.
+   * Writes the APP1 (EXIF) marker to the output buffer.
    * @param {OutputBuffer} out - The output buffer.
    * @param {ExifData} exif - The EXIF data.
    */
-  private static writeAPP1(out: OutputBuffer, exif: ExifData): void {
+  private static writeExif(out: OutputBuffer, exif: ExifData): void {
     if (exif.isEmpty) {
       return;
     }
@@ -303,6 +304,24 @@ export class JpegEncoder implements Encoder {
     out.writeUint32(exifSignature);
     out.writeUint16(0);
     out.writeBytes(exifBytes);
+  }
+
+  /**
+   * Writes the APP2 (ICC Profile) marker to the output buffer.
+   * @param {OutputBuffer} out - The output buffer.
+   * @param {IccProfile} profile - The ICC profile data.
+   */
+  private static writeICCProfile(out: OutputBuffer, profile: IccProfile): void {
+    this.writeMarker(out, JpegMarker.app2);
+    const profileData = profile.decompressed();
+    const blockSize = 12 + 2 + profileData.length;
+    // Signature: ICC_PROFILE\0
+    const signature = new Uint8Array([
+      0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0x00,
+    ]);
+    out.writeUint16(blockSize);
+    out.writeBytes(signature);
+    out.writeBytes(profileData);
   }
 
   /**
@@ -958,7 +977,10 @@ export class JpegEncoder implements Encoder {
     JpegEncoder.writeMarker(fp, JpegMarker.soi);
     JpegEncoder.writeAPP0(fp);
     if (!skipExif) {
-      JpegEncoder.writeAPP1(fp, image.exifData);
+      JpegEncoder.writeExif(fp, image.exifData);
+    }
+    if (image.iccProfile !== undefined) {
+      JpegEncoder.writeICCProfile(fp, image.iccProfile);
     }
     this.writeDQT(fp);
     JpegEncoder.writeSOF0(fp, image.width, image.height, chroma);

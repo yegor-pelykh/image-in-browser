@@ -18,6 +18,8 @@ import { MemoryImage } from '../../image/image.js';
 import { HuffmanNode } from './huffman-node.js';
 import { HuffmanValue } from './huffman-value.js';
 import { HuffmanParent } from './huffman-parent.js';
+import { IccProfile } from '../../image/icc-profile.js';
+import { IccProfileCompression } from '../../image/icc-profile-compression.js';
 
 /**
  * Class representing JPEG data.
@@ -92,6 +94,11 @@ export class JpegData {
   private _comment?: string;
   public get comment(): string | undefined {
     return this._comment;
+  }
+
+  private _iccProfile?: IccProfile;
+  public get iccProfile(): IccProfile | undefined {
+    return this._iccProfile;
   }
 
   private readonly _exifData: ExifData = new ExifData();
@@ -586,6 +593,30 @@ export class JpegData {
   }
 
   /**
+   * Reads the ICC profile data from the provided input buffer.
+   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the ICC profile data.
+   */
+  private readIccProfile(block: InputBuffer<Uint8Array>): void {
+    // "ICC_PROFILE\0"
+    const iccProfileSignature = [
+      0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0x00,
+    ];
+    for (let i = 0; i < iccProfileSignature.length; i++) {
+      const b = block.read();
+      if (b !== iccProfileSignature[i]) {
+        return;
+      }
+    }
+
+    const data = block.toUint8Array();
+    this._iccProfile = new IccProfile(
+      'ICC_PROFILE',
+      IccProfileCompression.none,
+      data
+    );
+  }
+
+  /**
    * Reads the EXIF data from the provided input buffer.
    * @param {InputBuffer<Uint8Array>} block - The input buffer containing the EXIF data.
    */
@@ -646,6 +677,8 @@ export class JpegData {
     } else if (marker === JpegMarker.app1) {
       // 'EXIF\0'
       this.readExifData(appData);
+    } else if (marker === JpegMarker.app2) {
+      this.readIccProfile(appData);
     } else if (marker === JpegMarker.app14) {
       // 'Adobe\0'
       if (
