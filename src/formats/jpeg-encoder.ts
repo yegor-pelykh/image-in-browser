@@ -433,6 +433,7 @@ export class JpegEncoder implements Encoder {
    * @param {Float32Array} ydu - The Y component of the block.
    * @param {Float32Array} udu - The U component of the block.
    * @param {Float32Array} vdu - The V component of the block.
+   * @param {Color} backgroundColor - The background color used for alpha blending.
    */
   private calculateYUV(
     image: MemoryImage,
@@ -442,7 +443,8 @@ export class JpegEncoder implements Encoder {
     height: number,
     ydu: Float32Array,
     udu: Float32Array,
-    vdu: Float32Array
+    vdu: Float32Array,
+    backgroundColor: Color
   ): void {
     for (let pos = 0; pos < 64; pos++) {
       // / 8
@@ -470,13 +472,11 @@ export class JpegEncoder implements Encoder {
         });
       }
       if (p.length > 3) {
-        const backgroundColor =
-          image.backgroundColor ?? JpegEncoder._backgroundColor;
         const a = p.aNormalized;
         const invA = 1 - a;
         p.r = Math.round(p.r * a + backgroundColor.r * invA);
-        p.g = Math.round(p.g * a + backgroundColor.r * invA);
-        p.b = Math.round(p.b * a + backgroundColor.r * invA);
+        p.g = Math.round(p.g * a + backgroundColor.g * invA);
+        p.b = Math.round(p.b * a + backgroundColor.b * invA);
       }
       const r = Math.trunc(p.r);
       const g = Math.trunc(p.g);
@@ -969,6 +969,8 @@ export class JpegEncoder implements Encoder {
 
     const width = image.width;
     const height = image.height;
+    const backgroundColor =
+      image.backgroundColor ?? JpegEncoder._backgroundColor;
 
     let dcy: number = 0;
     let dcu: number = 0;
@@ -981,7 +983,17 @@ export class JpegEncoder implements Encoder {
 
       for (let y = 0; y < height; y += 8) {
         for (let x = 0; x < width; x += 8) {
-          this.calculateYUV(image, x, y, width, height, ydu, udu, vdu);
+          this.calculateYUV(
+            image,
+            x,
+            y,
+            width,
+            height,
+            ydu,
+            udu,
+            vdu,
+            backgroundColor
+          );
           dcy = this.processDU(
             fp,
             ydu,
@@ -1027,7 +1039,17 @@ export class JpegEncoder implements Encoder {
 
       for (let y = 0; y < height; y += 16) {
         for (let x = 0; x < width; x += 16) {
-          this.calculateYUV(image, x, y, width, height, ydu[0], udu[0], vdu[0]);
+          this.calculateYUV(
+            image,
+            x,
+            y,
+            width,
+            height,
+            ydu[0],
+            udu[0],
+            vdu[0],
+            backgroundColor
+          );
           this.calculateYUV(
             image,
             x + 8,
@@ -1036,7 +1058,8 @@ export class JpegEncoder implements Encoder {
             height,
             ydu[1],
             udu[1],
-            vdu[1]
+            vdu[1],
+            backgroundColor
           );
           this.calculateYUV(
             image,
@@ -1046,7 +1069,8 @@ export class JpegEncoder implements Encoder {
             height,
             ydu[2],
             udu[2],
-            vdu[2]
+            vdu[2],
+            backgroundColor
           );
           this.calculateYUV(
             image,
@@ -1056,7 +1080,8 @@ export class JpegEncoder implements Encoder {
             height,
             ydu[3],
             udu[3],
-            vdu[3]
+            vdu[3],
+            backgroundColor
           );
           JpegEncoder.downsampleDU(sudu, udu[0], udu[1], udu[2], udu[3]);
           JpegEncoder.downsampleDU(svdu, vdu[0], vdu[1], vdu[2], vdu[3]);
