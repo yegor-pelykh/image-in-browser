@@ -1001,7 +1001,10 @@ export class MemoryImage implements Iterable<Pixel> {
   public addFrame(image?: MemoryImage): MemoryImage {
     const img = image ?? MemoryImage.from(this, true, true);
     img._frameIndex = this._frames.length;
-    if (this._frames[this._frames.length - 1] !== img) {
+    if (
+      this._frames.length === 0 ||
+      this._frames[this._frames.length - 1] !== img
+    ) {
       this._frames.push(img);
     }
     return img;
