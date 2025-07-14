@@ -820,7 +820,12 @@ export class GifDecoder implements Decoder {
       });
 
       if (frame.disposal === 2) {
-        nextImage.clear(colorMap.getColor(this._info.backgroundColor!.r));
+        const imageBytes = nextImage.toUint8Array();
+        imageBytes.fill(
+          0,
+          imageBytes.length - 1,
+          this._info.backgroundColor!.r
+        );
       } else if (frame.disposal !== 3) {
         if (frame.colorMap !== undefined) {
           const lp = lastImage.palette!;
@@ -841,7 +846,7 @@ export class GifDecoder implements Decoder {
             const lc = lastBytes[i];
             const nc = remapColors.get(lc)!;
             if (nc !== -1) {
-              nextBytes[i] = nc!;
+              nextBytes[i] = nc;
             }
           }
         }
