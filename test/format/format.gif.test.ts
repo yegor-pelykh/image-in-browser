@@ -24,6 +24,48 @@ import { ImageTestUtils } from '../_utils/image-test-utils';
  */
 describe('Format: GIF', TestUtils.testOptions, () => {
   /**
+   * Test case for bounce.gif animation.
+   */
+  test('bounce', () => {
+    const input1 = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'bounce.gif'
+    );
+    const g1 = decodeGif({
+      data: input1,
+    });
+
+    expect(g1).toBeDefined();
+    if (g1 === undefined) {
+      return;
+    }
+
+    const output = encodeGif({
+      image: g1,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.gif,
+      'bounce.gif',
+      output
+    );
+
+    for (const frame of g1.frames) {
+      const output = encodePng({
+        image: frame,
+        singleFrame: true,
+      });
+      TestUtils.writeToFile(
+        TestFolder.output,
+        TestSection.gif,
+        `bounce_${frame.frameIndex}.png`,
+        output
+      );
+    }
+  });
+
+  /**
    * Test case for animated.gif animation.
    */
   test('animated', () => {
