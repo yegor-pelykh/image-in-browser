@@ -330,6 +330,8 @@ export class GifDecoder implements Decoder {
 
       gifImage.duration = this._duration;
       gifImage.disposal = this._disposalMethod;
+      gifImage.transparent =
+        this._transparentFlag !== 0 ? this._transparent : -1;
 
       if (this._transparentFlag !== 0) {
         if (
@@ -821,11 +823,15 @@ export class GifDecoder implements Decoder {
 
       if (frame.disposal === 2) {
         const imageBytes = nextImage.toUint8Array();
-        imageBytes.fill(
-          0,
-          imageBytes.length - 1,
-          this._info.backgroundColor!.r
-        );
+        if (frame.transparent !== -1) {
+          imageBytes.fill(frame.transparent, 0, imageBytes.length - 1);
+        } else {
+          imageBytes.fill(
+            this._info.backgroundColor!.r,
+            0,
+            imageBytes.length - 1
+          );
+        }
       } else if (frame.disposal !== 3) {
         if (frame.colorMap !== undefined) {
           const lp = lastImage.palette!;

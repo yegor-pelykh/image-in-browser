@@ -140,6 +140,9 @@ export class GifColorMap {
   public findColor(r: number, g: number, b: number, a: number): number {
     let closestDistance: number = -1;
     let closestIndex: number = -1;
+    if (a === 0 && this._transparent !== undefined) {
+      return this._transparent;
+    }
     for (let i = 0; i < this._numColors; ++i) {
       const pr = this._palette.getRed(i);
       const pg = this._palette.getGreen(i);

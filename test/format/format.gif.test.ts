@@ -7,6 +7,7 @@ import {
   decodePng,
   Draw,
   encodeGif,
+  encodePng,
   Format,
   MemoryImage,
   Point,
@@ -22,6 +23,48 @@ import { ImageTestUtils } from '../_utils/image-test-utils';
  * Test suite for GIF format operations.
  */
 describe('Format: GIF', TestUtils.testOptions, () => {
+  /**
+   * Test case for animated.gif animation.
+   */
+  test('animated', () => {
+    const input1 = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'animated.gif'
+    );
+    const g1 = decodeGif({
+      data: input1,
+    });
+
+    expect(g1).toBeDefined();
+    if (g1 === undefined) {
+      return;
+    }
+
+    const output = encodeGif({
+      image: g1,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.gif,
+      'animated.gif',
+      output
+    );
+
+    for (const frame of g1.frames) {
+      const output = encodePng({
+        image: frame,
+        singleFrame: true,
+      });
+      TestUtils.writeToFile(
+        TestFolder.output,
+        TestSection.gif,
+        `animated_${frame.frameIndex}.png`,
+        output
+      );
+    }
+  });
+
   /**
    * Test case for anim_palette GIF.
    */

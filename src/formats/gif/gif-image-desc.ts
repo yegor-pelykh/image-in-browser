@@ -81,6 +81,17 @@ export class GifImageDesc {
   }
 
   /**
+   * The transparency value of the frame.
+   */
+  private _transparent: number = -1;
+  public set transparent(v: number) {
+    this._transparent = v;
+  }
+  public get transparent(): number {
+    return this._transparent;
+  }
+
+  /**
    * The position in the file after the ImageDesc for this frame.
    */
   protected _inputPosition: number;
