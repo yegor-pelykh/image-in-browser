@@ -34,6 +34,8 @@ interface DrawLineWuOptions {
   line: Line;
   /** The color to use for drawing. */
   color: Color;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -66,6 +68,8 @@ interface DrawAntialiasCircleOptions {
   color: Color;
   /** The quadrants of the circle to draw. */
   quadrants?: CircleQuadrant;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The mask image. */
   mask?: MemoryImage;
   /** The channel to use for masking. */
@@ -86,6 +90,8 @@ export interface DrawCircleOptions {
   color: Color;
   /** Whether to use antialiasing. */
   antialias?: boolean;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The mask image. */
   mask?: MemoryImage;
   /** The channel to use for masking. */
@@ -130,6 +136,8 @@ export interface DrawPolygonOptions {
   antialias?: boolean;
   /** The thickness of the polygon's edges. */
   thickness?: number;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -150,6 +158,8 @@ export interface DrawRectOptions {
   thickness?: number;
   /** The radius for rounded corners. */
   radius?: number;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -170,6 +180,8 @@ export interface FillCircleOptions {
   color: Color;
   /** Whether to use antialiasing. */
   antialias?: boolean;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -222,6 +234,8 @@ export interface FillPolygonOptions {
   vertices: Point[];
   /** The color to use for filling. */
   color: Color;
+  /** The blend mode to use. */
+  blend?: BlendMode;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -393,6 +407,7 @@ export abstract class Draw {
    * @param {number} opt.radius - The radius of the circle.
    * @param {Color} opt.color - The color of the circle.
    * @param {CircleQuadrant} [opt.quadrants] - The quadrants of the circle to draw.
+   * @param {BlendMode} [opt.blend] - The blend mode to use for drawing the circle. Defaults to BlendMode.alpha.
    * @param {Channel} [opt.maskChannel] - The mask channel to use.
    * @param {MemoryImage} [opt.mask] - The mask to apply.
    * @returns {MemoryImage} The image with the drawn circle.
@@ -400,6 +415,7 @@ export abstract class Draw {
   private static drawAntialiasCircle(
     opt: DrawAntialiasCircleOptions
   ): MemoryImage {
+    const blend = opt.blend ?? BlendMode.alpha;
     /**
      * Draws a pixel in four quadrants of the circle.
      *
@@ -423,6 +439,7 @@ export abstract class Draw {
           pos: new Point(x + dx, y + dy),
           color: opt.color,
           alpha: alpha,
+          blend: blend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -435,6 +452,7 @@ export abstract class Draw {
           pos: new Point(x - dx, y + dy),
           color: opt.color,
           alpha: alpha,
+          blend: blend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -447,6 +465,7 @@ export abstract class Draw {
           pos: new Point(x + dx, y - dy),
           color: opt.color,
           alpha: alpha,
+          blend: blend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -459,6 +478,7 @@ export abstract class Draw {
           pos: new Point(x - dx, y - dy),
           color: opt.color,
           alpha: alpha,
+          blend: blend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -490,7 +510,21 @@ export abstract class Draw {
    * @param {DrawLineWuOptions} opt - The options for drawing the line, including the image, line coordinates, color, and mask options.
    * @returns {MemoryImage} The image with the line drawn on it.
    */
+
+  /**
+   * Draws a line on an image using Wu's line algorithm, which provides anti-aliased lines.
+   *
+   * @param {DrawLineWuOptions} opt - The options for drawing the line, including:
+   *   @param {MemoryImage} opt.image - The image on which the line will be drawn.
+   *   @param {Line} opt.line - The line coordinates, including start and end points.
+   *   @param {Color} opt.color - The color of the line.
+   *   @param {BlendMode} [opt.blend] - The blending mode to use when drawing the line.
+   *   @param {number} [opt.maskChannel] - The mask channel to use for blending.
+   *   @param {Mask} [opt.mask] - The mask to apply when drawing the line.
+   * @returns {MemoryImage} The image with the line drawn on it.
+   */
   private static drawLineWu(opt: DrawLineWuOptions): MemoryImage {
+    const blend = opt.blend ?? BlendMode.alpha;
     const line = opt.line.clone();
     const steep = Math.abs(line.dy) > Math.abs(line.dx);
 
@@ -519,6 +553,7 @@ export abstract class Draw {
         pos: new Point(ypxl1, xpxl1),
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -527,6 +562,7 @@ export abstract class Draw {
         pos: new Point(ypxl1 + 1, xpxl1),
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -536,6 +572,7 @@ export abstract class Draw {
         pos: new Point(xpxl1, ypxl1),
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -544,6 +581,7 @@ export abstract class Draw {
         pos: new Point(xpxl1, ypxl1 + 1),
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -567,6 +605,7 @@ export abstract class Draw {
         pos: new Point(ypxl2, xpxl2),
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        blend: blend,
         mask: opt.mask,
         maskChannel: opt.maskChannel,
       });
@@ -575,6 +614,7 @@ export abstract class Draw {
         pos: new Point(ypxl2 + 1, xpxl2),
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -586,6 +626,7 @@ export abstract class Draw {
           pos: new Point(Math.floor(intery), x),
           color: opt.color,
           alpha: 1 - (intery - Math.floor(intery)),
+          blend: blend,
           mask: opt.mask,
           maskChannel: opt.maskChannel,
         });
@@ -594,6 +635,7 @@ export abstract class Draw {
           pos: new Point(Math.floor(intery) + 1, x),
           color: opt.color,
           alpha: intery - Math.floor(intery),
+          blend: blend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -606,6 +648,7 @@ export abstract class Draw {
         pos: new Point(xpxl2, ypxl2),
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -614,6 +657,7 @@ export abstract class Draw {
         pos: new Point(xpxl2, ypxl2 + 1),
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
+        blend: blend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -625,6 +669,7 @@ export abstract class Draw {
           pos: new Point(x, Math.floor(intery)),
           color: opt.color,
           alpha: 1 - (intery - Math.floor(intery)),
+          blend: blend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -633,6 +678,7 @@ export abstract class Draw {
           pos: new Point(x, Math.floor(intery) + 1),
           color: opt.color,
           alpha: intery - Math.floor(intery),
+          blend: blend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -986,6 +1032,7 @@ export abstract class Draw {
    * @param {Point} opt.center - The center point of the circle.
    * @param {number} opt.radius - The radius of the circle.
    * @param {Color} opt.color - The color of the circle.
+   * @param {BlendMode} [opt.blend] - The blending mode to use (default is BlendMode.alpha).
    * @param {MemoryImage} [opt.mask] - An optional mask to apply.
    * @param {Channel} [opt.maskChannel] - The channel of the mask to use (default is luminance).
    * @param {boolean} [opt.antialias] - Whether to apply antialiasing (default is false).
@@ -993,6 +1040,7 @@ export abstract class Draw {
    */
   public static drawCircle(opt: DrawCircleOptions): MemoryImage {
     const antialias = opt.antialias ?? false;
+    const blend = opt.blend ?? BlendMode.alpha;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     if (antialias) {
       return Draw.drawAntialiasCircle({
@@ -1001,6 +1049,7 @@ export abstract class Draw {
         y: opt.center.y,
         radius: opt.radius,
         color: opt.color,
+        blend: blend,
         mask: opt.mask,
         maskChannel: maskChannel,
       });
@@ -1016,6 +1065,7 @@ export abstract class Draw {
         image: opt.image,
         pos: new Point(pt.x, pt.y),
         color: opt.color,
+        blend: blend,
         mask: opt.mask,
         maskChannel: maskChannel,
       });
@@ -1031,13 +1081,15 @@ export abstract class Draw {
    * @param {Point} opt.center - The center point of the circle.
    * @param {number} opt.radius - The radius of the circle.
    * @param {Color} opt.color - The color to fill the circle with.
-   * @param {boolean} [opt.antialias=false] - Whether to apply antialiasing (optional, default is false).
-   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking (optional, default is luminance).
+   * @param {boolean} [opt.antialias] - Whether to apply antialiasing (optional, default is false).
+   * @param {BlendMode} [opt.blend] - The blend mode to use (optional, default is alpha).
+   * @param {Channel} [opt.maskChannel] - The channel to use for masking (optional, default is luminance).
    * @param {MemoryImage} [opt.mask] - The mask to apply (optional).
    * @returns {MemoryImage} The image with the filled circle.
    */
   public static fillCircle(opt: FillCircleOptions): MemoryImage {
     const antialias = opt.antialias ?? false;
+    const blend = opt.blend ?? BlendMode.alpha;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     const radiusSqr = opt.radius * opt.radius;
     const x1 = Math.max(0, opt.center.x - opt.radius);
@@ -1058,6 +1110,7 @@ export abstract class Draw {
             pos: new Point(p.x, p.y),
             color: opt.color,
             alpha: alpha,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1071,6 +1124,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(p.x, p.y),
             color: opt.color,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1088,13 +1142,15 @@ export abstract class Draw {
    * @param {MemoryImage} opt.image The image on which the line will be drawn.
    * @param {Line} opt.line The line coordinates.
    * @param {Color} opt.color The color of the line.
-   * @param {number} [opt.thickness=1] The thickness of the line.
-   * @param {boolean} [opt.antialias=false] Whether to apply antialiasing.
-   * @param {Channel} [opt.maskChannel=Channel.luminance] The mask channel to use.
+   * @param {BlendMode} [opt.blend] - The blending mode to use (default is BlendMode.alpha).
+   * @param {number} [opt.thickness] The thickness of the line.
+   * @param {boolean} [opt.antialias] Whether to apply antialiasing.
+   * @param {Channel} [opt.maskChannel] The mask channel to use.
    * @param {MemoryImage} [opt.mask] The mask to apply.
    * @returns {MemoryImage} The modified image with the drawn line.
    */
   public static drawLine(opt: DrawLineOptions): MemoryImage {
+    const blend = opt.blend ?? BlendMode.alpha;
     const line = opt.line.clone();
     const antialias = opt.antialias ?? false;
     const thickness = opt.thickness ?? 1;
@@ -1119,6 +1175,7 @@ export abstract class Draw {
           image: opt.image,
           pos: new Point(line.x1, line.y1),
           color: opt.color,
+          blend: blend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -1128,6 +1185,7 @@ export abstract class Draw {
           center: new Point(line.x1, line.y1),
           radius: radius,
           color: opt.color,
+          blend: blend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -1144,6 +1202,7 @@ export abstract class Draw {
               image: opt.image,
               pos: new Point(line.x1, y),
               color: opt.color,
+              blend: blend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1153,6 +1212,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(line.x1 - radius + i, y),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1166,6 +1226,7 @@ export abstract class Draw {
               image: opt.image,
               pos: new Point(line.x1, y),
               color: opt.color,
+              blend: blend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1175,6 +1236,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(line.x1 - radius + i, y),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1191,6 +1253,7 @@ export abstract class Draw {
               image: opt.image,
               pos: new Point(x, line.y1),
               color: opt.color,
+              blend: blend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1200,6 +1263,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(x, line.y1 - radius + i),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1213,6 +1277,7 @@ export abstract class Draw {
               image: opt.image,
               pos: new Point(x, line.y1),
               color: opt.color,
+              blend: blend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1222,6 +1287,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(x, line.y1 - radius + i),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1281,6 +1347,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(x, w),
             color: opt.color,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1301,6 +1368,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(x, w),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1321,6 +1389,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(x, w),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1366,6 +1435,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(w, y),
             color: opt.color,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1386,6 +1456,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(w, y),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1406,6 +1477,7 @@ export abstract class Draw {
                 image: opt.image,
                 pos: new Point(w, y),
                 color: opt.color,
+                blend: blend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1423,6 +1495,7 @@ export abstract class Draw {
         image: opt.image,
         line: new Line(line.x1, line.y1, line.x2, line.y2),
         color: opt.color,
+        blend: blend,
       });
     }
 
@@ -1459,6 +1532,7 @@ export abstract class Draw {
             pos: new Point(x, w),
             color: opt.color,
             alpha: ((frac >>> 8) & 0xff) / 255,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1468,6 +1542,7 @@ export abstract class Draw {
             pos: new Point(x, w + 1),
             color: opt.color,
             alpha: ((xor(frac) >>> 8) & 0xff) / 255,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1535,10 +1610,10 @@ export abstract class Draw {
    * @param {MemoryImage} opt.image The image to draw on.
    * @param {Position} opt.pos The position to draw the pixel.
    * @param {Color} opt.color The color of the pixel.
-   * @param {BlendMode} [opt.blend=BlendMode.alpha] The blending mode to use (default is BlendMode.alpha).
-   * @param {boolean} [opt.linearBlend=false] Whether to use linear blending (default is false).
+   * @param {BlendMode} [opt.blend] The blending mode to use (default is BlendMode.alpha).
+   * @param {boolean} [opt.linearBlend] Whether to use linear blending (default is false).
    * @param {MemoryImage} [opt.mask] An optional mask image.
-   * @param {Channel} [opt.maskChannel=Channel.luminance] The channel of the mask to use (default is Channel.luminance).
+   * @param {Channel} [opt.maskChannel] The channel of the mask to use (default is Channel.luminance).
    * @param {Color} [opt.filter] An optional color filter.
    * @param {number} [opt.alpha] An optional alpha value.
    * @returns {MemoryImage} The modified image with the pixel drawn.
@@ -1863,18 +1938,20 @@ export abstract class Draw {
    * @param {MemoryImage} opt.image The image on which to draw the polygon.
    * @param {Array<Point>} opt.vertices An array of points representing the vertices of the polygon.
    * @param {Color} opt.color The color to use for the polygon.
-   * @param {boolean} [opt.antialias=false] Optional. Whether to apply antialiasing. Defaults to false.
-   * @param {number} [opt.thickness=1] Optional. The thickness of the polygon lines. Defaults to 1.
-   * @param {Channel} [opt.maskChannel=Channel.luminance] Optional. The channel to use for masking. Defaults to luminance.
+   * @param {BlendMode} [opt.blend] - The blending mode to use (default is BlendMode.alpha).
+   * @param {boolean} [opt.antialias] Optional. Whether to apply antialiasing. Defaults to false.
+   * @param {number} [opt.thickness] Optional. The thickness of the polygon lines. Defaults to 1.
+   * @param {Channel} [opt.maskChannel] Optional. The channel to use for masking. Defaults to luminance.
    * @param {MemoryImage} [opt.mask] Optional. A mask to apply when drawing.
    * @returns {MemoryImage} The image with the polygon drawn on it.
    */
   public static drawPolygon(opt: DrawPolygonOptions): MemoryImage {
     const antialias = opt.antialias ?? false;
     const thickness = opt.thickness ?? 1;
+    const blend = opt.blend ?? BlendMode.alpha;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    if (opt.color.a === 0) {
+    if (blend === BlendMode.alpha && opt.color.a === 0) {
       return opt.image;
     }
 
@@ -1890,6 +1967,7 @@ export abstract class Draw {
         image: opt.image,
         pos: vertices[0],
         color: opt.color,
+        blend: blend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -1907,6 +1985,7 @@ export abstract class Draw {
         color: opt.color,
         antialias: antialias,
         thickness: thickness,
+        blend: blend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -1924,6 +2003,7 @@ export abstract class Draw {
         color: opt.color,
         antialias: antialias,
         thickness: thickness,
+        blend: blend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -1940,6 +2020,7 @@ export abstract class Draw {
       color: opt.color,
       antialias: antialias,
       thickness: thickness,
+      blend: blend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -1954,9 +2035,10 @@ export abstract class Draw {
    * @param {MemoryImage} opt.image - The image on which to draw the rectangle.
    * @param {Rectangle} opt.rect - The rectangle dimensions and position.
    * @param {Color} opt.color - The color of the rectangle.
+   * @param {BlendMode} [opt.blend] - The blending mode to use (default is BlendMode.alpha).
    * @param {number} [opt.thickness=1] - The thickness of the rectangle's border. Defaults to 1.
    * @param {number} [opt.radius=0] - The radius for rounded corners. Defaults to 0.
-   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking. Defaults to Channel.luminance.
+   * @param {Channel} [opt.maskChannel] - The channel to use for masking. Defaults to Channel.luminance.
    * @param {MemoryImage} [opt.mask] - An optional mask to apply when drawing.
    * @returns {MemoryImage} The modified image with the drawn rectangle.
    */
@@ -1964,6 +2046,7 @@ export abstract class Draw {
     const rect = opt.rect;
     const thickness = opt.thickness ?? 1;
     const radius = opt.radius ?? 0;
+    const blend = opt.blend ?? BlendMode.alpha;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const x0 = rect.left;
@@ -1978,21 +2061,25 @@ export abstract class Draw {
         image: opt.image,
         line: new Line(x0 + rad, y0, x1 - rad, y0),
         color: opt.color,
+        blend: blend,
       });
       Draw.drawLine({
         image: opt.image,
         line: new Line(x1, y0 + rad, x1, y1 - rad),
         color: opt.color,
+        blend: blend,
       });
       Draw.drawLine({
         image: opt.image,
         line: new Line(x0 + rad, y1, x1 - rad, y1),
         color: opt.color,
+        blend: blend,
       });
       Draw.drawLine({
         image: opt.image,
         line: new Line(x0, y0 + rad, x0, y1 - rad),
         color: opt.color,
+        blend: blend,
       });
 
       const c1x = x0 + rad;
@@ -2010,6 +2097,7 @@ export abstract class Draw {
         y: c1y,
         radius: rad,
         color: opt.color,
+        blend: blend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.topLeft,
         mask: opt.mask,
@@ -2021,6 +2109,7 @@ export abstract class Draw {
         y: c2y,
         radius: rad,
         color: opt.color,
+        blend: blend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.topRight,
         mask: opt.mask,
@@ -2032,6 +2121,7 @@ export abstract class Draw {
         y: c3y,
         radius: rad,
         color: opt.color,
+        blend: blend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.bottomRight,
         mask: opt.mask,
@@ -2043,6 +2133,7 @@ export abstract class Draw {
         y: c4y,
         radius: rad,
         color: opt.color,
+        blend: blend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.bottomLeft,
         mask: opt.mask,
@@ -2058,6 +2149,7 @@ export abstract class Draw {
       line: new Line(x0, y0, x1, y0),
       color: opt.color,
       thickness: thickness,
+      blend: blend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2067,6 +2159,7 @@ export abstract class Draw {
       line: new Line(x0, y1, x1, y1),
       color: opt.color,
       thickness: thickness,
+      blend: blend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2084,6 +2177,7 @@ export abstract class Draw {
       line: new Line(bx0, by0, bx0, by1),
       color: opt.color,
       thickness: thickness,
+      blend: blend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2093,6 +2187,7 @@ export abstract class Draw {
       line: new Line(bx1, by0, bx1, by1),
       color: opt.color,
       thickness: thickness,
+      blend: blend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2107,9 +2202,10 @@ export abstract class Draw {
    * @param {MemoryImage} opt.image - The image to be filled.
    * @param {Pixel} opt.start - The starting pixel coordinates for the flood fill.
    * @param {Pixel} opt.color - The color to fill the area with.
-   * @param {number} [opt.threshold=0] - The color distance threshold for the fill.
-   * @param {boolean} [opt.compareAlpha=false] - Whether to compare the alpha channel.
-   * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use for masking.
+   * @param {BlendMode} [opt.blend] - The blending mode to use (default is BlendMode.alpha).
+   * @param {number} [opt.threshold= - The color distance threshold for the fill.
+   * @param {boolean} [opt.compareAlpha] - Whether to compare the alpha channel.
+   * @param {Channel} [opt.maskChannel] - The channel to use for masking.
    * @param {MemoryImage} [opt.mask] - An optional mask image.
    * @returns {MemoryImage} The modified image after the flood fill operation.
    */
@@ -2188,14 +2284,16 @@ export abstract class Draw {
    * @param {MemoryImage} opt.image - The image to draw on.
    * @param {Array<Point>} opt.vertices - An array of points representing the vertices of the polygon.
    * @param {Color} opt.color - The color to fill the polygon with.
+   * @param {BlendMode} [opt.blend] - The blending mode to use (default is BlendMode.alpha).
    * @param {MemoryImage} [opt.mask] - An optional mask to apply.
    * @param {Channel} [opt.maskChannel] - The channel of the mask to use (default is luminance).
    * @returns {MemoryImage} - The modified image with the polygon filled.
    */
   public static fillPolygon(opt: FillPolygonOptions): MemoryImage {
+    const blend = opt.blend ?? BlendMode.alpha;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    if (opt.color.a === 0) {
+    if (blend === BlendMode.alpha && opt.color.a === 0) {
       return opt.image;
     }
 
@@ -2210,6 +2308,7 @@ export abstract class Draw {
         image: opt.image,
         pos: opt.vertices[0],
         color: opt.color,
+        blend: blend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -2225,6 +2324,7 @@ export abstract class Draw {
           opt.vertices[1].y
         ),
         color: opt.color,
+        blend: blend,
         mask: opt.mask,
         maskChannel: maskChannel,
       });
@@ -2278,6 +2378,7 @@ export abstract class Draw {
             image: opt.image,
             pos: new Point(xi, yi),
             color: opt.color,
+            blend: blend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
