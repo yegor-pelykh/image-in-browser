@@ -108,6 +108,7 @@ export { LibError } from './error/lib-error.js';
 export { IfdAsciiValue } from './exif/ifd-value/ifd-ascii-value.js';
 export { IfdByteValue } from './exif/ifd-value/ifd-byte-value.js';
 export { IfdDoubleValue } from './exif/ifd-value/ifd-double-value.js';
+export { IfdIfdValue } from './exif/ifd-value/ifd-ifd-value.js';
 export { IfdLongValue } from './exif/ifd-value/ifd-long-value.js';
 export { IfdRationalValue } from './exif/ifd-value/ifd-rational-value.js';
 export { IfdSByteValue } from './exif/ifd-value/ifd-sbyte-value.js';

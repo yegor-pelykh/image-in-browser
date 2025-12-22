@@ -28,10 +28,12 @@ export enum IfdValueType {
   single,
   /** Double precision floating point value type */
   double,
+  /** IFD offset value type (points to another IFD/sub-IFD) */
+  ifd,
 }
 
 /** Array representing the size of each IFD value type */
-export const IfdValueTypeSize = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
+export const IfdValueTypeSize = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4];
 
 /**
  * Function to get the string representation of an IFD value type

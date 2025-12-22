@@ -1,6 +1,7 @@
 /** @format */
 
 import { InputBuffer } from '../common/input-buffer.js';
+import { LibError } from '../error/lib-error.js';
 import { ExifData } from '../exif/exif-data.js';
 import { FrameType } from '../image/frame-type.js';
 import { MemoryImage } from '../image/image.js';
@@ -209,9 +210,16 @@ export class TiffDecoder implements Decoder {
       return undefined;
     }
 
+    // By default decode all frames and include the metadata in the result.
+    // Most tif images have only a single image.
     const len = this.numFrames;
-    if (len === 1 || opt.frameIndex !== undefined) {
-      return this.decodeFrame(opt.frameIndex ?? 0);
+    if (opt.frameIndex !== undefined) {
+      if (opt.frameIndex >= len) {
+        throw new LibError(
+          `Invalid value: frameIndex is not in range 0..${len - 1}, inclusive.`
+        );
+      }
+      return this.decodeFrame(opt.frameIndex);
     }
 
     const image = this.decodeFrame(0);

@@ -10,6 +10,7 @@ import { IfdValueType, IfdValueTypeSize } from './ifd-value-type.js';
 import { IfdAsciiValue } from './ifd-value/ifd-ascii-value.js';
 import { IfdByteValue } from './ifd-value/ifd-byte-value.js';
 import { IfdDoubleValue } from './ifd-value/ifd-double-value.js';
+import { IfdIfdValue } from './ifd-value/ifd-ifd-value.js';
 import { IfdLongValue } from './ifd-value/ifd-long-value.js';
 import { IfdRationalValue } from './ifd-value/ifd-rational-value.js';
 import { IfdSByteValue } from './ifd-value/ifd-sbyte-value.js';
@@ -211,6 +212,11 @@ export class ExifData extends IfdContainer {
         break;
       case IfdValueType.double:
         entry.value = IfdDoubleValue.data(data, count);
+        break;
+      case IfdValueType.ifd:
+        if (count === 1) {
+          entry.value = IfdIfdValue.data(data);
+        }
         break;
     }
 

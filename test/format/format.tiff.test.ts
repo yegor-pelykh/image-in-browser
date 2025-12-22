@@ -333,6 +333,9 @@ describe('Format: TIFF', TestUtils.testOptions, () => {
         return;
       }
 
+      expect(image.width).not.toBe(0);
+      expect(image.height).not.toBe(0);
+
       const i0 = image;
       const i1 = i0.isHdrFormat
         ? i0.convert({
@@ -388,6 +391,42 @@ describe('Format: TIFF', TestUtils.testOptions, () => {
       );
     });
   }
+
+  /**
+   * Test for reading a multipage TIFF file. Ensures that all pages are correctly detected and parsed.
+   */
+  test('multipageTiff', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.tiff,
+      'UF1_id1cS2300G0C2.tif'
+    );
+    const image = decodeTiff({
+      data: input,
+    });
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    expect(image.frames.length).toBe(8);
+
+    for (const frame of image.frames) {
+      expect(frame.width).not.toBe(0);
+      expect(frame.height).not.toBe(0);
+    }
+
+    const image2 = decodeTiff({
+      data: input,
+      frameIndex: 2,
+    });
+    expect(image2).toBeDefined();
+    if (image2 === undefined) {
+      return;
+    }
+
+    expect(image.frames[2].width).toBe(image2.width);
+  });
 });
 
 const _expectedInfo = new Map<string, TiffFileInfo>([

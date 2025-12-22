@@ -20,6 +20,7 @@ import { IfdDoubleValue } from './ifd-value/ifd-double-value.js';
 import { TypedArray } from '../common/typings.js';
 import { StringUtils } from '../common/string-utils.js';
 import { ArrayUtils } from '../common/array-utils.js';
+import { IfdIfdValue } from './ifd-value/ifd-ifd-value.js';
 
 /**
  * Represents a directory of IFD (Image File Directory) entries.
@@ -769,6 +770,11 @@ export class IfdDirectory {
                 );
               } else if (typeof value === 'number') {
                 this._data.set(_tag, new IfdDoubleValue(value));
+              }
+              break;
+            case IfdValueType.ifd:
+              if (typeof value === 'number') {
+                this._data.set(_tag, new IfdIfdValue(value));
               }
               break;
             case IfdValueType.none:

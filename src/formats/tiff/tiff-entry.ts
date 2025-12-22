@@ -166,6 +166,7 @@ export class TiffEntry {
       case IfdValueType.sRational:
         return (this._value = IfdSRationalValue.data(data, this._count));
       default:
+      case IfdValueType.ifd:
       case IfdValueType.none:
         return undefined;
     }

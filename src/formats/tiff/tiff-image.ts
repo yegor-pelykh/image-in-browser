@@ -397,9 +397,14 @@ export class TiffImage {
     for (let i = 0; i < numDirEntries; ++i) {
       const tag = p.readUint16();
       const ti = p.readUint16();
+      const count = p.readUint32();
+      if (ti > 13 || ti < 0) {
+        // Skip invalid tag types
+        p.skip(4);
+        continue;
+      }
       const type = ti as IfdValueType;
       const typeSize = IfdValueTypeSize[ti];
-      const count = p.readUint32();
       let valueOffset = 0;
       // The value for the tag is either stored in another location,
       // or within the tag itself (if the size fits in 4 bytes).
@@ -893,7 +898,10 @@ export class TiffImage {
         byteData = new InputBuffer<Uint8Array>({
           buffer: outData,
         });
-      } else if (this._compression === TiffCompression.oldJpeg) {
+      } else if (
+        this._compression === TiffCompression.oldJpeg ||
+        this._compression === TiffCompression.jpeg
+      ) {
         const data = p.toUint8Array(0, byteCount);
         const tile = new JpegDecoder().decode({
           bytes: data,
