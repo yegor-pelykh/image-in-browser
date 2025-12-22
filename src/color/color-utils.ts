@@ -343,7 +343,7 @@ export abstract class ColorUtils {
     if (maxCh === 0 || delta === 0) {
       hsv[0] = 0;
       hsv[1] = 0;
-      hsv[2] = 0;
+      hsv[2] = maxCh;
       return;
     }
 
