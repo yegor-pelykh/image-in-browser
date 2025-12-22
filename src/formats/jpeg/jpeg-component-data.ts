@@ -109,7 +109,17 @@ export class JpegComponentData {
     this._vSamples = vSamples;
     this._maxVSamples = maxVSamples;
     this._lines = lines;
-    this._hScaleShift = this._hSamples === 1 && this._maxHSamples === 2 ? 1 : 0;
-    this._vScaleShift = this._vSamples === 1 && this._maxVSamples === 2 ? 1 : 0;
+    this._hScaleShift =
+      this._hSamples === this._maxHSamples
+        ? 0
+        : this._hSamples === 1 && this._maxHSamples === 4
+          ? 2
+          : 1;
+    this._vScaleShift =
+      this._vSamples === this._maxVSamples
+        ? 0
+        : this._vSamples === 1 && this._maxVSamples === 4
+          ? 2
+          : 1;
   }
 }
