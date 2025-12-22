@@ -63,7 +63,7 @@ export abstract class ColorUtils {
     const cl = c.length;
     if (numChannels === 1) {
       const g = Math.trunc(c.length > 2 ? c.luminance : c.getChannel(0));
-      c2.setChannel(0, convertFormatValue(g, fromFormat, format));
+      c2.setChannel(0, convertFormatValue(Math.floor(g), fromFormat, format));
     } else if (numChannels <= cl) {
       for (let ci = 0; ci < numChannels; ++ci) {
         c2.setChannel(

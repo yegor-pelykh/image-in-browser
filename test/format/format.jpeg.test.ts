@@ -2,7 +2,9 @@
 
 import { describe, expect, test } from 'vitest';
 import {
+  ExifData,
   JpegChroma,
+  JpegDecoder,
   decodeJpg,
   decodeJpgExif,
   decodePng,
@@ -18,6 +20,86 @@ import { TestUtils } from '../_utils/test-utils';
  * Test suite for JPEG format handling.
  */
 describe('Format: JPEG', TestUtils.testOptions, () => {
+  /**
+   * Test to inject new EXIF data into a JPEG image that does not have EXIF,
+   * and verify that the injected EXIF data is present and correct.
+   */
+  test('inject new EXIF', () => {
+    const exifData = new ExifData();
+    exifData.imageIfd.setValue('xResolution', [300, 1]);
+    exifData.imageIfd.setValue('yResolution', [300, 1]);
+
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'jpeg444.jpg'
+    );
+
+    const jpg = injectJpgExif({ data: input, exifData: exifData });
+    expect(jpg).toBeDefined();
+    if (jpg === undefined) {
+      return;
+    }
+
+    const image2 = new JpegDecoder().decode({ bytes: jpg });
+    expect(image2).toBeDefined();
+    if (image2 === undefined) {
+      return;
+    }
+
+    let ed1 = exifData.imageIfd.getValue('XResolution');
+    let ed2 = image2.exifData.imageIfd.getValue('XResolution');
+    expect(ed1).toBeDefined();
+    expect(ed2).toBeDefined();
+    expect(ed1!.equals(ed2!)).toBeTruthy();
+
+    ed1 = exifData.imageIfd.getValue('YResolution');
+    ed2 = image2.exifData.imageIfd.getValue('YResolution');
+    expect(ed1).toBeDefined();
+    expect(ed2).toBeDefined();
+    expect(ed1!.equals(ed2!)).toBeTruthy();
+  });
+
+  /**
+   * Test to replace existing EXIF data in a JPEG image with new EXIF data,
+   * and verify that the replacement EXIF data is present and correct.
+   */
+  test('inject replacement EXIF', () => {
+    const exifData = new ExifData();
+    exifData.imageIfd.setValue('xResolution', [300, 1]);
+    exifData.imageIfd.setValue('yResolution', [300, 1]);
+
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'big_buck_bunny.jpg'
+    );
+
+    const jpg = injectJpgExif({ data: input, exifData: exifData });
+    expect(jpg).toBeDefined();
+    if (jpg === undefined) {
+      return;
+    }
+
+    const image2 = new JpegDecoder().decode({ bytes: jpg });
+    expect(image2).toBeDefined();
+    if (image2 === undefined) {
+      return;
+    }
+
+    let ed1 = exifData.imageIfd.getValue('XResolution');
+    let ed2 = image2.exifData.imageIfd.getValue('XResolution');
+    expect(ed1).toBeDefined();
+    expect(ed2).toBeDefined();
+    expect(ed1!.equals(ed2!)).toBeTruthy();
+
+    ed1 = exifData.imageIfd.getValue('YResolution');
+    ed2 = image2.exifData.imageIfd.getValue('YResolution');
+    expect(ed1).toBeDefined();
+    expect(ed2).toBeDefined();
+    expect(ed1!.equals(ed2!)).toBeTruthy();
+  });
+
   // Test to verify the decoding of a PNG image with an ICC profile and its conversion to JPEG
   test('png icc_profile', () => {
     const input = TestUtils.readFromFile(

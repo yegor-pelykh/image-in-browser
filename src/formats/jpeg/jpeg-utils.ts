@@ -52,6 +52,8 @@ export class JpegUtils {
     exif.write(exifData);
     const exifBytes = exifData.getBytes();
 
+    out.writeByte(0xff);
+    out.writeByte(JpegMarker.app1);
     out.writeUint16(exifBytes.length + 8);
     out.writeUint32(JpegUtils._exifSignature);
     out.writeUint16(0);
@@ -197,33 +199,38 @@ export class JpegUtils {
       bigEndian: true,
     });
 
-    let marker = this.nextMarker(input, output);
+    let marker = this.nextMarker(input);
     if (marker !== JpegMarker.soi) {
       return undefined;
     }
 
     // Check to see if the JPEG file has an EXIF block
     let hasExifBlock = false;
+    let exifBlockEndOffset = 0;
     const startOffset = input.offset;
+    let exifBlockStartOffset = startOffset;
     marker = this.nextMarker(input);
     while (!hasExifBlock && marker !== JpegMarker.eoi && !input.isEOS) {
       if (marker === JpegMarker.app1) {
         const block = this.readBlock(input);
         const signature = block?.readUint32();
         if (signature === JpegUtils._exifSignature) {
+          exifBlockEndOffset = input.offset;
           hasExifBlock = true;
           break;
         }
       } else {
         this.skipBlock(input);
       }
+      exifBlockStartOffset = startOffset;
       marker = this.nextMarker(input);
     }
 
-    input.offset = startOffset;
+    input.offset = 0;
 
     // If the JPEG file does not have an EXIF block, add a new one.
     if (!hasExifBlock) {
+      output.writeBuffer(input.readRange(startOffset));
       this.writeAPP1(output, exif);
       // No need to parse the remaining individual blocks, just write out
       // the remainder of the file.
@@ -231,26 +238,14 @@ export class JpegUtils {
       return output.getBytes();
     }
 
-    marker = this.nextMarker(input, output);
-    while (marker !== JpegMarker.eoi && !input.isEOS) {
-      if (marker === JpegMarker.app1) {
-        const saveOffset = input.offset;
-        // block length
-        input.skip(2);
-        const signature = input.readUint32();
-        input.offset = saveOffset;
-        if (signature === JpegUtils._exifSignature) {
-          this.skipBlock(input);
-          this.writeAPP1(output, exif);
-          // No need to parse the remaining individual blocks, just write out
-          // the remainder of the file.
-          output.writeBuffer(input.readRange(input.length));
-          return output.getBytes();
-        }
-      }
-      this.skipBlock(input, output);
-      marker = this.nextMarker(input, output);
-    }
+    // Write out the image file up until the exif block
+    output.writeBuffer(input.readRange(exifBlockStartOffset));
+    // Write the new EXIF block
+    this.writeAPP1(output, exif);
+    // Skip the EXIF block from the source
+    input.offset = exifBlockEndOffset;
+    // Write out the remainder of the image file
+    output.writeBuffer(input.readRange(input.length));
 
     return output.getBytes();
   }
