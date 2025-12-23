@@ -152,8 +152,6 @@ export class IfdSRationalValue extends IfdValue {
    * @returns {string} The string representation of the value.
    */
   public toString(): string {
-    return `${this.constructor.name} (${
-      this._value.length === 1 ? `${this._value[0]}` : `${this._value}`
-    })`;
+    return `[${this._value.toString()}]`;
   }
 }

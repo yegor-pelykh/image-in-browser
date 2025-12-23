@@ -112,6 +112,6 @@ export class IfdAsciiValue extends IfdValue {
    * @returns {string} The string representation of the ASCII value.
    */
   public toString(): string {
-    return `${this.constructor.name} (${this._value})`;
+    return this._value;
   }
 }

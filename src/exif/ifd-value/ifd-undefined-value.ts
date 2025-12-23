@@ -103,6 +103,6 @@ export class IfdUndefinedValue extends IfdValue {
    * @returns {string} The string representation of the IFD value.
    */
   public toString(): string {
-    return `${this.constructor.name} (undefined)`;
+    return 'undefined';
   }
 }

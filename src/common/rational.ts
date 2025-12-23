@@ -83,6 +83,6 @@ export class Rational {
    * Converts the rational number to a string representation.
    */
   public toString(): string {
-    return `${this.constructor.name} (${this._numerator}/${this._denominator})`;
+    return `${this._numerator}/${this._denominator}`;
   }
 }
