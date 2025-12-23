@@ -23,2037 +23,16 @@ import { StringUtils } from '../../common/string-utils.js';
 import { ExifData } from '../../exif/exif-data.js';
 
 /**
- * WebP lossy format
+ * WebP lossy format decoder (VP8)
  */
 export class VP8 {
-  // headers
-  /**
-   * VP8 Frame Header
-   */
-  private readonly _frameHeader = new VP8FrameHeader();
-  /**
-   * VP8 Picture Header
-   */
-  private readonly _picHeader = new VP8PictureHeader();
-  /**
-   * VP8 Filter Header
-   */
-  private readonly _filterHeader = new VP8FilterHeader();
-  /**
-   * VP8 Segment Header
-   */
-  private readonly _segmentHeader = new VP8SegmentHeader();
-
-  /**
-   * Input buffer for Uint8Array
-   */
-  private _input: InputBuffer<Uint8Array>;
-
-  /**
-   * Internal WebP information
-   */
-  private readonly _webp: WebPInfoInternal;
-  /**
-   * Public getter for WebP information
-   */
-  public get webp(): WebPInfo {
-    return this._webp;
-  }
-
-  /**
-   * Main data source
-   */
-  private _br!: VP8BitReader;
-  private _dsp!: VP8Filter;
-  private _output?: MemoryImage;
-
-  /**
-   * Left crop value
-   */
-  private _cropLeft: number = 0;
-  /**
-   * Right crop value
-   */
-  private _cropRight: number = 0;
-  /**
-   * Top crop value
-   */
-  private _cropTop: number = 0;
-  /**
-   * Bottom crop value
-   */
-  private _cropBottom: number = 0;
-
-  /**
-   * Width in macroblock units
-   */
-  private _mbWidth: number = 0;
-  /**
-   * Height in macroblock units
-   */
-  private _mbHeight: number = 0;
-
-  /**
-   * Top-left macroblock X coordinate that must be in-loop filtered
-   */
-  private _tlMbX: number = 0;
-  /**
-   * Top-left macroblock Y coordinate that must be in-loop filtered
-   */
-  private _tlMbY: number = 0;
-  /**
-   * Bottom-right macroblock X coordinate that must be decoded
-   */
-  private _brMbX: number = 0;
-  /**
-   * Bottom-right macroblock Y coordinate that must be decoded
-   */
-  private _brMbY: number = 0;
-
-  /**
-   * Number of partitions
-   */
-  private _numPartitions: number = 0;
-  /**
-   * Per-partition boolean decoders
-   */
-  private readonly _partitions: Array<VP8BitReader | undefined> =
-    ArrayUtils.fill<VP8BitReader | undefined>(VP8.maxNumPartitions, undefined);
-
-  /**
-   * Dithering strength, deduced from decoding options
-   * whether to use dithering or not
-   */
-  private readonly _dither: boolean = false;
-
-  /**
-   * Dequantization (one set of DC/AC dequant factor per segment)
-   */
-  private readonly _dqm: Array<VP8QuantMatrix | undefined> = ArrayUtils.fill<
-    VP8QuantMatrix | undefined
-  >(VP8.numMbSegments, undefined);
-
-  /**
-   * Probabilities
-   */
-  private _proba?: VP8Proba;
-  /**
-   * Whether to use skip probability
-   */
-  private _useSkipProba: boolean = false;
-  /**
-   * Skip probability
-   */
-  private _skipP: number = 0;
-
-  /**
-   * Top intra modes values: 4 * _mbWidth
-   */
-  private _intraT?: Uint8Array;
-
-  /**
-   * Left intra modes values
-   */
-  private readonly _intraL: Uint8Array = new Uint8Array(4);
-
-  /**
-   * Segment of the currently parsed block
-   */
-  private _segment: number = 0;
-
-  /**
-   * Top Y/U/V samples
-   */
-  private _yuvT!: VP8TopSamples[];
-
-  /**
-   * Contextual macroblock info (mb_w_ + 1)
-   */
-  private _mbInfo!: VP8MB[];
-
-  /**
-   * Filter strength info
-   */
-  private _fInfo!: Array<VP8FInfo | undefined>;
-
-  /**
-   * Main block for Y/U/V (size = YUV_SIZE)
-   */
-  private _yuvBlock!: Uint8Array;
-
-  /**
-   * Macroblock row for storing unfiltered samples
-   */
-  private _cacheY!: InputBuffer<Uint8Array>;
-  private _cacheU!: InputBuffer<Uint8Array>;
-  private _cacheV!: InputBuffer<Uint8Array>;
-  private _cacheYStride!: number;
-  private _cacheUVStride!: number;
-
-  private _tmpY!: InputBuffer<Uint8Array>;
-  private _tmpU!: InputBuffer<Uint8Array>;
-  private _tmpV!: InputBuffer<Uint8Array>;
-
-  private _y!: InputBuffer<Uint8Array>;
-  private _u!: InputBuffer<Uint8Array>;
-  private _v!: InputBuffer<Uint8Array>;
-  private _a?: InputBuffer<Uint8Array>;
-
-  /**
-   * Current position in macroblock units (X coordinate)
-   */
-  private _mbX: number = 0;
-  /**
-   * Current position in macroblock units (Y coordinate)
-   */
-  private _mbY: number = 0;
-
-  /**
-   * Parsed reconstruction data
-   */
-  private _mbData!: VP8MBData[];
-
-  /**
-   * Filter type: 0=off, 1=simple, 2=complex
-   */
-  private _filterType!: number;
-
-  /**
-   * Precalculated per-segment/type filter strengths
-   */
-  private _fStrengths!: Array<Array<VP8FInfo>>;
-
-  /**
-   * Alpha-plane decoder object
-   */
-  private _alpha!: WebPAlpha;
-
-  /**
-   * Compressed alpha data (if present)
-   */
-  private _alphaData?: InputBuffer<Uint8Array>;
-  /**
-   * Alpha plane data
-   */
-  private _alphaPlane!: Uint8Array;
-
-  /**
-   * Constructs a new VP8 instance.
-   * @param {InputBuffer<Uint8Array>} input - Input buffer of Uint8Array type.
-   * @param {WebPInfoInternal} webp - WebPInfoInternal object containing webp information.
-   */
-  constructor(input: InputBuffer<Uint8Array>, webp: WebPInfoInternal) {
-    this._input = input;
-    this._webp = webp;
-  }
-
-  /**
-   * Clips the value v to the range [0, M].
-   * @param {number} v - The value to be clipped.
-   * @param {number} M - The maximum value for clipping.
-   * @returns {number} The clipped value.
-   */
-  private static clip(v: number, M: number): number {
-    return v < 0 ? 0 : v > M ? M : v;
-  }
-
-  /**
-   * Checks the mode based on mbX and mbY values.
-   * @param {number} mbX - Macroblock X coordinate.
-   * @param {number} mbY - Macroblock Y coordinate.
-   * @param {number} [mode] - Optional mode value.
-   * @returns {number | undefined} The mode or undefined.
-   */
-  private static checkMode(
-    mbX: number,
-    mbY: number,
-    mode?: number
-  ): number | undefined {
-    if (mode === VP8.bDcPred) {
-      if (mbX === 0) {
-        return mbY === 0 ? VP8.bDcPredNoTopLeft : VP8.bDcPredNoLeft;
-      } else {
-        return mbY === 0 ? VP8.bDcPredNoTop : VP8.bDcPred;
-      }
-    }
-    return mode;
-  }
-
-  /**
-   * Retrieves the headers.
-   * @returns {boolean} True if headers are successfully retrieved, otherwise false.
-   */
-  private getHeaders(): boolean {
-    if (!this.decodeHeader()) {
-      return false;
-    }
-
-    this._proba = new VP8Proba();
-    for (let i = 0; i < VP8.numMbSegments; ++i) {
-      this._dqm[i] = new VP8QuantMatrix();
-    }
-
-    this._picHeader.width = this._webp.width;
-    this._picHeader.height = this._webp.height;
-    this._picHeader.xscale = (this._webp.width >>> 8) >>> 6;
-    this._picHeader.yscale = (this._webp.height >>> 8) >>> 6;
-
-    this._cropTop = 0;
-    this._cropLeft = 0;
-    this._cropRight = this._webp.width;
-    this._cropBottom = this._webp.height;
-
-    this._mbWidth = (this._webp.width + 15) >>> 4;
-    this._mbHeight = (this._webp.height + 15) >>> 4;
-
-    this._segment = 0;
-
-    this._br = new VP8BitReader(
-      this._input.subarray(this._frameHeader.partitionLength)
-    );
-    this._input.skip(this._frameHeader.partitionLength);
-
-    this._picHeader.colorspace = this._br.get();
-    this._picHeader.clampType = this._br.get();
-
-    if (!this.parseSegmentHeader(this._segmentHeader, this._proba)) {
-      return false;
-    }
-
-    // Filter specs
-    if (!this.parseFilterHeader()) {
-      return false;
-    }
-
-    if (!this.parsePartitions(this._input)) {
-      return false;
-    }
-
-    // quantizer change
-    this.parseQuant();
-
-    // Frame buffer marking
-    // ignore the value of update_proba_
-    this._br.get();
-
-    this.parseProba();
-
-    return true;
-  }
-
-  /**
-   * Parses the segment header.
-   * @param {VP8SegmentHeader} hdr - VP8SegmentHeader object containing segment header information.
-   * @param {VP8Proba} [proba] - Optional VP8Proba object containing probability information.
-   * @returns {boolean} True if segment header is successfully parsed, otherwise false.
-   */
-  private parseSegmentHeader(hdr: VP8SegmentHeader, proba?: VP8Proba): boolean {
-    hdr.useSegment = this._br.get() !== 0;
-    if (hdr.useSegment) {
-      hdr.updateMap = this._br.get() !== 0;
-      if (this._br.get() !== 0) {
-        // update data
-        hdr.absoluteDelta = this._br.get() !== 0;
-        for (let s = 0; s < VP8.numMbSegments; ++s) {
-          hdr.quantizer[s] =
-            this._br.get() !== 0 ? this._br.getSignedValue(7) : 0;
-        }
-        for (let s = 0; s < VP8.numMbSegments; ++s) {
-          hdr.filterStrength[s] =
-            this._br.get() !== 0 ? this._br.getSignedValue(6) : 0;
-        }
-      }
-      if (hdr.updateMap) {
-        for (let s = 0; s < VP8.mbFeatureTreeProbs; ++s) {
-          proba!.segments[s] =
-            this._br.get() !== 0 ? this._br.getValue(8) : 255;
-        }
-      }
-    } else {
-      hdr.updateMap = false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Parses the filter header.
-   *
-   * @returns {boolean} True if filter header is successfully parsed, otherwise false.
-   */
-  private parseFilterHeader(): boolean {
-    const hdr = this._filterHeader;
-    this._filterHeader.simple = this._br.get() !== 0;
-    this._filterHeader.level = this._br.getValue(6);
-    this._filterHeader.sharpness = this._br.getValue(3);
-    this._filterHeader.useLfDelta = this._br.get() !== 0;
-    if (hdr.useLfDelta) {
-      if (this._br.get() !== 0) {
-        // update lf-delta?
-        for (let i = 0; i < VP8.numRefLfDeltas; ++i) {
-          if (this._br.get() !== 0) {
-            hdr.refLfDelta[i] = this._br.getSignedValue(6);
-          }
-        }
-
-        for (let i = 0; i < VP8.numModeLfDeltas; ++i) {
-          if (this._br.get() !== 0) {
-            hdr.modeLfDelta[i] = this._br.getSignedValue(6);
-          }
-        }
-      }
-    }
-
-    this._filterType = hdr.level === 0 ? 0 : hdr.simple ? 1 : 2;
-
-    return true;
-  }
-
-  /**
-   * Parses the partitions from the given input buffer.
-   *
-   * @param {InputBuffer<Uint8Array>} input - The input buffer containing the data to be parsed.
-   * @returns {boolean} true if the partitions were successfully parsed, false otherwise.
-   */
-  private parsePartitions(input: InputBuffer<Uint8Array>): boolean {
-    let sz = 0;
-    const bufEnd = input.length;
-
-    this._numPartitions = 1 << this._br.getValue(2);
-    const lastPart = this._numPartitions - 1;
-    let partStart = lastPart * 3;
-    if (bufEnd < partStart) {
-      return false;
-    }
-
-    for (let p = 0; p < lastPart; ++p) {
-      const szb = input.peek(3, sz);
-      const psize = szb.get(0) | (szb.get(1) << 8) | (szb.get(2) << 16);
-      let partEnd = partStart + psize;
-      if (partEnd > bufEnd) {
-        partEnd = bufEnd;
-      }
-
-      const pin = input.subarray(partEnd - partStart, partStart);
-      this._partitions[p] = new VP8BitReader(pin);
-      partStart = partEnd;
-      sz += 3;
-    }
-
-    const pin = input.subarray(bufEnd - partStart, input.position + partStart);
-    this._partitions[lastPart] = new VP8BitReader(pin);
-
-    // Init is ok, but there's not enough data
-    return partStart < bufEnd;
-  }
-
-  /**
-   * Parses quantization parameters and updates the dequantization matrices.
-   *
-   * This method reads quantization values from the bit reader and updates the
-   * dequantization matrices for each macroblock segment based on the segment
-   * header and quantization parameters.
-   */
-  private parseQuant(): void {
-    const baseQ0 = this._br.getValue(7);
-    const dqy1Dc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
-    const dqy2Dc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
-    const dqy2Ac = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
-    const dquvDc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
-    const dquvAc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
-
-    const hdr = this._segmentHeader;
-
-    for (let i = 0; i < VP8.numMbSegments; ++i) {
-      let q: number = 0;
-      if (hdr.useSegment) {
-        q = hdr.quantizer[i];
-        if (!hdr.absoluteDelta) {
-          q += baseQ0;
-        }
-      } else {
-        if (i > 0) {
-          this._dqm[i] = this._dqm[0];
-          continue;
-        } else {
-          q = baseQ0;
-        }
-      }
-
-      const m = this._dqm[i]!;
-      m.y1Mat[0] = VP8.dcTable[VP8.clip(q + dqy1Dc, 127)];
-      m.y1Mat[1] = VP8.acTable[VP8.clip(q + 0, 127)];
-
-      m.y2Mat[0] = VP8.dcTable[VP8.clip(q + dqy2Dc, 127)] * 2;
-      // For all x in [0..284], x*155/100 is bitwise equal to (x*101581) >>> 16.
-      // The smallest precision for that is '(x*6349) >>> 12' but 16 is a good
-      // word size.
-      m.y2Mat[1] = (VP8.acTable[VP8.clip(q + dqy2Ac, 127)] * 101581) >>> 16;
-      if (m.y2Mat[1] < 8) {
-        m.y2Mat[1] = 8;
-      }
-
-      m.uvMat[0] = VP8.dcTable[VP8.clip(q + dquvDc, 117)];
-      m.uvMat[1] = VP8.acTable[VP8.clip(q + dquvAc, 127)];
-
-      // for dithering strength evaluation
-      m.uvQuant = q + dquvAc;
-    }
-  }
-
-  /**
-   * Parses the probability values for VP8 codec.
-   * This method updates the probability values used in the decoding process.
-   * It iterates through types, bands, contexts, and probabilities to set the appropriate values.
-   * It also checks and sets the skip probability if applicable.
-   */
-  private parseProba(): void {
-    const proba = this._proba;
-    for (let t = 0; t < VP8.numTypes; ++t) {
-      for (let b = 0; b < VP8.numBands; ++b) {
-        for (let c = 0; c < VP8.numCtx; ++c) {
-          for (let p = 0; p < VP8.numProbas; ++p) {
-            const v =
-              this._br.getBit(VP8.coeffsUpdateProba[t][b][c][p]) !== 0
-                ? this._br.getValue(8)
-                : VP8.coeffsProba0[t][b][c][p];
-            proba!.bands[t][b].probas[c][p] = v;
-          }
-        }
-      }
-    }
-
-    this._useSkipProba = this._br.get() !== 0;
-    if (this._useSkipProba) {
-      this._skipP = this._br.getValue(8);
-    }
-  }
-
-  /**
-   * Precomputes the filter strengths for each macroblock segment.
-   * This method calculates the filter strength based on the segment header,
-   * filter header, and other parameters, and updates the filter strengths
-   * for each segment and sub-block.
-   */
-  private precomputeFilterStrengths(): void {
-    if (this._filterType > 0) {
-      const hdr = this._filterHeader;
-      for (let s = 0; s < VP8.numMbSegments; ++s) {
-        // First, compute the initial level
-        let baseLevel: number = 0;
-        if (this._segmentHeader.useSegment) {
-          baseLevel = this._segmentHeader.filterStrength[s];
-          if (!this._segmentHeader.absoluteDelta) {
-            baseLevel += hdr.level;
-          }
-        } else {
-          baseLevel = hdr.level;
-        }
-
-        for (let i4x4 = 0; i4x4 <= 1; ++i4x4) {
-          const info = this._fStrengths[s][i4x4];
-          let level = baseLevel;
-          if (hdr.useLfDelta) {
-            level += hdr.refLfDelta[0];
-            if (i4x4 !== 0) {
-              level += hdr.modeLfDelta[0];
-            }
-          }
-
-          level = level < 0 ? 0 : level > 63 ? 63 : level;
-          if (level > 0) {
-            let iLevel: number = level;
-            if (hdr.sharpness > 0) {
-              if (hdr.sharpness > 4) {
-                iLevel >>>= 2;
-              } else {
-                iLevel >>>= 1;
-              }
-
-              if (iLevel > 9 - hdr.sharpness) {
-                iLevel = 9 - hdr.sharpness;
-              }
-            }
-
-            if (iLevel < 1) {
-              iLevel = 1;
-            }
-
-            info.fInnerLevel = iLevel;
-            info.fLimit = 2 * level + iLevel;
-            info.hevThresh = level >= 40 ? 2 : level >= 15 ? 1 : 0;
-          } else {
-            // no filtering
-            info.fLimit = 0;
-          }
-
-          info.fInner = i4x4 !== 0;
-        }
-      }
-    }
-  }
-
-  /**
-   * Initializes the frame for processing.
-   *
-   * This method sets up various buffers and parameters required for processing
-   * the frame, including alpha data, filter strengths, YUV samples, and caches.
-   * It also defines the area where in-loop filtering can be skipped in case of cropping.
-   *
-   * @returns {boolean} - Returns true when initialization is successful.
-   */
-  private initFrame(): boolean {
-    if (this._webp.alphaData !== undefined) {
-      this._alphaData = this._webp.alphaData;
-    }
-
-    this._fStrengths = ArrayUtils.generate<Array<VP8FInfo>>(
-      VP8.numMbSegments,
-      () => [new VP8FInfo(), new VP8FInfo()]
-    );
-
-    this._yuvT = ArrayUtils.generate<VP8TopSamples>(
-      this._mbWidth,
-      () => new VP8TopSamples()
-    );
-
-    this._yuvBlock = new Uint8Array(VP8.yuvSize);
-
-    this._intraT = new Uint8Array(4 * this._mbWidth);
-
-    this._cacheYStride = 16 * this._mbWidth;
-    this._cacheUVStride = 8 * this._mbWidth;
-
-    const extraRows = VP8.filterExtraRows[this._filterType];
-    const extraY = extraRows * this._cacheYStride;
-    const extraUv = Math.trunc(extraRows / 2) * this._cacheUVStride;
-
-    this._cacheY = new InputBuffer<Uint8Array>({
-      buffer: new Uint8Array(16 * this._cacheYStride + extraY),
-      offset: extraY,
-    });
-
-    this._cacheU = new InputBuffer<Uint8Array>({
-      buffer: new Uint8Array(8 * this._cacheUVStride + extraUv),
-      offset: extraUv,
-    });
-
-    this._cacheV = new InputBuffer<Uint8Array>({
-      buffer: new Uint8Array(8 * this._cacheUVStride + extraUv),
-      offset: extraUv,
-    });
-
-    this._tmpY = new InputBuffer<Uint8Array>({
-      buffer: new Uint8Array(this._webp.width),
-    });
-
-    const uvWidth = (this._webp.width + 1) >>> 1;
-    this._tmpU = new InputBuffer<Uint8Array>({
-      buffer: new Uint8Array(uvWidth),
-    });
-    this._tmpV = new InputBuffer<Uint8Array>({
-      buffer: new Uint8Array(uvWidth),
-    });
-
-    // Define the area where we can skip in-loop filtering, in case of cropping.
-    //
-    // 'Simple' filter reads two luma samples outside of the macroblock
-    // and filters one. It doesn't filter the chroma samples. Hence, we can
-    // avoid doing the in-loop filtering before _cropTop/_cropLeft position.
-    // For the 'Complex' filter, 3 samples are read and up to 3 are filtered.
-    // Means: there's a dependency chain that goes all the way up to the
-    // top-left corner of the picture (MB #0). We must filter all the previous
-    // macroblocks.
-    {
-      const extraPixels = VP8.filterExtraRows[this._filterType];
-      if (this._filterType === 2) {
-        // For complex filter, we need to preserve the dependency chain.
-        this._tlMbX = 0;
-        this._tlMbY = 0;
-      } else {
-        // For simple filter, we can filter only the cropped region.
-        // We include 'extraPixels' on the other side of the boundary, since
-        // vertical or horizontal filtering of the previous macroblock can
-        // modify some abutting pixels.
-        this._tlMbX = Math.trunc((this._cropLeft - extraPixels) / 16);
-        this._tlMbY = Math.trunc((this._cropTop - extraPixels) / 16);
-        if (this._tlMbX < 0) {
-          this._tlMbX = 0;
-        }
-        if (this._tlMbY < 0) {
-          this._tlMbY = 0;
-        }
-      }
-
-      // We need some 'extraPixels' on the right/bottom.
-      this._brMbY = Math.trunc((this._cropBottom + 15 + extraPixels) / 16);
-      this._brMbX = Math.trunc((this._cropRight + 15 + extraPixels) / 16);
-      if (this._brMbX > this._mbWidth) {
-        this._brMbX = this._mbWidth;
-      }
-      if (this._brMbY > this._mbHeight) {
-        this._brMbY = this._mbHeight;
-      }
-    }
-
-    this._mbInfo = ArrayUtils.generate<VP8MB>(
-      this._mbWidth + 1,
-      () => new VP8MB()
-    );
-    this._mbData = ArrayUtils.generate<VP8MBData>(
-      this._mbWidth,
-      () => new VP8MBData()
-    );
-    this._fInfo = ArrayUtils.fill<VP8FInfo | undefined>(
-      this._mbWidth,
-      undefined
-    );
-
-    this.precomputeFilterStrengths();
-
-    // Init critical function pointers and look-up tables.
-    this._dsp = new VP8Filter();
-    return true;
-  }
-
-  /**
-   * Parses the frame by iterating through macroblock rows and columns.
-   * For each macroblock, it decodes and processes the row.
-   *
-   * @returns {boolean} - Returns true if the frame is successfully parsed, otherwise false.
-   */
-  private parseFrame(): boolean {
-    for (this._mbY = 0; this._mbY < this._brMbY; ++this._mbY) {
-      // Parse bitstream for this row
-      const tokenBr = this._partitions[this._mbY & (this._numPartitions - 1)];
-      for (; this._mbX < this._mbWidth; ++this._mbX) {
-        if (!this.decodeMB(tokenBr)) {
-          return false;
-        }
-      }
-
-      // Prepare for next scanline
-      this._mbInfo[0].nz = 0;
-      this._mbInfo[0].nzDc = 0;
-      this._intraL.fill(VP8.bDcPred);
-      this._mbX = 0;
-
-      // Reconstruct, filter and emit the row.
-      if (!this.processRow()) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Processes a row by reconstructing it and then determining whether to use a filter
-   * based on certain conditions.
-   *
-   * @returns {boolean} - The result of finishing the row, potentially using a filter.
-   */
-  private processRow(): boolean {
-    this.reconstructRow();
-
-    const useFilter =
-      this._filterType > 0 &&
-      this._mbY >= this._tlMbY &&
-      this._mbY <= this._brMbY;
-    return this.finishRow(useFilter);
-  }
-
-  /**
-   * Reconstructs a row of macroblocks by processing each macroblock in the row.
-   * This involves rotating left samples, initializing top-left samples, bringing
-   * top samples into the cache, predicting and adding residuals, and transferring
-   * reconstructed samples to the final destination.
-   */
-  private reconstructRow(): void {
-    const mbY = this._mbY;
-    const yDst = new InputBuffer<Uint8Array>({
-      buffer: this._yuvBlock,
-      offset: VP8.yOffset,
-    });
-    const uDst = new InputBuffer<Uint8Array>({
-      buffer: this._yuvBlock,
-      offset: VP8.uOffset,
-    });
-    const vDst = new InputBuffer<Uint8Array>({
-      buffer: this._yuvBlock,
-      offset: VP8.vOffset,
-    });
-
-    for (let mbX = 0; mbX < this._mbWidth; ++mbX) {
-      const block = this._mbData[mbX];
-
-      // Rotate in the left samples from previously decoded block. We move four
-      // pixels at a time for alignment reason, and because of in-loop filter.
-      if (mbX > 0) {
-        for (let j = -1; j < 16; ++j) {
-          yDst.memcpy(j * VP8.bps - 4, 4, yDst, j * VP8.bps + 12);
-        }
-
-        for (let j = -1; j < 8; ++j) {
-          uDst.memcpy(j * VP8.bps - 4, 4, uDst, j * VP8.bps + 4);
-          vDst.memcpy(j * VP8.bps - 4, 4, vDst, j * VP8.bps + 4);
-        }
-      } else {
-        for (let j = 0; j < 16; ++j) {
-          yDst.set(j * VP8.bps - 1, 129);
-        }
-
-        for (let j = 0; j < 8; ++j) {
-          uDst.set(j * VP8.bps - 1, 129);
-          vDst.set(j * VP8.bps - 1, 129);
-        }
-
-        // Init top-left sample on left column too
-        if (mbY > 0) {
-          yDst.set(
-            -1 - VP8.bps,
-            uDst.set(-1 - VP8.bps, vDst.set(-1 - VP8.bps, 129))
-          );
-        }
-      }
-
-      // bring top samples into the cache
-      const topYuv = this._yuvT[mbX];
-      const coeffs = block.coeffs;
-      let bits = block.nonZeroY;
-
-      if (mbY > 0) {
-        yDst.memcpy(-VP8.bps, 16, topYuv.y);
-        uDst.memcpy(-VP8.bps, 8, topYuv.u);
-        vDst.memcpy(-VP8.bps, 8, topYuv.v);
-      } else if (mbX === 0) {
-        // we only need to do this init once at block (0,0).
-        // Afterward, it remains valid for the whole topmost row.
-        yDst.memset(-VP8.bps - 1, 16 + 4 + 1, 127);
-        uDst.memset(-VP8.bps - 1, 8 + 1, 127);
-        vDst.memset(-VP8.bps - 1, 8 + 1, 127);
-      }
-
-      // predict and add residuals
-      if (block.isIntra4x4) {
-        // 4x4
-        const topRight = InputBuffer.from(yDst, -VP8.bps + 16);
-        const topRight32 = topRight.toUint32Array();
-
-        if (mbY > 0) {
-          if (mbX >= this._mbWidth - 1) {
-            // on rightmost border
-            topRight.memset(0, 4, topYuv.y[15]);
-          } else {
-            topRight.memcpy(0, 4, this._yuvT[mbX + 1].y);
-          }
-        }
-
-        // replicate the top-right pixels below
-        const p = topRight32[0];
-        topRight32[3 * VP8.bps] = p;
-        topRight32[2 * VP8.bps] = p;
-        topRight32[VP8.bps] = p;
-
-        // predict and add residuals for all 4x4 blocks in turn.
-        for (let n = 0; n < 16; ++n, bits = (bits << 2) & 0xffffffff) {
-          const dst = InputBuffer.from(yDst, VP8.kScan[n]);
-
-          VP8Filter.predLuma4[block.imodes[n]](dst);
-
-          this.doTransform(
-            bits,
-            new InputBuffer<Int16Array>({
-              buffer: coeffs,
-              offset: n * 16,
-            }),
-            dst
-          );
-        }
-      } else {
-        // 16x16
-        const predFunc = VP8.checkMode(mbX, mbY, block.imodes[0])!;
-
-        VP8Filter.predLuma16[predFunc](yDst);
-        if (bits !== 0) {
-          for (let n = 0; n < 16; ++n, bits = (bits << 2) & 0xffffffff) {
-            const dst = InputBuffer.from(yDst, VP8.kScan[n]);
-
-            this.doTransform(
-              bits,
-              new InputBuffer<Int16Array>({
-                buffer: coeffs,
-                offset: n * 16,
-              }),
-              dst
-            );
-          }
-        }
-      }
-
-      // Chroma
-      const bitsUv = block.nonZeroUV;
-      const predFunc = VP8.checkMode(mbX, mbY, block.uvmode)!;
-      VP8Filter.predChroma8[predFunc](uDst);
-      VP8Filter.predChroma8[predFunc](vDst);
-
-      const c1 = new InputBuffer<Int16Array>({
-        buffer: coeffs,
-        offset: 16 * 16,
-      });
-      this.doUVTransform(bitsUv, c1, uDst);
-
-      const c2 = new InputBuffer<Int16Array>({
-        buffer: coeffs,
-        offset: 20 * 16,
-      });
-      this.doUVTransform(bitsUv >>> 8, c2, vDst);
-
-      // stash away top samples for next block
-      if (mbY < this._mbHeight - 1) {
-        ArrayUtils.copyRange(
-          yDst.toUint8Array(),
-          15 * VP8.bps,
-          topYuv.y,
-          0,
-          16
-        );
-        ArrayUtils.copyRange(uDst.toUint8Array(), 7 * VP8.bps, topYuv.u, 0, 8);
-        ArrayUtils.copyRange(vDst.toUint8Array(), 7 * VP8.bps, topYuv.v, 0, 8);
-      }
-
-      // Transfer reconstructed samples from yuv_b_ cache to final destination.
-      // dec->cache_y_ +
-      const yOut = mbX * 16;
-      // dec->cache_u_ +
-      const uOut = mbX * 8;
-      // _dec->cache_v_ +
-      const vOut = mbX * 8;
-
-      for (let j = 0; j < 16; ++j) {
-        const start = yOut + j * this._cacheYStride;
-        this._cacheY.memcpy(start, 16, yDst, j * VP8.bps);
-      }
-
-      for (let j = 0; j < 8; ++j) {
-        let start = uOut + j * this._cacheUVStride;
-        this._cacheU.memcpy(start, 8, uDst, j * VP8.bps);
-
-        start = vOut + j * this._cacheUVStride;
-        this._cacheV.memcpy(start, 8, vDst, j * VP8.bps);
-      }
-    }
-  }
-
-  /**
-   * Transforms the input buffer based on the specified bit pattern.
-   *
-   * @param {number} bits - The bit pattern used to determine the type of transformation.
-   * @param {InputBuffer<Int16Array>} src - The source input buffer containing Int16Array data.
-   * @param {InputBuffer<Uint8Array>} dst - The destination input buffer to store the transformed Uint8Array data.
-   */
-  private doTransform(
-    bits: number,
-    src: InputBuffer<Int16Array>,
-    dst: InputBuffer<Uint8Array>
-  ): void {
-    switch (bits >>> 30) {
-      case 3:
-        this._dsp.transform(src, dst, false);
-        break;
-      case 2:
-        this._dsp.transformAC3(src, dst);
-        break;
-      case 1:
-        this._dsp.transformDC(src, dst);
-        break;
-      default:
-        break;
-    }
-  }
-
-  /**
-   * Performs a UV transform on the given input buffers based on the provided bits.
-   *
-   * @param {number} bits - A number representing the bits to check for non-zero coefficients.
-   * @param {InputBuffer<Int16Array>} src - The source input buffer containing Int16Array data.
-   * @param {InputBuffer<Uint8Array>} dst - The destination input buffer to store the transformed Uint8Array data.
-   */
-  private doUVTransform(
-    bits: number,
-    src: InputBuffer<Int16Array>,
-    dst: InputBuffer<Uint8Array>
-  ): void {
-    if ((bits & 0xff) !== 0) {
-      // any non-zero coeff at all?
-      if ((bits & 0xaa) !== 0) {
-        // any non-zero AC coefficient?
-        // note we don't use the AC3 variant for U/V
-        this._dsp.transformUV(src, dst);
-      } else {
-        this._dsp.transformDCUV(src, dst);
-      }
-    }
-  }
-
-  /**
-   * Applies filtering to the macroblock at the specified coordinates.
-   *
-   * @param {number} mbX - The x-coordinate of the macroblock.
-   * @param {number} mbY - The y-coordinate of the macroblock.
-   */
-  private doFilter(mbX: number, mbY: number): void {
-    const yBps = this._cacheYStride;
-    const fInfo = this._fInfo[mbX]!;
-    const yDst = InputBuffer.from(this._cacheY, mbX * 16);
-    const iLevel = fInfo.fInnerLevel;
-    const limit = fInfo.fLimit;
-    if (limit === 0) {
-      return;
-    }
-
-    if (this._filterType === 1) {
-      // simple
-      if (mbX > 0) {
-        this._dsp.simpleHFilter16(yDst, yBps!, limit + 4);
-      }
-      if (fInfo.fInner) {
-        this._dsp.simpleHFilter16i(yDst, yBps!, limit);
-      }
-      if (mbY > 0) {
-        this._dsp.simpleVFilter16(yDst, yBps!, limit + 4);
-      }
-      if (fInfo.fInner) {
-        this._dsp.simpleVFilter16i(yDst, yBps!, limit);
-      }
-    } else {
-      // complex
-      const uvBps = this._cacheUVStride;
-      const uDst = InputBuffer.from(this._cacheU, mbX * 8);
-      const vDst = InputBuffer.from(this._cacheV, mbX * 8);
-
-      const hevThresh = fInfo.hevThresh;
-      if (mbX > 0) {
-        this._dsp.hFilter16(yDst, yBps!, limit + 4, iLevel, hevThresh);
-        this._dsp.hFilter8(uDst, vDst, uvBps!, limit + 4, iLevel, hevThresh);
-      }
-      if (fInfo.fInner) {
-        this._dsp.hFilter16i(yDst, yBps!, limit, iLevel, hevThresh);
-        this._dsp.hFilter8i(uDst, vDst, uvBps!, limit, iLevel!, hevThresh);
-      }
-      if (mbY > 0) {
-        this._dsp.vFilter16(yDst, yBps!, limit + 4, iLevel, hevThresh);
-        this._dsp.vFilter8(uDst, vDst, uvBps!, limit + 4, iLevel, hevThresh);
-      }
-      if (fInfo.fInner) {
-        this._dsp.vFilter16i(yDst, yBps!, limit, iLevel, hevThresh);
-        this._dsp.vFilter8i(uDst, vDst, uvBps!, limit, iLevel, hevThresh);
-      }
-    }
-  }
-
-  /**
-   * Filters a row of data by iterating through a range of X coordinates
-   * and applying a filter function to each coordinate.
-   *
-   * @private
-   */
-  private filterRow(): void {
-    for (let mbX = this._tlMbX; mbX < this._brMbX; ++mbX) {
-      this.doFilter(mbX, this._mbY);
-    }
-  }
-
-  /**
-   * Applies a dithering effect to the current row.
-   */
-  private ditherRow(): void {}
-
-  /**
-   * Processes the current row of macroblocks, applying filters and dithering if necessary,
-   * and updates the internal buffers for the next row.
-   *
-   * @param {boolean} useFilter - Indicates whether to apply the filter to the current row.
-   * @returns {boolean} Returns true if the row was successfully processed, false otherwise.
-   */
-  private finishRow(useFilter: boolean): boolean {
-    const extraYRows = VP8.kFilterExtraRows[this._filterType];
-    const ySize = extraYRows * this._cacheYStride;
-    const uvSize = Math.trunc(extraYRows / 2) * this._cacheUVStride;
-    const yDst = InputBuffer.from(this._cacheY, -ySize);
-    const uDst = InputBuffer.from(this._cacheU, -uvSize);
-    const vDst = InputBuffer.from(this._cacheV, -uvSize);
-    const mbY = this._mbY;
-    const isFirstRow = mbY === 0;
-    const isLastRow = mbY >= this._brMbY - 1;
-    let yStart: number | undefined = this.macroBlockVPos(mbY);
-    let yEnd: number | undefined = this.macroBlockVPos(mbY + 1);
-
-    if (useFilter) {
-      this.filterRow();
-    }
-
-    if (this._dither) {
-      this.ditherRow();
-    }
-
-    if (!isFirstRow) {
-      yStart -= extraYRows;
-      this._y = InputBuffer.from(yDst);
-      this._u = InputBuffer.from(uDst);
-      this._v = InputBuffer.from(vDst);
-    } else {
-      this._y = InputBuffer.from(this._cacheY);
-      this._u = InputBuffer.from(this._cacheU);
-      this._v = InputBuffer.from(this._cacheV);
-    }
-
-    if (!isLastRow) {
-      yEnd -= extraYRows;
-    }
-
-    if (yEnd > this._cropBottom) {
-      // make sure we don't overflow on last row.
-      yEnd = this._cropBottom;
-    }
-
-    this._a = undefined;
-    if (this._alphaData !== undefined && yStart < yEnd) {
-      this._a = this.decompressAlphaRows(yStart, yEnd - yStart);
-      if (this._a === undefined) {
-        return false;
-      }
-    }
-
-    if (yStart < this._cropTop) {
-      const deltaY = this._cropTop - yStart;
-      yStart = this._cropTop;
-
-      this._y.offset += this._cacheYStride * deltaY;
-      this._u.offset += this._cacheUVStride * (deltaY >>> 1);
-      this._v.offset += this._cacheUVStride * (deltaY >>> 1);
-
-      if (this._a !== undefined) {
-        this._a.offset += this._webp.width * deltaY;
-      }
-    }
-
-    if (yStart < yEnd) {
-      this._y.offset += this._cropLeft;
-      this._u.offset += this._cropLeft >>> 1;
-      this._v.offset += this._cropLeft >>> 1;
-      if (this._a !== undefined) {
-        this._a.offset += this._cropLeft;
-      }
-
-      this.put(
-        yStart - this._cropTop!,
-        this._cropRight - this._cropLeft,
-        yEnd - yStart
-      );
-    }
-
-    // rotate top samples if needed
-    if (!isLastRow) {
-      this._cacheY.memcpy(-ySize, ySize, yDst, 16 * this._cacheYStride);
-      this._cacheU.memcpy(-uvSize, uvSize, uDst, 8 * this._cacheUVStride);
-      this._cacheV.memcpy(-uvSize, uvSize, vDst, 8 * this._cacheUVStride);
-    }
-
-    return true;
-  }
-
-  /**
-   * Puts the specified width and height at the given Y-coordinate.
-   * Emits fancy RGB and alpha RGB values.
-   *
-   * @param {number} mbY - The Y-coordinate.
-   * @param {number} mbW - The width to be put.
-   * @param {number} mbH - The height to be put.
-   * @returns {boolean} Returns true if the width and height are greater than 0, otherwise false.
-   */
-  private put(mbY: number, mbW: number, mbH: number): boolean {
-    if (mbW <= 0 || mbH <= 0) {
-      return false;
-    }
-
-    this.emitFancyRGB(mbY, mbW, mbH);
-    this.emitAlphaRGB(mbY, mbW, mbH);
-
-    return true;
-  }
-
-  /**
-   * Clips the given value to an 8-bit range based on specific conditions.
-   *
-   * @param {number} v - The value to be clipped.
-   * @returns {number} The clipped value, either shifted right by a fixed amount or set to 0 or 255.
-   */
-  private clip8(v: number): number {
-    const d = (v & VP8.xorYuvMask2) === 0 ? v >>> VP8.yuvFix2 : v < 0 ? 0 : 255;
-    return d;
-  }
-
-  /**
-   * Converts YUV color space values to the Red (R) component in RGB color space.
-   *
-   * @param {number} y - The Y (luminance) component of the YUV color space.
-   * @param {number} v - The V (chrominance) component of the YUV color space.
-   * @returns {number} The Red (R) component in RGB color space.
-   */
-  private yuvToR(y: number, v: number): number {
-    return this.clip8(VP8.kYScale * y + VP8.kVToR * v + VP8.kRCst);
-  }
-
-  /**
-   * Converts YUV color components to the green (G) component in RGB color space.
-   *
-   * @param {number} y - The Y (luminance) component of the YUV color space.
-   * @param {number} u - The U (chrominance) component of the YUV color space.
-   * @param {number} v - The V (chrominance) component of the YUV color space.
-   * @returns {number} The green (G) component in the RGB color space.
-   */
-  private yuvToG(y: number, u: number, v: number): number {
-    return this.clip8(
-      VP8.kYScale * y - VP8.kUToG * u - VP8.kVToG * v + VP8.kGCst
-    );
-  }
-
-  /**
-   * Converts YUV to Blue component.
-   * @param {number} y - Luminance component.
-   * @param {number} u - Chrominance component U.
-   * @returns {number} Blue component.
-   */
-  private yuvToB(y: number, u: number): number {
-    return this.clip8(VP8.kYScale * y + VP8.kUToB * u + VP8.kBCst);
-  }
-
-  /**
-   * Converts YUV to RGB.
-   * @param {number} y - Luminance component.
-   * @param {number} u - Chrominance component U.
-   * @param {number} v - Chrominance component V.
-   * @param {InputBuffer<Uint8Array>} rgb - Buffer to store RGB values.
-   */
-  private yuvToRgb(
-    y: number,
-    u: number,
-    v: number,
-    rgb: InputBuffer<Uint8Array>
-  ): void {
-    rgb.set(0, this.yuvToR(y, v));
-    rgb.set(1, this.yuvToG(y, u, v));
-    rgb.set(2, this.yuvToB(y, u));
-  }
-
-  /**
-   * Converts YUV to RGBA.
-   * @param {number} y - Luminance component.
-   * @param {number} u - Chrominance component U.
-   * @param {number} v - Chrominance component V.
-   * @param {InputBuffer<Uint8Array>} rgba - Buffer to store RGBA values.
-   */
-  private yuvToRgba(
-    y: number,
-    u: number,
-    v: number,
-    rgba: InputBuffer<Uint8Array>
-  ): void {
-    this.yuvToRgb(y, u, v, rgba);
-    rgba.set(3, 0xff);
-  }
-
-  /**
-   * Upsamples YUV components.
-   * @param {InputBuffer<Uint8Array>} topY - Top Y component buffer.
-   * @param {InputBuffer<Uint8Array> | undefined} bottomY - Bottom Y component buffer.
-   * @param {InputBuffer<Uint8Array>} topU - Top U component buffer.
-   * @param {InputBuffer<Uint8Array>} topV - Top V component buffer.
-   * @param {InputBuffer<Uint8Array>} curU - Current U component buffer.
-   * @param {InputBuffer<Uint8Array>} curV - Current V component buffer.
-   * @param {InputBuffer<Uint8Array>} topDst - Top destination buffer.
-   * @param {InputBuffer<Uint8Array> | undefined} bottomDst - Bottom destination buffer.
-   * @param {number} len - Length of the buffer.
-   */
-  private upSample(
-    topY: InputBuffer<Uint8Array>,
-    bottomY: InputBuffer<Uint8Array> | undefined,
-    topU: InputBuffer<Uint8Array>,
-    topV: InputBuffer<Uint8Array>,
-    curU: InputBuffer<Uint8Array>,
-    curV: InputBuffer<Uint8Array>,
-    topDst: InputBuffer<Uint8Array>,
-    bottomDst: InputBuffer<Uint8Array> | undefined,
-    len: number
-  ): void {
-    const loadUv = (u: number, v: number): number => {
-      return u | (v << 16);
-    };
-
-    const lastPixelPair = (len - 1) >>> 1;
-    // top-left sample
-    let tlUv = loadUv(topU.get(0), topV.get(0));
-    // left-sample
-    let lUv = loadUv(curU.get(0), curV.get(0));
-
-    const uv0 = (3 * tlUv + lUv + 0x00020002) >>> 2;
-    this.yuvToRgba(topY.get(0), uv0 & 0xff, uv0 >>> 16, topDst);
-
-    if (bottomY !== undefined) {
-      const uv0 = (3 * lUv + tlUv + 0x00020002) >>> 2;
-      this.yuvToRgba(bottomY.get(0), uv0 & 0xff, uv0 >>> 16, bottomDst!);
-    }
-
-    for (let x = 1; x <= lastPixelPair; ++x) {
-      // top sample
-      const tUv = loadUv(topU.get(x), topV.get(x));
-      // sample
-      const uv = loadUv(curU.get(x), curV.get(x));
-      // precompute invariant values associated with first and second diagonals
-      const avg = tlUv + tUv + lUv + uv + 0x00080008;
-      const diag12 = (avg + 2 * (tUv + lUv)) >>> 3;
-      const diag03 = (avg + 2 * (tlUv + uv)) >>> 3;
-
-      let uv0 = (diag12 + tlUv) >>> 1;
-      let uv1 = (diag03 + tUv) >>> 1;
-
-      this.yuvToRgba(
-        topY.get(2 * x - 1),
-        uv0 & 0xff,
-        uv0 >>> 16,
-        InputBuffer.from(topDst, (2 * x - 1) * 4)
-      );
-      this.yuvToRgba(
-        topY.get(2 * x),
-        uv1 & 0xff,
-        uv1 >>> 16,
-        InputBuffer.from(topDst, 2 * x * 4)
-      );
-
-      if (bottomY !== undefined) {
-        uv0 = (diag03 + lUv) >>> 1;
-        uv1 = (diag12 + uv) >>> 1;
-        this.yuvToRgba(
-          bottomY.get(2 * x - 1),
-          uv0 & 0xff,
-          uv0 >>> 16,
-          InputBuffer.from(bottomDst!, (2 * x - 1) * 4)
-        );
-        this.yuvToRgba(
-          bottomY.get(2 * x),
-          uv1 & 0xff,
-          uv1 >>> 16,
-          InputBuffer.from(bottomDst!, (2 * x + 0) * 4)
-        );
-      }
-
-      tlUv = tUv;
-      lUv = uv;
-    }
-
-    if ((len & 1) === 0) {
-      const uv0 = (3 * tlUv + lUv + 0x00020002) >>> 2;
-      this.yuvToRgba(
-        topY.get(len - 1),
-        uv0 & 0xff,
-        uv0 >>> 16,
-        InputBuffer.from(topDst, (len - 1) * 4)
-      );
-
-      if (bottomY !== undefined) {
-        const uv0 = (3 * lUv + tlUv + 0x00020002) >>> 2;
-        this.yuvToRgba(
-          bottomY.get(len - 1),
-          uv0 & 0xff,
-          uv0 >>> 16,
-          InputBuffer.from(bottomDst!, (len - 1) * 4)
-        );
-      }
-    }
-  }
-
-  /**
-   * Emits alpha values for RGB.
-   * @param {number} mbY - Macroblock Y position.
-   * @param {number} mbW - Macroblock width.
-   * @param {number} mbH - Macroblock height.
-   */
-  private emitAlphaRGB(mbY: number, mbW: number, mbH: number): void {
-    if (this._a === undefined) {
-      return;
-    }
-
-    const alpha = InputBuffer.from(this._a);
-    let startY = mbY;
-    let numRows = mbH;
-
-    // Compensate for the 1-line delay of the fancy upscaler.
-    // This is similar to EmitFancyRGB().
-    if (startY === 0) {
-      // We don't process the last row yet. It'll be done during the next call.
-      --numRows;
-    } else {
-      --startY;
-      // Fortunately, alpha data is persistent, so we can go back
-      // one row and finish alpha blending, now that the fancy upscaler
-      // completed the YUV->RGB interpolation.
-      alpha.offset -= this.webp.width;
-    }
-
-    if (this._cropTop + mbY + mbH === this._cropBottom) {
-      // If it's the very last call, we process all the remaining rows!
-      numRows = this._cropBottom - this._cropTop - startY;
-    }
-
-    for (let y = 0; y < numRows; ++y) {
-      for (let x = 0; x < mbW; ++x) {
-        const alphaValue = alpha.get(x);
-        this._output!.getPixel(x, y + startY).a = alphaValue;
-      }
-
-      alpha.offset += this.webp.width;
-    }
-  }
-
-  /**
-   * Emits fancy RGB values.
-   * @param {number} mbY - Macroblock Y position.
-   * @param {number} mbW - Macroblock width.
-   * @param {number} mbH - Macroblock height.
-   * @returns {number} Number of lines output.
-   */
-  private emitFancyRGB(mbY: number, mbW: number, mbH: number): number {
-    // a priori guess
-    let numLinesOut = mbH;
-    const outputBytes = new Uint8Array(this._output!.buffer!);
-    const dst = new InputBuffer<Uint8Array>({
-      buffer: outputBytes,
-      offset: mbY * this.webp.width * 4,
-    });
-    const curY = InputBuffer.from(this._y);
-    const curU = InputBuffer.from(this._u);
-    const curV = InputBuffer.from(this._v);
-    let y = mbY;
-    const yEnd = mbY + mbH;
-    const uvW = (mbW + 1) >>> 1;
-    const stride = this.webp.width * 4;
-    const topU = InputBuffer.from(this._tmpU);
-    const topV = InputBuffer.from(this._tmpV);
-
-    if (y === 0) {
-      // First line is special cased. We mirror the u/v samples at boundary
-      this.upSample(
-        curY,
-        undefined,
-        curU,
-        curV,
-        curU,
-        curV,
-        dst,
-        undefined,
-        mbW
-      );
-    } else {
-      // We can finish the left-over line from previous call
-      this.upSample(
-        this._tmpY,
-        curY,
-        topU,
-        topV,
-        curU,
-        curV,
-        InputBuffer.from(dst, -stride),
-        dst,
-        mbW
-      );
-      ++numLinesOut;
-    }
-
-    // Loop over each output pairs of row.
-    topU.buffer = curU.buffer;
-    topV.buffer = curV.buffer;
-    for (; y + 2 < yEnd; y += 2) {
-      topU.offset = curU.offset;
-      topV.offset = curV.offset;
-      curU.offset += this._cacheUVStride;
-      curV.offset += this._cacheUVStride;
-      dst.offset += 2 * stride;
-      curY.offset += 2 * this._cacheYStride;
-      this.upSample(
-        InputBuffer.from(curY, -this._cacheYStride),
-        curY,
-        topU,
-        topV,
-        curU,
-        curV,
-        InputBuffer.from(dst, -stride),
-        dst,
-        mbW
-      );
-    }
-
-    // move to last row
-    curY.offset += this._cacheYStride;
-    if (this._cropTop + yEnd < this._cropBottom) {
-      // Save the unfinished samples for next call (as we're not done yet).
-      this._tmpY.memcpy(0, mbW, curY);
-      this._tmpU.memcpy(0, uvW, curU);
-      this._tmpV.memcpy(0, uvW, curV);
-      // The fancy upsampler leaves a row unfinished behind
-      // (except for the very last row)
-      numLinesOut--;
-    } else {
-      // Process the very last row of even-sized picture
-      if ((yEnd & 1) === 0) {
-        this.upSample(
-          curY,
-          undefined,
-          curU,
-          curV,
-          curU,
-          curV,
-          InputBuffer.from(dst, stride),
-          undefined,
-          mbW
-        );
-      }
-    }
-
-    return numLinesOut;
-  }
-
-  /**
-   * Decompresses alpha rows.
-   * @param {number} row - Starting row.
-   * @param {number} numRows - Number of rows to decompress.
-   * @returns {InputBuffer<Uint8Array> | undefined} Buffer containing decompressed alpha rows.
-   */
-  private decompressAlphaRows(
-    row: number,
-    numRows: number
-  ): InputBuffer<Uint8Array> | undefined {
-    const width = this.webp.width;
-    const height = this.webp.height;
-
-    if (row < 0 || numRows <= 0 || row + numRows > height) {
-      // sanity check
-      return undefined;
-    }
-
-    if (row === 0) {
-      this._alphaPlane = new Uint8Array(width * height);
-      this._alpha = new WebPAlpha(this._alphaData!, width, height);
-    }
-
-    if (!this._alpha.isAlphaDecoded) {
-      if (!this._alpha.decode(row, numRows, this._alphaPlane)) {
-        return undefined;
-      }
-    }
-
-    // Return a pointer to the current decoded row.
-    return new InputBuffer<Uint8Array>({
-      buffer: this._alphaPlane,
-      offset: row * width,
-    });
-  }
-
-  /**
-   * Decodes a macroblock.
-   * @param {VP8BitReader} [tokenBr] - Optional bit reader for tokens.
-   * @returns {boolean} True if decoding was successful.
-   */
-  private decodeMB(tokenBr?: VP8BitReader): boolean {
-    const left = this._mbInfo[0];
-    const mb = this._mbInfo[1 + this._mbX];
-    const block = this._mbData[this._mbX];
-    let skip: boolean = false;
-
-    // Note: we don't save segment map (yet), as we don't expect
-    // to decode more than 1 keyframe.
-    if (this._segmentHeader.updateMap) {
-      // Hardcoded tree parsing
-      this._segment =
-        this._br.getBit(this._proba!.segments[0]) === 0
-          ? this._br.getBit(this._proba!.segments[1])
-          : 2 + this._br.getBit(this._proba!.segments[2]);
-    }
-
-    skip = this._useSkipProba && this._br.getBit(this._skipP) !== 0;
-
-    this.parseIntraMode();
-
-    if (!skip) {
-      skip = this.parseResiduals(mb, tokenBr);
-    } else {
-      mb.nz = 0;
-      left.nz = mb.nz;
-      if (!block.isIntra4x4) {
-        mb.nzDc = 0;
-        left.nzDc = mb.nzDc;
-      }
-      block.nonZeroY = 0;
-      block.nonZeroUV = 0;
-    }
-
-    if (this._filterType > 0) {
-      // store filter info
-      this._fInfo[this._mbX] =
-        this._fStrengths[this._segment][block.isIntra4x4 ? 1 : 0];
-      const finfo = this._fInfo[this._mbX]!;
-      finfo.fInner = finfo.fInner || !skip;
-    }
-
-    return true;
-  }
-
-  /**
-   * Parses residuals for a macroblock.
-   * @param {VP8MB} mb - Macroblock information.
-   * @param {VP8BitReader} [tokenBr] - Optional bit reader for tokens.
-   * @returns {boolean} True if parsing was successful.
-   */
-  private parseResiduals(mb: VP8MB, tokenBr?: VP8BitReader): boolean {
-    const bands = this._proba!.bands;
-    const q = this._dqm[this._segment];
-    const block = this._mbData[this._mbX];
-    const dst = new InputBuffer<Int16Array>({
-      buffer: block.coeffs,
-    });
-    const leftMb = this._mbInfo[0];
-    let tnz: number = 0;
-    let lnz: number = 0;
-    let nonZeroY = 0;
-    let nonZeroUV = 0;
-    let outTopNz: number = 0;
-    let outLeftNz: number = 0;
-    let first: number = 0;
-
-    dst.memset(0, dst.length, 0);
-
-    let acProba: VP8BandProbas[] = [];
-    if (!block.isIntra4x4) {
-      // parse DC
-      const dc = new InputBuffer<Int16Array>({
-        buffer: new Int16Array(16),
-      });
-      const ctx = mb.nzDc + leftMb.nzDc;
-      const nz = this.getCoeffs(tokenBr, bands[1], ctx, q!.y2Mat, 0, dc);
-      leftMb.nzDc = nz > 0 ? 1 : 0;
-      mb.nzDc = leftMb.nzDc;
-      if (nz > 1) {
-        // more than just the DC -> perform the full transform
-        this.transformWHT(dc, dst);
-      } else {
-        // only DC is non-zero -> inlined simplified transform
-        const dc0 = (dc.get(0) + 3) >>> 3;
-        for (let i = 0; i < 16 * 16; i += 16) {
-          dst.set(i, dc0);
-        }
-      }
-
-      first = 1;
-      acProba = bands[0];
-    } else {
-      first = 0;
-      acProba = bands[3];
-    }
-
-    tnz = mb.nz & 0x0f;
-    lnz = leftMb.nz & 0x0f;
-    for (let y = 0; y < 4; ++y) {
-      let l = lnz & 1;
-      let nzCoeffs = 0;
-      for (let x = 0; x < 4; ++x) {
-        const ctx = l + (tnz & 1);
-        const nz = this.getCoeffs(tokenBr, acProba, ctx, q!.y1Mat, first, dst);
-        l = nz > first ? 1 : 0;
-        tnz = (tnz >>> 1) | (l << 7);
-        nzCoeffs = this.nzCodeBits(nzCoeffs, nz, dst.get(0) !== 0 ? 1 : 0);
-        dst.offset += 16;
-      }
-
-      tnz >>>= 4;
-      lnz = (lnz >>> 1) | (l << 7);
-      nonZeroY = ((nonZeroY << 8) | nzCoeffs) >>> 0;
-    }
-    outTopNz = tnz;
-    outLeftNz = lnz >>> 4;
-
-    for (let ch = 0; ch < 4; ch += 2) {
-      let nzCoeffs = 0;
-      tnz = mb.nz >>> (4 + ch);
-      lnz = leftMb.nz >>> (4 + ch);
-      for (let y = 0; y < 2; ++y) {
-        let l = lnz & 1;
-        for (let x = 0; x < 2; ++x) {
-          const ctx = l + (tnz & 1);
-          const nz = this.getCoeffs(tokenBr, bands[2], ctx, q!.uvMat, 0, dst);
-          l = nz > 0 ? 1 : 0;
-          tnz = (tnz >>> 1) | (l << 3);
-          nzCoeffs = this.nzCodeBits(nzCoeffs, nz, dst.get(0) !== 0 ? 1 : 0);
-          dst.offset += 16;
-        }
-
-        tnz >>>= 2;
-        lnz = (lnz >>> 1) | (l << 5);
-      }
-
-      // Note: we don't really need the per-4x4 details for U/V blocks.
-      nonZeroUV |= nzCoeffs << (4 * ch);
-      outTopNz |= (tnz << 4) << ch;
-      outLeftNz |= (lnz & 0xf0) << ch;
-    }
-
-    mb.nz = outTopNz;
-    leftMb.nz = outLeftNz;
-
-    block.nonZeroY = nonZeroY;
-    block.nonZeroUV = nonZeroUV;
-    // We look at the mode-code of each block and check if some blocks have
-    // less than three non-zero coeffs (code < 2). This is to avoid dithering
-    // flat and empty blocks.
-    block.dither = (nonZeroUV & 0xaaaa) !== 0 ? 0 : q!.dither;
-
-    // will be used for further optimization
-    return (nonZeroY | nonZeroUV) === 0;
-  }
-
-  /**
-   * Performs a Walsh-Hadamard Transform (WHT) on the input buffer and stores the result in the output buffer.
-   *
-   * @param {InputBuffer<Int16Array>} src - The source input buffer containing the data to be transformed.
-   * @param {InputBuffer<Int16Array>} out - The output buffer where the transformed data will be stored.
-   */
-  private transformWHT(
-    src: InputBuffer<Int16Array>,
-    out: InputBuffer<Int16Array>
-  ): void {
-    const tmp = new Int32Array(16);
-
-    let oi = 0;
-    for (let i = 0; i < 4; ++i) {
-      const a0 = src.get(0 + i) + src.get(12 + i);
-      const a1 = src.get(4 + i) + src.get(8 + i);
-      const a2 = src.get(4 + i) - src.get(8 + i);
-      const a3 = src.get(0 + i) - src.get(12 + i);
-      tmp[0 + i] = a0 + a1;
-      tmp[8 + i] = a0 - a1;
-      tmp[4 + i] = a3 + a2;
-      tmp[12 + i] = a3 - a2;
-    }
-
-    for (let i = 0; i < 4; ++i) {
-      const dc = tmp[0 + i * 4] + 3;
-      const a0 = dc + tmp[3 + i * 4];
-      const a1 = tmp[1 + i * 4] + tmp[2 + i * 4];
-      const a2 = tmp[1 + i * 4] - tmp[2 + i * 4];
-      const a3 = dc - tmp[3 + i * 4];
-      out.set(oi + 0, (a0 + a1) >>> 3);
-      out.set(oi + 16, (a3 + a2) >>> 3);
-      out.set(oi + 32, (a0 - a1) >>> 3);
-      out.set(oi + 48, (a3 - a2) >>> 3);
-
-      oi += 64;
-    }
-  }
-
-  /**
-   * Computes the non-zero coefficients.
-   * @param {number} nzCoeffs - The number of non-zero coefficients.
-   * @param {number} nz - The number of non-zero coefficients in the current block.
-   * @param {number} dcNz - The number of non-zero DC coefficients.
-   * @returns {number} The computed non-zero coefficients.
-   */
-  private nzCodeBits(nzCoeffs: number, nz: number, dcNz: number): number {
-    let _nzCoeffs = nzCoeffs;
-    _nzCoeffs <<= 2;
-    _nzCoeffs |= nz > 3 ? 3 : nz > 1 ? 2 : dcNz;
-    return _nzCoeffs;
-  }
-
-  /**
-   * Retrieves a large value based on bit reading.
-   * @param {VP8BitReader} br - The bit reader.
-   * @param {Uint8Array} p - The probability array.
-   * @returns {number} The large value.
-   */
-  private getLargeValue(br: VP8BitReader, p: Uint8Array): number {
-    let v: number = 0;
-    if (br.getBit(p[3]) === 0) {
-      if (br.getBit(p[4]) === 0) {
-        v = 2;
-      } else {
-        v = 3 + br.getBit(p[5]);
-      }
-    } else {
-      if (br.getBit(p[6]) === 0) {
-        if (br.getBit(p[7]) === 0) {
-          v = 5 + br.getBit(159);
-        } else {
-          v = 7 + 2 * br.getBit(165);
-          v += br.getBit(145);
-        }
-      } else {
-        const bit1 = br.getBit(p[8]);
-        const bit0 = br.getBit(p[9 + bit1]);
-        const cat = 2 * bit1 + bit0;
-        v = 0;
-        const tab = VP8.kCat3456[cat];
-        const len = tab.length;
-        for (let i = 0; i < len; ++i) {
-          v += v + br.getBit(tab[i]);
-        }
-        v += 3 + (8 << cat);
-      }
-    }
-    return v;
-  }
-
-  /**
-   * Returns the position of the last non-zero coefficient plus one.
-   * @param {VP8BitReader | undefined} br - The bit reader.
-   * @param {VP8BandProbas[]} prob - The probability bands.
-   * @param {number} ctx - The context.
-   * @param {Int32Array} dq - The dequantization values.
-   * @param {number} n - The initial coefficient index.
-   * @param {InputBuffer<Int16Array>} out - The output buffer.
-   * @returns {number} The position of the last non-zero coefficient plus one.
-   */
-  private getCoeffs(
-    br: VP8BitReader | undefined,
-    prob: VP8BandProbas[],
-    ctx: number,
-    dq: Int32Array,
-    n: number,
-    out: InputBuffer<Int16Array>
-  ): number {
-    let _n = n;
-    // _n is either 0 or 1 here. kBands[_n] is not necessary for extracting '*p'.
-    let p: Uint8Array = prob[_n].probas[ctx];
-    for (; _n < 16; ++_n) {
-      if (br!.getBit(p[0]) === 0) {
-        // previous coeff was last non-zero coeff
-        return _n;
-      }
-
-      while (br!.getBit(p[1]) === 0) {
-        // sequence of zero coeffs
-        p = prob[VP8.kBands[++_n]].probas[0];
-        if (_n === 16) {
-          return 16;
-        }
-      }
-
-      {
-        // non zero coeff
-        const pCtx = prob[VP8.kBands[_n + 1]].probas;
-        let v: number = 0;
-        if (br!.getBit(p[2]) === 0) {
-          v = 1;
-          p = pCtx[1];
-        } else {
-          v = this.getLargeValue(br!, p);
-          p = pCtx[2];
-        }
-
-        out.set(VP8.kZigzag[_n], br!.getSigned(v) * dq[_n > 0 ? 1 : 0]);
-      }
-    }
-    return 16;
-  }
-
-  /**
-   * Parses the intra mode.
-   */
-  private parseIntraMode(): void {
-    const ti = 4 * this._mbX;
-    const li = 0;
-    const top = this._intraT;
-    const left = this._intraL;
-
-    const block = this._mbData[this._mbX];
-    // decide for B_PRED first
-    block.isIntra4x4 = this._br.getBit(145) === 0;
-
-    if (!block.isIntra4x4) {
-      // Hardcoded 16x16 intra-mode decision tree.
-      const ymode =
-        this._br.getBit(156) !== 0
-          ? this._br.getBit(128) !== 0
-            ? VP8.tmPred
-            : VP8.hPred
-          : this._br.getBit(163) !== 0
-            ? VP8.vPred
-            : VP8.dcPred;
-      block.imodes[0] = ymode;
-
-      top!.fill(ymode, ti, ti + 4);
-      left.fill(ymode, li, li + 4);
-    } else {
-      const modes = block.imodes;
-      let mi = 0;
-      for (let y = 0; y < 4; ++y) {
-        let ymode = left[y];
-        for (let x = 0; x < 4; ++x) {
-          const prob = VP8.kBModesProba[top![ti + x]][ymode];
-
-          // Generic tree-parsing
-          const b = this._br.getBit(prob[0]);
-          let i = VP8.kYModesIntra4[b];
-
-          while (i > 0) {
-            i = VP8.kYModesIntra4[2 * i + this._br.getBit(prob[i])];
-          }
-
-          ymode = -i;
-          top![ti + x] = ymode;
-        }
-
-        ArrayUtils.copyRange(top!, ti, modes, mi, 4);
-
-        mi += 4;
-        left[y] = ymode;
-      }
-    }
-
-    // Hardcoded UVMode decision tree
-    block.uvmode =
-      this._br.getBit(142) === 0
-        ? VP8.dcPred
-        : this._br.getBit(114) === 0
-          ? VP8.vPred
-          : this._br.getBit(183) !== 0
-            ? VP8.tmPred
-            : VP8.hPred;
-  }
-
-  /**
-   * Decodes the header of the input stream.
-   * @returns {boolean} True if the header is successfully decoded, false otherwise.
-   */
-  public decodeHeader(): boolean {
-    const bits = this._input.readUint24();
-
-    const keyFrame = (bits & 1) === 0;
-    if (!keyFrame) {
-      return false;
-    }
-
-    if (((bits >>> 1) & 7) > 3) {
-      // unknown profile
-      return false;
-    }
-
-    if (((bits >>> 4) & 1) === 0) {
-      // first frame is invisible!
-      return false;
-    }
-
-    this._frameHeader.keyFrame = (bits & 1) === 0;
-    this._frameHeader.profile = (bits >>> 1) & 7;
-    this._frameHeader.show = (bits >>> 4) & 1;
-    this._frameHeader.partitionLength = bits >>> 5;
-
-    const signature = this._input.readUint24();
-    if (signature !== VP8.vp8Signature) {
-      return false;
-    }
-
-    this._webp.width = this._input.readUint16();
-    this._webp.height = this._input.readUint16();
-
-    return true;
-  }
-
-  /**
-   * Decodes the input stream and returns the decoded image.
-   * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
-   */
-  public decode(): MemoryImage | undefined {
-    if (!this.getHeaders()) {
-      return undefined;
-    }
-
-    this._output = new MemoryImage({
-      width: this._webp.width,
-      height: this._webp.height,
-      numChannels: 4,
-    });
-
-    // Will allocate memory and prepare everything
-    if (!this.initFrame()) {
-      return undefined;
-    }
-
-    // Main decoding loop
-    if (!this.parseFrame()) {
-      return undefined;
-    }
-
-    if (this._webp.exifData.length > 0) {
-      const input = new InputBuffer({
-        buffer: StringUtils.getCodePoints(this._webp.exifData),
-      });
-      this._output.exifData = ExifData.fromInputBuffer(input);
-    }
-
-    return this._output;
-  }
-
-  /**
-   * Computes the vertical position of a macroblock.
-   * @param {number} mbY - The macroblock Y-coordinate.
-   * @returns {number} The vertical position of the macroblock.
-   */
-  public macroBlockVPos(mbY: number): number {
-    return mbY * 16;
-  }
-
-  /**
-   * How many extra lines are needed on the MB boundary
-   * for caching, given a filtering level.
-   * Simple filter: up to 2 luma samples are read and 1 is written.
-   * Complex filter: up to 4 luma samples are read and 3 are written. Same for
-   * U/V, so it's 8 samples total (because of the 2x upsampling).
-   */
   public static readonly filterExtraRows = [0, 2, 8];
-
-  /**
-   * VP8 signature constant.
-   */
   public static readonly vp8Signature = 0x2a019d;
-
-  /**
-   * Number of probabilities in the macroblock feature tree.
-   */
   public static readonly mbFeatureTreeProbs = 3;
-
-  /**
-   * Number of macroblock segments.
-   */
   public static readonly numMbSegments = 4;
-
-  /**
-   * Number of reference loop filter deltas.
-   */
   public static readonly numRefLfDeltas = 4;
-
-  /**
-   * Number of mode loop filter deltas.
-   * I4x4, ZERO, *, SPLIT
-   */
   public static readonly numModeLfDeltas = 4;
-
-  /**
-   * Maximum number of partitions.
-   */
   public static readonly maxNumPartitions = 8;
-
-  /**
-   * 4x4 prediction modes.
-   */
   public static readonly bDcPred = 0;
   public static readonly bTmPred = 1;
   public static readonly bVePred = 2;
@@ -2064,171 +43,46 @@ export class VP8 {
   public static readonly bVlPred = 7;
   public static readonly bHdPred = 8;
   public static readonly bHuPred = 9;
-
-  /**
-   * Number of 4x4 prediction modes.
-   */
   public static readonly numBModes = VP8.bHuPred + 1 - VP8.bDcPred;
-
-  /**
-   * Luma16 or UV prediction modes.
-   */
   public static readonly dcPred = VP8.bDcPred;
   public static readonly vPred = VP8.bVePred;
   public static readonly hPred = VP8.bHePred;
   public static readonly tmPred = VP8.bTmPred;
   public static readonly bPred = VP8.numBModes;
-
-  /**
-   * Special prediction modes.
-   */
   public static readonly bDcPredNoTop = 4;
   public static readonly bDcPredNoLeft = 5;
   public static readonly bDcPredNoTopLeft = 6;
   public static readonly numBDcModes = 7;
-
-  /**
-   * Number of types.
-   */
   public static readonly numTypes = 4;
-
-  /**
-   * Number of bands.
-   */
   public static readonly numBands = 8;
-
-  /**
-   * Number of contexts.
-   */
   public static readonly numCtx = 3;
-
-  /**
-   * Number of probabilities.
-   */
   public static readonly numProbas = 11;
-
-  /**
-   * Common stride used by yuv[].
-   */
   public static readonly bps = 32;
-
-  /**
-   * YUV size.
-   */
   public static readonly yuvSize = VP8.bps * 17 + VP8.bps * 9;
-
-  /**
-   * Y size.
-   */
   public static readonly ySize = VP8.bps * 17;
-
-  /**
-   * Y offset.
-   */
   public static readonly yOffset = Number(VP8.bps) + 8;
-
-  /**
-   * U offset.
-   */
   public static readonly uOffset = VP8.yOffset + VP8.bps * 16 + VP8.bps;
-
-  /**
-   * V offset.
-   */
   public static readonly vOffset = VP8.uOffset + 16;
-
-  /**
-   * Fixed-point precision for RGB->YUV.
-   */
   public static readonly yuvFix = 16;
-
-  /**
-   * Half value for YUV fixed-point precision.
-   */
   public static readonly yuvHalf = 1 << (VP8.yuvFix - 1);
-
-  /**
-   * Mask value for YUV fixed-point precision.
-   */
   public static readonly yuvMask = (256 << VP8.yuvFix) - 1;
-
-  /**
-   * Minimum value of r/g/b output.
-   */
   public static readonly yuvRangeMin = -227;
-
-  /**
-   * Maximum value of r/g/b output.
-   */
   public static readonly yuvRangeMax = 256 + 226;
-
-  /**
-   * Fixed-point precision for YUV->RGB.
-   */
   public static readonly yuvFix2 = 14;
-
-  /**
-   * Half value for YUV->RGB fixed-point precision.
-   */
   public static readonly yuvHalf2 = 1 << (VP8.yuvFix2 - 1);
-
-  /**
-   * Mask value for YUV->RGB fixed-point precision.
-   */
   public static readonly yuvMask2 = (256 << VP8.yuvFix2) - 1;
-
-  /**
-   * XOR mask value for YUV->RGB fixed-point precision.
-   */
   public static readonly xorYuvMask2 = -VP8.yuvMask2 - 1;
-
-  /**
-   * 14b fixed-point version of ITU-R BT.601 constants.
-   * 1.164 = 255 / 219
-   */
   public static readonly kYScale = 19077;
-
-  /**
-   * 1.596 = 255 / 112 * 0.701
-   */
   public static readonly kVToR = 26149;
-
-  /**
-   * 0.391 = 255 / 112 * 0.886 * 0.114 / 0.587
-   */
   public static readonly kUToG = 6419;
-
-  /**
-   * 0.813 = 255 / 112 * 0.701 * 0.299 / 0.587
-   */
   public static readonly kVToG = 13320;
-
-  /**
-   * 2.018 = 255 / 112 * 0.886
-   */
   public static readonly kUToB = 33050;
-
-  /**
-   * Constant for red channel.
-   */
   public static readonly kRCst =
     -VP8.kYScale * 16 - VP8.kVToR * 128 + VP8.yuvHalf2;
-
-  /**
-   * Constant for green channel.
-   */
   public static readonly kGCst =
     -VP8.kYScale * 16 + VP8.kUToG * 128 + VP8.kVToG * 128 + VP8.yuvHalf2;
-
-  /**
-   * Constant for blue channel.
-   */
   public static readonly kBCst =
     -VP8.kYScale * 16 - VP8.kUToB * 128 + VP8.yuvHalf2;
-
-  /**
-   * Intra4 prediction modes for Y.
-   */
   public static readonly kYModesIntra4: number[] = [
     -VP8.bDcPred,
     1,
@@ -2249,10 +103,6 @@ export class VP8 {
     -VP8.bHdPred,
     -VP8.bHuPred,
   ];
-
-  /**
-   * Probabilities for B modes.
-   */
   public static readonly kBModesProba: Array<Array<Array<number>>> = [
     [
       [231, 120, 48, 89, 115, 113, 120, 152, 112],
@@ -2375,10 +225,6 @@ export class VP8 {
       [112, 19, 12, 61, 195, 128, 48, 4, 24],
     ],
   ];
-
-  /**
-   * A 4-dimensional array representing the probability coefficients for Proba0.
-   */
   public static readonly coeffsProba0: Array<Array<Array<Array<number>>>> = [
     [
       [
@@ -2549,10 +395,6 @@ export class VP8 {
       ],
     ],
   ];
-
-  /**
-   * A 4-dimensional array representing the probability coefficients for UpdateProba.
-   */
   public static readonly coeffsUpdateProba: Array<Array<Array<Array<number>>>> =
     [
       [
@@ -2724,12 +566,7 @@ export class VP8 {
         ],
       ],
     ];
-
-  /**
-   * Represents a table of DC values.
-   */
   public static readonly dcTable: number[] = [
-    // uint8
     4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 17, 18, 19, 20, 20,
     21, 21, 22, 22, 23, 23, 24, 25, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
     36, 37, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 46, 47, 48, 49, 50, 51, 52,
@@ -2739,12 +576,7 @@ export class VP8 {
     122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 143, 145, 148, 151, 154,
     157,
   ];
-
-  /**
-   * Represents a table of AC values.
-   */
   public static readonly acTable: number[] = [
-    // uint16
     4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
     24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
     43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 60, 62, 64,
@@ -2754,9 +586,6 @@ export class VP8 {
     189, 193, 197, 201, 205, 209, 213, 217, 221, 225, 229, 234, 239, 245, 249,
     254, 259, 264, 269, 274, 279, 284,
   ];
-  /**
-   * Scan order for VP8.
-   */
   public static readonly kScan: number[] = [
     0 + 0 * VP8.bps,
     4 + 0 * VP8.bps,
@@ -2775,59 +604,1463 @@ export class VP8 {
     8 + 12 * VP8.bps,
     12 + 12 * VP8.bps,
   ];
-
-  /**
-   * Band order for VP8.
-   */
   public static readonly kBands: number[] = [
     0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0,
   ];
-
-  /**
-   * Category 3 probabilities for VP8.
-   */
   public static readonly kCat3: number[] = [173, 148, 140];
-
-  /**
-   * Category 4 probabilities for VP8.
-   */
   public static readonly kCat4: number[] = [176, 155, 140, 135];
-
-  /**
-   * Category 5 probabilities for VP8.
-   */
   public static readonly kCat5: number[] = [180, 157, 141, 134, 130];
-
-  /**
-   * Category 6 probabilities for VP8.
-   */
   public static readonly kCat6: number[] = [
     254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129,
   ];
-
-  /**
-   * Combined categories 3, 4, 5, and 6 probabilities for VP8.
-   */
   public static readonly kCat3456: Array<Array<number>> = [
     VP8.kCat3,
     VP8.kCat4,
     VP8.kCat5,
     VP8.kCat6,
   ];
-
-  /**
-   * Zigzag order for VP8.
-   */
   public static readonly kZigzag: number[] = [
     0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15,
   ];
+  public static readonly kFilterExtraRows: number[] = [0, 2, 8];
 
   /**
-   * How many extra lines are needed on the MB boundary
-   * for caching, given a filtering level.
-   * Simple filter:  up to 2 luma samples are read and 1 is written.
-   * Complex filter: up to 4 luma samples are read and 3 are written. Same for
-   * U/V, so it's 8 samples total (because of the 2x upsampling).
+   * Returns public WebP info.
    */
-  public static readonly kFilterExtraRows: number[] = [0, 2, 8];
+  public get webp(): WebPInfo {
+    return this._webp;
+  }
+
+  /** VP8 Frame Header */
+  private readonly _frameHeader = new VP8FrameHeader();
+  /** VP8 Picture Header */
+  private readonly _picHeader = new VP8PictureHeader();
+  /** VP8 Filter Header */
+  private readonly _filterHeader = new VP8FilterHeader();
+  /** VP8 Segment Header */
+  private readonly _segmentHeader = new VP8SegmentHeader();
+  /** Internal WebP info */
+  private readonly _webp: WebPInfoInternal;
+
+  /** Input buffer */
+  private _input: InputBuffer<Uint8Array>;
+  /** Bit reader for main data */
+  private _br!: VP8BitReader;
+  /** DSP/filter instance */
+  private _dsp!: VP8Filter;
+  /** Output image */
+  private _output?: MemoryImage;
+
+  /** Crop left */
+  private _cropLeft: number = 0;
+  /** Crop right */
+  private _cropRight: number = 0;
+  /** Crop top */
+  private _cropTop: number = 0;
+  /** Crop bottom */
+  private _cropBottom: number = 0;
+  /** Macroblock width */
+  private _mbWidth: number = 0;
+  /** Macroblock height */
+  private _mbHeight: number = 0;
+  /** Top-left macroblock X for filtering */
+  private _tlMbX: number = 0;
+  /** Top-left macroblock Y for filtering */
+  private _tlMbY: number = 0;
+  /** Bottom-right macroblock X for decoding */
+  private _brMbX: number = 0;
+  /** Bottom-right macroblock Y for decoding */
+  private _brMbY: number = 0;
+
+  /** Number of partitions */
+  private _numPartitions: number = 0;
+  /** Per-partition boolean decoders */
+  private readonly _partitions: Array<VP8BitReader | undefined> =
+    ArrayUtils.fill<VP8BitReader | undefined>(VP8.maxNumPartitions, undefined);
+  /** Probabilities */
+  private _proba?: VP8Proba;
+  /** Use skip probability */
+  private _useSkipProba: boolean = false;
+  /** Skip probability */
+  private _skipP: number = 0;
+
+  /** Dequantization matrices per segment */
+  private readonly _dqm: Array<VP8QuantMatrix | undefined> = ArrayUtils.fill<
+    VP8QuantMatrix | undefined
+  >(VP8.numMbSegments, undefined);
+  /** Current segment index */
+  private _segment: number = 0;
+
+  /** Top intra modes (4 * _mbWidth) */
+  private _intraT?: Uint8Array;
+  /** Left intra modes */
+  private readonly _intraL: Uint8Array = new Uint8Array(4);
+
+  /** Top Y/U/V samples */
+  private _yuvT!: VP8TopSamples[];
+  /** Macroblock info (mb_w_ + 1) */
+  private _mbInfo!: VP8MB[];
+  /** Macroblock data */
+  private _mbData!: VP8MBData[];
+  /** Filter info per macroblock */
+  private _fInfo!: Array<VP8FInfo | undefined>;
+  /** Precomputed filter strengths */
+  private _fStrengths!: Array<Array<VP8FInfo>>;
+  /** Filter type: 0=off, 1=simple, 2=complex */
+  private _filterType!: number;
+
+  /** Main YUV block buffer */
+  private _yuvBlock!: Uint8Array;
+  /** Macroblock row cache for Y */
+  private _cacheY!: InputBuffer<Uint8Array>;
+  /** Macroblock row cache for U */
+  private _cacheU!: InputBuffer<Uint8Array>;
+  /** Macroblock row cache for V */
+  private _cacheV!: InputBuffer<Uint8Array>;
+  /** Stride for Y cache */
+  private _cacheYStride!: number;
+  /** Stride for UV cache */
+  private _cacheUVStride!: number;
+  /** Temporary Y buffer */
+  private _tmpY!: InputBuffer<Uint8Array>;
+  /** Temporary U buffer */
+  private _tmpU!: InputBuffer<Uint8Array>;
+  /** Temporary V buffer */
+  private _tmpV!: InputBuffer<Uint8Array>;
+  /** Current Y buffer */
+  private _y!: InputBuffer<Uint8Array>;
+  /** Current U buffer */
+  private _u!: InputBuffer<Uint8Array>;
+  /** Current V buffer */
+  private _v!: InputBuffer<Uint8Array>;
+  /** Current alpha buffer */
+  private _a?: InputBuffer<Uint8Array>;
+
+  /** Current macroblock X */
+  private _mbX: number = 0;
+  /** Current macroblock Y */
+  private _mbY: number = 0;
+
+  /** Dithering enabled */
+  private readonly _dither: boolean = false;
+
+  /** Alpha-plane decoder */
+  private _alpha?: WebPAlpha;
+  /** Compressed alpha data */
+  private _alphaData?: InputBuffer<Uint8Array>;
+  /** Alpha plane buffer */
+  private _alphaPlane!: Uint8Array;
+
+  /**
+   * Create VP8 decoder instance.
+   * @param input Input buffer
+   * @param webp WebP info
+   */
+  constructor(input: InputBuffer<Uint8Array>, webp: WebPInfoInternal) {
+    this._input = input;
+    this._webp = webp;
+  }
+
+  /**
+   * Decode the input stream and return the decoded image.
+   * @returns Decoded image or undefined if failed.
+   */
+  public decode(): MemoryImage | undefined {
+    if (!this.getHeaders()) return undefined;
+    this._output = new MemoryImage({
+      width: this._webp.width,
+      height: this._webp.height,
+      numChannels: 4,
+    });
+    if (!this.initFrame()) return undefined;
+    if (!this.parseFrame()) return undefined;
+    if (this._webp.exifData.length > 0) {
+      const input = new InputBuffer({
+        buffer: StringUtils.getCodePoints(this._webp.exifData),
+      });
+      this._output.exifData = ExifData.fromInputBuffer(input);
+    }
+    return this._output;
+  }
+
+  /**
+   * Decode VP8 header from input stream.
+   * @returns True if header is valid.
+   */
+  public decodeHeader(): boolean {
+    const bits = this._input.readUint24();
+    const keyFrame = (bits & 1) === 0;
+    if (!keyFrame) return false;
+    if (((bits >>> 1) & 7) > 3) return false;
+    if (((bits >>> 4) & 1) === 0) return false;
+    this._frameHeader.keyFrame = (bits & 1) === 0;
+    this._frameHeader.profile = (bits >>> 1) & 7;
+    this._frameHeader.show = (bits >>> 4) & 1;
+    this._frameHeader.partitionLength = bits >>> 5;
+    const signature = this._input.readUint24();
+    if (signature !== VP8.vp8Signature) return false;
+    this._webp.width = this._input.readUint16();
+    this._webp.height = this._input.readUint16();
+    return true;
+  }
+
+  /**
+   * Compute vertical position of macroblock.
+   * @param mbY Macroblock Y
+   * @returns Vertical pixel position
+   */
+  public macroBlockVPos(mbY: number): number {
+    return mbY * 16;
+  }
+
+  /**
+   * Parse all headers and initialize decoding state.
+   * @returns True if headers are valid.
+   */
+  private getHeaders(): boolean {
+    if (!this.decodeHeader()) return false;
+    this._proba = new VP8Proba();
+    for (let i = 0; i < VP8.numMbSegments; ++i)
+      this._dqm[i] = new VP8QuantMatrix();
+    this._picHeader.width = this._webp.width;
+    this._picHeader.height = this._webp.height;
+    this._picHeader.xscale = (this._webp.width >>> 8) >>> 6;
+    this._picHeader.yscale = (this._webp.height >>> 8) >>> 6;
+    this._cropTop = 0;
+    this._cropLeft = 0;
+    this._cropRight = this._webp.width;
+    this._cropBottom = this._webp.height;
+    this._mbWidth = (this._webp.width + 15) >>> 4;
+    this._mbHeight = (this._webp.height + 15) >>> 4;
+    this._segment = 0;
+    this._br = new VP8BitReader(
+      this._input.subarray(this._frameHeader.partitionLength)
+    );
+    this._input.skip(this._frameHeader.partitionLength);
+    this._picHeader.colorspace = this._br.get();
+    this._picHeader.clampType = this._br.get();
+    if (!this.parseSegmentHeader(this._segmentHeader, this._proba))
+      return false;
+    if (!this.parseFilterHeader()) return false;
+    if (!this.parsePartitions(this._input)) return false;
+    this.parseQuant();
+    this._br.get();
+    this.parseProba();
+    return true;
+  }
+
+  /**
+   * Parse segment header.
+   * @param hdr Segment header
+   * @param proba Probability table
+   * @returns True if parsed
+   */
+  private parseSegmentHeader(hdr: VP8SegmentHeader, proba?: VP8Proba): boolean {
+    hdr.useSegment = this._br.get() !== 0;
+    if (hdr.useSegment) {
+      hdr.updateMap = this._br.get() !== 0;
+      if (this._br.get() !== 0) {
+        hdr.absoluteDelta = this._br.get() !== 0;
+        for (let s = 0; s < VP8.numMbSegments; ++s)
+          hdr.quantizer[s] =
+            this._br.get() !== 0 ? this._br.getSignedValue(7) : 0;
+        for (let s = 0; s < VP8.numMbSegments; ++s)
+          hdr.filterStrength[s] =
+            this._br.get() !== 0 ? this._br.getSignedValue(6) : 0;
+      }
+      if (hdr.updateMap) {
+        for (let s = 0; s < VP8.mbFeatureTreeProbs; ++s)
+          proba!.segments[s] =
+            this._br.get() !== 0 ? this._br.getValue(8) : 255;
+      }
+    } else hdr.updateMap = false;
+    return true;
+  }
+
+  /**
+   * Parse filter header.
+   * @returns True if parsed
+   */
+  private parseFilterHeader(): boolean {
+    const hdr = this._filterHeader;
+    this._filterHeader.simple = this._br.get() !== 0;
+    this._filterHeader.level = this._br.getValue(6);
+    this._filterHeader.sharpness = this._br.getValue(3);
+    this._filterHeader.useLfDelta = this._br.get() !== 0;
+    if (hdr.useLfDelta && this._br.get() !== 0) {
+      for (let i = 0; i < VP8.numRefLfDeltas; ++i)
+        if (this._br.get() !== 0)
+          hdr.refLfDelta[i] = this._br.getSignedValue(6);
+      for (let i = 0; i < VP8.numModeLfDeltas; ++i)
+        if (this._br.get() !== 0)
+          hdr.modeLfDelta[i] = this._br.getSignedValue(6);
+    }
+    this._filterType = hdr.level === 0 ? 0 : hdr.simple ? 1 : 2;
+    return true;
+  }
+
+  /**
+   * Parse partitions from input buffer.
+   * @param input Input buffer
+   * @returns True if parsed
+   */
+  private parsePartitions(input: InputBuffer<Uint8Array>): boolean {
+    let sz = 0;
+    const bufEnd = input.length;
+    this._numPartitions = 1 << this._br.getValue(2);
+    const lastPart = this._numPartitions - 1;
+    let partStart = lastPart * 3;
+    if (bufEnd < partStart) return false;
+    for (let p = 0; p < lastPart; ++p) {
+      const szb = input.peek(3, sz);
+      const psize = szb.get(0) | (szb.get(1) << 8) | (szb.get(2) << 16);
+      let partEnd = partStart + psize;
+      if (partEnd > bufEnd) partEnd = bufEnd;
+      const pin = input.subarray(partEnd - partStart, partStart);
+      this._partitions[p] = new VP8BitReader(pin);
+      partStart = partEnd;
+      sz += 3;
+    }
+    const pin = input.subarray(bufEnd - partStart, input.position + partStart);
+    this._partitions[lastPart] = new VP8BitReader(pin);
+    return partStart < bufEnd;
+  }
+
+  /**
+   * Parse quantization parameters and update dequant matrices.
+   */
+  private parseQuant(): void {
+    const baseQ0 = this._br.getValue(7);
+    const dqy1Dc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
+    const dqy2Dc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
+    const dqy2Ac = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
+    const dquvDc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
+    const dquvAc = this._br.get() !== 0 ? this._br.getSignedValue(4) : 0;
+    const hdr = this._segmentHeader;
+    for (let i = 0; i < VP8.numMbSegments; ++i) {
+      let q: number = 0;
+      if (hdr.useSegment) {
+        q = hdr.quantizer[i];
+        if (!hdr.absoluteDelta) q += baseQ0;
+      } else {
+        if (i > 0) {
+          this._dqm[i] = this._dqm[0];
+          continue;
+        } else q = baseQ0;
+      }
+      const m = this._dqm[i]!;
+      m.y1Mat[0] = VP8.dcTable[VP8.clip(q + dqy1Dc, 127)];
+      m.y1Mat[1] = VP8.acTable[VP8.clip(q + 0, 127)];
+      m.y2Mat[0] = VP8.dcTable[VP8.clip(q + dqy2Dc, 127)] * 2;
+      m.y2Mat[1] = (VP8.acTable[VP8.clip(q + dqy2Ac, 127)] * 101581) >>> 16;
+      if (m.y2Mat[1] < 8) m.y2Mat[1] = 8;
+      m.uvMat[0] = VP8.dcTable[VP8.clip(q + dquvDc, 117)];
+      m.uvMat[1] = VP8.acTable[VP8.clip(q + dquvAc, 127)];
+      m.uvQuant = q + dquvAc;
+    }
+  }
+
+  /**
+   * Parse probability values for VP8 codec.
+   */
+  private parseProba(): void {
+    const proba = this._proba;
+    for (let t = 0; t < VP8.numTypes; ++t)
+      for (let b = 0; b < VP8.numBands; ++b)
+        for (let c = 0; c < VP8.numCtx; ++c)
+          for (let p = 0; p < VP8.numProbas; ++p) {
+            const v =
+              this._br.getBit(VP8.coeffsUpdateProba[t][b][c][p]) !== 0
+                ? this._br.getValue(8)
+                : VP8.coeffsProba0[t][b][c][p];
+            proba!.bands[t][b].probas[c][p] = v;
+          }
+    this._useSkipProba = this._br.get() !== 0;
+    if (this._useSkipProba) this._skipP = this._br.getValue(8);
+  }
+
+  /**
+   * Initialize frame buffers and state for decoding.
+   * @returns True if successful.
+   */
+  private initFrame(): boolean {
+    if (this._webp.alphaData !== undefined)
+      this._alphaData = this._webp.alphaData;
+    this._fStrengths = ArrayUtils.generate<Array<VP8FInfo>>(
+      VP8.numMbSegments,
+      () => [new VP8FInfo(), new VP8FInfo()]
+    );
+    this._yuvT = ArrayUtils.generate<VP8TopSamples>(
+      this._mbWidth,
+      () => new VP8TopSamples()
+    );
+    this._yuvBlock = new Uint8Array(VP8.yuvSize);
+    this._intraT = new Uint8Array(4 * this._mbWidth);
+    this._cacheYStride = 16 * this._mbWidth;
+    this._cacheUVStride = 8 * this._mbWidth;
+    const extraRows = VP8.filterExtraRows[this._filterType];
+    const extraY = extraRows * this._cacheYStride;
+    const extraUv = Math.trunc(extraRows / 2) * this._cacheUVStride;
+    this._cacheY = new InputBuffer<Uint8Array>({
+      buffer: new Uint8Array(16 * this._cacheYStride + extraY),
+      offset: extraY,
+    });
+    this._cacheU = new InputBuffer<Uint8Array>({
+      buffer: new Uint8Array(8 * this._cacheUVStride + extraUv),
+      offset: extraUv,
+    });
+    this._cacheV = new InputBuffer<Uint8Array>({
+      buffer: new Uint8Array(8 * this._cacheUVStride + extraUv),
+      offset: extraUv,
+    });
+    this._tmpY = new InputBuffer<Uint8Array>({
+      buffer: new Uint8Array(this._webp.width),
+    });
+    const uvWidth = (this._webp.width + 1) >>> 1;
+    this._tmpU = new InputBuffer<Uint8Array>({
+      buffer: new Uint8Array(uvWidth),
+    });
+    this._tmpV = new InputBuffer<Uint8Array>({
+      buffer: new Uint8Array(uvWidth),
+    });
+    const extraPixels = VP8.filterExtraRows[this._filterType];
+    if (this._filterType === 2) {
+      this._tlMbX = 0;
+      this._tlMbY = 0;
+    } else {
+      this._tlMbX = Math.trunc((this._cropLeft - extraPixels) / 16);
+      this._tlMbY = Math.trunc((this._cropTop - extraPixels) / 16);
+      if (this._tlMbX < 0) this._tlMbX = 0;
+      if (this._tlMbY < 0) this._tlMbY = 0;
+    }
+    this._brMbY = Math.trunc((this._cropBottom + 15 + extraPixels) / 16);
+    this._brMbX = Math.trunc((this._cropRight + 15 + extraPixels) / 16);
+    if (this._brMbX > this._mbWidth) this._brMbX = this._mbWidth;
+    if (this._brMbY > this._mbHeight) this._brMbY = this._mbHeight;
+    this._mbInfo = ArrayUtils.generate<VP8MB>(
+      this._mbWidth + 1,
+      () => new VP8MB()
+    );
+    this._mbData = ArrayUtils.generate<VP8MBData>(
+      this._mbWidth,
+      () => new VP8MBData()
+    );
+    this._fInfo = ArrayUtils.fill<VP8FInfo | undefined>(
+      this._mbWidth,
+      undefined
+    );
+    this.precomputeFilterStrengths();
+    this._dsp = new VP8Filter();
+    return true;
+  }
+
+  /**
+   * Precompute filter strengths for each macroblock segment.
+   */
+  private precomputeFilterStrengths(): void {
+    if (this._filterType > 0) {
+      const hdr = this._filterHeader;
+      for (let s = 0; s < VP8.numMbSegments; ++s) {
+        let baseLevel: number = 0;
+        if (this._segmentHeader.useSegment) {
+          baseLevel = this._segmentHeader.filterStrength[s];
+          if (!this._segmentHeader.absoluteDelta) baseLevel += hdr.level;
+        } else baseLevel = hdr.level;
+        for (let i4x4 = 0; i4x4 <= 1; ++i4x4) {
+          const info = this._fStrengths[s][i4x4];
+          let level = baseLevel;
+          if (hdr.useLfDelta) {
+            level += hdr.refLfDelta[0];
+            if (i4x4 !== 0) level += hdr.modeLfDelta[0];
+          }
+          level = level < 0 ? 0 : level > 63 ? 63 : level;
+          if (level > 0) {
+            let iLevel: number = level;
+            if (hdr.sharpness > 0) {
+              if (hdr.sharpness > 4) iLevel >>>= 2;
+              else iLevel >>>= 1;
+              if (iLevel > 9 - hdr.sharpness) iLevel = 9 - hdr.sharpness;
+            }
+            if (iLevel < 1) iLevel = 1;
+            info.fInnerLevel = iLevel;
+            info.fLimit = 2 * level + iLevel;
+            info.hevThresh = level >= 40 ? 2 : level >= 15 ? 1 : 0;
+          } else info.fLimit = 0;
+          info.fInner = i4x4 !== 0;
+        }
+      }
+    }
+  }
+
+  /**
+   * Parse frame by iterating macroblock rows and columns.
+   * @returns True if frame parsed
+   */
+  private parseFrame(): boolean {
+    for (this._mbY = 0; this._mbY < this._brMbY; ++this._mbY) {
+      const tokenBr = this._partitions[this._mbY & (this._numPartitions - 1)];
+      for (; this._mbX < this._mbWidth; ++this._mbX)
+        if (!this.decodeMB(tokenBr)) return false;
+      this._mbInfo[0].nz = 0;
+      this._mbInfo[0].nzDc = 0;
+      this._intraL.fill(VP8.bDcPred);
+      this._mbX = 0;
+      if (!this.processRow()) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Process a row: reconstruct, filter, and emit.
+   * @returns True if successful
+   */
+  private processRow(): boolean {
+    this.reconstructRow();
+    const useFilter =
+      this._filterType > 0 &&
+      this._mbY >= this._tlMbY &&
+      this._mbY <= this._brMbY;
+    return this.finishRow(useFilter);
+  }
+
+  /**
+   * Reconstruct a row of macroblocks.
+   */
+  private reconstructRow(): void {
+    const mbY = this._mbY;
+    const yDst = new InputBuffer<Uint8Array>({
+      buffer: this._yuvBlock,
+      offset: VP8.yOffset,
+    });
+    const uDst = new InputBuffer<Uint8Array>({
+      buffer: this._yuvBlock,
+      offset: VP8.uOffset,
+    });
+    const vDst = new InputBuffer<Uint8Array>({
+      buffer: this._yuvBlock,
+      offset: VP8.vOffset,
+    });
+    for (let mbX = 0; mbX < this._mbWidth; ++mbX) {
+      const block = this._mbData[mbX];
+      if (mbX > 0) {
+        for (let j = -1; j < 16; ++j)
+          yDst.memcpy(j * VP8.bps - 4, 4, yDst, j * VP8.bps + 12);
+        for (let j = -1; j < 8; ++j) {
+          uDst.memcpy(j * VP8.bps - 4, 4, uDst, j * VP8.bps + 4);
+          vDst.memcpy(j * VP8.bps - 4, 4, vDst, j * VP8.bps + 4);
+        }
+      } else {
+        for (let j = 0; j < 16; ++j) yDst.set(j * VP8.bps - 1, 129);
+        for (let j = 0; j < 8; ++j) {
+          uDst.set(j * VP8.bps - 1, 129);
+          vDst.set(j * VP8.bps - 1, 129);
+        }
+        if (mbY > 0)
+          yDst.set(
+            -1 - VP8.bps,
+            uDst.set(-1 - VP8.bps, vDst.set(-1 - VP8.bps, 129))
+          );
+      }
+      const topYuv = this._yuvT[mbX];
+      const coeffs = block.coeffs;
+      let bits = block.nonZeroY;
+      if (mbY > 0) {
+        yDst.memcpy(-VP8.bps, 16, topYuv.y);
+        uDst.memcpy(-VP8.bps, 8, topYuv.u);
+        vDst.memcpy(-VP8.bps, 8, topYuv.v);
+      } else if (mbX === 0) {
+        yDst.memset(-VP8.bps - 1, 16 + 4 + 1, 127);
+        uDst.memset(-VP8.bps - 1, 8 + 1, 127);
+        vDst.memset(-VP8.bps - 1, 8 + 1, 127);
+      }
+      if (block.isIntra4x4) {
+        const topRight = InputBuffer.from(yDst, -VP8.bps + 16);
+        const topRight32 = topRight.toUint32Array();
+        if (mbY > 0) {
+          if (mbX >= this._mbWidth - 1) topRight.memset(0, 4, topYuv.y[15]);
+          else topRight.memcpy(0, 4, this._yuvT[mbX + 1].y);
+        }
+        const p = topRight32[0];
+        topRight32[3 * VP8.bps] = p;
+        topRight32[2 * VP8.bps] = p;
+        topRight32[VP8.bps] = p;
+        for (let n = 0; n < 16; ++n, bits = (bits << 2) & 0xffffffff) {
+          const dst = InputBuffer.from(yDst, VP8.kScan[n]);
+          VP8Filter.predLuma4[block.imodes[n]](dst);
+          this.doTransform(
+            bits,
+            new InputBuffer<Int16Array>({ buffer: coeffs, offset: n * 16 }),
+            dst
+          );
+        }
+      } else {
+        const predFunc = VP8.checkMode(mbX, mbY, block.imodes[0])!;
+        VP8Filter.predLuma16[predFunc](yDst);
+        if (bits !== 0) {
+          for (let n = 0; n < 16; ++n, bits = (bits << 2) & 0xffffffff) {
+            const dst = InputBuffer.from(yDst, VP8.kScan[n]);
+            this.doTransform(
+              bits,
+              new InputBuffer<Int16Array>({ buffer: coeffs, offset: n * 16 }),
+              dst
+            );
+          }
+        }
+      }
+      const bitsUv = block.nonZeroUV;
+      const predFunc = VP8.checkMode(mbX, mbY, block.uvmode)!;
+      VP8Filter.predChroma8[predFunc](uDst);
+      VP8Filter.predChroma8[predFunc](vDst);
+      const c1 = new InputBuffer<Int16Array>({
+        buffer: coeffs,
+        offset: 16 * 16,
+      });
+      this.doUVTransform(bitsUv, c1, uDst);
+      const c2 = new InputBuffer<Int16Array>({
+        buffer: coeffs,
+        offset: 20 * 16,
+      });
+      this.doUVTransform(bitsUv >>> 8, c2, vDst);
+      if (mbY < this._mbHeight - 1) {
+        ArrayUtils.copyRange(
+          yDst.toUint8Array(),
+          15 * VP8.bps,
+          topYuv.y,
+          0,
+          16
+        );
+        ArrayUtils.copyRange(uDst.toUint8Array(), 7 * VP8.bps, topYuv.u, 0, 8);
+        ArrayUtils.copyRange(vDst.toUint8Array(), 7 * VP8.bps, topYuv.v, 0, 8);
+      }
+      const yOut = mbX * 16;
+      const uOut = mbX * 8;
+      const vOut = mbX * 8;
+      for (let j = 0; j < 16; ++j)
+        this._cacheY.memcpy(
+          yOut + j * this._cacheYStride,
+          16,
+          yDst,
+          j * VP8.bps
+        );
+      for (let j = 0; j < 8; ++j) {
+        let start = uOut + j * this._cacheUVStride;
+        this._cacheU.memcpy(start, 8, uDst, j * VP8.bps);
+        start = vOut + j * this._cacheUVStride;
+        this._cacheV.memcpy(start, 8, vDst, j * VP8.bps);
+      }
+    }
+  }
+
+  /**
+   * Apply filter to macroblock at (mbX, mbY).
+   * @param mbX Macroblock X
+   * @param mbY Macroblock Y
+   */
+  private doFilter(mbX: number, mbY: number): void {
+    const yBps = this._cacheYStride;
+    const fInfo = this._fInfo[mbX]!;
+    const yDst = InputBuffer.from(this._cacheY, mbX * 16);
+    const iLevel = fInfo.fInnerLevel;
+    const limit = fInfo.fLimit;
+    if (limit === 0) return;
+    if (this._filterType === 1) {
+      if (mbX > 0) this._dsp.simpleHFilter16(yDst, yBps!, limit + 4);
+      if (fInfo.fInner) this._dsp.simpleHFilter16i(yDst, yBps!, limit);
+      if (mbY > 0) this._dsp.simpleVFilter16(yDst, yBps!, limit + 4);
+      if (fInfo.fInner) this._dsp.simpleVFilter16i(yDst, yBps!, limit);
+    } else {
+      const uvBps = this._cacheUVStride;
+      const uDst = InputBuffer.from(this._cacheU, mbX * 8);
+      const vDst = InputBuffer.from(this._cacheV, mbX * 8);
+      const hevThresh = fInfo.hevThresh;
+      if (mbX > 0) {
+        this._dsp.hFilter16(yDst, yBps!, limit + 4, iLevel, hevThresh);
+        this._dsp.hFilter8(uDst, vDst, uvBps!, limit + 4, iLevel, hevThresh);
+      }
+      if (fInfo.fInner) {
+        this._dsp.hFilter16i(yDst, yBps!, limit, iLevel, hevThresh);
+        this._dsp.hFilter8i(uDst, vDst, uvBps!, limit, iLevel!, hevThresh);
+      }
+      if (mbY > 0) {
+        this._dsp.vFilter16(yDst, yBps!, limit + 4, iLevel, hevThresh);
+        this._dsp.vFilter8(uDst, vDst, uvBps!, limit + 4, iLevel, hevThresh);
+      }
+      if (fInfo.fInner) {
+        this._dsp.vFilter16i(yDst, yBps!, limit, iLevel, hevThresh);
+        this._dsp.vFilter8i(uDst, vDst, uvBps!, limit, iLevel, hevThresh);
+      }
+    }
+  }
+
+  /**
+   * Filter a row of macroblocks.
+   */
+  private filterRow(): void {
+    for (let mbX = this._tlMbX; mbX < this._brMbX; ++mbX)
+      this.doFilter(mbX, this._mbY);
+  }
+
+  /**
+   * Dither the current row (stub).
+   */
+  private ditherRow(): void {}
+
+  /**
+   * Finalize processing of the current row.
+   * @param useFilter Whether to apply filter
+   * @returns True if successful
+   */
+  private finishRow(useFilter: boolean): boolean {
+    const extraYRows = VP8.kFilterExtraRows[this._filterType];
+    const ySize = extraYRows * this._cacheYStride;
+    const uvSize = Math.trunc(extraYRows / 2) * this._cacheUVStride;
+    const yDst = InputBuffer.from(this._cacheY, -ySize);
+    const uDst = InputBuffer.from(this._cacheU, -uvSize);
+    const vDst = InputBuffer.from(this._cacheV, -uvSize);
+    const mbY = this._mbY;
+    const isFirstRow = mbY === 0;
+    const isLastRow = mbY >= this._brMbY - 1;
+    let yStart = this.macroBlockVPos(mbY);
+    let yEnd = this.macroBlockVPos(mbY + 1);
+    if (useFilter) this.filterRow();
+    if (this._dither) this.ditherRow();
+    if (!isFirstRow) {
+      yStart -= extraYRows;
+      this._y = InputBuffer.from(yDst);
+      this._u = InputBuffer.from(uDst);
+      this._v = InputBuffer.from(vDst);
+    } else {
+      this._y = InputBuffer.from(this._cacheY);
+      this._u = InputBuffer.from(this._cacheU);
+      this._v = InputBuffer.from(this._cacheV);
+    }
+    if (!isLastRow) yEnd -= extraYRows;
+    if (yEnd > this._cropBottom) yEnd = this._cropBottom;
+    this._a = undefined;
+    if (this._alphaData !== undefined && yStart < yEnd) {
+      this._a = this.decompressAlphaRows(yStart, yEnd - yStart);
+      if (this._a === undefined) return false;
+    }
+    if (yStart < this._cropTop) {
+      const deltaY = this._cropTop - yStart;
+      yStart = this._cropTop;
+      this._y.offset += this._cacheYStride * deltaY;
+      this._u.offset += this._cacheUVStride * (deltaY >>> 1);
+      this._v.offset += this._cacheUVStride * (deltaY >>> 1);
+      if (this._a !== undefined) this._a.offset += this._webp.width * deltaY;
+    }
+    if (yStart < yEnd) {
+      this._y.offset += this._cropLeft;
+      this._u.offset += this._cropLeft >>> 1;
+      this._v.offset += this._cropLeft >>> 1;
+      if (this._a !== undefined) this._a.offset += this._cropLeft;
+      this.put(
+        yStart - this._cropTop!,
+        this._cropRight - this._cropLeft,
+        yEnd - yStart
+      );
+    }
+    if (!isLastRow) {
+      this._cacheY.memcpy(-ySize, ySize, yDst, 16 * this._cacheYStride);
+      this._cacheU.memcpy(-uvSize, uvSize, uDst, 8 * this._cacheUVStride);
+      this._cacheV.memcpy(-uvSize, uvSize, vDst, 8 * this._cacheUVStride);
+    }
+    return true;
+  }
+
+  /**
+   * Write decoded RGB and alpha to output.
+   * @param mbY Y position
+   * @param mbW Width
+   * @param mbH Height
+   * @returns True if written
+   */
+  private put(mbY: number, mbW: number, mbH: number): boolean {
+    if (mbW <= 0 || mbH <= 0) return false;
+    this.emitFancyRGB(mbY, mbW, mbH);
+    this.emitAlphaRGB(mbY, mbW, mbH);
+    return true;
+  }
+
+  /**
+   * Emit alpha values for RGB.
+   * @param mbY Macroblock Y
+   * @param mbW Macroblock width
+   * @param mbH Macroblock height
+   */
+  private emitAlphaRGB(mbY: number, mbW: number, mbH: number): void {
+    if (this._a === undefined) return;
+    const alpha = InputBuffer.from(this._a);
+    let startY = mbY;
+    let numRows = mbH;
+    if (startY === 0) --numRows;
+    else {
+      --startY;
+      alpha.offset -= this.webp.width;
+    }
+    if (this._cropTop + mbY + mbH === this._cropBottom)
+      numRows = this._cropBottom - this._cropTop - startY;
+    for (let y = 0; y < numRows; ++y) {
+      for (let x = 0; x < mbW; ++x)
+        this._output!.getPixel(x, y + startY).a = alpha.get(x);
+      alpha.offset += this.webp.width;
+    }
+  }
+
+  /**
+   * Emit fancy RGB values.
+   * @param mbY Macroblock Y
+   * @param mbW Macroblock width
+   * @param mbH Macroblock height
+   * @returns Number of lines output
+   */
+  private emitFancyRGB(mbY: number, mbW: number, mbH: number): number {
+    let numLinesOut = mbH;
+    const outputBytes = new Uint8Array(this._output!.buffer!);
+    const dst = new InputBuffer<Uint8Array>({
+      buffer: outputBytes,
+      offset: mbY * this.webp.width * 4,
+    });
+    const curY = InputBuffer.from(this._y);
+    const curU = InputBuffer.from(this._u);
+    const curV = InputBuffer.from(this._v);
+    let y = mbY;
+    const yEnd = mbY + mbH;
+    const uvW = (mbW + 1) >>> 1;
+    const stride = this.webp.width * 4;
+    const topU = InputBuffer.from(this._tmpU);
+    const topV = InputBuffer.from(this._tmpV);
+    if (y === 0)
+      this.upSample(
+        curY,
+        undefined,
+        curU,
+        curV,
+        curU,
+        curV,
+        dst,
+        undefined,
+        mbW
+      );
+    else {
+      this.upSample(
+        this._tmpY,
+        curY,
+        topU,
+        topV,
+        curU,
+        curV,
+        InputBuffer.from(dst, -stride),
+        dst,
+        mbW
+      );
+      ++numLinesOut;
+    }
+    topU.buffer = curU.buffer;
+    topV.buffer = curV.buffer;
+    for (; y + 2 < yEnd; y += 2) {
+      topU.offset = curU.offset;
+      topV.offset = curV.offset;
+      curU.offset += this._cacheUVStride;
+      curV.offset += this._cacheUVStride;
+      dst.offset += 2 * stride;
+      curY.offset += 2 * this._cacheYStride;
+      this.upSample(
+        InputBuffer.from(curY, -this._cacheYStride),
+        curY,
+        topU,
+        topV,
+        curU,
+        curV,
+        InputBuffer.from(dst, -stride),
+        dst,
+        mbW
+      );
+    }
+    curY.offset += this._cacheYStride;
+    if (this._cropTop + yEnd < this._cropBottom) {
+      this._tmpY.memcpy(0, mbW, curY);
+      this._tmpU.memcpy(0, uvW, curU);
+      this._tmpV.memcpy(0, uvW, curV);
+      numLinesOut--;
+    } else if ((yEnd & 1) === 0) {
+      this.upSample(
+        curY,
+        undefined,
+        curU,
+        curV,
+        curU,
+        curV,
+        InputBuffer.from(dst, stride),
+        undefined,
+        mbW
+      );
+    }
+    return numLinesOut;
+  }
+
+  /**
+   * Decompress alpha rows.
+   * @param row Start row
+   * @param numRows Number of rows
+   * @returns Buffer with decompressed alpha rows or undefined
+   */
+  private decompressAlphaRows(
+    row: number,
+    numRows: number
+  ): InputBuffer<Uint8Array> | undefined {
+    const width = this.webp.width;
+    const height = this.webp.height;
+    if (row < 0 || numRows <= 0 || row + numRows > height) return undefined;
+    if (row === 0) {
+      this._alphaPlane = new Uint8Array(width * height);
+      this._alpha = new WebPAlpha(this._alphaData!, width, height);
+    }
+    if (this._alpha !== undefined) {
+      if (!this._alpha.isAlphaDecoded) {
+        if (!this._alpha.decode(row, numRows, this._alphaPlane))
+          return undefined;
+      }
+    }
+    return new InputBuffer<Uint8Array>({
+      buffer: this._alphaPlane,
+      offset: row * width,
+    });
+  }
+
+  /**
+   * Decode a macroblock.
+   * @param tokenBr Bit reader for tokens
+   * @returns True if successful
+   */
+  private decodeMB(tokenBr?: VP8BitReader): boolean {
+    const left = this._mbInfo[0];
+    const mb = this._mbInfo[1 + this._mbX];
+    const block = this._mbData[this._mbX];
+    let skip: boolean = false;
+    if (this._segmentHeader.updateMap) {
+      this._segment =
+        this._br.getBit(this._proba!.segments[0]) === 0
+          ? this._br.getBit(this._proba!.segments[1])
+          : 2 + this._br.getBit(this._proba!.segments[2]);
+    }
+    skip = this._useSkipProba && this._br.getBit(this._skipP) !== 0;
+    this.parseIntraMode();
+    if (!skip) skip = this.parseResiduals(mb, tokenBr);
+    else {
+      mb.nz = 0;
+      left.nz = mb.nz;
+      if (!block.isIntra4x4) {
+        mb.nzDc = 0;
+        left.nzDc = mb.nzDc;
+      }
+      block.nonZeroY = 0;
+      block.nonZeroUV = 0;
+    }
+    if (this._filterType > 0) {
+      this._fInfo[this._mbX] =
+        this._fStrengths[this._segment][block.isIntra4x4 ? 1 : 0];
+      const finfo = this._fInfo[this._mbX]!;
+      finfo.fInner = finfo.fInner || !skip;
+    }
+    return true;
+  }
+
+  /**
+   * Parse residuals for a macroblock.
+   * @param mb Macroblock info
+   * @param tokenBr Bit reader for tokens
+   * @returns True if parsed
+   */
+  private parseResiduals(mb: VP8MB, tokenBr?: VP8BitReader): boolean {
+    const bands = this._proba!.bands;
+    const q = this._dqm[this._segment];
+    const block = this._mbData[this._mbX];
+    const dst = new InputBuffer<Int16Array>({ buffer: block.coeffs });
+    const leftMb = this._mbInfo[0];
+    let tnz: number = 0;
+    let lnz: number = 0;
+    let nonZeroY = 0;
+    let nonZeroUV = 0;
+    let outTopNz = 0;
+    let outLeftNz = 0;
+    let first = 0;
+    dst.memset(0, dst.length, 0);
+    let acProba: VP8BandProbas[] = [];
+    if (!block.isIntra4x4) {
+      const dc = new InputBuffer<Int16Array>({ buffer: new Int16Array(16) });
+      const ctx = mb.nzDc + leftMb.nzDc;
+      const nz = this.getCoeffs(tokenBr, bands[1], ctx, q!.y2Mat, 0, dc);
+      leftMb.nzDc = nz > 0 ? 1 : 0;
+      mb.nzDc = leftMb.nzDc;
+      if (nz > 1) this.transformWHT(dc, dst);
+      else {
+        const dc0 = (dc.get(0) + 3) >>> 3;
+        for (let i = 0; i < 16 * 16; i += 16) dst.set(i, dc0);
+      }
+      first = 1;
+      acProba = bands[0];
+    } else {
+      first = 0;
+      acProba = bands[3];
+    }
+    tnz = mb.nz & 0x0f;
+    lnz = leftMb.nz & 0x0f;
+    for (let y = 0; y < 4; ++y) {
+      let l = lnz & 1;
+      let nzCoeffs = 0;
+      for (let x = 0; x < 4; ++x) {
+        const ctx = l + (tnz & 1);
+        const nz = this.getCoeffs(tokenBr, acProba, ctx, q!.y1Mat, first, dst);
+        l = nz > first ? 1 : 0;
+        tnz = (tnz >>> 1) | (l << 7);
+        nzCoeffs = this.nzCodeBits(nzCoeffs, nz, dst.get(0) !== 0 ? 1 : 0);
+        dst.offset += 16;
+      }
+      tnz >>>= 4;
+      lnz = (lnz >>> 1) | (l << 7);
+      nonZeroY = ((nonZeroY << 8) | nzCoeffs) >>> 0;
+    }
+    outTopNz = tnz;
+    outLeftNz = lnz >>> 4;
+    for (let ch = 0; ch < 4; ch += 2) {
+      let nzCoeffs = 0;
+      tnz = mb.nz >>> (4 + ch);
+      lnz = leftMb.nz >>> (4 + ch);
+      for (let y = 0; y < 2; ++y) {
+        let l = lnz & 1;
+        for (let x = 0; x < 2; ++x) {
+          const ctx = l + (tnz & 1);
+          const nz = this.getCoeffs(tokenBr, bands[2], ctx, q!.uvMat, 0, dst);
+          l = nz > 0 ? 1 : 0;
+          tnz = (tnz >>> 1) | (l << 3);
+          nzCoeffs = this.nzCodeBits(nzCoeffs, nz, dst.get(0) !== 0 ? 1 : 0);
+          dst.offset += 16;
+        }
+        tnz >>>= 2;
+        lnz = (lnz >>> 1) | (l << 5);
+      }
+      nonZeroUV |= nzCoeffs << (4 * ch);
+      outTopNz |= (tnz << 4) << ch;
+      outLeftNz |= (lnz & 0xf0) << ch;
+    }
+    mb.nz = outTopNz;
+    leftMb.nz = outLeftNz;
+    block.nonZeroY = nonZeroY;
+    block.nonZeroUV = nonZeroUV;
+    block.dither = (nonZeroUV & 0xaaaa) !== 0 ? 0 : q!.dither;
+    return (nonZeroY | nonZeroUV) === 0;
+  }
+
+  /**
+   * Parse intra prediction mode for macroblock.
+   */
+  private parseIntraMode(): void {
+    const ti = 4 * this._mbX;
+    const li = 0;
+    const top = this._intraT;
+    const left = this._intraL;
+    const block = this._mbData[this._mbX];
+    block.isIntra4x4 = this._br.getBit(145) === 0;
+    if (!block.isIntra4x4) {
+      const ymode =
+        this._br.getBit(156) !== 0
+          ? this._br.getBit(128) !== 0
+            ? VP8.tmPred
+            : VP8.hPred
+          : this._br.getBit(163) !== 0
+            ? VP8.vPred
+            : VP8.dcPred;
+      block.imodes[0] = ymode;
+      top!.fill(ymode, ti, ti + 4);
+      left.fill(ymode, li, li + 4);
+    } else {
+      const modes = block.imodes;
+      let mi = 0;
+      for (let y = 0; y < 4; ++y) {
+        let ymode = left[y];
+        for (let x = 0; x < 4; ++x) {
+          const prob = VP8.kBModesProba[top![ti + x]][ymode];
+          const b = this._br.getBit(prob[0]);
+          let i = VP8.kYModesIntra4[b];
+          while (i > 0) i = VP8.kYModesIntra4[2 * i + this._br.getBit(prob[i])];
+          ymode = -i;
+          top![ti + x] = ymode;
+        }
+        ArrayUtils.copyRange(top!, ti, modes, mi, 4);
+        mi += 4;
+        left[y] = ymode;
+      }
+    }
+    block.uvmode =
+      this._br.getBit(142) === 0
+        ? VP8.dcPred
+        : this._br.getBit(114) === 0
+          ? VP8.vPred
+          : this._br.getBit(183) !== 0
+            ? VP8.tmPred
+            : VP8.hPred;
+  }
+
+  /**
+   * Transform input buffer based on bit pattern.
+   * @param bits Bit pattern
+   * @param src Source buffer
+   * @param dst Destination buffer
+   */
+  private doTransform(
+    bits: number,
+    src: InputBuffer<Int16Array>,
+    dst: InputBuffer<Uint8Array>
+  ): void {
+    switch (bits >>> 30) {
+      case 3:
+        this._dsp.transform(src, dst, false);
+        break;
+      case 2:
+        this._dsp.transformAC3(src, dst);
+        break;
+      case 1:
+        this._dsp.transformDC(src, dst);
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Perform UV transform on input buffers.
+   * @param bits Bit pattern
+   * @param src Source buffer
+   * @param dst Destination buffer
+   */
+  private doUVTransform(
+    bits: number,
+    src: InputBuffer<Int16Array>,
+    dst: InputBuffer<Uint8Array>
+  ): void {
+    if ((bits & 0xff) !== 0) {
+      if ((bits & 0xaa) !== 0) this._dsp.transformUV(src, dst);
+      else this._dsp.transformDCUV(src, dst);
+    }
+  }
+
+  /**
+   * Walsh-Hadamard Transform (WHT) on input buffer.
+   * @param src Source buffer
+   * @param out Output buffer
+   */
+  private transformWHT(
+    src: InputBuffer<Int16Array>,
+    out: InputBuffer<Int16Array>
+  ): void {
+    const tmp = new Int32Array(16);
+    let oi = 0;
+    for (let i = 0; i < 4; ++i) {
+      const a0 = src.get(0 + i) + src.get(12 + i);
+      const a1 = src.get(4 + i) + src.get(8 + i);
+      const a2 = src.get(4 + i) - src.get(8 + i);
+      const a3 = src.get(0 + i) - src.get(12 + i);
+      tmp[0 + i] = a0 + a1;
+      tmp[8 + i] = a0 - a1;
+      tmp[4 + i] = a3 + a2;
+      tmp[12 + i] = a3 - a2;
+    }
+    for (let i = 0; i < 4; ++i) {
+      const dc = tmp[0 + i * 4] + 3;
+      const a0 = dc + tmp[3 + i * 4];
+      const a1 = tmp[1 + i * 4] + tmp[2 + i * 4];
+      const a2 = tmp[1 + i * 4] - tmp[2 + i * 4];
+      const a3 = dc - tmp[3 + i * 4];
+      out.set(oi + 0, (a0 + a1) >>> 3);
+      out.set(oi + 16, (a3 + a2) >>> 3);
+      out.set(oi + 32, (a0 - a1) >>> 3);
+      out.set(oi + 48, (a3 - a2) >>> 3);
+      oi += 64;
+    }
+  }
+
+  /**
+   * Compute non-zero coefficients code.
+   * @param nzCoeffs Current code
+   * @param nz Non-zero count
+   * @param dcNz Non-zero DC
+   * @returns Updated code
+   */
+  private nzCodeBits(nzCoeffs: number, nz: number, dcNz: number): number {
+    let _nzCoeffs = nzCoeffs;
+    _nzCoeffs <<= 2;
+    _nzCoeffs |= nz > 3 ? 3 : nz > 1 ? 2 : dcNz;
+    return _nzCoeffs;
+  }
+
+  /**
+   * Get large value from bit reader.
+   * @param br Bit reader
+   * @param p Probability array
+   * @returns Value
+   */
+  private getLargeValue(br: VP8BitReader, p: Uint8Array): number {
+    let v: number = 0;
+    if (br.getBit(p[3]) === 0)
+      v = br.getBit(p[4]) === 0 ? 2 : 3 + br.getBit(p[5]);
+    else if (br.getBit(p[6]) === 0)
+      v =
+        br.getBit(p[7]) === 0
+          ? 5 + br.getBit(159)
+          : 7 + 2 * br.getBit(165) + br.getBit(145);
+    else {
+      const bit1 = br.getBit(p[8]);
+      const bit0 = br.getBit(p[9 + bit1]);
+      const cat = 2 * bit1 + bit0;
+      v = 0;
+      const tab = VP8.kCat3456[cat];
+      const len = tab.length;
+      for (let i = 0; i < len; ++i) v += v + br.getBit(tab[i]);
+      v += 3 + (8 << cat);
+    }
+    return v;
+  }
+
+  /**
+   * Get position of last non-zero coefficient plus one.
+   * @param br Bit reader
+   * @param prob Probability bands
+   * @param ctx Context
+   * @param dq Dequant values
+   * @param n Initial coefficient index
+   * @param out Output buffer
+   * @returns Position
+   */
+  private getCoeffs(
+    br: VP8BitReader | undefined,
+    prob: VP8BandProbas[],
+    ctx: number,
+    dq: Int32Array,
+    n: number,
+    out: InputBuffer<Int16Array>
+  ): number {
+    let _n = n;
+    let p: Uint8Array = prob[_n].probas[ctx];
+    for (; _n < 16; ++_n) {
+      if (br!.getBit(p[0]) === 0) return _n;
+      while (br!.getBit(p[1]) === 0) {
+        p = prob[VP8.kBands[++_n]].probas[0];
+        if (_n === 16) return 16;
+      }
+      {
+        const pCtx = prob[VP8.kBands[_n + 1]].probas;
+        let v: number = 0;
+        if (br!.getBit(p[2]) === 0) {
+          v = 1;
+          p = pCtx[1];
+        } else {
+          v = this.getLargeValue(br!, p);
+          p = pCtx[2];
+        }
+        out.set(VP8.kZigzag[_n], br!.getSigned(v) * dq[_n > 0 ? 1 : 0]);
+      }
+    }
+    return 16;
+  }
+
+  /**
+   * Clips value v to range [0, M].
+   * @param v Value
+   * @param M Max
+   * @returns Clipped value
+   */
+  private static clip(v: number, M: number): number {
+    return v < 0 ? 0 : v > M ? M : v;
+  }
+
+  /**
+   * Check prediction mode based on macroblock position.
+   * @param mbX Macroblock X
+   * @param mbY Macroblock Y
+   * @param mode Optional mode
+   * @returns Mode or undefined
+   */
+  private static checkMode(
+    mbX: number,
+    mbY: number,
+    mode?: number
+  ): number | undefined {
+    if (mode === VP8.bDcPred) {
+      if (mbX === 0)
+        return mbY === 0 ? VP8.bDcPredNoTopLeft : VP8.bDcPredNoLeft;
+      else return mbY === 0 ? VP8.bDcPredNoTop : VP8.bDcPred;
+    }
+    return mode;
+  }
+
+  /**
+   * Clip value to 8-bit range.
+   * @param v Value
+   * @returns Clipped value
+   */
+  private clip8(v: number): number {
+    const d = (v & VP8.xorYuvMask2) === 0 ? v >>> VP8.yuvFix2 : v < 0 ? 0 : 255;
+    return d;
+  }
+
+  /**
+   * Convert YUV to R component.
+   * @param y Y
+   * @param v V
+   * @returns R
+   */
+  private yuvToR(y: number, v: number): number {
+    return this.clip8(VP8.kYScale * y + VP8.kVToR * v + VP8.kRCst);
+  }
+
+  /**
+   * Convert YUV to G component.
+   * @param y Y
+   * @param u U
+   * @param v V
+   * @returns G
+   */
+  private yuvToG(y: number, u: number, v: number): number {
+    return this.clip8(
+      VP8.kYScale * y - VP8.kUToG * u - VP8.kVToG * v + VP8.kGCst
+    );
+  }
+
+  /**
+   * Convert YUV to B component.
+   * @param y Y
+   * @param u U
+   * @returns B
+   */
+  private yuvToB(y: number, u: number): number {
+    return this.clip8(VP8.kYScale * y + VP8.kUToB * u + VP8.kBCst);
+  }
+
+  /**
+   * Convert YUV to RGB.
+   * @param y Y
+   * @param u U
+   * @param v V
+   * @param rgb Output buffer
+   */
+  private yuvToRgb(
+    y: number,
+    u: number,
+    v: number,
+    rgb: InputBuffer<Uint8Array>
+  ): void {
+    rgb.set(0, this.yuvToR(y, v));
+    rgb.set(1, this.yuvToG(y, u, v));
+    rgb.set(2, this.yuvToB(y, u));
+  }
+
+  /**
+   * Convert YUV to RGBA.
+   * @param y Y
+   * @param u U
+   * @param v V
+   * @param rgba Output buffer
+   */
+  private yuvToRgba(
+    y: number,
+    u: number,
+    v: number,
+    rgba: InputBuffer<Uint8Array>
+  ): void {
+    this.yuvToRgb(y, u, v, rgba);
+    rgba.set(3, 0xff);
+  }
+
+  /**
+   * Upsample YUV components to RGBA.
+   * @param topY Top Y buffer
+   * @param bottomY Bottom Y buffer
+   * @param topU Top U buffer
+   * @param topV Top V buffer
+   * @param curU Current U buffer
+   * @param curV Current V buffer
+   * @param topDst Top output buffer
+   * @param bottomDst Bottom output buffer
+   * @param len Length
+   */
+  private upSample(
+    topY: InputBuffer<Uint8Array>,
+    bottomY: InputBuffer<Uint8Array> | undefined,
+    topU: InputBuffer<Uint8Array>,
+    topV: InputBuffer<Uint8Array>,
+    curU: InputBuffer<Uint8Array>,
+    curV: InputBuffer<Uint8Array>,
+    topDst: InputBuffer<Uint8Array>,
+    bottomDst: InputBuffer<Uint8Array> | undefined,
+    len: number
+  ): void {
+    const loadUv = (u: number, v: number): number => u | (v << 16);
+    const lastPixelPair = (len - 1) >>> 1;
+    let tlUv = loadUv(topU.get(0), topV.get(0));
+    let lUv = loadUv(curU.get(0), curV.get(0));
+    let uv0 = (3 * tlUv + lUv + 0x00020002) >>> 2;
+    this.yuvToRgba(topY.get(0), uv0 & 0xff, uv0 >>> 16, topDst);
+    if (bottomY !== undefined) {
+      uv0 = (3 * lUv + tlUv + 0x00020002) >>> 2;
+      this.yuvToRgba(bottomY.get(0), uv0 & 0xff, uv0 >>> 16, bottomDst!);
+    }
+    for (let x = 1; x <= lastPixelPair; ++x) {
+      const tUv = loadUv(topU.get(x), topV.get(x));
+      const uv = loadUv(curU.get(x), curV.get(x));
+      const avg = tlUv + tUv + lUv + uv + 0x00080008;
+      const diag12 = (avg + 2 * (tUv + lUv)) >>> 3;
+      const diag03 = (avg + 2 * (tlUv + uv)) >>> 3;
+      let uv0 = (diag12 + tlUv) >>> 1;
+      let uv1 = (diag03 + tUv) >>> 1;
+      this.yuvToRgba(
+        topY.get(2 * x - 1),
+        uv0 & 0xff,
+        uv0 >>> 16,
+        InputBuffer.from(topDst, (2 * x - 1) * 4)
+      );
+      this.yuvToRgba(
+        topY.get(2 * x),
+        uv1 & 0xff,
+        uv1 >>> 16,
+        InputBuffer.from(topDst, 2 * x * 4)
+      );
+      if (bottomY !== undefined) {
+        uv0 = (diag03 + lUv) >>> 1;
+        uv1 = (diag12 + uv) >>> 1;
+        this.yuvToRgba(
+          bottomY.get(2 * x - 1),
+          uv0 & 0xff,
+          uv0 >>> 16,
+          InputBuffer.from(bottomDst!, (2 * x - 1) * 4)
+        );
+        this.yuvToRgba(
+          bottomY.get(2 * x),
+          uv1 & 0xff,
+          uv1 >>> 16,
+          InputBuffer.from(bottomDst!, (2 * x + 0) * 4)
+        );
+      }
+      tlUv = tUv;
+      lUv = uv;
+    }
+    if ((len & 1) === 0) {
+      uv0 = (3 * tlUv + lUv + 0x00020002) >>> 2;
+      this.yuvToRgba(
+        topY.get(len - 1),
+        uv0 & 0xff,
+        uv0 >>> 16,
+        InputBuffer.from(topDst, (len - 1) * 4)
+      );
+      if (bottomY !== undefined) {
+        uv0 = (3 * lUv + tlUv + 0x00020002) >>> 2;
+        this.yuvToRgba(
+          bottomY.get(len - 1),
+          uv0 & 0xff,
+          uv0 >>> 16,
+          InputBuffer.from(bottomDst!, (len - 1) * 4)
+        );
+      }
+    }
+  }
 }

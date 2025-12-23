@@ -599,7 +599,7 @@ export class IfdDirectory {
    * @param {number | string} tag - The tag number or name.
    * @returns {IfdValue | undefined} The IFD value or undefined if not found.
    */
-  public getValue(tag: number | string): IfdValue | undefined {
+  public get(tag: number | string): IfdValue | undefined {
     let _tag: string | number | undefined = tag;
     if (typeof _tag === 'string') {
       _tag = ExifTagNameToID.get(_tag);
@@ -615,7 +615,7 @@ export class IfdDirectory {
    * @param {number | string} tag - The tag number or name.
    * @param {Rational[] | number[] | TypedArray | Rational | IfdValue | number | undefined} value - The value to set.
    */
-  public setValue(
+  public set(
     tag: number | string,
     value:
       | Rational[]

@@ -26,8 +26,8 @@ describe('Format: JPEG', TestUtils.testOptions, () => {
    */
   test('inject new EXIF', () => {
     const exifData = new ExifData();
-    exifData.imageIfd.setValue('xResolution', [300, 1]);
-    exifData.imageIfd.setValue('yResolution', [300, 1]);
+    exifData.imageIfd.set('xResolution', [300, 1]);
+    exifData.imageIfd.set('yResolution', [300, 1]);
 
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -47,14 +47,14 @@ describe('Format: JPEG', TestUtils.testOptions, () => {
       return;
     }
 
-    let ed1 = exifData.imageIfd.getValue('XResolution');
-    let ed2 = image2.exifData.imageIfd.getValue('XResolution');
+    let ed1 = exifData.imageIfd.get('XResolution');
+    let ed2 = image2.exifData.imageIfd.get('XResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
     expect(ed1!.equals(ed2!)).toBeTruthy();
 
-    ed1 = exifData.imageIfd.getValue('YResolution');
-    ed2 = image2.exifData.imageIfd.getValue('YResolution');
+    ed1 = exifData.imageIfd.get('YResolution');
+    ed2 = image2.exifData.imageIfd.get('YResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
     expect(ed1!.equals(ed2!)).toBeTruthy();
@@ -66,8 +66,8 @@ describe('Format: JPEG', TestUtils.testOptions, () => {
    */
   test('inject replacement EXIF', () => {
     const exifData = new ExifData();
-    exifData.imageIfd.setValue('xResolution', [300, 1]);
-    exifData.imageIfd.setValue('yResolution', [300, 1]);
+    exifData.imageIfd.set('xResolution', [300, 1]);
+    exifData.imageIfd.set('yResolution', [300, 1]);
 
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -87,14 +87,14 @@ describe('Format: JPEG', TestUtils.testOptions, () => {
       return;
     }
 
-    let ed1 = exifData.imageIfd.getValue('XResolution');
-    let ed2 = image2.exifData.imageIfd.getValue('XResolution');
+    let ed1 = exifData.imageIfd.get('XResolution');
+    let ed2 = image2.exifData.imageIfd.get('XResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
     expect(ed1!.equals(ed2!)).toBeTruthy();
 
-    ed1 = exifData.imageIfd.getValue('YResolution');
-    ed2 = image2.exifData.imageIfd.getValue('YResolution');
+    ed1 = exifData.imageIfd.get('YResolution');
+    ed2 = image2.exifData.imageIfd.get('YResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
     expect(ed1!.equals(ed2!)).toBeTruthy();
@@ -193,11 +193,11 @@ describe('Format: JPEG', TestUtils.testOptions, () => {
       return;
     }
 
-    let orientation = exif.imageIfd.getValue('Orientation')?.toInt();
+    let orientation = exif.imageIfd.get('Orientation')?.toInt();
     expect(orientation).toBe(1);
 
-    exif.imageIfd.setValue('Orientation', 4);
-    orientation = exif.imageIfd.getValue('Orientation')?.toInt();
+    exif.imageIfd.set('Orientation', 4);
+    orientation = exif.imageIfd.get('Orientation')?.toInt();
     expect(orientation).toBe(4);
 
     const output = injectJpgExif({

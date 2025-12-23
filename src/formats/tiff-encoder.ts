@@ -84,19 +84,19 @@ export class TiffEncoder implements Encoder {
     const nc = image.numChannels;
 
     const ifd0 = exif.imageIfd;
-    ifd0.setValue('ImageWidth', image.width);
-    ifd0.setValue('ImageHeight', image.height);
-    ifd0.setValue('BitsPerSample', image.bitsPerChannel);
-    ifd0.setValue('SampleFormat', this.getSampleFormat(image));
-    ifd0.setValue('SamplesPerPixel', image.hasPalette ? 1 : nc);
-    ifd0.setValue('Compression', TiffCompression.none);
-    ifd0.setValue('PhotometricInterpretation', type);
-    ifd0.setValue('RowsPerStrip', image.height);
-    ifd0.setValue('PlanarConfiguration', 1);
-    ifd0.setValue('TileWidth', image.width);
-    ifd0.setValue('TileLength', image.height);
-    ifd0.setValue('StripByteCounts', image.byteLength);
-    ifd0.setValue('StripOffsets', new IfdUndefinedValue(image.toUint8Array()));
+    ifd0.set('ImageWidth', image.width);
+    ifd0.set('ImageHeight', image.height);
+    ifd0.set('BitsPerSample', image.bitsPerChannel);
+    ifd0.set('SampleFormat', this.getSampleFormat(image));
+    ifd0.set('SamplesPerPixel', image.hasPalette ? 1 : nc);
+    ifd0.set('Compression', TiffCompression.none);
+    ifd0.set('PhotometricInterpretation', type);
+    ifd0.set('RowsPerStrip', image.height);
+    ifd0.set('PlanarConfiguration', 1);
+    ifd0.set('TileWidth', image.width);
+    ifd0.set('TileLength', image.height);
+    ifd0.set('StripByteCounts', image.byteLength);
+    ifd0.set('StripOffsets', new IfdUndefinedValue(image.toUint8Array()));
 
     if (image.hasPalette) {
       const p = image.palette!;
@@ -110,7 +110,7 @@ export class TiffEncoder implements Encoder {
         }
       }
 
-      ifd0.setValue('ColorMap', colorMap);
+      ifd0.set('ColorMap', colorMap);
     }
 
     exif.write(out);

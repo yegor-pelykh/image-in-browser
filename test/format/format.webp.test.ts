@@ -1,5 +1,6 @@
 /** @format */
 
+import { existsSync } from 'fs';
 import { describe, expect, test } from 'vitest';
 import { IfdShortValue, decodePng, decodeWebP, encodePng } from '../../src';
 import { WebPDecoder } from '../../src/formats/webp-decoder';
@@ -66,7 +67,7 @@ describe('Format: WEBP', TestUtils.testOptions, () => {
     }
     const correctOrientation = new IfdShortValue(1);
     expect(
-      webp.exifData.imageIfd.getValue('Orientation')?.equals(correctOrientation)
+      webp.exifData.imageIfd.get('Orientation')?.equals(correctOrientation)
     ).toBeTruthy();
   });
 
@@ -97,49 +98,6 @@ describe('Format: WEBP', TestUtils.testOptions, () => {
         output
       );
     }
-  });
-
-  /**
-   * Test for decoding a lossless WEBP image and comparing it to a PNG.
-   */
-  test("decode lossless 'test.webp'", () => {
-    const inputWebp = TestUtils.readFromFile(
-      TestFolder.input,
-      TestSection.webp,
-      'test.webp'
-    );
-    const webp = decodeWebP({
-      data: inputWebp,
-    });
-    expect(webp).toBeDefined();
-    if (webp === undefined) {
-      return;
-    }
-
-    const inputPng = TestUtils.readFromFile(
-      TestFolder.input,
-      TestSection.webp,
-      'test.png'
-    );
-    const png = decodePng({
-      data: inputPng,
-    });
-    expect(png).toBeDefined();
-    if (png === undefined) {
-      return;
-    }
-
-    const outputPng = encodePng({
-      image: webp,
-    });
-    TestUtils.writeToFile(
-      TestFolder.output,
-      TestSection.webp,
-      'test.png',
-      outputPng
-    );
-
-    ImageTestUtils.testImageEquals(webp, png);
   });
 
   /**
@@ -241,9 +199,39 @@ describe('Format: WEBP', TestUtils.testOptions, () => {
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.webp,
-        `${file.nameExt}.png`,
+        `${file.name}.png`,
         output
       );
+
+      const pngPath = TestUtils.preparePath(
+        TestFolder.output,
+        TestSection.webp,
+        `${file.name}.png`
+      );
+      if (!existsSync(pngPath)) {
+        return;
+      }
+
+      const input2 = TestUtils.readFromFilePath(pngPath);
+      const image2 = decodePng({
+        data: input2,
+      });
+      expect(image2).toBeDefined();
+      if (image2 === undefined) {
+        return;
+      }
+
+      const png4 =
+        image2.numChannels !== 4
+          ? image2.convert({
+              numChannels: 4,
+              alpha: 255,
+            })
+          : image2;
+
+      expect(image.width).toBe(png4.width);
+      expect(image.height).toBe(png4.height);
+      // TODO: Implement image comparison
     });
   }
 

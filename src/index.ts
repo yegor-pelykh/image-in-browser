@@ -345,8 +345,12 @@ export { WebPAlpha } from './formats/webp/webp-alpha.js';
 export { WebPFilters } from './formats/webp/webp-filters.js';
 export { WebPFormat } from './formats/webp/webp-format.js';
 export { WebPFrame } from './formats/webp/webp-frame.js';
+export { HuffmanCode32 } from './formats/webp/webp-huffman-code-32.js';
+export { HuffmanCodeList } from './formats/webp/webp-huffman-code-list.js';
+export { HuffmanCode } from './formats/webp/webp-huffman-code.js';
+export { HuffmanTablesSegment } from './formats/webp/webp-huffman-table-segment.js';
+export { HuffmanTables } from './formats/webp/webp-huffman-tables.js';
 export { HuffmanTreeGroup } from './formats/webp/webp-huffman-tree-group.js';
-export { HuffmanTree } from './formats/webp/webp-huffman-tree.js';
 export { WebPInfoInternal } from './formats/webp/webp-info-internal.js';
 export { WebPInfo } from './formats/webp/webp-info.js';
 

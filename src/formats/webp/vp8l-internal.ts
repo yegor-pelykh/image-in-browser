@@ -4,98 +4,68 @@ import { VP8L } from './vp8l.js';
 import { VP8LTransform } from './vp8l-transform.js';
 
 /**
- * Class representing internal VP8L operations.
+ * Internal operations for VP8L image decoding.
  */
 export class VP8LInternal extends VP8L {
-  /**
-   * Gets the transforms.
-   * @returns {VP8LTransform[]} The array of VP8LTransform objects.
-   */
+  /** Array of VP8LTransform objects used for image transformations. */
   public get transforms(): VP8LTransform[] {
     return this._transforms;
   }
 
-  /**
-   * Gets the pixels.
-   * @returns {Uint32Array | undefined} The pixel data.
-   */
+  /** Pixel data buffer. */
   public get pixels(): Uint32Array | undefined {
     return this._pixels;
   }
 
-  /**
-   * Gets the opaque data.
-   * @returns {Uint8Array | undefined} The opaque data.
-   */
+  /** Opaque (alpha) channel data. */
   public get opaque(): Uint8Array | undefined {
     return this._opaque;
   }
-
-  /**
-   * Sets the opaque data.
-   * @param {Uint8Array | undefined} v - The opaque data.
-   */
   public set opaque(v: Uint8Array | undefined) {
     this._opaque = v;
   }
 
-  /**
-   * Gets the IO width.
-   * @returns {number | undefined} The IO width.
-   */
-  public get ioWidth(): number | undefined {
+  /** Width of the IO buffer. */
+  public get ioWidth(): number {
     return this._ioWidth;
   }
-
-  /**
-   * Sets the IO width.
-   * @param {number | undefined} v - The IO width.
-   */
-  public set ioWidth(v: number | undefined) {
+  public set ioWidth(v: number) {
     this._ioWidth = v;
   }
 
-  /**
-   * Gets the IO height.
-   * @returns {number | undefined} The IO height.
-   */
-  public get ioHeight(): number | undefined {
+  /** Height of the IO buffer. */
+  public get ioHeight(): number {
     return this._ioHeight;
   }
-
-  /**
-   * Sets the IO height.
-   * @param {number | undefined} v - The IO height.
-   */
-  public set ioHeight(v: number | undefined) {
+  public set ioHeight(v: number) {
     this._ioHeight = v;
   }
 
   /**
-   * Decodes image data.
-   * @param {Uint32Array} data - The image data.
-   * @param {number} width - The width of the image.
-   * @param {number} height - The height of the image.
-   * @param {number} lastRow - The last row of the image.
-   * @param {(_: number) => void} processFunc - The function to process each pixel.
-   * @returns {boolean} True if decoding was successful, otherwise false.
+   * Decode image data using a processing function for each row.
+   * @param data - Image data buffer.
+   * @param width - Image width.
+   * @param height - Image height.
+   * @param lastRow - Last row index to process.
+   * @param processFunc - Function to process each row.
+   * @returns True if decoding succeeds.
    */
   public decodeImageData(
     data: Uint32Array,
     width: number,
     height: number,
     lastRow: number,
-    processFunc: (_: number) => void
+    processFunc: (_row: number, _waitForBiggestBatch: boolean) => void
   ): boolean {
     return super.decodeImageData(data, width, height, lastRow, processFunc);
   }
 
   /**
-   * Decodes image stream.
-   * @param {number} xsize - The width of the image.
-   * @param {number} ysize - The height of the image.
-   * @param {boolean} isLevel0 - Indicates if it is level 0.
-   * @returns {Uint32Array | undefined} The decoded image stream.
+   * Decode the image stream to a pixel buffer.
+   * @param xsize - Image width.
+   * @param ysize - Image height.
+   * @param isLevel0 - If true, decode at level 0.
+   * @returns Decoded pixel buffer or undefined.
    */
   public decodeImageStream(
     xsize: number,
@@ -106,27 +76,28 @@ export class VP8LInternal extends VP8L {
   }
 
   /**
-   * Allocates internal buffers for 32-bit data.
-   * @returns {boolean} True if allocation was successful, otherwise false.
+   * Allocate internal 32-bit buffers.
+   * @param finalWidth - Final width for buffer allocation.
+   * @returns True if allocation succeeds.
    */
-  public allocateInternalBuffers32b(): boolean {
-    return super.allocateInternalBuffers32b();
+  public allocateInternalBuffers32b(finalWidth: number): boolean {
+    return super.allocateInternalBuffers32b(finalWidth);
   }
 
   /**
-   * Allocates internal buffers for 8-bit data.
-   * @returns {boolean} True if allocation was successful, otherwise false.
+   * Allocate internal 8-bit buffers.
+   * @returns True if allocation succeeds.
    */
   public allocateInternalBuffers8b(): boolean {
     return super.allocateInternalBuffers8b();
   }
 
   /**
-   * Decodes alpha data.
-   * @param {number} width - The width of the image.
-   * @param {number} height - The height of the image.
-   * @param {number} lastRow - The last row of the image.
-   * @returns {boolean} True if decoding was successful, otherwise false.
+   * Decode alpha (transparency) channel data.
+   * @param width - Image width.
+   * @param height - Image height.
+   * @param lastRow - Last row index to process.
+   * @returns True if decoding succeeds.
    */
   public decodeAlphaData(
     width: number,
@@ -137,26 +108,27 @@ export class VP8LInternal extends VP8L {
   }
 
   /**
-   * Checks if 8-bit optimization is possible.
-   * @returns {boolean} True if 8-bit optimization is possible, otherwise false.
+   * Check if 8-bit optimization can be applied.
+   * @returns True if optimization is possible.
    */
   public is8bOptimizable(): boolean {
     return super.is8bOptimizable();
   }
 
   /**
-   * Extracts alpha rows.
-   * @param {number} row - The row to extract.
+   * Extract alpha rows for processing.
+   * @param row - Row index to extract.
+   * @param waitForBiggestBatch - If true, wait for the largest batch.
    */
-  public extractAlphaRows(row: number): void {
-    return super.extractAlphaRows(row);
+  public extractAlphaRows(row: number, waitForBiggestBatch: boolean): void {
+    return super.extractAlphaRows(row, waitForBiggestBatch);
   }
 
   /**
-   * Calculates the subsample size.
-   * @param {number} size - The original size.
-   * @param {number} samplingBits - The number of sampling bits.
-   * @returns {number} The subsample size.
+   * Calculate subsampled size for given sampling bits.
+   * @param size - Original size.
+   * @param samplingBits - Number of sampling bits.
+   * @returns Subsampled size.
    */
   public static subSampleSize(size: number, samplingBits: number): number {
     return VP8L.subSampleSize(size, samplingBits);
