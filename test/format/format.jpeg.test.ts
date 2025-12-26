@@ -26,8 +26,8 @@ describe('Format: JPEG', () => {
    */
   test('inject new EXIF', () => {
     const exifData = new ExifData();
-    exifData.imageIfd.set('xResolution', [300, 1]);
-    exifData.imageIfd.set('yResolution', [300, 1]);
+    exifData.imageIfd.set('XResolution', [300, 1]);
+    exifData.imageIfd.set('YResolution', [300, 1]);
 
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -66,8 +66,8 @@ describe('Format: JPEG', () => {
    */
   test('inject replacement EXIF', () => {
     const exifData = new ExifData();
-    exifData.imageIfd.set('xResolution', [300, 1]);
-    exifData.imageIfd.set('yResolution', [300, 1]);
+    exifData.imageIfd.set('XResolution', [300, 1]);
+    exifData.imageIfd.set('YResolution', [300, 1]);
 
     const input = TestUtils.readFromFile(
       TestFolder.input,
