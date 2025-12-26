@@ -297,7 +297,7 @@ export class PngDecoder implements Decoder {
     const rowBytes = (w * pixelDepth + 7) >>> 3;
     const bpp = (pixelDepth + 7) >>> 3;
 
-    const line = new Uint8Array(rowBytes);
+    const line = new Uint8Array(rowBytes) as Uint8Array<ArrayBufferLike>;
     const inData = [line, line];
 
     const pixel = [0, 0, 0, 0];
