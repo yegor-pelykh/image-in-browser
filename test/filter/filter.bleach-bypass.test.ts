@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Filter module.
  */
-describe('Filter', TestUtils.testOptions, () => {
+describe('Filter', () => {
   /**
    * Test case for the bleachBypass filter.
    */

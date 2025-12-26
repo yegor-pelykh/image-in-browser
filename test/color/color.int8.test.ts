@@ -7,7 +7,7 @@ import { ColorInt8 } from '../../src';
 /**
  * Test suite for the Color class.
  */
-describe('Color', TestUtils.testOptions, () => {
+describe('Color', () => {
   /**
    * Test case for the ColorInt8 class.
    */

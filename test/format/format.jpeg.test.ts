@@ -19,7 +19,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for JPEG format handling.
  */
-describe('Format: JPEG', TestUtils.testOptions, () => {
+describe('Format: JPEG', () => {
   /**
    * Test to inject new EXIF data into a JPEG image that does not have EXIF,
    * and verify that the injected EXIF data is present and correct.

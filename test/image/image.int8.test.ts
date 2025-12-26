@@ -7,7 +7,7 @@ import { Format, MemoryImage } from '../../src';
 /**
  * Test suite for the MemoryImage class.
  */
-describe('MemoryImage', TestUtils.testOptions, () => {
+describe('MemoryImage', () => {
   /**
    * Test case for 8-bit integer format images with different numbers of channels.
    */

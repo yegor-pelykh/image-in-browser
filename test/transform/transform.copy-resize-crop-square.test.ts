@@ -16,7 +16,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Transform module.
  */
-describe('Transform', TestUtils.testOptions, () => {
+describe('Transform', () => {
   /**
    * Test case for the copyResizeCropSquare function.
    * Reads an input PNG file, decodes it, resizes and crops it to a square of size 64,

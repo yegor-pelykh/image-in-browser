@@ -7,7 +7,7 @@ import { ColorUint1 } from '../../src';
 /**
  * Test suite for the Color class.
  */
-describe('Color', TestUtils.testOptions, () => {
+describe('Color', () => {
   /**
    * Test case for the ColorUint1 class.
    * This test verifies the properties and methods of the ColorUint1 class.

@@ -21,7 +21,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for ICO format encoding and decoding.
  */
-describe('Format: ICO', TestUtils.testOptions, () => {
+describe('Format: ICO', () => {
   /**
    * Test case for encoding a palette-based PNG image to ICO format.
    */

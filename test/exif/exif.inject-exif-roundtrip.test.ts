@@ -10,7 +10,7 @@ import { ExifData, IfdAsciiValue, JpegUtils } from '../../src';
 /**
  * Test suite for realistic EXIF tag roundtrip in JPEG files.
  */
-describe('injectExif realistic tags roundtrip', TestUtils.testOptions, () => {
+describe('injectExif realistic tags roundtrip', () => {
   function getAsciiValue(v: unknown): string | undefined {
     if (v === null || v === undefined) return undefined;
     if (typeof v === 'string') return v;

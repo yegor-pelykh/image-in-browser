@@ -20,7 +20,7 @@ import {
 /**
  * Test suite for Exif data handling.
  */
-describe('Exif', TestUtils.testOptions, () => {
+describe('Exif', () => {
   /**
    * Test case for writing and reading Exif data.
    */

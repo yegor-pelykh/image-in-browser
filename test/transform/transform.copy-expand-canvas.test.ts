@@ -18,7 +18,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Transform module.
  */
-describe('Transform', TestUtils.testOptions, () => {
+describe('Transform', () => {
   // Loop through each position in ExpandCanvasPosition enum
   for (const position of ArrayUtils.getNumEnumValues(ExpandCanvasPosition)) {
     const strPosition = ExpandCanvasPosition[position];

@@ -7,7 +7,7 @@ import { Format, MemoryImage } from '../../src';
 /**
  * Test suite for the MemoryImage class.
  */
-describe('MemoryImage', TestUtils.testOptions, () => {
+describe('MemoryImage', () => {
   /**
    * Test case for creating and manipulating a float64 image with different numbers of channels.
    */

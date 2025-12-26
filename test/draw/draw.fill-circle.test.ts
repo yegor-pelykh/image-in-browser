@@ -16,7 +16,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for Draw functionalities.
  */
-describe('Draw', TestUtils.testOptions, () => {
+describe('Draw', () => {
   /**
    * Test case for the fillCircle function.
    */

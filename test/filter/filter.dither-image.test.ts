@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Filter module.
  */
-describe('Filter', TestUtils.testOptions, () => {
+describe('Filter', () => {
   /**
    * Test case for the ditherImage function.
    * This test reads an input image, applies various dithering kernels,

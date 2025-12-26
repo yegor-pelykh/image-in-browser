@@ -48,7 +48,7 @@ type WebPFileInfo = {
 /**
  * Test suite for WEBP format handling.
  */
-describe('Format: WEBP', TestUtils.testOptions, () => {
+describe('Format: WEBP', () => {
   /**
    * Test for reading EXIF data from a WEBP image.
    */

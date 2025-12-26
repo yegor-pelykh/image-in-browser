@@ -17,10 +17,6 @@ import { TestOptions } from 'vitest';
  * Utility class for handling test-related file operations.
  */
 export abstract class TestUtils {
-  public static testOptions: TestOptions = {
-    timeout: 30000,
-  };
-
   /**
    * Gets the folder name based on the TestFolder enum.
    * @param {TestFolder} folder - The test folder enum value.

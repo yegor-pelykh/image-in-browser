@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for PVR (PVRTC) format.
  */
-describe('Format: PVR (PVRTC)', TestUtils.testOptions, () => {
+describe('Format: PVR (PVRTC)', () => {
   /**
    * Test case for decoding and encoding a specific PVR file (globe.pvr).
    */

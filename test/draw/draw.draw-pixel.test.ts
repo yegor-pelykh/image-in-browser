@@ -16,7 +16,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for drawing operations.
  */
-describe('Draw', TestUtils.testOptions, () => {
+describe('Draw', () => {
   /**
    * Test case for drawing a circle by plotting random pixels.
    */

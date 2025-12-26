@@ -27,7 +27,7 @@ import { ImageTestUtils } from '../_utils/image-test-utils';
 /**
  * Test suite for PNG format.
  */
-describe('Format: PNG', TestUtils.testOptions, () => {
+describe('Format: PNG', () => {
   const buck24Hash = 817446904;
   let buck24Image: MemoryImage | undefined = undefined;
 

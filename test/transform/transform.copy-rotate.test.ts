@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Transform functionality.
  */
-describe('Transform', TestUtils.testOptions, () => {
+describe('Transform', () => {
   /**
    * Test case for the copyRotate function.
    */

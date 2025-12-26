@@ -20,7 +20,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the MemoryImage class.
  */
-describe('MemoryImage', TestUtils.testOptions, () => {
+describe('MemoryImage', () => {
   /**
    * Test the creation of an empty MemoryImage.
    */

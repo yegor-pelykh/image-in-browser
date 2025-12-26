@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for PNM format.
  */
-describe('Format: PNM', TestUtils.testOptions, () => {
+describe('Format: PNM', () => {
   // List all files in the input folder for the PNM section.
   const resFiles = TestUtils.listFiles(TestFolder.input, TestSection.pnm);
 

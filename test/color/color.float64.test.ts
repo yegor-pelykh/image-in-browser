@@ -7,7 +7,7 @@ import { ColorFloat64 } from '../../src';
 /**
  * Test suite for the Color class.
  */
-describe('Color', TestUtils.testOptions, () => {
+describe('Color', () => {
   /**
    * Test case for the ColorFloat64 class.
    */

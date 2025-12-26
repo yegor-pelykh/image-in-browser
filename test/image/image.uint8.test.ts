@@ -7,7 +7,7 @@ import { ColorRgba8, Format, MemoryImage } from '../../src';
 /**
  * Test suite for the MemoryImage class.
  */
-describe('MemoryImage', TestUtils.testOptions, () => {
+describe('MemoryImage', () => {
   /**
    * Test case for an image with uint8 format and 1 channel.
    */

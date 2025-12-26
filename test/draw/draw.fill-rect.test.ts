@@ -16,7 +16,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for the Draw module.
  */
-describe('Draw', TestUtils.testOptions, () => {
+describe('Draw', () => {
   /**
    * Test case for the fillRect function.
    */

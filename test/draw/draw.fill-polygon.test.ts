@@ -9,7 +9,7 @@ import { TestUtils } from '../_utils/test-utils';
 /**
  * Test suite for drawing operations.
  */
-describe('Draw', TestUtils.testOptions, () => {
+describe('Draw', () => {
   /**
    * Test case for the fillPolygon function.
    * This test creates an image, defines a set of vertices for a polygon,

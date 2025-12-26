@@ -7,7 +7,7 @@ import { ColorUint16 } from '../../src';
 /**
  * Test suite for Color related functionalities.
  */
-describe('Color', TestUtils.testOptions, () => {
+describe('Color', () => {
   /**
    * Test case for ColorUint16 class.
    */

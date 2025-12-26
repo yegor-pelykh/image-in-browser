@@ -29,6 +29,7 @@
   },
   "include": [
     "eslint.config.mjs",
+    "vitest.config.ts",
     "src/**/*.ts",
     "test/**/*.ts"
   ]
