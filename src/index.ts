@@ -502,8 +502,7 @@ export interface DecodeImageLargestOptions extends DecodeMultiframeOptions {
 /**
  * Interface representing options for decoding an image by MIME type.
  */
-export interface DecodeImageByMimeTypeOptions
-  extends DecodeImageLargestOptions {
+export interface DecodeImageByMimeTypeOptions extends DecodeImageLargestOptions {
   /**
    * The MIME type of the image to decode.
    */

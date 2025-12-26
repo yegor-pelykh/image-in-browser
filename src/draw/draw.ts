@@ -359,7 +359,6 @@ export abstract class Draw {
     for (
       let f = 1 - radius, ddFx = 0, ddFy = -(radius << 1), x = 0, y = radius;
       x < y;
-
     ) {
       if (f >= 0) {
         ddFy += 2;

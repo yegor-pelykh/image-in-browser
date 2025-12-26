@@ -270,10 +270,10 @@ export abstract class ArrayUtils {
   public static isNumArrayOrTypedArray(obj: unknown): boolean {
     return Boolean(
       obj &&
-        typeof obj === 'object' &&
-        ((Array.isArray(obj) &&
-          (obj as Array<unknown>).every((v) => typeof v === 'number')) ||
-          (ArrayBuffer.isView(obj) && !(obj instanceof DataView)))
+      typeof obj === 'object' &&
+      ((Array.isArray(obj) &&
+        (obj as Array<unknown>).every((v) => typeof v === 'number')) ||
+        (ArrayBuffer.isView(obj) && !(obj instanceof DataView)))
     );
   }
 
@@ -285,9 +285,9 @@ export abstract class ArrayUtils {
   public static isArrayOfRational(obj: unknown): boolean {
     return Boolean(
       obj &&
-        typeof obj === 'object' &&
-        Array.isArray(obj) &&
-        (obj as Array<unknown>).every((v) => v instanceof Rational)
+      typeof obj === 'object' &&
+      Array.isArray(obj) &&
+      (obj as Array<unknown>).every((v) => v instanceof Rational)
     );
   }
 }

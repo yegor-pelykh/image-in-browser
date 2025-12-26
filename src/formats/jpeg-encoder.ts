@@ -234,7 +234,7 @@ export class JpegEncoder implements Encoder {
             ? duIn3
             : duIn4;
       const pos: number =
-        (Math.trunc((posOut % 32) / 8) << 4) + (posOut % 4 << 1);
+        (Math.trunc((posOut % 32) / 8) << 4) + ((posOut % 4) << 1);
       duOut[posOut] = (du[pos] + du[pos + 1] + du[pos + 8] + du[pos + 9]) / 4;
     }
   }
