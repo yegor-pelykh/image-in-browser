@@ -166,7 +166,8 @@ export class WebPAlpha {
           this._vp8l.webp.width,
           this._vp8l.webp.height,
           lastRow,
-          this._vp8l.extractAlphaRows
+          (_row, _waitForBiggestBatch) =>
+            this._vp8l.extractAlphaRows(_row, _waitForBiggestBatch)
         );
   }
 

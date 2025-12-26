@@ -208,7 +208,8 @@ export class VP8L {
         this._webp.width,
         this._webp.height,
         this._webp.height,
-        this.processRows
+        (_row, _waitForBiggestBatch) =>
+          this.processRows(_row, _waitForBiggestBatch)
       )
     ) {
       return undefined;
