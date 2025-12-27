@@ -47,7 +47,7 @@ Whether you're working with static images or animated graphics, this library is 
 
 Want to see **image-in-browser** in action? Check out our dedicated repository for practical examples and code snippets:
 
-[**image-in-browser.examples**](https://github.com/yegor-pelykh/image-in-browser.examples) (_GitHub_)
+[**image-in-browser.examples**](https://github.com/yegor-pelykh/image-in-browser.examples/tree/main/examples) (_GitHub_)
 
 This repository will continue to grow, providing you with more examples over time.
 
