@@ -608,26 +608,22 @@ export class VP8L {
     let n = this._transforms.length;
     const cachePixels = this._webp.width * numRows;
     const endRow = startRow + numRows;
-    let rowsIn = rows;
     const rowsOut = this._argbCache;
+    ArrayUtils.copyRange(
+      this._pixels!,
+      rows,
+      this._pixels!,
+      rowsOut,
+      cachePixels
+    );
     while (n-- > 0) {
       this._transforms[n].inverseTransform(
         startRow,
         endRow,
         this._pixels!,
-        rowsIn,
+        rowsOut,
         this._pixels!,
         rowsOut
-      );
-      rowsIn = rowsOut;
-    }
-    if (rowsIn !== rowsOut) {
-      ArrayUtils.copyRange(
-        this._pixels!,
-        rowsIn,
-        this._pixels!,
-        rowsOut,
-        cachePixels
       );
     }
   }

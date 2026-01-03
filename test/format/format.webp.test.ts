@@ -100,6 +100,33 @@ describe('Format: WEBP', () => {
     }
   });
 
+  /*
+   * Test for lossless compression with the subtractGreen transform.
+   */
+  test('lossless with subtractGreen transform', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.webp,
+      'test_animated.webp'
+    );
+    const image = decodeWebP({
+      data: input,
+    });
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+
+    let hasVisiblePixel = false;
+    for (const pixel of image) {
+      if (pixel.a > 0 && (pixel.r > 0 || pixel.g > 0 || pixel.b > 0)) {
+        hasVisiblePixel = true;
+        break;
+      }
+    }
+    expect(hasVisiblePixel).toBeTruthy();
+  });
+
   /**
    * Test for validating the decoding of a WEBP image.
    */
