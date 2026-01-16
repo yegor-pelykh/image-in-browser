@@ -480,6 +480,29 @@ describe('Format: GIF', () => {
   });
 
   /**
+   * Test case for a regression preventing exception when decoding animated GIFs
+   * with varying local color palettes due to an incorrectly built remapColors map.
+   */
+  test('palette_remap', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.gif,
+      'palette_remap.gif'
+    );
+    const image = decodeGif({
+      data: input,
+    });
+    expect(image).not.toBeUndefined();
+    if (image === undefined) {
+      return;
+    }
+
+    expect(image.width).toBe(240);
+    expect(image.height).toBe(135);
+    expect(image.numFrames).toBe(21);
+  });
+
+  /**
    * Test case for encoding and decoding all GIF files in the input folder.
    */
   const inputFiles = TestUtils.listFiles(
