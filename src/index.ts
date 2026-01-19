@@ -182,7 +182,10 @@ export {
   SolarizeOptions,
   StretchDistortionOptions,
   VignetteOptions,
+  HistogramEqualizationOptions,
+  HistogramStretchOptions,
 } from './filter/filter.js';
+export { HistogramEqualizeMode } from './filter/histogram-equalize-mode.js';
 export { NoiseType } from './filter/noise-type.js';
 export { PixelateMode } from './filter/pixelate-mode.js';
 export { QuantizeMethod } from './filter/quantize-method.js';

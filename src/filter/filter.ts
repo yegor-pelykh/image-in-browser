@@ -20,6 +20,9 @@ import { ColorUtils } from '../color/color-utils.js';
 import { SolarizeMode } from './solarize-mode.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
 import { ContrastMode } from './contrast-mode.js';
+import { HistogramEqualizeMode } from './histogram-equalize-mode.js';
+import { Format, FormatType } from '../color/format.js';
+import { ArrayUtils } from '../common/array-utils.js';
 
 /**
  * Interface representing a cache for contrast adjustments.
@@ -667,6 +670,44 @@ export interface VignetteOptions {
   mask?: MemoryImage;
 }
 
+/**
+ * Options for applying histogram equalization to an image.
+ */
+export interface HistogramEqualizationOptions {
+  /** The image to apply the effect to. */
+  image: MemoryImage;
+  /** The mode of histogram equalization (grayscale or color). */
+  mode?: HistogramEqualizeMode;
+  /** The minimum output range for intensity values. */
+  outputRangeMin?: number;
+  /** The maximum output range for intensity values. */
+  outputRangeMax?: number;
+  /** The channel to use for masking. */
+  maskChannel?: Channel;
+  /** The mask image. */
+  mask?: MemoryImage;
+}
+
+/**
+ * Options for applying histogram stretching to an image.
+ */
+export interface HistogramStretchOptions {
+  /** The image to apply the effect to. */
+  image: MemoryImage;
+  /** The mode of histogram stretching (grayscale or color). */
+  mode?: HistogramEqualizeMode;
+  /** The minimum output range for intensity values. */
+  outputRangeMin?: number;
+  /** The maximum output range for intensity values. */
+  outputRangeMax?: number;
+  /** The ratio of intensity levels to clip from both ends of the histogram. */
+  stretchClipRatio?: number;
+  /** The channel to use for masking. */
+  maskChannel?: Channel;
+  /** The mask image. */
+  mask?: MemoryImage;
+}
+
 export abstract class Filter {
   /**
    * Cache for contrast values.
@@ -680,6 +721,60 @@ export abstract class Filter {
    */
   private static readonly _gaussianKernelCache: Map<number, SeparableKernel> =
     new Map<number, SeparableKernel>();
+
+  /**
+   * Applies a histogram transformation map to an image frame.
+   *
+   * @param {MemoryImage} frame - The image frame to transform.
+   * @param {number[]} Hmap - The histogram mapping array.
+   * @param {HistogramEqualizeMode} mode - The histogram equalization mode.
+   * @param {number} maxChannelValue - The maximum channel value of the image.
+   * @param {Channel} [maskChannel] - The channel to use for masking (defaults to luminance).
+   * @param {MemoryImage} [mask] - The mask image.
+   */
+  private static applyHistogramTransform(
+    frame: MemoryImage,
+    Hmap: number[],
+    mode: HistogramEqualizeMode,
+    maxChannelValue: number,
+    maskChannel: Channel = Channel.luminance,
+    mask?: MemoryImage
+  ) {
+    const _maskChannel = maskChannel ?? Channel.luminance;
+    for (const p of frame) {
+      if (frame.hasAlpha && p.a === 0) {
+        continue;
+      }
+      if (mode === HistogramEqualizeMode.grayscale) {
+        const newl = Hmap[Math.round(p.luminance)];
+        const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel);
+        if (msk === undefined) {
+          p.r = newl;
+          p.g = newl;
+          p.b = newl;
+        } else {
+          p.r = MathUtils.mix(p.r, newl, msk);
+          p.g = MathUtils.mix(p.g, newl, msk);
+          p.b = MathUtils.mix(p.b, newl, msk);
+        }
+      } else {
+        const hsl = ColorUtils.rgbToHsl(p.r, p.g, p.b);
+        const newl = Hmap[Math.round(hsl[2] * maxChannelValue)];
+        const newRGB = [0, 0, 0];
+        ColorUtils.hslToRgb(hsl[0], hsl[1], newl / maxChannelValue, newRGB);
+        const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel);
+        if (msk === undefined) {
+          p.r = newRGB[0];
+          p.g = newRGB[1];
+          p.b = newRGB[2];
+        } else {
+          p.r = MathUtils.mix(p.r, newRGB[0], msk);
+          p.g = MathUtils.mix(p.g, newRGB[1], msk);
+          p.b = MathUtils.mix(p.b, newRGB[2], msk);
+        }
+      }
+    }
+  }
 
   /**
    * Adjust the color of the image using various color transformations.
@@ -3473,6 +3568,200 @@ export abstract class Filter {
       }
     }
 
+    return image;
+  }
+
+  /**
+   * Spreads the histogram of the input image into a relatively linear cumulative distribution.
+   *
+   * @param {HistogramEqualizationOptions} opt - Options for histogram equalization.
+   * @param {MemoryImage} opt.image - The image to apply the effect to.
+   * @param {HistogramEqualizeMode} [opt.mode] - The mode of histogram equalization (grayscale or color).
+   * @param {number} [opt.outputRangeMin] - The minimum output range for intensity values.
+   * @param {number} [opt.outputRangeMax] - The maximum output range for intensity values.
+   * @param {Channel} [opt.maskChannel] - The channel to use for masking.
+   * @param {MemoryImage} [opt.mask] - The mask image.
+   * @returns {MemoryImage} The image with histogram equalization applied.
+   */
+  public static histogramEqualization(
+    opt: HistogramEqualizationOptions
+  ): MemoryImage {
+    const mode = opt.mode ?? HistogramEqualizeMode.grayscale;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+    let image = opt.image;
+    if (image.hasPalette) {
+      image = image.convert({
+        numChannels: Math.max(image.numChannels, 3),
+      });
+    }
+    if (image.formatType === FormatType.float) {
+      image = image.convert({
+        format: Format.uint8,
+        numChannels: Math.max(image.numChannels, 3),
+      });
+    }
+    if (image.numChannels < 3) {
+      image = image.convert({
+        numChannels: 3,
+      });
+    }
+    const outputRangeMin = Math.min(
+      Math.max(0, opt.outputRangeMin ?? 0),
+      image.maxChannelValue
+    );
+    const outputRangeMax = Math.min(
+      Math.max(0, opt.outputRangeMax ?? image.maxChannelValue),
+      image.maxChannelValue
+    );
+    const numOutputBin = outputRangeMax - outputRangeMin + 1;
+    for (const frame of image.frames) {
+      const H = ArrayUtils.generate<number>(
+        Math.ceil(image.maxChannelValue) + 1,
+        (_) => 0
+      );
+      let validPixelCounts = 0;
+      for (const p of frame) {
+        if (image.hasAlpha && p.a === 0) {
+          continue;
+        }
+        const l =
+          mode === HistogramEqualizeMode.grayscale
+            ? p.luminance
+            : ColorUtils.rgbToHsl(p.r, p.g, p.b)[2] * image.maxChannelValue;
+        H[Math.round(l)]++;
+        validPixelCounts++;
+      }
+      const numPixelPerBin = validPixelCounts / numOutputBin;
+      const Hmap = ArrayUtils.generate<number>(
+        Math.ceil(image.maxChannelValue) + 1,
+        (x) => x
+      );
+      let pCounter = 0;
+      for (let l = 0; l < H.length / 2; ++l) {
+        Hmap[l] = Math.round(pCounter / numPixelPerBin) + outputRangeMin;
+        pCounter += H[l];
+      }
+      pCounter = 0;
+      for (let l = H.length - 1; l >= H.length / 2; --l) {
+        Hmap[l] =
+          outputRangeMax - Math.round(Math.trunc(pCounter / numPixelPerBin));
+        pCounter += H[l];
+      }
+      this.applyHistogramTransform(
+        frame,
+        Hmap,
+        mode,
+        image.maxChannelValue,
+        maskChannel,
+        opt.mask
+      );
+    }
+    return image;
+  }
+
+  /**
+   * Linearly stretches the histogram of the input image to span the available dynamic range.
+   *
+   * @param {HistogramStretchOptions} opt - Options for histogram stretching.
+   * @param {MemoryImage} opt.image - The image to apply the effect to.
+   * @param {HistogramEqualizeMode} [opt.mode] - The mode of histogram stretching (grayscale or color).
+   * @param {number} [opt.outputRangeMin] - The minimum output range for intensity values.
+   * @param {number} [opt.outputRangeMax] - The maximum output range for intensity values.
+   * @param {number} [opt.stretchClipRatio] - The ratio of intensity levels to clip from both ends of the histogram.
+   * @param {Channel} [opt.maskChannel] - The channel to use for masking.
+   * @param {MemoryImage} [opt.mask] - The mask image.
+   * @returns {MemoryImage} The image with histogram stretching applied.
+   */
+  public static histogramStretch(opt: HistogramStretchOptions): MemoryImage {
+    const mode = opt.mode ?? HistogramEqualizeMode.grayscale;
+    const stretchClipRatio = opt.stretchClipRatio ?? 0.015;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+    let image = opt.image;
+    if (image.hasPalette) {
+      image = image.convert({
+        numChannels: Math.max(image.numChannels, 3),
+      });
+    }
+    if (image.formatType === FormatType.float) {
+      image = image.convert({
+        format: Format.uint8,
+        numChannels: Math.max(image.numChannels, 3),
+      });
+    }
+    if (image.numChannels < 3) {
+      image = image.convert({
+        numChannels: 3,
+      });
+    }
+    const outputRangeMin = Math.min(
+      Math.max(0, opt.outputRangeMin ?? 0),
+      image.maxChannelValue
+    );
+    const outputRangeMax = Math.min(
+      Math.max(0, opt.outputRangeMax ?? image.maxChannelValue),
+      image.maxChannelValue
+    );
+    for (const frame of image.frames) {
+      const H = ArrayUtils.generate<number>(
+        Math.ceil(image.maxChannelValue) + 1,
+        (_) => 0
+      );
+      let validPixelCounts = 0;
+      for (const p of frame) {
+        if (image.hasAlpha && p.a === 0) {
+          continue;
+        }
+        const l =
+          mode === HistogramEqualizeMode.grayscale
+            ? p.luminance
+            : ColorUtils.rgbToHsl(p.r, p.g, p.b)[2] * image.maxChannelValue;
+        H[Math.round(l)]++;
+        validPixelCounts++;
+      }
+      let lowPercentileBin = 0;
+      let highPercentileBin = 0;
+      let pCounter = 0;
+      for (let l = 0; l < H.length; ++l) {
+        pCounter += H[l];
+        if (pCounter / validPixelCounts < stretchClipRatio) {
+          lowPercentileBin++;
+        }
+        if (pCounter / validPixelCounts < 1 - stretchClipRatio) {
+          highPercentileBin++;
+        }
+      }
+      highPercentileBin = Math.min(
+        Math.ceil(image.maxChannelValue),
+        Math.max(lowPercentileBin + 1, highPercentileBin)
+      );
+      lowPercentileBin = Math.max(
+        0,
+        Math.min(lowPercentileBin, highPercentileBin - 1)
+      );
+      const Hmap = ArrayUtils.generate(
+        Math.ceil(image.maxChannelValue) + 1,
+        (x) => x
+      );
+      const inputDynamicRange = highPercentileBin - lowPercentileBin;
+      const outputDynamicRange = outputRangeMax - outputRangeMin;
+      for (let l = 0; l < H.length; ++l) {
+        const newIntensityLv =
+          ((l - lowPercentileBin) * outputDynamicRange) / inputDynamicRange +
+          outputRangeMin;
+        Hmap[l] = Math.max(
+          outputRangeMin,
+          Math.min(Math.round(newIntensityLv), outputDynamicRange)
+        );
+      }
+      this.applyHistogramTransform(
+        frame,
+        Hmap,
+        mode,
+        image.maxChannelValue,
+        maskChannel,
+        opt.mask
+      );
+    }
     return image;
   }
 }
