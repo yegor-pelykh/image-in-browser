@@ -20,6 +20,11 @@ export class VP8LBitReader {
    */
   private readonly _buffer8: Uint8Array;
 
+  /*
+   * True if end of stream is reached.
+   */
+  private _isEOS: boolean = true;
+
   /**
    * Current bit position in the buffer.
    */
@@ -42,11 +47,11 @@ export class VP8LBitReader {
   }
 
   /**
-   * Checks if end of stream is reached.
+   * Returns if end of stream is reached.
    * @returns {boolean} True if end of stream is reached, otherwise false.
    */
   public get isEOS(): boolean {
-    return this._input.isEOS && this._bitPos >= VP8LBitReader.lBits;
+    return this._isEOS;
   }
 
   /**
@@ -60,6 +65,7 @@ export class VP8LBitReader {
     for (let i = 0; i < 8; i++) {
       this._buffer8[i] = this._input.read();
     }
+    this._isEOS = false;
   }
 
   /**
@@ -117,6 +123,7 @@ export class VP8LBitReader {
       this.shiftBytes();
       return value;
     } else {
+      this._isEOS = true;
       throw new LibError('Not enough data in input.');
     }
   }

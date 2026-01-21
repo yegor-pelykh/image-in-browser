@@ -437,7 +437,6 @@ export class VP8L {
         this._br.fillBitWindow();
         const distCode = this.getCopyDistance(distSymbol);
         const dist = this.planeCodeToDistance(width, distCode);
-        if (this._br.isEOS) break;
         if (src < dist || srcEnd - src < length) {
           return false;
         } else {

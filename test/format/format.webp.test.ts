@@ -170,6 +170,31 @@ describe('Format: WEBP', () => {
     ImageTestUtils.testImageEquals(image, debugImage);
   });
 
+  /**
+   * Test for decoding a WebP image with an invalid last row,
+   * ensuring pixel alpha values are correctly processed.
+   */
+  test('webp invalid decode', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.webp,
+      'invalid_last_row.webp'
+    );
+    const webp = decodeWebP({
+      data: input,
+    });
+    expect(webp).toBeDefined();
+    if (webp === undefined) {
+      return;
+    }
+
+    let pixelAlpha = webp.getPixel(0, webp.height - 2).a;
+    expect(pixelAlpha).not.toBe(0);
+
+    pixelAlpha = webp.getPixel(0, webp.height - 1).a;
+    expect(pixelAlpha).not.toBe(0);
+  });
+
   const resFiles = TestUtils.listFiles(
     TestFolder.input,
     TestSection.webp,
