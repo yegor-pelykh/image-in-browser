@@ -195,6 +195,40 @@ describe('Format: WEBP', () => {
     expect(pixelAlpha).not.toBe(0);
   });
 
+  /**
+   * Test for decoding a transparent animated WEBP image.
+   */
+  test('decode transparent animation', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.webp,
+      'animated_transparency.webp'
+    );
+    const anim = decodeWebP({
+      data: input,
+    });
+    expect(anim).toBeDefined();
+    if (anim === undefined) {
+      return;
+    }
+
+    expect(anim.numFrames).toBe(20);
+
+    for (let i = 0; i < anim.numFrames; ++i) {
+      const image = anim.getFrame(i);
+      const output = encodePng({
+        image: image,
+      });
+      TestUtils.writeToFile(
+        TestFolder.output,
+        TestSection.webp,
+        `animated_transparency_${i}.png`,
+        output
+      );
+    }
+    expect(anim.getFrame(2).getPixel(0, 0).equals([0, 0, 0, 0])).toBeTruthy();
+  });
+
   const resFiles = TestUtils.listFiles(
     TestFolder.input,
     TestSection.webp,
@@ -231,7 +265,7 @@ describe('Format: WEBP', () => {
     /**
      * Test for decoding a WEBP file and saving it as a PNG.
      */
-    test(`decode - ${file.nameExt}`, () => {
+    test(`decode webp - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFile(
         TestFolder.input,
         TestSection.webp,
@@ -286,40 +320,6 @@ describe('Format: WEBP', () => {
       // TODO: Implement image comparison
     });
   }
-
-  /**
-   * Test for decoding a transparent animated WEBP image.
-   */
-  test('decode transparent animation', () => {
-    const input = TestUtils.readFromFile(
-      TestFolder.input,
-      TestSection.webp,
-      'animated_transparency.webp'
-    );
-    const anim = decodeWebP({
-      data: input,
-    });
-    expect(anim).toBeDefined();
-    if (anim === undefined) {
-      return;
-    }
-
-    expect(anim.numFrames).toBe(20);
-
-    for (let i = 0; i < anim.numFrames; ++i) {
-      const image = anim.getFrame(i);
-      const output = encodePng({
-        image: image,
-      });
-      TestUtils.writeToFile(
-        TestFolder.output,
-        TestSection.webp,
-        `animated_transparency_${i}.png`,
-        output
-      );
-    }
-    expect(anim.getFrame(2).getPixel(0, 0).equals([0, 0, 0, 0])).toBeTruthy();
-  });
 });
 
 const webpTests = new Map<string, WebPFileInfo>([
