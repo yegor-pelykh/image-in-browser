@@ -363,6 +363,9 @@ export abstract class JpegQuantize {
         {
           // The default transform for three components is true
           colorTransform = true;
+          if (jpeg.adobe !== undefined) {
+            colorTransform = jpeg.adobe.transformCode === 1;
+          }
 
           component1 = jpeg.components[0];
           component2 = jpeg.components[1];
@@ -393,16 +396,18 @@ export abstract class JpegQuantize {
               const x2 = x >>> hShift2;
               const x3 = x >>> hShift3;
 
-              const cy = component1Line[x1] << 8;
-              const cb = component2Line[x2] - 128;
-              const cr = component3Line[x3] - 128;
+              let r = component1Line[x1];
+              let g = component2Line[x2];
+              let b = component3Line[x3];
 
-              let r = cy + 359 * cr + 128;
-              let g = cy - 88 * cb - 183 * cr + 128;
-              let b = cy + 454 * cb + 128;
-              r = MathUtils.clampInt255(BitUtils.sshR(r, 8));
-              g = MathUtils.clampInt255(BitUtils.sshR(g, 8));
-              b = MathUtils.clampInt255(BitUtils.sshR(b, 8));
+              if (colorTransform) {
+                const cy = r << 8;
+                const cb = g - 128;
+                const cr = b - 128;
+                r = MathUtils.clamp((cy + 359 * cr) >> 8, 0, 255);
+                g = MathUtils.clamp((cy - 88 * cb - 183 * cr) >> 8, 0, 255);
+                b = MathUtils.clamp((cy + 454 * cb) >> 8, 0, 255);
+              }
 
               if (orientation === 2) {
                 image.setPixelRgb(w1 - x, y, r, g, b);
