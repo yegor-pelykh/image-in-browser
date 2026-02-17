@@ -9,7 +9,10 @@ export class JpegHuffman {
   /**
    * The children nodes of the Huffman tree.
    */
-  private readonly _children: Array<HuffmanNode | undefined> = [];
+  private readonly _children: Array<HuffmanNode | undefined> = [
+    undefined,
+    undefined,
+  ];
 
   /**
    * Gets the children nodes of the Huffman tree.

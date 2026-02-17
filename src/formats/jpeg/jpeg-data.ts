@@ -406,22 +406,19 @@ export class JpegData {
       throw new LibError('Only single frame JPEGs supported');
     }
 
-    if (this._frame !== undefined) {
-      for (let i = 0; i < this._frame.componentsOrder.length; ++i) {
-        const component = this._frame.components.get(
-          this._frame.componentsOrder[i]
+    const f = this._frame!;
+    for (let i = 0; i < f.componentsOrder.length; ++i) {
+      const component = f.components.get(f.componentsOrder[i]);
+      if (component !== undefined) {
+        this.components.push(
+          new JpegComponentData(
+            component.hSamples,
+            f.maxHSamples,
+            component.vSamples,
+            f.maxVSamples,
+            JpegData.buildComponentData(component)
+          )
         );
-        if (component !== undefined) {
-          this.components.push(
-            new JpegComponentData(
-              component.hSamples,
-              this._frame.maxHSamples,
-              component.vSamples,
-              this._frame.maxVSamples,
-              JpegData.buildComponentData(component)
-            )
-          );
-        }
       }
     }
   }
@@ -458,9 +455,6 @@ export class JpegData {
     for (let i = 0; i < length; i++) {
       for (let j = 0; j < codeLengths[i]; j++) {
         p = code.pop()!;
-        if (p.children.length <= p.index) {
-          p.children.length = p.index + 1;
-        }
         p.children[p.index] = new HuffmanValue(values[k]);
         while (p.index > 0) {
           p = code.pop()!;
@@ -470,9 +464,6 @@ export class JpegData {
         while (code.length <= i) {
           const q = new JpegHuffman();
           code.push(q);
-          if (p.children.length <= p.index) {
-            p.children.length = p.index + 1;
-          }
           p.children[p.index] = new HuffmanParent(q.children);
           p = q;
         }
@@ -480,12 +471,8 @@ export class JpegData {
       }
 
       if (i + 1 < length) {
-        // P here points to last code
         const q = new JpegHuffman();
         code.push(q);
-        if (p.children.length <= p.index) {
-          p.children.length = p.index + 1;
-        }
         p.children[p.index] = new HuffmanParent(q.children);
         p = q;
       }
@@ -527,13 +514,9 @@ export class JpegData {
           R
         );
 
-        let offset = 0;
         const sample = blockCol << 3;
         for (let j = 0; j < 8; j++) {
-          const line = lines[scanLine + j];
-          for (let i = 0; i < 8; i++) {
-            line![sample + i] = r[offset++];
-          }
+          ArrayUtils.copyRange(r, j << 3, lines[scanLine + j]!, sample, 8);
         }
       }
     }
@@ -847,15 +830,15 @@ export class JpegData {
       throw new LibError('Invalid SOS block');
     }
 
+    const f = this._frame!;
     const components = new Array<JpegComponent>();
     for (let i = 0; i < n; i++) {
       const id = block.read();
       const c = block.read();
-
-      if (!this._frame!.components.has(id)) {
+      if (!f.components.has(id)) {
         throw new LibError('Invalid Component in SOS block');
       }
-      const component = this._frame!.components.get(id);
+      const component = f.components.get(id);
       if (component !== undefined) {
         const dcTableNumber = (c >>> 4) & 15;
         const acTableNumber = c & 15;
@@ -878,7 +861,7 @@ export class JpegData {
 
     const scan = new JpegScan(
       this._input,
-      this._frame!,
+      f,
       components,
       spectralStart,
       spectralEnd,

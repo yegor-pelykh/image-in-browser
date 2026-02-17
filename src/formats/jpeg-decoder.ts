@@ -44,6 +44,9 @@ export class JpegDecoder implements Decoder {
    * @returns {boolean} True if the file is a valid JPEG image, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
+    if (bytes.length < 2 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
+      return false;
+    }
     return new JpegData().validate(bytes);
   }
 
