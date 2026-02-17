@@ -33,14 +33,10 @@ export abstract class JpegQuantize {
    */
   private static createDctClip(): Uint8Array {
     const result = new Uint8Array(JpegQuantize._dctClipLength);
-    let i = 0;
-    for (i = -256; i < 0; ++i) {
-      result[JpegQuantize._dctClipOffset + i] = 0;
-    }
-    for (i = 0; i < 256; ++i) {
+    for (let i = 0; i < 256; ++i) {
       result[JpegQuantize._dctClipOffset + i] = i;
     }
-    for (i = 256; i < 512; ++i) {
+    for (let i = 256; i < 512; ++i) {
       result[JpegQuantize._dctClipOffset + i] = 255;
     }
     return result;
@@ -167,44 +163,46 @@ export abstract class JpegQuantize {
     // inverse DCT on columns
     for (let i = 0; i < 8; ++i) {
       const col = i;
+      const p0 = col;
+      const p1 = 8 + col;
+      const p2 = 16 + col;
+      const p3 = 24 + col;
+      const p4 = 32 + col;
+      const p5 = 40 + col;
+      const p6 = 48 + col;
+      const p7 = 56 + col;
 
       // check for all-zero AC coefficients
       if (
-        p[1 * 8 + col] === 0 &&
-        p[2 * 8 + col] === 0 &&
-        p[3 * 8 + col] === 0 &&
-        p[4 * 8 + col] === 0 &&
-        p[5 * 8 + col] === 0 &&
-        p[6 * 8 + col] === 0 &&
-        p[7 * 8 + col] === 0
+        p[p1] === 0 &&
+        p[p2] === 0 &&
+        p[p3] === 0 &&
+        p[p4] === 0 &&
+        p[p5] === 0 &&
+        p[p6] === 0 &&
+        p[p7] === 0
       ) {
         const t = BitUtils.sshR(sqrt2 * dataIn[i] + 8192, 14);
-        p[0 * 8 + col] = t;
-        p[1 * 8 + col] = t;
-        p[2 * 8 + col] = t;
-        p[3 * 8 + col] = t;
-        p[4 * 8 + col] = t;
-        p[5 * 8 + col] = t;
-        p[6 * 8 + col] = t;
-        p[7 * 8 + col] = t;
+        p[p0] = t;
+        p[p1] = t;
+        p[p2] = t;
+        p[p3] = t;
+        p[p4] = t;
+        p[p5] = t;
+        p[p6] = t;
+        p[p7] = t;
         continue;
       }
 
       // stage 4
-      let v0 = BitUtils.sshR(sqrt2 * p[0 * 8 + col] + 2048, 12);
-      let v1 = BitUtils.sshR(sqrt2 * p[4 * 8 + col] + 2048, 12);
-      let v2 = p[2 * 8 + col];
-      let v3 = p[6 * 8 + col];
-      let v4 = BitUtils.sshR(
-        sqrt102 * (p[1 * 8 + col] - p[7 * 8 + col]) + 2048,
-        12
-      );
-      let v7 = BitUtils.sshR(
-        sqrt102 * (p[1 * 8 + col] + p[7 * 8 + col]) + 2048,
-        12
-      );
-      let v5 = p[3 * 8 + col];
-      let v6 = p[5 * 8 + col];
+      let v0 = BitUtils.sshR(sqrt2 * p[p0] + 2048, 12);
+      let v1 = BitUtils.sshR(sqrt2 * p[p4] + 2048, 12);
+      let v2 = p[p2];
+      let v3 = p[p6];
+      let v4 = BitUtils.sshR(sqrt102 * (p[p1] - p[p7]) + 2048, 12);
+      let v7 = BitUtils.sshR(sqrt102 * (p[p1] + p[p7]) + 2048, 12);
+      let v5 = p[p3];
+      let v6 = p[p5];
 
       // stage 3
       let t = BitUtils.sshR(v0 - v1 + 1, 1);
@@ -235,14 +233,14 @@ export abstract class JpegQuantize {
       v6 = t;
 
       // stage 1
-      p[0 * 8 + col] = v0 + v7;
-      p[7 * 8 + col] = v0 - v7;
-      p[1 * 8 + col] = v1 + v6;
-      p[6 * 8 + col] = v1 - v6;
-      p[2 * 8 + col] = v2 + v5;
-      p[5 * 8 + col] = v2 - v5;
-      p[3 * 8 + col] = v3 + v4;
-      p[4 * 8 + col] = v3 - v4;
+      p[p0] = v0 + v7;
+      p[p7] = v0 - v7;
+      p[p1] = v1 + v6;
+      p[p6] = v1 - v6;
+      p[p2] = v2 + v5;
+      p[p5] = v2 - v5;
+      p[p3] = v3 + v4;
+      p[p4] = v3 - v4;
     }
 
     // convert to 8-bit integers
@@ -278,7 +276,6 @@ export abstract class JpegQuantize {
       height: height,
     });
 
-    // Copy exif data, except for ORIENTATION which we're baking.
     image.exifData = ExifData.from(jpeg.exifData);
     image.exifData.imageIfd.orientation = undefined;
 
@@ -295,6 +292,38 @@ export abstract class JpegQuantize {
     const h1 = h - 1;
     const w1 = w - 1;
 
+    let setPixel:
+      | ((x: number, y: number, r: number, g: number, b: number) => void)
+      | undefined = undefined;
+    switch (orientation) {
+      case 2:
+        setPixel = (x, y, r, g, b) => image.setPixelRgb(w1 - x, y, r, g, b);
+        break;
+      case 3:
+        setPixel = (x, y, r, g, b) =>
+          image.setPixelRgb(w1 - x, h1 - y, r, g, b);
+        break;
+      case 4:
+        setPixel = (x, y, r, g, b) => image.setPixelRgb(x, h1 - y, r, g, b);
+        break;
+      case 5:
+        setPixel = (x, y, r, g, b) => image.setPixelRgb(y, x, r, g, b);
+        break;
+      case 6:
+        setPixel = (x, y, r, g, b) => image.setPixelRgb(h1 - y, x, r, g, b);
+        break;
+      case 7:
+        setPixel = (x, y, r, g, b) =>
+          image.setPixelRgb(h1 - y, w1 - x, r, g, b);
+        break;
+      case 8:
+        setPixel = (x, y, r, g, b) => image.setPixelRgb(y, w1 - x, r, g, b);
+        break;
+      default:
+        setPixel = image.setPixelRgb;
+        break;
+    }
+
     switch (jpeg.components.length) {
       case 1:
         {
@@ -308,24 +337,7 @@ export abstract class JpegQuantize {
             for (let x = 0; x < w; x++) {
               const x1 = x >>> hShift1;
               const cy = component1Line![x1];
-
-              if (orientation === 2) {
-                image.setPixelRgb(w1 - x, y, cy, cy, cy);
-              } else if (orientation === 3) {
-                image.setPixelRgb(w1 - x, h1 - y, cy, cy, cy);
-              } else if (orientation === 4) {
-                image.setPixelRgb(x, h1 - y, cy, cy, cy);
-              } else if (orientation === 5) {
-                image.setPixelRgb(y, x, cy, cy, cy);
-              } else if (orientation === 6) {
-                image.setPixelRgb(h1 - y, x, cy, cy, cy);
-              } else if (orientation === 7) {
-                image.setPixelRgb(h1 - y, w1 - x, cy, cy, cy);
-              } else if (orientation === 8) {
-                image.setPixelRgb(y, w1 - x, cy, cy, cy);
-              } else {
-                image.setPixelRgb(x, y, cy, cy, cy);
-              }
+              setPixel(x, y, cy, cy, cy);
             }
           }
         }
@@ -409,23 +421,7 @@ export abstract class JpegQuantize {
                 b = MathUtils.clamp((cy + 454 * cb) >> 8, 0, 255);
               }
 
-              if (orientation === 2) {
-                image.setPixelRgb(w1 - x, y, r, g, b);
-              } else if (orientation === 3) {
-                image.setPixelRgb(w1 - x, h1 - y, r, g, b);
-              } else if (orientation === 4) {
-                image.setPixelRgb(x, h1 - y, r, g, b);
-              } else if (orientation === 5) {
-                image.setPixelRgb(y, x, r, g, b);
-              } else if (orientation === 6) {
-                image.setPixelRgb(h1 - y, x, r, g, b);
-              } else if (orientation === 7) {
-                image.setPixelRgb(h1 - y, w1 - x, r, g, b);
-              } else if (orientation === 8) {
-                image.setPixelRgb(y, w1 - x, r, g, b);
-              } else {
-                image.setPixelRgb(x, y, r, g, b);
-              }
+              setPixel(x, y, r, g, b);
             }
           }
         }
@@ -461,7 +457,7 @@ export abstract class JpegQuantize {
           const hShift4 = component4.hScaleShift;
           const vShift4 = component4.vScaleShift;
 
-          for (let y = 0; y < jpeg.height!; y++) {
+          for (let y = 0; y < h; y++) {
             const y1 = y >>> vShift1;
             const y2 = y >>> vShift2;
             const y3 = y >>> vShift3;
@@ -470,7 +466,7 @@ export abstract class JpegQuantize {
             component2Line = lines2[y2];
             component3Line = lines3[y3];
             component4Line = lines4[y4];
-            for (let x = 0; x < jpeg.width!; x++) {
+            for (let x = 0; x < w; x++) {
               const x1 = x >>> hShift1;
               const x2 = x >>> hShift2;
               const x3 = x >>> hShift3;
@@ -490,35 +486,26 @@ export abstract class JpegQuantize {
                 const cr = component3Line![x3];
                 ck = component4Line![x4];
 
-                cc = 255 - MathUtils.clampInt255(cy + 1.402 * (cr - 128));
+                const crShifted = cr - 128;
+                const cbShifted = cb - 128;
+                const cyScaled = cy << 8;
+                cc =
+                  255 -
+                  MathUtils.clampInt255((cyScaled + 359 * crShifted) >> 8);
                 cm =
                   255 -
                   MathUtils.clampInt255(
-                    cy - 0.3441363 * (cb - 128) - 0.71413636 * (cr - 128)
+                    (cyScaled - 88 * cbShifted - 183 * crShifted) >> 8
                   );
-                cy = 255 - MathUtils.clampInt255(cy + 1.772 * (cb - 128));
+                cy =
+                  255 -
+                  MathUtils.clampInt255((cyScaled + 454 * cbShifted) >> 8);
               }
               const r = BitUtils.sshR(cc * ck, 8);
               const g = BitUtils.sshR(cm * ck, 8);
               const b = BitUtils.sshR(cy * ck, 8);
 
-              if (orientation === 2) {
-                image.setPixelRgb(w1 - x, y, r, g, b);
-              } else if (orientation === 3) {
-                image.setPixelRgb(w1 - x, h1 - y, r, g, b);
-              } else if (orientation === 4) {
-                image.setPixelRgb(x, h1 - y, r, g, b);
-              } else if (orientation === 5) {
-                image.setPixelRgb(y, x, r, g, b);
-              } else if (orientation === 6) {
-                image.setPixelRgb(h1 - y, x, r, g, b);
-              } else if (orientation === 7) {
-                image.setPixelRgb(h1 - y, w1 - x, r, g, b);
-              } else if (orientation === 8) {
-                image.setPixelRgb(y, w1 - x, r, g, b);
-              } else {
-                image.setPixelRgb(x, y, r, g, b);
-              }
+              setPixel(x, y, r, g, b);
             }
           }
         }
