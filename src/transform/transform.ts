@@ -868,12 +868,21 @@ export abstract class Transform {
       });
     }
 
+    const linear = (
+      icc: number,
+      inc: number,
+      icn: number,
+      inn: number,
+      kx: number,
+      ky: number
+    ) =>
+      icc + kx * (inc - icc + ky * (icc + inn - icn - inc)) + ky * (icn - icc);
+
     let x1 = 0;
     let y1 = 0;
     let x2 = 0;
     let y2 = 0;
 
-    // this block sets [width] and [height] if undefined or negative.
     if (
       opt.width !== undefined &&
       opt.height !== undefined &&
@@ -909,7 +918,7 @@ export abstract class Transform {
         ? Math.round(opt.height! * (src.width / src.height))
         : opt.width;
 
-    const w = maintainAspect! ? x2 - x1 : width;
+    const w = maintainAspect ? x2 - x1 : width;
     const h = maintainAspect ? y2 - y1 : height;
 
     if (!maintainAspect) {
@@ -928,9 +937,15 @@ export abstract class Transform {
     for (let x = 0; x < w; ++x) {
       scaleX[x] = Math.trunc(x * dx);
     }
+    const scaleY = new Int32Array(h);
+    const dy = src.height / h;
+    for (let y = 0; y < h; ++y) {
+      scaleY[y] = Math.trunc(y * dy);
+    }
 
     let firstFrame: MemoryImage | undefined = undefined;
     const numFrames = src.numFrames;
+    const noOffset = x1 === 0 && y1 === 0;
     for (let i = 0; i < numFrames; ++i) {
       const frame = src.frames[i];
       const dst = MemoryImage.fromResized(frame, width, height, true);
@@ -945,12 +960,14 @@ export abstract class Transform {
       }
 
       if (interpolation === Interpolation.average) {
+        const srcPixel = frame.getPixelSafe(0, 0);
         for (let y = 0; y < h; ++y) {
           const ay1 = Math.trunc(y * dy);
           let ay2 = Math.trunc((y + 1) * dy);
           if (ay2 === ay1) {
             ay2++;
           }
+          const dstY = y1 + y;
 
           for (let x = 0; x < w; ++x) {
             const ax1 = Math.trunc(x * dx);
@@ -966,50 +983,109 @@ export abstract class Transform {
             let np = 0;
             for (let sy = ay1; sy < ay2; ++sy) {
               for (let sx = ax1; sx < ax2; ++sx, ++np) {
-                const s = frame.getPixel(sx, sy);
-                r += s.r;
-                g += s.g;
-                b += s.b;
-                a += s.a;
+                frame.getPixel(sx, sy, srcPixel);
+                r += srcPixel.r;
+                g += srcPixel.g;
+                b += srcPixel.b;
+                a += srcPixel.a;
               }
             }
-            dst.setPixel(
-              x1 + x,
-              y1 + y,
-              dst.getColor(r / np, g / np, b / np, a / np)
-            );
+            const inv = 1.0 / np;
+            dst.setPixelRgba(x1 + x, dstY, r * inv, g * inv, b * inv, a * inv);
           }
         }
       } else if (interpolation === Interpolation.nearest) {
         if (frame.hasPalette) {
           for (let y = 0; y < h; ++y) {
-            const y2 = Math.trunc(y * dy);
+            const y2 = scaleY[y];
+            const dstY = y1 + y;
             for (let x = 0; x < w; ++x) {
               dst.setPixelIndex(
                 x1 + x,
-                y1 + y,
+                dstY,
                 frame.getPixelIndex(scaleX[x], y2)
               );
             }
           }
-        } else {
+        } else if (noOffset) {
+          const srcPixel = frame.getPixelSafe(0, 0);
           for (let y = 0; y < h; ++y) {
-            const y2 = Math.trunc(y * dy);
+            const sy = scaleY[y];
             for (let x = 0; x < w; ++x) {
-              dst.setPixel(x1 + x, y1 + y, frame.getPixel(scaleX[x], y2));
+              frame.getPixel(scaleX[x], sy, srcPixel);
+              dst.setPixelRgba(
+                x,
+                y,
+                srcPixel.r,
+                srcPixel.g,
+                srcPixel.b,
+                srcPixel.a
+              );
+            }
+          }
+        } else {
+          const srcPixel = frame.getPixelSafe(0, 0);
+          for (let y = 0; y < h; ++y) {
+            const sy = scaleY[y];
+            const dstY = y1 + y;
+            for (let x = 0; x < w; ++x) {
+              frame.getPixel(scaleX[x], sy, srcPixel);
+              dst.setPixelRgba(
+                x1 + x,
+                dstY,
+                srcPixel.r,
+                srcPixel.g,
+                srcPixel.b,
+                srcPixel.a
+              );
             }
           }
         }
+      } else if (interpolation === Interpolation.linear) {
+        const icc = frame.getPixelSafe(0, 0);
+        const icn = frame.getPixelSafe(0, 0);
+        const inc = frame.getPixelSafe(0, 0);
+        const inn = frame.getPixelSafe(0, 0);
+        const maxX = frame.width - 1;
+        const maxY = frame.height - 1;
+
+        for (let y = 0; y < h; ++y) {
+          const fy = y * dy;
+          const iy = Math.trunc(fy);
+          const ky = fy - iy;
+          const ny = MathUtils.clamp(iy + 1, 0, maxY);
+          const dstY = y1 + y;
+          for (let x = 0; x < w; ++x) {
+            const fx = x * dx;
+            const ix = Math.trunc(fx);
+            const kx = fx - ix;
+            const nx = MathUtils.clamp(ix + 1, 0, maxX);
+
+            frame.getPixel(ix, iy, icc);
+            frame.getPixel(ix, ny, icn);
+            frame.getPixel(nx, iy, inc);
+            frame.getPixel(nx, ny, inn);
+
+            dst.setPixelRgba(
+              x1 + x,
+              dstY,
+              linear(icc.r, inc.r, icn.r, inn.r, kx, ky),
+              linear(icc.g, inc.g, icn.g, inn.g, kx, ky),
+              linear(icc.b, inc.b, icn.b, inn.b, kx, ky),
+              linear(icc.a, inc.a, icn.a, inn.a, kx, ky)
+            );
+          }
+        }
       } else {
-        // Copy the pixels from this image to the new image.
         for (let y = 0; y < h; ++y) {
           const sy2 = y * dy;
+          const dstY = y1 + y;
           for (let x = 0; x < w; ++x) {
             const sx2 = x * dx;
             dst.setPixel(
-              x,
-              y,
-              frame.getPixelInterpolate(x1 + sx2, y1 + sy2, interpolation)
+              x1 + x,
+              dstY,
+              frame.getPixelInterpolate(sx2, sy2, interpolation)
             );
           }
         }
