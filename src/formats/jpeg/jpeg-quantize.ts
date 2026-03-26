@@ -320,7 +320,7 @@ export abstract class JpegQuantize {
         setPixel = (x, y, r, g, b) => image.setPixelRgb(y, w1 - x, r, g, b);
         break;
       default:
-        setPixel = image.setPixelRgb;
+        setPixel = (x, y, r, g, b) => image.setPixelRgb(x, y, r, g, b);
         break;
     }
 
