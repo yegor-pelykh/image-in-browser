@@ -115,4 +115,12 @@ export abstract class MathUtils {
   public static clampInt255(num: number): number {
     return Math.trunc(MathUtils.clamp(num, 0, 255));
   }
+
+  public static isEven(num: number): boolean {
+    return num % 2 === 0;
+  }
+
+  public static cmp(a: number, b: number): number {
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
 }

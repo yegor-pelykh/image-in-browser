@@ -251,6 +251,11 @@ export abstract class BitUtils {
     return this._float32ToUint32[0];
   }
 
+  public static bitLength(n: number): number {
+    if (n === 0) return 0;
+    return Math.floor(Math.log2(Math.abs(n))) + 1;
+  }
+
   /**
    * Debug method to get a binary string representation of a 32-bit number.
    * @param {number} value - The number to convert to binary string.

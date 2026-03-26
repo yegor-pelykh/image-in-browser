@@ -28,6 +28,7 @@ import { ImageFormat } from './formats/image-format.js';
 import { PsdDecoder } from './formats/psd-decoder.js';
 import { PvrEncoder } from './formats/pvr-encoder.js';
 import { PvrDecoder } from './formats/pvr-decoder.js';
+import { WebPEncoder } from './formats/webp-encoder.js';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order.js';
@@ -66,6 +67,7 @@ export { Float16 } from './common/float16.js';
 export { InputBuffer, InputBufferInitOptions } from './common/input-buffer.js';
 export { Interpolation } from './common/interpolation.js';
 export { Line } from './common/line.js';
+export { MapUtils } from './common/map-utils.js';
 export { MathUtils } from './common/math-utils.js';
 export {
   OutputBuffer,
@@ -345,6 +347,8 @@ export { VP8LMultipliers } from './formats/webp/vp8l-multipliers.js';
 export { VP8LTransform } from './formats/webp/vp8l-transform.js';
 export { VP8L } from './formats/webp/vp8l.js';
 export { WebPAlpha } from './formats/webp/webp-alpha.js';
+export { WebPBitWriter } from './formats/webp/webp-bit-writer.js';
+export { WebPClSymbol } from './formats/webp/webp-cl-symbol.js';
 export { WebPFilters } from './formats/webp/webp-filters.js';
 export { WebPFormat } from './formats/webp/webp-format.js';
 export { WebPFrame } from './formats/webp/webp-frame.js';
@@ -385,6 +389,7 @@ export { TgaEncoder } from './formats/tga-encoder.js';
 export { TiffDecoder } from './formats/tiff-decoder.js';
 export { TiffEncoder } from './formats/tiff-encoder.js';
 export { WebPDecoder } from './formats/webp-decoder.js';
+export { WebPEncoder } from './formats/webp-encoder.js';
 export { WinEncoder } from './formats/win-encoder.js';
 
 // Export types from 'image' directory
@@ -761,6 +766,8 @@ export function findEncoderForMimeType(mimeType: string): Encoder | undefined {
       return new IcoEncoder();
     case 'image/x-pvr':
       return new PvrEncoder();
+    case 'image/webp':
+      return new WebPEncoder();
     default:
       return undefined;
   }
@@ -800,6 +807,9 @@ export function findEncoderForNamedImage(name: string): Encoder | undefined {
   }
   if (n.endsWith('.pvr')) {
     return new PvrEncoder();
+  }
+  if (n.endsWith('.webp')) {
+    return new WebPEncoder();
   }
   return undefined;
 }
@@ -1226,6 +1236,19 @@ export function decodeWebP(
   return new WebPDecoder().decode({
     bytes: dataUint8,
     frameIndex: opt.frameIndex,
+  });
+}
+
+/**
+ * Encode an image to the WebP format (lossless).
+ *
+ * @param {EncodeOptions} opt - Options for encoding the image.
+ * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @returns {Uint8Array} The encoded image bytes.
+ */
+export function encodeWebP(opt: EncodeOptions): Uint8Array {
+  return new WebPEncoder().encode({
+    image: opt.image,
   });
 }
 

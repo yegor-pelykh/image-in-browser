@@ -2,7 +2,14 @@
 
 import { existsSync } from 'fs';
 import { describe, expect, test } from 'vitest';
-import { IfdShortValue, decodePng, decodeWebP, encodePng } from '../../src';
+import {
+  IfdShortValue,
+  MemoryImage,
+  Pixel,
+  decodePng,
+  decodeWebP,
+  encodeWebP,
+} from '../../src';
 import { WebPDecoder } from '../../src/formats/webp-decoder';
 import { WebPFormat } from '../../src/formats/webp/webp-format';
 import { ImageTestUtils } from '../_utils/image-test-utils';
@@ -88,13 +95,13 @@ describe('Format: WEBP', () => {
       return;
     }
     for (const frame of anim.frames) {
-      const output = encodePng({
+      const output = encodeWebP({
         image: frame,
       });
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.webp,
-        `animated_lossy_${frame.frameIndex}.png`,
+        `animated_lossy_${frame.frameIndex}.webp`,
         output
       );
     }
@@ -144,13 +151,13 @@ describe('Format: WEBP', () => {
       return;
     }
 
-    const output = encodePng({
+    const output = encodeWebP({
       image: image,
     });
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.webp,
-      'decode.png',
+      'decode.webp',
       output
     );
 
@@ -216,13 +223,13 @@ describe('Format: WEBP', () => {
 
     for (let i = 0; i < anim.numFrames; ++i) {
       const image = anim.getFrame(i);
-      const output = encodePng({
+      const output = encodeWebP({
         image: image,
       });
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.webp,
-        `animated_transparency_${i}.png`,
+        `animated_transparency_${i}.webp`,
         output
       );
     }
@@ -279,13 +286,13 @@ describe('Format: WEBP', () => {
         return;
       }
 
-      const output = encodePng({
+      const output = encodeWebP({
         image: image,
       });
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.webp,
-        `${file.name}.png`,
+        file.nameExt,
         output
       );
 
@@ -320,6 +327,187 @@ describe('Format: WEBP', () => {
       // TODO: Implement image comparison
     });
   }
+
+  test('encode round-trip lossless', () => {
+    const input = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.webp,
+      '1_webp_ll.webp'
+    );
+    const original = decodeWebP({
+      data: input,
+    });
+    expect(original).toBeDefined();
+    if (original === undefined) {
+      return;
+    }
+
+    const encoded = encodeWebP({
+      image: original,
+    });
+    const decoded = decodeWebP({
+      data: encoded,
+    });
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+
+    expect(decoded.width).toBe(original.width);
+    expect(decoded.height).toBe(original.height);
+
+    for (let y = 0; y < original.height; y++) {
+      for (let x = 0; x < original.width; x++) {
+        const op = original.getPixel(x, y);
+        const dp = decoded.getPixel(x, y);
+        expect(dp.r).toBe(op.r);
+        expect(dp.g).toBe(op.g);
+        expect(dp.b).toBe(op.b);
+        expect(dp.a).toBe(op.a);
+      }
+    }
+  });
+
+  test('encode rgb image', () => {
+    const image = new MemoryImage({
+      width: 4,
+      height: 4,
+    });
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        const p = image.getPixel(x, y);
+        p.r = x * 60;
+        p.g = y * 60;
+        p.b = 128;
+      }
+    }
+
+    const encoded = encodeWebP({
+      image: image,
+    });
+    const decoded = decodeWebP({
+      data: encoded,
+    });
+
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+
+    expect(decoded.width).toBe(4);
+    expect(decoded.height).toBe(4);
+
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        const dp = decoded.getPixel(x, y);
+        expect(dp.r).toBe(x * 60);
+        expect(dp.g).toBe(y * 60);
+        expect(dp.b).toBe(128);
+        expect(dp.a).toBe(255);
+      }
+    }
+  });
+
+  test('encode rgba image with alpha', () => {
+    const image = new MemoryImage({
+      width: 4,
+      height: 4,
+      numChannels: 4,
+    });
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        const p = image.getPixel(x, y);
+        p.r = 100;
+        p.g = 150;
+        p.b = 200;
+        p.a = (x + y * 4) * 16;
+      }
+    }
+
+    const encoded = encodeWebP({
+      image: image,
+    });
+    const decoded = decodeWebP({
+      data: encoded,
+    });
+
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+
+    expect(decoded.width).toBe(4);
+    expect(decoded.height).toBe(4);
+
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        const dp = decoded.getPixel(x, y);
+        expect(dp.r).toBe(100);
+        expect(dp.g).toBe(150);
+        expect(dp.b).toBe(200);
+        expect(dp.a).toBe((x + y * 4) * 16);
+      }
+    }
+  });
+
+  test('encodeWebP', () => {
+    const image = new MemoryImage({
+      width: 2,
+      height: 2,
+      numChannels: 4,
+    });
+    let p: Pixel | undefined = undefined;
+    p = image.getPixel(0, 0);
+    p.r = 255;
+    p.g = 0;
+    p.b = 0;
+    p.a = 255;
+    p = image.getPixel(1, 0);
+    p.r = 0;
+    p.g = 255;
+    p.b = 0;
+    p.a = 128;
+    p = image.getPixel(0, 1);
+    p.r = 0;
+    p.g = 0;
+    p.b = 255;
+    p.a = 64;
+    p = image.getPixel(1, 1);
+    p.r = 255;
+    p.g = 255;
+    p.b = 0;
+    p.a = 0;
+
+    const output = encodeWebP({
+      image: image,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.webp,
+      'encode_test.webp',
+      output
+    );
+
+    const input = TestUtils.readFromFile(
+      TestFolder.output,
+      TestSection.webp,
+      'encode_test.webp'
+    );
+    const decoded = decodeWebP({
+      data: input,
+    });
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+
+    expect(decoded.width).toBe(2);
+    expect(decoded.height).toBe(2);
+    expect(decoded.getPixel(0, 0).r).toBe(255);
+    expect(decoded.getPixel(1, 0).g).toBe(255);
+    expect(decoded.getPixel(0, 1).b).toBe(255);
+    expect(decoded.getPixel(1, 1).a).toBe(0);
+  });
 });
 
 const webpTests = new Map<string, WebPFileInfo>([
