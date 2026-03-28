@@ -17,6 +17,11 @@ import { WebPClSymbol } from './webp/webp-cl-symbol.js';
  * Applies the subtract-green transform and LZ77 back-references.
  */
 export class WebPEncoder implements Encoder {
+  /**
+   * Lookup table for mapping (x, y) offsets to plane codes for distance encoding.
+   * Used in the LZ77 back-reference distance calculation.
+   * @private
+   */
   private static readonly planeLut = [
     96, 73, 55, 39, 23, 13, 5, 1, 255, 255, 255, 255, 255, 255, 255, 255, 101,
     78, 58, 42, 26, 16, 8, 2, 0, 3, 9, 17, 27, 43, 59, 79, 102, 86, 62, 46, 32,
@@ -41,6 +46,15 @@ export class WebPEncoder implements Encoder {
     return this._supportsAnimation;
   }
 
+  /**
+   * Encodes the given image data into the VP8L lossless bitstream.
+   * Applies transforms, predictor selection, and entropy coding.
+   * @param {MemoryImage} image - The image to encode.
+   * @param {number} width - The width of the image.
+   * @param {number} height - The height of the image.
+   * @returns {Uint8Array} The encoded VP8L bitstream.
+   * @private
+   */
   private encodeVP8L(
     image: MemoryImage,
     width: number,
@@ -255,6 +269,15 @@ export class WebPEncoder implements Encoder {
     return out.getBytes();
   }
 
+  /**
+   * Applies the subtract-green transform to the red and blue channels.
+   * This decorrelates color channels for better compression.
+   * @param {Uint8Array} r - Red channel data.
+   * @param {Uint8Array} g - Green channel data.
+   * @param {Uint8Array} b - Blue channel data.
+   * @param {number} numPixels - Number of pixels in the image.
+   * @private
+   */
   private applySubtractGreenTransform(
     r: Uint8Array,
     g: Uint8Array,
@@ -267,6 +290,20 @@ export class WebPEncoder implements Encoder {
     }
   }
 
+  /**
+   * Selects the best predictor mode for each block in the image.
+   * Evaluates candidate predictors and chooses the one with the lowest cost.
+   * @param {Uint8Array} r - Red channel data.
+   * @param {Uint8Array} g - Green channel data.
+   * @param {Uint8Array} b - Blue channel data.
+   * @param {number} width - Image width.
+   * @param {number} height - Image height.
+   * @param {number} blockW - Number of blocks horizontally.
+   * @param {number} blockH - Number of blocks vertically.
+   * @param {number} blockSize - Size of each block.
+   * @returns {number[]} Array of predictor modes for each block.
+   * @private
+   */
   private selectPredictorModes(
     r: Uint8Array,
     g: Uint8Array,
@@ -369,6 +406,20 @@ export class WebPEncoder implements Encoder {
     return modes;
   }
 
+  /**
+   * Applies the selected predictor transform to the image channels.
+   * Modifies the channel data in-place to store residuals.
+   * @param {Uint8Array} r - Red channel data.
+   * @param {Uint8Array} g - Green channel data.
+   * @param {Uint8Array} b - Blue channel data.
+   * @param {Uint8Array} a - Alpha channel data.
+   * @param {number} width - Image width.
+   * @param {number} height - Image height.
+   * @param {number} blockW - Number of blocks horizontally.
+   * @param {number} blockSize - Size of each block.
+   * @param {number[]} modes - Predictor modes for each block.
+   * @private
+   */
   private applyPredictorTransform(
     r: Uint8Array,
     g: Uint8Array,
@@ -466,6 +517,15 @@ export class WebPEncoder implements Encoder {
     }
   }
 
+  /**
+   * Writes the predictor mode subimage to the bitstream.
+   * Encodes the predictor modes using Huffman coding.
+   * @param {WebPBitWriter} bw - The bit writer.
+   * @param {number} blockW - Number of blocks horizontally.
+   * @param {number} blockH - Number of blocks vertically.
+   * @param {number[]} modes - Predictor modes for each block.
+   * @private
+   */
   private writePredictorSubImage(
     bw: WebPBitWriter,
     blockW: number,
@@ -506,6 +566,12 @@ export class WebPEncoder implements Encoder {
     }
   }
 
+  /**
+   * Maps a match length to its corresponding symbol for entropy coding.
+   * @param {number} length - The match length.
+   * @returns {number} The symbol representing the length.
+   * @private
+   */
   private lengthSymbol(length: number): number {
     if (length <= 4) {
       return 255 + length;
@@ -515,6 +581,13 @@ export class WebPEncoder implements Encoder {
     return 256 + 2 * msb + half;
   }
 
+  /**
+   * Computes the extra bits and value for a given match length symbol.
+   * Used for encoding match lengths with additional precision.
+   * @param {number} length - The match length.
+   * @returns {{ extraBits: number, extraValue: number }} Extra bits and value.
+   * @private
+   */
   private lengthExtra(length: number): {
     extraBits: number;
     extraValue: number;
@@ -532,6 +605,14 @@ export class WebPEncoder implements Encoder {
     };
   }
 
+  /**
+   * Converts a pixel distance to a plane code for distance entropy coding.
+   * Uses a lookup table for small distances and a direct mapping for larger ones.
+   * @param {number} width - Image width.
+   * @param {number} dist - Pixel distance.
+   * @returns {number} The plane code for the distance.
+   * @private
+   */
   private distToPlaneCode(width: number, dist: number): number {
     const yoff = Math.trunc(dist / width);
     const xoff = dist - yoff * width;
@@ -543,6 +624,12 @@ export class WebPEncoder implements Encoder {
     return dist + 120;
   }
 
+  /**
+   * Maps a value to its prefix code for distance or length coding.
+   * @param {number} v - The value to encode.
+   * @returns {number} The prefix code.
+   * @private
+   */
   private prefixCode(v: number): number {
     const val = v - 1;
     if (val < 4) {
@@ -553,6 +640,13 @@ export class WebPEncoder implements Encoder {
     return 2 * msb + half;
   }
 
+  /**
+   * Computes the extra bits and value for a given prefix code.
+   * Used for encoding distances and lengths with additional precision.
+   * @param {number} v - The value to encode.
+   * @returns {{ extraBits: number, extraValue: number }} Extra bits and value.
+   * @private
+   */
   private prefixExtra(v: number): {
     extraBits: number;
     extraValue: number;
@@ -571,6 +665,12 @@ export class WebPEncoder implements Encoder {
     };
   }
 
+  /**
+   * Computes the floor of the base-2 logarithm of the given value.
+   * @param {number} v - The value to compute the log2 floor for.
+   * @returns {number} The floor of log2(v).
+   * @private
+   */
   private log2Floor(v: number): number {
     let _v = v;
     let log = 0;
@@ -581,6 +681,15 @@ export class WebPEncoder implements Encoder {
     return log;
   }
 
+  /**
+   * Builds the Huffman code lengths for the given symbol frequencies.
+   * Uses a bounded-length Huffman tree construction.
+   * @param {number[]} freq - Symbol frequencies.
+   * @param {number} alphabetSize - Number of symbols in the alphabet.
+   * @param {number} [maxBits] - Maximum allowed code length.
+   * @returns {number[]} Array of code lengths for each symbol.
+   * @private
+   */
   private buildHuffmanCodeLengths(
     freq: number[],
     alphabetSize: number,
@@ -659,6 +768,14 @@ export class WebPEncoder implements Encoder {
     return cl;
   }
 
+  /**
+   * Writes the Huffman code tree to the bitstream.
+   * Handles special cases for small alphabets and uses RLE for code lengths.
+   * @param {WebPBitWriter} bw - The bit writer.
+   * @param {number} alphabetSize - Number of symbols in the alphabet.
+   * @param {number[]} codeLengths - Huffman code lengths for each symbol.
+   * @private
+   */
   private writeHuffmanCode(
     bw: WebPBitWriter,
     alphabetSize: number,
@@ -738,6 +855,14 @@ export class WebPEncoder implements Encoder {
     }
   }
 
+  /**
+   * Builds a run-length encoded (RLE) sequence of code length symbols.
+   * Used for compact representation of Huffman code trees.
+   * @param {number[]} codeLengths - Huffman code lengths for each symbol.
+   * @param {number} alphabetSize - Number of symbols in the alphabet.
+   * @returns {WebPClSymbol[]} RLE sequence of code length symbols.
+   * @private
+   */
   private buildRleSequence(
     codeLengths: number[],
     alphabetSize: number
@@ -794,6 +919,13 @@ export class WebPEncoder implements Encoder {
     return result;
   }
 
+  /**
+   * Generates canonical Huffman codes from code lengths.
+   * @param {Int32Array} codeLengths - Huffman code lengths for each symbol.
+   * @param {number} numSymbols - Number of symbols in the alphabet.
+   * @returns {number[]} Canonical Huffman codes for each symbol.
+   * @private
+   */
   private canonicalCodes(
     codeLengths: Int32Array,
     numSymbols: number
@@ -829,6 +961,13 @@ export class WebPEncoder implements Encoder {
     return codes;
   }
 
+  /**
+   * Reverses the order of bits in the given value.
+   * @param {number} value - The value whose bits to reverse.
+   * @param {number} numBits - The number of bits to reverse.
+   * @returns {number} The value with bits reversed.
+   * @private
+   */
   private reverseBits(value: number, numBits: number): number {
     let _value = value;
     let result = 0;
@@ -839,6 +978,12 @@ export class WebPEncoder implements Encoder {
     return result;
   }
 
+  /**
+   * Returns a Uint8Array containing the ASCII codes of the given string.
+   * @param {string} s - The string to convert.
+   * @returns {Uint8Array} The byte array representing the string.
+   * @private
+   */
   private tag(s: string): Uint8Array {
     const bytes = new Uint8Array(s.length);
     for (let k = 0; k < s.length; k++) {
@@ -847,6 +992,12 @@ export class WebPEncoder implements Encoder {
     return bytes;
   }
 
+  /**
+   * Encodes the given image into a WEBP format.
+   * @param {EncoderEncodeOptions} opt - The options for encoding.
+   * @param {MemoryImage} opt.image - The image to encode.
+   * @returns {Uint8Array} The encoded image in WEBP format.
+   */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const width = opt.image.width;
     const height = opt.image.height;

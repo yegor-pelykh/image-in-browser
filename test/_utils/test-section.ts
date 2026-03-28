@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Enum representing different test sections.
- *
- * @format
  */
-
 export enum TestSection {
   /** APNG test section */
   apng,

@@ -1598,7 +1598,7 @@ export abstract class Transform {
     let x2 = 0;
     let y2 = 0;
 
-    // this block sets [width] and [height] if null or negative.
+    // this block sets [width] and [height] if undefined or negative.
     if (
       width !== undefined &&
       height !== undefined &&

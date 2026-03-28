@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Abstract class containing various mathematical utility functions.
- *
- * @format
  */
-
 export abstract class MathUtils {
   /**
    * Returns the fractional part of a number.
@@ -116,10 +115,21 @@ export abstract class MathUtils {
     return Math.trunc(MathUtils.clamp(num, 0, 255));
   }
 
+  /**
+   * Determines whether the given number is even.
+   * @param {number} num - The number to check.
+   * @returns {boolean} True if the number is even, false otherwise.
+   */
   public static isEven(num: number): boolean {
     return num % 2 === 0;
   }
 
+  /**
+   * Compares two numbers.
+   * @param {number} a - The first number.
+   * @param {number} b - The second number.
+   * @returns {number} -1 if a < b, 1 if a > b, 0 if equal.
+   */
   public static cmp(a: number, b: number): number {
     return a < b ? -1 : a > b ? 1 : 0;
   }

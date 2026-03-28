@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Represents information about a file.
- *
- * @format
  */
-
 export class FileInfo {
   /** The path of the file. */
   public path: string;

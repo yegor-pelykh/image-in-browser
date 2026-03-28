@@ -1,5 +1,3 @@
-<!-- @format -->
-
 # 📋 Table of Contents
 
 - [**Introduction**](#introduction)

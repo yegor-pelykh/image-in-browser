@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Represents a Huffman code with its bit length and value.
- *
- * @format
  */
-
 export class HuffmanCode {
   /** Number of bits in the Huffman code. */
   bits: number;

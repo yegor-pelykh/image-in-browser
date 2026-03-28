@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Class representing the physical pixel dimensions of a PNG image.
- *
- * @format
  */
-
 export class PngPhysicalPixelDimensions {
   /**
    * Conversion factor from meters to inches.

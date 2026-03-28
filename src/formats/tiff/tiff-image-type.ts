@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Enum representing different types of TIFF images.
- *
- * @format
  */
-
 export enum TiffImageType {
   /** Bilevel image type */
   bilevel,

@@ -1,6 +1,4 @@
-/**
- * @format
- */
+/** @format */
 
 import { BitUtils } from '../../common/bit-utils.js';
 import { InputBuffer } from '../../common/input-buffer.js';

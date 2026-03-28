@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Enum representing different TIFF formats.
- *
- * @format
  */
-
 export enum TiffFormat {
   /** Invalid TIFF format */
   invalid,

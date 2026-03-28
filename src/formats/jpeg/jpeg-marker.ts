@@ -1,9 +1,8 @@
+/** @format */
+
 /**
  * Enum representing various JPEG markers.
- *
- * @format
  */
-
 export enum JpegMarker {
   /** Start of Frame 0 */
   sof0 = 0xc0,

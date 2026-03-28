@@ -251,6 +251,12 @@ export abstract class BitUtils {
     return this._float32ToUint32[0];
   }
 
+  /**
+   * Returns the number of bits required to represent the absolute value of the given integer.
+   * For zero, returns 0.
+   * @param {number} n - The integer value.
+   * @returns {number} The number of bits needed to represent the value.
+   */
   public static bitLength(n: number): number {
     if (n === 0) return 0;
     return Math.floor(Math.log2(Math.abs(n))) + 1;
