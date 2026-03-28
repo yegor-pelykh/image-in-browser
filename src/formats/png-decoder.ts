@@ -763,6 +763,25 @@ export class PngDecoder implements Decoder {
           this._input.skip(4);
           break;
         }
+        case 'cICP': {
+          if (chunkSize === 4) {
+            const colorPrimaries = this._input.read();
+            const transferCharacteristics = this._input.read();
+            const matrixCoefficients = this._input.read();
+            const videoFullRangeFlag = this._input.read();
+            this._info.cicpData = {
+              colorPrimaries: colorPrimaries,
+              transferCharacteristics: transferCharacteristics,
+              matrixCoefficients: matrixCoefficients,
+              videoFullRangeFlag: videoFullRangeFlag,
+            };
+          } else {
+            this._input.skip(chunkSize);
+          }
+          // CRC
+          this._input.skip(4);
+          break;
+        }
         default: {
           this._input.skip(chunkSize);
           // CRC

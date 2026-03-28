@@ -29,6 +29,7 @@ import { PsdDecoder } from './formats/psd-decoder.js';
 import { PvrEncoder } from './formats/pvr-encoder.js';
 import { PvrDecoder } from './formats/pvr-decoder.js';
 import { WebPEncoder } from './formats/webp-encoder.js';
+import { PngCicpData } from './formats/png/png-cicp-data.js';
 
 // Export types from 'color' directory
 export { ChannelOrder, ChannelOrderLength } from './color/channel-order.js';
@@ -231,6 +232,7 @@ export { JpegScan } from './formats/jpeg/jpeg-scan.js';
 export { JpegUtils } from './formats/jpeg/jpeg-utils.js';
 
 export { PngBlendMode } from './formats/png/png-blend-mode.js';
+export { PngCicpData } from './formats/png/png-cicp-data.js';
 export { PngColorType } from './formats/png/png-color-type.js';
 export { PngDisposeMode } from './formats/png/png-dispose-mode.js';
 export { PngFilterType } from './formats/png/png-filter-type.js';
@@ -610,6 +612,10 @@ export interface EncodePngOptions extends EncodeAnimatedOptions {
    * The filter type of the PNG image.
    */
   filter?: PngFilterType;
+  /**
+   * CICP (Coding-independent code points) data to embed in the PNG file.
+   */
+  cicpData?: PngCicpData;
 }
 
 /**
@@ -1159,8 +1165,9 @@ export function decodePng(
  * @param {EncodePngOptions} opt - Options for encoding the image.
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
  * @param {boolean} [opt.singleFrame] - Whether to encode a single frame (default is false).
- * @param {number} [opt.level] - The compression level (default is 6).
- * @param {PngFilterType} [opt.filter] - The filter type (default is paeth).
+ * @param {number} [opt.level] - The compression level to use (default is 6).
+ * @param {PngFilterType} [opt.filter] - The PNG filter type to use (default is paeth).
+ * @param {PngCicpData} [opt.cicpData] - CICP (Coding-independent code points) data to embed in the PNG file.
  * @returns {Uint8Array} The encoded image bytes.
  */
 export function encodePng(opt: EncodePngOptions): Uint8Array {
@@ -1170,6 +1177,7 @@ export function encodePng(opt: EncodePngOptions): Uint8Array {
   return new PngEncoder({
     filter: filter,
     level: level,
+    cicpData: opt.cicpData,
   }).encode({
     image: opt.image,
     singleFrame: singleFrame,

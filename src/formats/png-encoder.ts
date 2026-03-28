@@ -15,6 +15,7 @@ import { PngColorType } from './png/png-color-type.js';
 import { Palette } from '../image/palette.js';
 import { IccProfile } from '../image/icc-profile.js';
 import { PngPhysicalPixelDimensions } from './png/png-physical-pixel-dimensions.js';
+import { PngCicpData } from './png/png-cicp-data.js';
 
 /**
  * Options for initializing the PNG encoder.
@@ -33,6 +34,10 @@ export interface PngEncoderInitOptions {
    * This provides information about the intended display size of the image in physical units.
    */
   pixelDimensions?: PngPhysicalPixelDimensions;
+  /**
+   * CICP (Coding-independent code points) data to be embedded in the PNG file.
+   */
+  cicpData?: PngCicpData;
 }
 
 /**
@@ -83,8 +88,6 @@ export class PngEncoder implements Encoder {
 
   /**
    * Checks if this encoder supports animation.
-   *
-   * @returns {boolean} True if the encoder supports animation, otherwise false.
    */
   public get supportsAnimation(): boolean {
     return this._supportsAnimation;
@@ -103,15 +106,30 @@ export class PngEncoder implements Encoder {
   }
 
   /**
+   * CICP (Coding-independent code points) data to be embedded in the PNG file.
+   */
+  private _cicpData: PngCicpData | undefined;
+
+  /**
+   * Gets the CICP (Coding-independent code points) data associated with the PNG encoder.
+   */
+  public get cicpData(): PngCicpData | undefined {
+    return this._cicpData;
+  }
+
+  /**
    * Constructor for PngEncoder.
    * @param {PngEncoderInitOptions} [opt] - Initialization options for the encoder.
    * @param {PngFilterType} [opt.filter] - The filter type to use for encoding. Defaults to PngFilterType.paeth.
    * @param {number} [opt.level] - The compression level to use for encoding. Defaults to 6.
+   * @param {PngPhysicalPixelDimensions} [opt.pixelDimensions] - The physical pixel dimensions of the image.
+   * @param {PngCicpData} [opt.cicpData] - CICP data to embed in the PNG file.
    */
   constructor(opt?: PngEncoderInitOptions) {
     this._filter = opt?.filter ?? PngFilterType.paeth;
     this._level = opt?.level ?? 6;
     this._pixelDimensions = opt?.pixelDimensions;
+    this._cicpData = opt?.cicpData;
   }
 
   /**
@@ -403,6 +421,21 @@ export class PngEncoder implements Encoder {
   }
 
   /**
+   * Writes the cICP (Coding-independent code points) chunk to the PNG output buffer.
+   * @param {PngCicpData} cicp - The CICP data to write into the PNG file.
+   */
+  private writeCicpChunk(cicp: PngCicpData): void {
+    const chunk = new OutputBuffer({
+      bigEndian: true,
+    });
+    chunk.writeByte(cicp.colorPrimaries);
+    chunk.writeByte(cicp.transferCharacteristics);
+    chunk.writeByte(cicp.matrixCoefficients);
+    chunk.writeByte(cicp.videoFullRangeFlag);
+    PngEncoder.writeChunk(this._output!, 'cICP', chunk.getBytes());
+  }
+
+  /**
    * Write the ICC profile chunk.
    * @param {IccProfile} iccp - The ICC profile.
    */
@@ -595,6 +628,10 @@ export class PngEncoder implements Encoder {
 
       if (_image.iccProfile !== undefined) {
         this.writeICCPChunk(_image.iccProfile);
+      }
+
+      if (this._cicpData !== undefined) {
+        this.writeCicpChunk(this._cicpData);
       }
 
       if (_image.hasPalette) {

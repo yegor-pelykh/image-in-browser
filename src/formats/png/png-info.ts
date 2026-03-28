@@ -2,6 +2,7 @@
 
 import { Color } from '../../color/color.js';
 import { DecodeInfo } from '../decode-info.js';
+import { PngCicpData } from './png-cicp-data.js';
 import { PngColorType } from './png-color-type.js';
 import { PngFrame } from './png-frame.js';
 import { PngPhysicalPixelDimensions } from './png-physical-pixel-dimensions.js';
@@ -225,6 +226,16 @@ export class PngInfo implements DecodeInfo {
   /** Sets the physical pixel dimensions of the PNG image. */
   public set pixelDimensions(v: PngPhysicalPixelDimensions | undefined) {
     this._pixelDimensions = v;
+  }
+
+  private _cicpData: PngCicpData | undefined;
+  /** Gets the CICP (Coding-independent code points) data of the PNG image. */
+  public get cicpData(): PngCicpData | undefined {
+    return this._cicpData;
+  }
+  /** Sets the CICP (Coding-independent code points) data of the PNG image. */
+  public set cicpData(v: PngCicpData | undefined) {
+    this._cicpData = v;
   }
 
   private _repeat = 0;
