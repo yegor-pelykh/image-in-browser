@@ -141,6 +141,7 @@ export class WebPEncoder implements Encoder {
         for (let ci = candidates.length - 1; ci >= 0; ci--) {
           const c = candidates[ci];
           const dist = j - c;
+          if (dist > 1048456) break;
           let len = 1;
           while (
             len < maxMatchLen &&
