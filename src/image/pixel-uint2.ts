@@ -314,7 +314,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       -2,
       0,
       image.data instanceof MemoryImageDataUint2
-        ? (image.data as MemoryImageDataUint2)
+        ? image.data
         : new MemoryImageDataUint2(0, 0, 0)
     );
   }
@@ -406,7 +406,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @param {number} y - The normalized y-coordinate.
    */
   public setPositionNormalized(x: number, y: number): void {
-    return this.setPosition(
+    this.setPosition(
       Math.floor(x * (this.width - 1)),
       Math.floor(y * (this.height - 1))
     );
@@ -421,7 +421,7 @@ export class PixelUint2 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     if (this.palette !== undefined) {
       return this.palette.get(this.getChannelInternal(0), channel);
     } else {
-      if (channel === Channel.luminance) {
+      if (channel === (Channel.luminance as number)) {
         return this.luminance;
       } else {
         return channel < this.numChannels

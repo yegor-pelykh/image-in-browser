@@ -636,7 +636,7 @@ export class PngEncoder implements Encoder {
 
       if (_image.hasPalette) {
         if (this._globalQuantizer !== undefined) {
-          this.writePalette(this._globalQuantizer!.palette);
+          this.writePalette(this._globalQuantizer.palette);
         } else {
           this.writePalette(_image.palette!);
         }
@@ -692,7 +692,7 @@ export class PngEncoder implements Encoder {
       });
       fdat.writeUint32(this._sequenceNumber);
       fdat.writeBytes(compressed);
-      PngEncoder.writeChunk(this._output!, 'fdAT', fdat.getBytes());
+      PngEncoder.writeChunk(this._output, 'fdAT', fdat.getBytes());
 
       this._sequenceNumber++;
     }

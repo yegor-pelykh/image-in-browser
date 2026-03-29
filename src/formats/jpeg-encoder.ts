@@ -1,15 +1,15 @@
 /** @format */
 
 import { ColorRgb8 } from '../color/color-rgb8.js';
-import { Color } from '../color/color.js';
+import type { Color } from '../color/color.js';
 import { Format } from '../color/format.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { MathUtils } from '../common/math-utils.js';
 import { OutputBuffer } from '../common/output-buffer.js';
-import { ExifData } from '../exif/exif-data.js';
-import { IccProfile } from '../image/icc-profile.js';
-import { MemoryImage } from '../image/image.js';
-import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import type { ExifData } from '../exif/exif-data.js';
+import type { IccProfile } from '../image/icc-profile.js';
+import type { MemoryImage } from '../image/image.js';
+import type { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
 
 /**
@@ -193,7 +193,7 @@ export class JpegEncoder implements Encoder {
   ): Array<Array<number> | undefined> {
     let codeValue = 0;
     let posInTable = 0;
-    const ht = new Array<Array<number> | undefined>();
+    const ht: (Array<number> | undefined)[] = [];
     for (let k = 1; k <= 16; k++) {
       for (let j = 1; j <= nrcodes[k]; j++) {
         const index = stdTable[posInTable];
@@ -297,7 +297,7 @@ export class JpegEncoder implements Encoder {
     exif.write(exifData);
     const exifBytes = exifData.getBytes();
 
-    this.writeMarker(out, JpegMarker.app1);
+    JpegEncoder.writeMarker(out, JpegMarker.app1);
     // Signature: Exif\0\0
     const exifSignature = 0x45786966;
     out.writeUint16(exifBytes.length + 8);
@@ -312,7 +312,7 @@ export class JpegEncoder implements Encoder {
    * @param {IccProfile} profile - The ICC profile data.
    */
   private static writeICCProfile(out: OutputBuffer, profile: IccProfile): void {
-    this.writeMarker(out, JpegMarker.app2);
+    JpegEncoder.writeMarker(out, JpegMarker.app2);
     const profileData = profile.decompressed();
     const blockSize = 12 + 2 + profileData.length;
     // Signature: ICC_PROFILE\0
@@ -921,8 +921,7 @@ export class JpegEncoder implements Encoder {
 
     // Encode ACs
     let end0pos = 63;
-    // eslint-disable-next-line no-empty
-    for (; end0pos > 0 && this._du[end0pos] === 0; end0pos--) {}
+    for (; end0pos > 0 && this._du[end0pos] === 0; end0pos--);
     //End0pos = first element in reverse order !=0
     if (end0pos === 0) {
       this.writeBits(out, eob!);
@@ -932,9 +931,7 @@ export class JpegEncoder implements Encoder {
     let i = 1;
     while (i <= end0pos) {
       const startpos = i;
-      // eslint-disable-next-line no-empty
-      for (; this._du[i] === 0 && i <= end0pos; ++i) {}
-
+      for (; this._du[i] === 0 && i <= end0pos; ++i);
       let nrzeroes = i - startpos;
       if (nrzeroes >= I16) {
         const lng = nrzeroes >>> 4;

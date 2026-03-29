@@ -28,7 +28,8 @@
     ],
   },
   "include": [
-    "eslint.config.mjs",
+    "eslint.config.js",
+    "pre-build.ts",
     "vitest.config.ts",
     "src/**/*.ts",
     "test/**/*.ts"

@@ -190,11 +190,11 @@ export class WebPEncoder implements Encoder {
       }
     }
 
-    const greenFreq = new Array(280).fill(0);
-    const redFreq = new Array(256).fill(0);
-    const blueFreq = new Array(256).fill(0);
-    const alphaFreq = new Array(256).fill(0);
-    const distFreq = new Array(40).fill(0);
+    const greenFreq = new Array<number>(280).fill(0);
+    const redFreq = new Array<number>(256).fill(0);
+    const blueFreq = new Array<number>(256).fill(0);
+    const alphaFreq = new Array<number>(256).fill(0);
+    const distFreq = new Array<number>(40).fill(0);
 
     let litPtr = 0;
     let refPtr = 0;
@@ -315,7 +315,7 @@ export class WebPEncoder implements Encoder {
     blockSize: number
   ): number[] {
     const candidates = [1, 2, 7, 11];
-    const modes = new Array(blockW * blockH).fill(11);
+    const modes = new Array<number>(blockW * blockH).fill(11);
     for (let by = 0; by < blockH; by++) {
       for (let bx = 0; bx < blockW; bx++) {
         const x0 = bx * blockSize;

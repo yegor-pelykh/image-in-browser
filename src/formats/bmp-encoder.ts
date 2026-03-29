@@ -292,7 +292,7 @@ export class BmpEncoder implements Encoder {
             out.writeByte(v);
             out.writeByte(0);
           }
-        } else if (bpp === 8) {
+        } else {
           for (let pi = 0; pi < 256; ++pi) {
             out.writeByte(pi);
             out.writeByte(pi);

@@ -1,8 +1,6 @@
 /** @format */
-
 /* eslint-disable no-multi-assign */
 /* eslint-disable no-param-reassign */
-/* eslint-disable space-before-function-paren */
 
 /**
  * @property {number} lit - The literal value of the node.
@@ -588,7 +586,6 @@ export function restrictDepth(
       dps[i].d!--;
       dbt++;
     }
-  if (dbt !== 0) console.log('debt left');
 }
 
 /**
@@ -1023,7 +1020,7 @@ function _get25(dt: Uint8Array, pos: number): number {
   );
 }
 
-export const U = (function () {
+export const U = (() => {
   const U16 = Uint16Array;
   const U32 = Uint32Array;
   return {
@@ -1070,7 +1067,7 @@ export const U = (function () {
   };
 })();
 
-(function () {
+(() => {
   const len = 1 << 15;
   for (let i = 0; i < len; i++) {
     let x = i;

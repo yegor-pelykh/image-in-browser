@@ -106,9 +106,6 @@ export class PngFrame {
    * @returns {number} The delay of the frame.
    */
   public get delay(): number {
-    if (this._delayNum === undefined || this._delayDen === undefined) {
-      return 0;
-    }
     if (this._delayDen === 0) {
       return 0;
     }
@@ -129,14 +126,14 @@ export class PngFrame {
    * @param {PngBlendMode} opt.blend - The blend mode for the frame.
    */
   constructor(opt: PngFrameInitOptions) {
-    this._sequenceNumber = opt?.sequenceNumber ?? 0;
-    this._width = opt?.width ?? 0;
-    this._height = opt?.height ?? 0;
-    this._xOffset = opt?.xOffset ?? 0;
-    this._yOffset = opt?.yOffset ?? 0;
-    this._delayNum = opt?.delayNum ?? 0;
-    this._delayDen = opt?.delayDen ?? 0;
-    this._dispose = opt?.dispose ?? PngDisposeMode.none;
-    this._blend = opt?.blend ?? PngBlendMode.source;
+    this._sequenceNumber = opt.sequenceNumber ?? 0;
+    this._width = opt.width ?? 0;
+    this._height = opt.height ?? 0;
+    this._xOffset = opt.xOffset ?? 0;
+    this._yOffset = opt.yOffset ?? 0;
+    this._delayNum = opt.delayNum ?? 0;
+    this._delayDen = opt.delayDen ?? 0;
+    this._dispose = opt.dispose ?? PngDisposeMode.none;
+    this._blend = opt.blend ?? PngBlendMode.source;
   }
 }

@@ -394,7 +394,7 @@ export class PixelInt16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       0,
       -image.numChannels,
       image.data instanceof MemoryImageDataInt16
-        ? (image.data as MemoryImageDataInt16)
+        ? image.data
         : new MemoryImageDataInt16(0, 0, 0)
     );
   }
@@ -450,7 +450,7 @@ export class PixelInt16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @param {number} y - The normalized y-coordinate.
    */
   public setPositionNormalized(x: number, y: number): void {
-    return this.setPosition(
+    this.setPosition(
       Math.floor(x * (this.width - 1)),
       Math.floor(y * (this.height - 1))
     );
@@ -462,7 +462,7 @@ export class PixelInt16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number} The channel value.
    */
   public getChannel(channel: number | Channel): number {
-    if (channel === Channel.luminance) {
+    if (channel === (Channel.luminance as number)) {
       return this.luminance;
     } else {
       return channel < this.numChannels ? this.data[this._index + channel] : 0;

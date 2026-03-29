@@ -859,7 +859,7 @@ export class PsdImage implements DecodeInfo {
    */
   public renderImage(): MemoryImage {
     if (this._mergedImage !== undefined) {
-      return this._mergedImage!;
+      return this._mergedImage;
     }
 
     this._mergedImage = new MemoryImage({
@@ -889,9 +889,9 @@ export class PsdImage implements DecodeInfo {
           const bb = Math.trunc(srcP.b);
           const ba = Math.trunc(srcP.a);
 
-          if (sx! >= 0 && sx < this._width && sy >= 0 && sy < this._height) {
+          if (sx >= 0 && sx < this._width && sy >= 0 && sy < this._height) {
             const dx = layer.left! + x;
-            const p = this._mergedImage!.getPixel(dx, dy);
+            const p = this._mergedImage.getPixel(dx, dy);
             const ar = Math.trunc(p.r);
             const ag = Math.trunc(p.g);
             const ab = Math.trunc(p.b);

@@ -968,9 +968,6 @@ describe('Format: PNG', () => {
       bytes: png1,
     });
     expect(dec1).toBeDefined();
-    if (dec1 === undefined) {
-      return;
-    }
 
     const equals = dec1.info.pixelDimensions?.equals(phys1) ?? false;
     expect(equals).toBeTruthy();

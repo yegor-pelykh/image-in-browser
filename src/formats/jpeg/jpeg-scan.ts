@@ -345,10 +345,10 @@ export class JpegScan {
     if (n === undefined) {
       return 0;
     }
-    if (n >= 1 << ((length ?? 0) - 1)) {
+    if (n >= 1 << (length - 1)) {
       return n;
     }
-    return n + (-1 << (length ?? 0)) + 1;
+    return n + (-1 << length) + 1;
   }
 
   /**
@@ -576,16 +576,16 @@ export class JpegScan {
       if (this._spectralStart === 0) {
         decodeFn =
           this._successivePrev === 0
-            ? this.decodeDCFirst
-            : this.decodeDCSuccessive;
+            ? this.decodeDCFirst.bind(this)
+            : this.decodeDCSuccessive.bind(this);
       } else {
         decodeFn =
           this._successivePrev === 0
-            ? this.decodeACFirst
-            : this.decodeACSuccessive;
+            ? this.decodeACFirst.bind(this)
+            : this.decodeACSuccessive.bind(this);
       }
     } else {
-      decodeFn = this.decodeBaseline;
+      decodeFn = this.decodeBaseline.bind(this);
     }
 
     let mcu = 0;
@@ -638,7 +638,10 @@ export class JpegScan {
       const m1 = this._input.get(0);
       const m2 = this._input.get(1);
       if (m1 === 0xff) {
-        if (m2 >= JpegMarker.rst0 && m2 <= JpegMarker.rst7) {
+        if (
+          (m2 as JpegMarker) >= JpegMarker.rst0 &&
+          (m2 as JpegMarker) <= JpegMarker.rst7
+        ) {
           this._input.skip(2);
         } else {
           break;

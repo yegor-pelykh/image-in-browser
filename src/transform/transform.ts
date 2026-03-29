@@ -7,7 +7,7 @@ import { MathUtils } from '../common/math-utils.js';
 import { ExifData } from '../exif/exif-data.js';
 import { MemoryImage } from '../image/image.js';
 import { ImageUtils } from '../image/image-utils.js';
-import { Pixel } from '../image/pixel.js';
+import type { Pixel } from '../image/pixel.js';
 import { FlipDirection } from './flip-direction.js';
 import { TrimSide } from './trim-side.js';
 import { Rectangle } from '../common/rectangle.js';
@@ -15,7 +15,7 @@ import { Draw } from '../draw/draw.js';
 import { BlendMode } from '../draw/blend-mode.js';
 import { TrimMode } from './trim-mode.js';
 import { ExpandCanvasPosition } from './expand-canvas-position.js';
-import { Color } from '../color/color.js';
+import type { Color } from '../color/color.js';
 
 /**
  * Interface for transform options.
@@ -883,11 +883,7 @@ export abstract class Transform {
     let x2 = 0;
     let y2 = 0;
 
-    if (
-      opt.width !== undefined &&
-      opt.height !== undefined &&
-      maintainAspect === true
-    ) {
+    if (opt.width !== undefined && opt.height !== undefined && maintainAspect) {
       x1 = 0;
       x2 = opt.width;
       const srcAspect = src.height / src.width;

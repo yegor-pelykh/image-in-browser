@@ -641,7 +641,7 @@ export class GifDecoder implements Decoder {
 
     const colorMap =
       gifImage.colorMap !== undefined
-        ? gifImage.colorMap!
+        ? gifImage.colorMap
         : this._info.globalColorMap!;
 
     this._pixelCount = width * height;
@@ -725,7 +725,7 @@ export class GifDecoder implements Decoder {
                 this._info!.globalColorMap !== undefined
               ) {
                 gifImage.colorMap = GifColorMap.from(
-                  this._info!.globalColorMap!
+                  this._info!.globalColorMap
                 );
               }
               if (gifImage.colorMap !== undefined) {

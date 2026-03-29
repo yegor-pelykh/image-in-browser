@@ -265,8 +265,8 @@ export abstract class JpegQuantize {
       ? jpeg.exifData.imageIfd.orientation!
       : 0;
 
-    const w = jpeg.width!;
-    const h = jpeg.height!;
+    const w = jpeg.width;
+    const h = jpeg.height;
     const flipWidthHeight = orientation >= 5 && orientation <= 8;
     const width = flipWidthHeight ? h : w;
     const height = flipWidthHeight ? w : h;
@@ -297,30 +297,44 @@ export abstract class JpegQuantize {
       | undefined = undefined;
     switch (orientation) {
       case 2:
-        setPixel = (x, y, r, g, b) => image.setPixelRgb(w1 - x, y, r, g, b);
+        setPixel = (x, y, r, g, b) => {
+          image.setPixelRgb(w1 - x, y, r, g, b);
+        };
         break;
       case 3:
-        setPixel = (x, y, r, g, b) =>
+        setPixel = (x, y, r, g, b) => {
           image.setPixelRgb(w1 - x, h1 - y, r, g, b);
+        };
         break;
       case 4:
-        setPixel = (x, y, r, g, b) => image.setPixelRgb(x, h1 - y, r, g, b);
+        setPixel = (x, y, r, g, b) => {
+          image.setPixelRgb(x, h1 - y, r, g, b);
+        };
         break;
       case 5:
-        setPixel = (x, y, r, g, b) => image.setPixelRgb(y, x, r, g, b);
+        setPixel = (x, y, r, g, b) => {
+          image.setPixelRgb(y, x, r, g, b);
+        };
         break;
       case 6:
-        setPixel = (x, y, r, g, b) => image.setPixelRgb(h1 - y, x, r, g, b);
+        setPixel = (x, y, r, g, b) => {
+          image.setPixelRgb(h1 - y, x, r, g, b);
+        };
         break;
       case 7:
-        setPixel = (x, y, r, g, b) =>
+        setPixel = (x, y, r, g, b) => {
           image.setPixelRgb(h1 - y, w1 - x, r, g, b);
+        };
         break;
       case 8:
-        setPixel = (x, y, r, g, b) => image.setPixelRgb(y, w1 - x, r, g, b);
+        setPixel = (x, y, r, g, b) => {
+          image.setPixelRgb(y, w1 - x, r, g, b);
+        };
         break;
       default:
-        setPixel = (x, y, r, g, b) => image.setPixelRgb(x, y, r, g, b);
+        setPixel = (x, y, r, g, b) => {
+          image.setPixelRgb(x, y, r, g, b);
+        };
         break;
     }
 
@@ -343,41 +357,11 @@ export abstract class JpegQuantize {
         }
         break;
       case 2:
-        // {
-        //   // PDF might compress two component data in custom color-space
-        //   component1 = jpeg.components[0];
-        //   component2 = jpeg.components[1];
-        //   const hShift1 = component1.hScaleShift;
-        //   const vShift1 = component1.vScaleShift;
-        //   const hShift2 = component2.hScaleShift;
-        //   const vShift2 = component2.vScaleShift;
-
-        //   for (let y = 0; y < h; ++y) {
-        //     const y1 = y >>> vShift1;
-        //     const y2 = y >>> vShift2;
-        //     component1Line = component1.lines[y1];
-        //     component2Line = component2.lines[y2];
-
-        //     for (let x = 0; x < w; ++x) {
-        //       const x1 = x >>> hShift1;
-        //       const x2 = x >>> hShift2;
-
-        //       let cy = component1Line![x1];
-        //       // data[offset++] = cy;
-
-        //       cy = component2Line![x2];
-        //       // data[offset++] = cy;
-        //     }
-        //   }
-        // }
         break;
       case 3:
         {
           // The default transform for three components is true
-          colorTransform = true;
-          if (jpeg.adobe !== undefined) {
-            colorTransform = jpeg.adobe.transformCode === 1;
-          }
+          colorTransform = jpeg.adobe.transformCode === 1;
 
           component1 = jpeg.components[0];
           component2 = jpeg.components[1];
@@ -428,13 +412,10 @@ export abstract class JpegQuantize {
         break;
       case 4:
         {
-          if (jpeg.adobe === undefined) {
-            throw new LibError('Unsupported color mode (4 components)');
-          }
           // The default transform for four components is false
           colorTransform = false;
           // The adobe transform marker overrides any previous setting
-          if (jpeg.adobe!.transformCode !== 0) {
+          if (jpeg.adobe.transformCode !== 0) {
             colorTransform = true;
           }
 

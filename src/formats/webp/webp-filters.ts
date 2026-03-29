@@ -21,20 +21,12 @@ export class WebPFilters {
   /** Fast filter constant. */
   public static readonly filterFast = 6;
 
-  /** Array of filter functions. */
-  public static readonly filters = [
-    undefined,
-    WebPFilters.horizontalFilter,
-    WebPFilters.verticalFilter,
-    WebPFilters.gradientFilter,
-  ];
-
   /** Array of unfilter functions. */
   public static readonly unfilters = [
     undefined,
-    WebPFilters.horizontalUnfilter,
-    WebPFilters.verticalUnfilter,
-    WebPFilters.gradientUnfilter,
+    WebPFilters.horizontalUnfilter.bind(this),
+    WebPFilters.verticalUnfilter.bind(this),
+    WebPFilters.gradientUnfilter.bind(this),
   ];
 
   /**

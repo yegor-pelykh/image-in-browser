@@ -76,7 +76,7 @@ export class JpegDecoder implements Decoder {
     }
 
     const jpeg = new JpegData();
-    jpeg.read(this._input.buffer as Uint8Array);
+    jpeg.read(this._input.buffer);
     if (jpeg.frames.length !== 1) {
       throw new LibError('Only single frame JPEGs supported.');
     }

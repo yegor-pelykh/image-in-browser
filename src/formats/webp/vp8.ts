@@ -60,7 +60,7 @@ export class VP8 {
   public static readonly bps = 32;
   public static readonly yuvSize = VP8.bps * 17 + VP8.bps * 9;
   public static readonly ySize = VP8.bps * 17;
-  public static readonly yOffset = Number(VP8.bps) + 8;
+  public static readonly yOffset = VP8.bps + 8;
   public static readonly uOffset = VP8.yOffset + VP8.bps * 16 + VP8.bps;
   public static readonly vOffset = VP8.uOffset + 16;
   public static readonly yuvFix = 16;
@@ -1264,30 +1264,30 @@ export class VP8 {
     const limit = fInfo.fLimit;
     if (limit === 0) return;
     if (this._filterType === 1) {
-      if (mbX > 0) this._dsp.simpleHFilter16(yDst, yBps!, limit + 4);
-      if (fInfo.fInner) this._dsp.simpleHFilter16i(yDst, yBps!, limit);
-      if (mbY > 0) this._dsp.simpleVFilter16(yDst, yBps!, limit + 4);
-      if (fInfo.fInner) this._dsp.simpleVFilter16i(yDst, yBps!, limit);
+      if (mbX > 0) this._dsp.simpleHFilter16(yDst, yBps, limit + 4);
+      if (fInfo.fInner) this._dsp.simpleHFilter16i(yDst, yBps, limit);
+      if (mbY > 0) this._dsp.simpleVFilter16(yDst, yBps, limit + 4);
+      if (fInfo.fInner) this._dsp.simpleVFilter16i(yDst, yBps, limit);
     } else {
       const uvBps = this._cacheUVStride;
       const uDst = InputBuffer.from(this._cacheU, mbX * 8);
       const vDst = InputBuffer.from(this._cacheV, mbX * 8);
       const hevThresh = fInfo.hevThresh;
       if (mbX > 0) {
-        this._dsp.hFilter16(yDst, yBps!, limit + 4, iLevel, hevThresh);
-        this._dsp.hFilter8(uDst, vDst, uvBps!, limit + 4, iLevel, hevThresh);
+        this._dsp.hFilter16(yDst, yBps, limit + 4, iLevel, hevThresh);
+        this._dsp.hFilter8(uDst, vDst, uvBps, limit + 4, iLevel, hevThresh);
       }
       if (fInfo.fInner) {
-        this._dsp.hFilter16i(yDst, yBps!, limit, iLevel, hevThresh);
-        this._dsp.hFilter8i(uDst, vDst, uvBps!, limit, iLevel!, hevThresh);
+        this._dsp.hFilter16i(yDst, yBps, limit, iLevel, hevThresh);
+        this._dsp.hFilter8i(uDst, vDst, uvBps, limit, iLevel, hevThresh);
       }
       if (mbY > 0) {
-        this._dsp.vFilter16(yDst, yBps!, limit + 4, iLevel, hevThresh);
-        this._dsp.vFilter8(uDst, vDst, uvBps!, limit + 4, iLevel, hevThresh);
+        this._dsp.vFilter16(yDst, yBps, limit + 4, iLevel, hevThresh);
+        this._dsp.vFilter8(uDst, vDst, uvBps, limit + 4, iLevel, hevThresh);
       }
       if (fInfo.fInner) {
-        this._dsp.vFilter16i(yDst, yBps!, limit, iLevel, hevThresh);
-        this._dsp.vFilter8i(uDst, vDst, uvBps!, limit, iLevel, hevThresh);
+        this._dsp.vFilter16i(yDst, yBps, limit, iLevel, hevThresh);
+        this._dsp.vFilter8i(uDst, vDst, uvBps, limit, iLevel, hevThresh);
       }
     }
   }
@@ -1355,7 +1355,7 @@ export class VP8 {
       this._v.offset += this._cropLeft >>> 1;
       if (this._a !== undefined) this._a.offset += this._cropLeft;
       this.put(
-        yStart - this._cropTop!,
+        yStart - this._cropTop,
         this._cropRight - this._cropLeft,
         yEnd - yStart
       );

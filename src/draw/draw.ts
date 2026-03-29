@@ -2260,10 +2260,10 @@ export abstract class Draw {
         const m = opt.mask.getPixel(x, y).getChannelNormalized(maskChannel);
         if (m > 0) {
           p = opt.image.getPixel(x, y, p);
-          p.r = MathUtils.mix(p!.r, opt.color.r, m);
-          p.g = MathUtils.mix(p!.g, opt.color.g, m);
-          p.b = MathUtils.mix(p!.b, opt.color.b, m);
-          p.a = MathUtils.mix(p!.a, opt.color.a, m);
+          p.r = MathUtils.mix(p.r, opt.color.r, m);
+          p.g = MathUtils.mix(p.g, opt.color.g, m);
+          p.b = MathUtils.mix(p.b, opt.color.b, m);
+          p.a = MathUtils.mix(p.a, opt.color.a, m);
         }
       } else {
         opt.image.setPixel(x, y, opt.color);

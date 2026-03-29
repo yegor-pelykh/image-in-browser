@@ -148,7 +148,7 @@ export interface MemoryImageGetBytesOptions {
  * A MemoryImage is a container for MemoryImageData and other various metadata
  * representing an image in memory.
  */
-export class MemoryImage implements Iterable<Pixel> {
+export class MemoryImage implements Iterable<Pixel, Pixel> {
   private _data?: MemoryImageData;
 
   /**
@@ -1198,7 +1198,7 @@ export class MemoryImage implements Iterable<Pixel> {
             p.b = g;
             p.a = b;
           }
-        } else if (order === ChannelOrder.bgra) {
+        } else if ((order as ChannelOrder) === ChannelOrder.bgra) {
           for (const p of this) {
             const r = p.r;
             const g = p.g;

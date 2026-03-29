@@ -105,10 +105,11 @@ export class BinaryQuantizer implements Quantizer {
 
     const imageIt = image[Symbol.iterator]();
     const targetIt = target[Symbol.iterator]();
-    let imageItRes: IteratorResult<Pixel> | undefined = undefined;
-    let targetItRes: IteratorResult<Pixel> | undefined = undefined;
+    let imageItRes: IteratorResult<Pixel, Pixel> | undefined = undefined;
+    let targetItRes: IteratorResult<Pixel, Pixel> | undefined = undefined;
     while (
-      (((imageItRes = imageIt.next()), (targetItRes = targetIt.next())),
+      ((imageItRes = imageIt.next()),
+      (targetItRes = targetIt.next()),
       !imageItRes.done && !targetItRes.done)
     ) {
       const t = targetItRes.value;

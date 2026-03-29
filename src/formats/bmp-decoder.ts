@@ -140,10 +140,10 @@ export class BmpDecoder implements Decoder {
           if (x < w) {
             if (this._forceRgba && inf.palette !== undefined) {
               const pi = Math.trunc(r);
-              const pr = inf.palette!.getRed(pi);
-              const pg = inf.palette!.getGreen(pi);
-              const pb = inf.palette!.getBlue(pi);
-              const pa = inf.palette!.getAlpha(pi);
+              const pr = inf.palette.getRed(pi);
+              const pg = inf.palette.getGreen(pi);
+              const pb = inf.palette.getBlue(pi);
+              const pa = inf.palette.getAlpha(pi);
               p.setRgba(pr, pg, pb, pa);
             } else {
               p.setRgba(r, g, b, a);

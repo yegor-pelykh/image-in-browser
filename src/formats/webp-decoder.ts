@@ -52,7 +52,7 @@ export class WebPDecoder implements Decoder {
    * @returns {number} The number of frames.
    */
   public get numFrames(): number {
-    return this._info !== undefined ? this._info.numFrames : 0;
+    return this._info.numFrames;
   }
 
   /**
@@ -171,7 +171,7 @@ export class WebPDecoder implements Decoder {
             buffer: input.buffer,
             bigEndian: input.bigEndian,
           });
-          webp.alphaData!.offset = input.offset;
+          webp.alphaData.offset = input.offset;
           webp.alphaSize = size;
           input.skip(diskSize);
           break;
@@ -187,13 +187,13 @@ export class WebPDecoder implements Decoder {
           }
           break;
         case 'ICCP':
-          webp!.iccpData = input.readRange(size).toUint8Array();
+          webp.iccpData = input.readRange(size).toUint8Array();
           break;
         case 'EXIF':
-          webp!.exifData = input.readString(size);
+          webp.exifData = input.readString(size);
           break;
         case 'XMP ':
-          webp!.xmpData = input.readString(size);
+          webp.xmpData = input.readString(size);
           break;
         default:
           input.skip(diskSize);
@@ -208,11 +208,11 @@ export class WebPDecoder implements Decoder {
 
     /// The alpha flag might not have been set, but it does in fact have alpha
     /// if there is an ALPH chunk.
-    if (!webp!.hasAlpha) {
-      webp!.hasAlpha = webp!.alphaData !== undefined;
+    if (!webp.hasAlpha) {
+      webp.hasAlpha = webp.alphaData !== undefined;
     }
 
-    return webp!.format !== WebPFormat.undefined;
+    return webp.format !== WebPFormat.undefined;
   }
 
   /**
@@ -420,10 +420,6 @@ export class WebPDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
-    if (this._input === undefined || this._info === undefined) {
-      return undefined;
-    }
-
     if (this._info.hasAnimation) {
       if (frameIndex >= this._info.frames.length || frameIndex < 0) {
         return undefined;

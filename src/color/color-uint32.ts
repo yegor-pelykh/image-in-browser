@@ -301,7 +301,7 @@ export class ColorUint32 implements Color {
    * @returns {number} The value of the specified channel.
    */
   public getChannel(channel: number | Channel): number {
-    if (channel === Channel.luminance) {
+    if (channel === (Channel.luminance as number)) {
       return this.luminance;
     } else {
       return channel < this.data.length ? this.data[channel] : 0;

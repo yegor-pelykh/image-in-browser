@@ -68,7 +68,7 @@ export class TiffInfo implements DecodeInfo {
   private _backgroundColor: Color | undefined = undefined;
   /** Gets the background color of the TIFF image. */
   public get backgroundColor(): Color | undefined {
-    throw this._backgroundColor;
+    return this._backgroundColor;
   }
 
   /** Gets the number of frames in the TIFF image. */

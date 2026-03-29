@@ -252,7 +252,7 @@ export function getImageDataBytes(
           p.b = g;
           p.a = b;
         }
-      } else if (order === ChannelOrder.bgra) {
+      } else if ((order as ChannelOrder) === ChannelOrder.bgra) {
         for (const p of tempImage) {
           const r = p.r;
           const g = p.g;

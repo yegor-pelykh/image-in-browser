@@ -151,14 +151,14 @@ export class JpegUtils {
     }
 
     let marker = this.nextMarker(input);
-    if (marker !== JpegMarker.soi) {
+    if ((marker as JpegMarker) !== JpegMarker.soi) {
       return undefined;
     }
 
     let exif: ExifData | undefined = undefined;
     marker = this.nextMarker(input);
-    while (marker !== JpegMarker.eoi && !input.isEOS) {
-      switch (marker) {
+    while ((marker as JpegMarker) !== JpegMarker.eoi && !input.isEOS) {
+      switch (marker as JpegMarker) {
         case JpegMarker.app1:
           exif = this.readExifData(this.readBlock(input));
           if (exif !== undefined) {
@@ -200,7 +200,7 @@ export class JpegUtils {
     });
 
     let marker = this.nextMarker(input);
-    if (marker !== JpegMarker.soi) {
+    if ((marker as JpegMarker) !== JpegMarker.soi) {
       return undefined;
     }
 
@@ -210,8 +210,8 @@ export class JpegUtils {
     const startOffset = input.offset;
     let exifBlockStartOffset = startOffset;
     marker = this.nextMarker(input);
-    while (!hasExifBlock && marker !== JpegMarker.eoi && !input.isEOS) {
-      if (marker === JpegMarker.app1) {
+    while ((marker as JpegMarker) !== JpegMarker.eoi && !input.isEOS) {
+      if ((marker as JpegMarker) === JpegMarker.app1) {
         const block = this.readBlock(input);
         const signature = block?.readUint32();
         if (signature === JpegUtils._exifSignature) {

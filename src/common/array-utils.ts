@@ -258,7 +258,7 @@ export abstract class ArrayUtils {
    * @param {T} t - The enum object.
    * @returns {number[]} An array of numeric values from the enum.
    */
-  public static getNumEnumValues<T extends object>(t: T): number[] {
+  public static getNumEnumValues(t: object): number[] {
     return Object.values(t).filter((v) => typeof v === 'number');
   }
 

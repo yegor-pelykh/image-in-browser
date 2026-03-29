@@ -546,14 +546,14 @@ export class IfdDirectory {
    */
   private setRational(
     tag: number,
-    value: Rational | number[] | TypedArray | unknown
+    value: Rational | number[] | TypedArray | undefined
   ): boolean {
     if (value instanceof Rational) {
       this._data.set(tag, IfdRationalValue.from(value));
       return true;
     } else if (
       ArrayUtils.isNumArrayOrTypedArray(value) &&
-      (value as []).length >= 2
+      (value as Array<unknown>).length >= 2
     ) {
       const r = new Rational((value as number[])[0], (value as number[])[1]);
       this._data.set(tag, IfdRationalValue.from(r));
@@ -580,7 +580,9 @@ export class IfdDirectory {
     return (
       Array.isArray(value) &&
       value.every(
-        (v) => ArrayUtils.isNumArrayOrTypedArray(v) && (v as []).length >= 2
+        (v) =>
+          ArrayUtils.isNumArrayOrTypedArray(v) &&
+          (v as Array<unknown>).length >= 2
       )
     );
   }
@@ -684,7 +686,7 @@ export class IfdDirectory {
                 this._data.set(_tag, new IfdRationalValue(value as Rational[]));
               } else if (
                 ArrayUtils.isNumArrayOrTypedArray(value) &&
-                (value as []).length >= 2
+                (value as Array<unknown>).length >= 2
               ) {
                 const r = new Rational(
                   (value as number[])[0],
@@ -741,7 +743,7 @@ export class IfdDirectory {
                 );
               } else if (
                 ArrayUtils.isNumArrayOrTypedArray(value) &&
-                (value as []).length >= 2
+                (value as Array<unknown>).length >= 2
               ) {
                 const r = new Rational(
                   (value as number[])[0],

@@ -208,7 +208,7 @@ export class ColorUint8 implements Color {
    * @returns {number} The value of the channel.
    */
   public getChannel(channel: number | Channel, defValue = 0): number {
-    if (channel === Channel.luminance) {
+    if (channel === (Channel.luminance as number)) {
       return this.luminance;
     } else {
       return channel < this.data.length ? this.data[channel] : defValue;

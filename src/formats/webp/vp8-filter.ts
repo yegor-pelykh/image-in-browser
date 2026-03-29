@@ -229,8 +229,8 @@ export class VP8Filter {
    * @param {InputBuffer<Uint8Array>} dst - The destination buffer.
    */
   private static rd4(dst: InputBuffer<Uint8Array>): void {
-    const i = dst.get(-1 + 0 * VP8.bps);
-    const j = dst.get(-1 + Number(VP8.bps));
+    const i = dst.get(-1);
+    const j = dst.get(-1 + VP8.bps);
     const K = dst.get(-1 + 2 * VP8.bps);
     const l = dst.get(-1 + 3 * VP8.bps);
     const x = dst.get(-1 - VP8.bps);
@@ -331,7 +331,7 @@ export class VP8Filter {
    */
   private static vr4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
-    const j = dst.get(-1 + Number(VP8.bps));
+    const j = dst.get(-1 + VP8.bps);
     const k = dst.get(-1 + 2 * VP8.bps);
     const x = dst.get(-1 - VP8.bps);
     const a = dst.get(0 - VP8.bps);
@@ -421,7 +421,7 @@ export class VP8Filter {
    */
   private static hu4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
-    const j = dst.get(-1 + Number(VP8.bps));
+    const j = dst.get(-1 + VP8.bps);
     const k = dst.get(-1 + 2 * VP8.bps);
     const l = dst.get(-1 + 3 * VP8.bps);
 
@@ -465,7 +465,7 @@ export class VP8Filter {
    */
   private static hd4(dst: InputBuffer<Uint8Array>): void {
     const i = dst.get(-1 + 0 * VP8.bps);
-    const j = dst.get(-1 + Number(VP8.bps));
+    const j = dst.get(-1 + VP8.bps);
     const k = dst.get(-1 + 2 * VP8.bps);
     const l = dst.get(-1 + 3 * VP8.bps);
     const x = dst.get(-1 - VP8.bps);
@@ -1329,41 +1329,41 @@ export class VP8Filter {
    * Array of prediction functions for Luma 4x4 blocks.
    */
   public static readonly predLuma4 = [
-    this.dc4,
-    this.tm4,
-    this.ve4,
-    this.he4,
-    this.rd4,
-    this.vr4,
-    this.ld4,
-    this.vl4,
-    this.hd4,
-    this.hu4,
+    this.dc4.bind(this),
+    this.tm4.bind(this),
+    this.ve4.bind(this),
+    this.he4.bind(this),
+    this.rd4.bind(this),
+    this.vr4.bind(this),
+    this.ld4.bind(this),
+    this.vl4.bind(this),
+    this.hd4.bind(this),
+    this.hu4.bind(this),
   ];
 
   /**
    * Array of prediction functions for Luma 16x16 blocks.
    */
   public static readonly predLuma16 = [
-    this.dc16,
-    this.tm16,
-    this.ve16,
-    this.he16,
-    this.dc16NoTop,
-    this.dc16NoLeft,
-    this.dc16NoTopLeft,
+    this.dc16.bind(this),
+    this.tm16.bind(this),
+    this.ve16.bind(this),
+    this.he16.bind(this),
+    this.dc16NoTop.bind(this),
+    this.dc16NoLeft.bind(this),
+    this.dc16NoTopLeft.bind(this),
   ];
 
   /**
    * Array of prediction functions for Chroma 8x8 blocks.
    */
   public static readonly predChroma8 = [
-    this.dc8uv,
-    this.tm8uv,
-    this.ve8uv,
-    this.he8uv,
-    this.dc8uvNoTop,
-    this.dc8uvNoLeft,
-    this.dc8uvNoTopLeft,
+    this.dc8uv.bind(this),
+    this.tm8uv.bind(this),
+    this.ve8uv.bind(this),
+    this.he8uv.bind(this),
+    this.dc8uvNoTop.bind(this),
+    this.dc8uvNoLeft.bind(this),
+    this.dc8uvNoTopLeft.bind(this),
   ];
 }

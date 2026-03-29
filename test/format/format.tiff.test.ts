@@ -294,7 +294,7 @@ describe('Format: TIFF', () => {
         return;
       }
       const expectedInfo = _expectedInfo.get(file.nameExt);
-      if (info !== undefined && expectedInfo !== undefined) {
+      if (expectedInfo !== undefined) {
         expect(info.width).toBe(expectedInfo.width);
         expect(info.height).toBe(expectedInfo.height);
         expect(info.bigEndian).toBe(expectedInfo.bigEndian);

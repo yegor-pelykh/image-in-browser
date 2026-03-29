@@ -289,7 +289,7 @@ export class PngDecoder implements Decoder {
       channels = 4;
     }
 
-    const pixelDepth = channels * this._info!.bits!;
+    const pixelDepth = channels * this._info.bits;
 
     const w = this._info.width;
     const h = this._info.height;
@@ -297,7 +297,7 @@ export class PngDecoder implements Decoder {
     const rowBytes = (w * pixelDepth + 7) >>> 3;
     const bpp = (pixelDepth + 7) >>> 3;
 
-    const line = new Uint8Array(rowBytes) as Uint8Array<ArrayBufferLike>;
+    const line = new Uint8Array(rowBytes) as Uint8Array;
     const inData = [line, line];
 
     const pixel = [0, 0, 0, 0];
@@ -326,7 +326,7 @@ export class PngDecoder implements Decoder {
 
       for (let x = 0; x < w; ++x) {
         this.readPixel(rowInput, pixel);
-        this.setPixel(pIterRes.value, pixel);
+        this.setPixel(pIterRes.value as Pixel, pixel);
         pIterRes = pIter.next();
       }
     }
@@ -412,25 +412,25 @@ export class PngDecoder implements Decoder {
   private readPixel(input: InputBuffer<Uint8Array>, pixel: number[]): void {
     switch (this._info.colorType) {
       case PngColorType.grayscale:
-        pixel[0] = this.readBits(input, this._info.bits!);
+        pixel[0] = this.readBits(input, this._info.bits);
         return;
       case PngColorType.rgb:
-        pixel[0] = this.readBits(input, this._info.bits!);
-        pixel[1] = this.readBits(input, this._info.bits!);
-        pixel[2] = this.readBits(input, this._info.bits!);
+        pixel[0] = this.readBits(input, this._info.bits);
+        pixel[1] = this.readBits(input, this._info.bits);
+        pixel[2] = this.readBits(input, this._info.bits);
         return;
       case PngColorType.indexed:
-        pixel[0] = this.readBits(input, this._info.bits!);
+        pixel[0] = this.readBits(input, this._info.bits);
         return;
       case PngColorType.grayscaleAlpha:
-        pixel[0] = this.readBits(input, this._info.bits!);
-        pixel[1] = this.readBits(input, this._info.bits!);
+        pixel[0] = this.readBits(input, this._info.bits);
+        pixel[1] = this.readBits(input, this._info.bits);
         return;
       case PngColorType.rgba:
-        pixel[0] = this.readBits(input, this._info.bits!);
-        pixel[1] = this.readBits(input, this._info.bits!);
-        pixel[2] = this.readBits(input, this._info.bits!);
-        pixel[3] = this.readBits(input, this._info.bits!);
+        pixel[0] = this.readBits(input, this._info.bits);
+        pixel[1] = this.readBits(input, this._info.bits);
+        pixel[2] = this.readBits(input, this._info.bits);
+        pixel[3] = this.readBits(input, this._info.bits);
         return;
     }
     throw new LibError(`Invalid color type: ${this._info.colorType}.`);
@@ -445,7 +445,7 @@ export class PngDecoder implements Decoder {
     switch (this._info.colorType) {
       case PngColorType.grayscale:
         if (this._info.transparency !== undefined && this._info.bits > 8) {
-          const t = this._info.transparency!;
+          const t = this._info.transparency;
           const a = ((t[0] & 0xff) << 24) | (t[1] & 0xff);
           const g = raw[0];
           p.setRgba(g, g, g, g !== a ? p.maxChannelValue : 0);
@@ -460,7 +460,7 @@ export class PngDecoder implements Decoder {
           const b = raw[2];
 
           if (this._info.transparency !== undefined) {
-            const t = this._info.transparency!;
+            const t = this._info.transparency;
             const tr = ((t[0] & 0xff) << 8) | (t[1] & 0xff);
             const tg = ((t[2] & 0xff) << 8) | (t[3] & 0xff);
             const tb = ((t[4] & 0xff) << 8) | (t[5] & 0xff);
@@ -575,27 +575,27 @@ export class PngDecoder implements Decoder {
 
           switch (this._info.colorType) {
             case PngColorType.grayscale:
-              if (![1, 2, 4, 8, 16].includes(this._info.bits!)) {
+              if (![1, 2, 4, 8, 16].includes(this._info.bits)) {
                 return undefined;
               }
               break;
             case PngColorType.rgb:
-              if (![8, 16].includes(this._info.bits!)) {
+              if (![8, 16].includes(this._info.bits)) {
                 return undefined;
               }
               break;
             case PngColorType.indexed:
-              if (![1, 2, 4, 8].includes(this._info.bits!)) {
+              if (![1, 2, 4, 8].includes(this._info.bits)) {
                 return undefined;
               }
               break;
             case PngColorType.grayscaleAlpha:
-              if (![8, 16].includes(this._info.bits!)) {
+              if (![8, 16].includes(this._info.bits)) {
                 return undefined;
               }
               break;
             case PngColorType.rgba:
-              if (![8, 16].includes(this._info.bits!)) {
+              if (![8, 16].includes(this._info.bits)) {
                 return undefined;
               }
               break;
@@ -711,9 +711,9 @@ export class PngDecoder implements Decoder {
             const paletteIndex = this._input.read();
             chunkSize--;
             const p3 = paletteIndex * 3;
-            const r = this._info.palette![p3]!;
-            const g = this._info.palette![p3 + 1]!;
-            const b = this._info.palette![p3 + 2]!;
+            const r = this._info.palette![p3];
+            const g = this._info.palette![p3 + 1];
+            const b = this._info.palette![p3 + 2];
             if (this._info.transparency !== undefined) {
               const isTransparent =
                 this._info.transparency.includes(paletteIndex);
@@ -885,7 +885,6 @@ export class PngDecoder implements Decoder {
     try {
       uncompressed = inflate(imageData);
     } catch (error) {
-      console.error(error);
       return undefined;
     }
 
@@ -903,7 +902,7 @@ export class PngDecoder implements Decoder {
     // directly. In this case, just ignore the palette.
     if (this._info.colorType === PngColorType.indexed) {
       if (this._info.palette !== undefined) {
-        const p = this._info.palette!;
+        const p = this._info.palette;
         const numColors = Math.trunc(p.length / 3);
         const t = this._info.transparency;
         const tl = t !== undefined ? t.length : 0;
@@ -914,7 +913,7 @@ export class PngDecoder implements Decoder {
           if (nc === 4 && i < tl) {
             a = t![i];
           }
-          palette.setRgba(i, p[pi]!, p[pi + 1]!, p[pi + 2]!, a);
+          palette.setRgba(i, p[pi], p[pi + 1], p[pi + 2], a);
         }
       }
     }
@@ -927,7 +926,7 @@ export class PngDecoder implements Decoder {
       palette === undefined &&
       this._info.bits <= 8
     ) {
-      const t = this._info.transparency!;
+      const t = this._info.transparency;
       const nt = t.length;
       const numColors = 1 << this._info.bits;
       palette = new PaletteUint8(numColors, 4);

@@ -413,7 +413,7 @@ export class NeuralQuantizer implements Quantizer {
       j = j < 0 ? this.contest(blue, green, red) : j;
 
       if (j >= this._specials) {
-        const a = Number(alpha) / NeuralQuantizer._initAlpha;
+        const a = alpha / NeuralQuantizer._initAlpha;
         this.alterSingle(a, j, blue, green, red);
         if (rad > 0) {
           this.alterNeighbors(a, rad, j, blue, green, red);
@@ -667,10 +667,11 @@ export class NeuralQuantizer implements Quantizer {
 
     const imageIt = image[Symbol.iterator]();
     const targetIt = target[Symbol.iterator]();
-    let imageItRes: IteratorResult<Pixel> | undefined = undefined;
-    let targetItRes: IteratorResult<Pixel> | undefined = undefined;
+    let imageItRes: IteratorResult<Pixel, Pixel> | undefined = undefined;
+    let targetItRes: IteratorResult<Pixel, Pixel> | undefined = undefined;
     while (
-      (((imageItRes = imageIt.next()), (targetItRes = targetIt.next())),
+      ((imageItRes = imageIt.next()),
+      (targetItRes = targetIt.next()),
       !imageItRes.done && !targetItRes.done)
     ) {
       const t = targetItRes.value;

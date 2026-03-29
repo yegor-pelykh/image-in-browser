@@ -208,8 +208,9 @@ export class VP8L {
         this._webp.width,
         this._webp.height,
         this._webp.height,
-        (_row, _waitForBiggestBatch) =>
-          this.processRows(_row, _waitForBiggestBatch)
+        (_row, _waitForBiggestBatch) => {
+          this.processRows(_row, _waitForBiggestBatch);
+        }
       )
     ) {
       return undefined;
@@ -689,7 +690,7 @@ export class VP8L {
       this._huffmanSubsampleBits = huffmanPrecision;
       for (let i = 0; i < huffmanPixs; ++i) {
         const group = (huffmanImage[i] >>> 8) & 0xffff;
-        huffmanImage![i] = group;
+        huffmanImage[i] = group;
         if (group >= numHtreeGroupsMax) numHtreeGroupsMax = group + 1;
       }
       if (numHtreeGroupsMax > 1000 || numHtreeGroupsMax > xSize * ySize) {

@@ -121,7 +121,7 @@ export class VP8LInternal extends VP8L {
    * @param waitForBiggestBatch - If true, wait for the largest batch.
    */
   public extractAlphaRows(row: number, waitForBiggestBatch: boolean): void {
-    return super.extractAlphaRows(row, waitForBiggestBatch);
+    super.extractAlphaRows(row, waitForBiggestBatch);
   }
 
   /**

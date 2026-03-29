@@ -248,14 +248,12 @@ export class ExifData extends IfdContainer {
     for (const [name, directory] of this.directories) {
       s += `${name}\n`;
       for (const [tag, value] of directory.entries) {
-        if (value === undefined) s += `\t${this.getTagName(tag)}\n`;
-        else s += `\t${this.getTagName(tag)}: ${value.toString()}\n`;
+        s += `\t${this.getTagName(tag)}: ${value.toString()}\n`;
       }
       for (const [subName, subDir] of directory.sub.entries) {
         s += `${subName}\n`;
         for (const [tag, value] of subDir.entries) {
-          if (value === undefined) s += `\t${this.getTagName(tag)}\n`;
-          else s += `\t${this.getTagName(tag)}: ${value}\n`;
+          s += `\t${this.getTagName(tag)}: ${value}\n`;
         }
       }
     }

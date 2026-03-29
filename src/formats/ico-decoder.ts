@@ -122,7 +122,7 @@ export class IcoDecoder implements Decoder {
     const imageBuffer = this._input.buffer.subarray(
       this._input.start + imageInfo.bytesOffset,
       this._input.start + imageInfo.bytesOffset + imageInfo.bytesSize
-    ) as Uint8Array;
+    );
 
     const png = new PngDecoder();
     if (png.isValidFile(imageBuffer)) {

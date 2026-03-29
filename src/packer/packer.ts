@@ -1,7 +1,5 @@
 /** @format */
-
 /* eslint-disable no-param-reassign */
-/* eslint-disable space-before-function-paren */
 
 import {
   readUshort,
@@ -46,7 +44,7 @@ const crc = {
    * Generates a CRC table.
    * @returns {Uint32Array} The generated CRC table.
    */
-  table: (function (): Uint32Array {
+  table: ((): Uint32Array => {
     const tab = new Uint32Array(256);
     for (let n = 0; n < 256; n++) {
       let c = n;
@@ -66,12 +64,7 @@ const crc = {
    * @param {number} len - The length of data to read.
    * @returns {number} The updated CRC value.
    */
-  update: function (
-    c: number,
-    buf: Uint8Array,
-    off: number,
-    len: number
-  ): number {
+  update: (c: number, buf: Uint8Array, off: number, len: number): number => {
     for (let i = 0; i < len; i++)
       c = crc.table[(c ^ buf[off + i]) & 0xff] ^ (c >>> 8);
     return c;
@@ -83,9 +76,8 @@ const crc = {
    * @param {number} l - The length of data to read.
    * @returns {number} The calculated CRC value.
    */
-  crc: function (b: Uint8Array, o: number, l: number): number {
-    return crc.update(0xffffffff, b, o, l) ^ 0xffffffff;
-  },
+  crc: (b: Uint8Array, o: number, l: number): number =>
+    crc.update(0xffffffff, b, o, l) ^ 0xffffffff,
 };
 
 /**

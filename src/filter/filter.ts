@@ -1,13 +1,14 @@
 /** @format */
+/* eslint-disable no-self-assign */
 
 import { Channel } from '../color/channel.js';
-import { Color } from '../color/color.js';
+import type { Color } from '../color/color.js';
 import { ColorRgba8 } from '../color/color-rgba8.js';
 import { Interpolation } from '../common/interpolation.js';
 import { MathUtils } from '../common/math-utils.js';
 import { NeuralQuantizer } from '../image/neural-quantizer.js';
 import { OctreeQuantizer } from '../image/octree-quantizer.js';
-import { Quantizer } from '../image/quantizer.js';
+import type { Quantizer } from '../image/quantizer.js';
 import { RandomUtils } from '../common/random-utils.js';
 import { Draw } from '../draw/draw.js';
 import { MemoryImage } from '../image/image.js';
@@ -729,7 +730,7 @@ export abstract class Filter {
    * @param {number[]} Hmap - The histogram mapping array.
    * @param {HistogramEqualizeMode} mode - The histogram equalization mode.
    * @param {number} maxChannelValue - The maximum channel value of the image.
-   * @param {Channel} [maskChannel] - The channel to use for masking (defaults to luminance).
+   * @param {Channel} [maskChannel] - The channel to use for masking.
    * @param {MemoryImage} [mask] - The mask image.
    */
   private static applyHistogramTransform(
@@ -737,7 +738,7 @@ export abstract class Filter {
     Hmap: number[],
     mode: HistogramEqualizeMode,
     maxChannelValue: number,
-    maskChannel: Channel = Channel.luminance,
+    maskChannel?: Channel,
     mask?: MemoryImage
   ) {
     const _maskChannel = maskChannel ?? Channel.luminance;
@@ -747,7 +748,7 @@ export abstract class Filter {
       }
       if (mode === HistogramEqualizeMode.grayscale) {
         const newl = Hmap[Math.round(p.luminance)];
-        const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel);
+        const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(_maskChannel);
         if (msk === undefined) {
           p.r = newl;
           p.g = newl;
@@ -762,7 +763,7 @@ export abstract class Filter {
         const newl = Hmap[Math.round(hsl[2] * maxChannelValue)];
         const newRGB = [0, 0, 0];
         ColorUtils.hslToRgb(hsl[0], hsl[1], newl / maxChannelValue, newRGB);
-        const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel);
+        const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(_maskChannel);
         if (msk === undefined) {
           p.r = newRGB[0];
           p.g = newRGB[1];
@@ -858,7 +859,7 @@ export abstract class Filter {
     const invContrast = contrast !== undefined ? 1 - contrast : 0;
 
     if (exposure !== undefined) {
-      exposure = Math.pow(2, exposure);
+      exposure = 2 ** exposure;
     }
 
     const hsv: number[] = [0, 0, 0];
@@ -874,9 +875,9 @@ export abstract class Filter {
         let b = ob;
 
         if (useBlacksWhitesMids) {
-          r = Math.pow((r + br) * wr, mr);
-          g = Math.pow((g + bg) * wg, mg);
-          b = Math.pow((b + bb) * wb, mb);
+          r = ((r + br) * wr) ** mr;
+          g = ((g + bg) * wg) ** mg;
+          b = ((b + bb) * wb) ** mb;
         }
 
         if (brightness !== undefined && brightness !== 1.0) {
@@ -903,9 +904,9 @@ export abstract class Filter {
         }
 
         if (gamma !== undefined) {
-          r = Math.pow(r, gamma);
-          g = Math.pow(g, gamma);
-          b = Math.pow(b, gamma);
+          r **= gamma;
+          g **= gamma;
+          b **= gamma;
         }
 
         if (exposure !== undefined) {
@@ -982,8 +983,8 @@ export abstract class Filter {
 
         const prcX = MathUtils.fract(uvX / (grid * stepX));
         const prcY = MathUtils.fract(uvY / (grid * stepY));
-        const pwX = Math.pow(Math.abs(prcX - 0.5), 2);
-        const pwY = Math.pow(Math.abs(prcY - 0.5), 2);
+        const pwX = Math.abs(prcX - 0.5) ** 2;
+        const pwY = Math.abs(prcY - 0.5) ** 2;
 
         let r = op.r / p.maxChannelValue;
         let g = op.g / p.maxChannelValue;
@@ -2011,23 +2012,23 @@ export abstract class Filter {
           ?.getPixel(p.x, p.y)
           .getChannelNormalized(maskChannel);
         if (msk === undefined) {
-          p.rNormalized = Math.pow(p.rNormalized, opt.gamma);
-          p.gNormalized = Math.pow(p.gNormalized, opt.gamma);
-          p.bNormalized = Math.pow(p.bNormalized, opt.gamma);
+          p.rNormalized **= opt.gamma;
+          p.gNormalized **= opt.gamma;
+          p.bNormalized **= opt.gamma;
         } else {
           p.rNormalized = MathUtils.mix(
             p.rNormalized,
-            Math.pow(p.rNormalized, opt.gamma),
+            p.rNormalized ** opt.gamma,
             msk
           );
           p.gNormalized = MathUtils.mix(
             p.gNormalized,
-            Math.pow(p.gNormalized, opt.gamma),
+            p.gNormalized ** opt.gamma,
             msk
           );
           p.bNormalized = MathUtils.mix(
             p.bNormalized,
-            Math.pow(p.bNormalized, opt.gamma),
+            p.bNormalized ** opt.gamma,
             msk
           );
         }
@@ -2172,7 +2173,7 @@ export abstract class Filter {
       if (x > 1.0) {
         x = 1 + knee(x - 1, 0.184874);
       }
-      return Math.pow(x, 0.4545) * 84.66;
+      return x ** 0.4545 * 84.66;
     };
 
     const image = new MemoryImage({
@@ -2183,7 +2184,7 @@ export abstract class Filter {
 
     const m =
       opt.exposure !== undefined
-        ? Math.pow(2, MathUtils.clamp(opt.exposure + 2.47393, -20, 20))
+        ? 2 ** MathUtils.clamp(opt.exposure + 2.47393, -20, 20)
         : 1;
 
     const nc = opt.image.numChannels;
@@ -3391,11 +3392,8 @@ export abstract class Filter {
                 p.g = max - p.g;
                 p.b = max - p.b;
               } else {
-                // eslint-disable-next-line no-self-assign
                 p.r = p.r;
-                // eslint-disable-next-line no-self-assign
                 p.g = p.g;
-                // eslint-disable-next-line no-self-assign
                 p.b = p.b;
               }
             } else {
@@ -3404,11 +3402,8 @@ export abstract class Filter {
                 p.g = max - p.g;
                 p.b = max - p.b;
               } else {
-                // eslint-disable-next-line no-self-assign
                 p.r = p.r;
-                // eslint-disable-next-line no-self-assign
                 p.g = p.g;
-                // eslint-disable-next-line no-self-assign
                 p.b = p.b;
               }
             }
@@ -3647,7 +3642,7 @@ export abstract class Filter {
           outputRangeMax - Math.round(Math.trunc(pCounter / numPixelPerBin));
         pCounter += H[l];
       }
-      this.applyHistogramTransform(
+      Filter.applyHistogramTransform(
         frame,
         Hmap,
         mode,
@@ -3753,7 +3748,7 @@ export abstract class Filter {
           Math.min(Math.round(newIntensityLv), outputDynamicRange)
         );
       }
-      this.applyHistogramTransform(
+      Filter.applyHistogramTransform(
         frame,
         Hmap,
         mode,

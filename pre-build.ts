@@ -1,3 +1,6 @@
+/** @format */
+/* eslint-disable no-console */
+
 import fs from 'fs';
 import path from 'path';
 
@@ -6,16 +9,18 @@ const srcDirectory = 'src';
 /**
  * Returns a list of files in a folder (with recursive traversal).
  */
-function getFiles(dir) {
+function getFiles(dir: string) {
   const results = [];
   const files = fs.readdirSync(dir, {
     recursive: true,
   });
   for (const filePath of files) {
-    const fullPath = path.join(dir, filePath);
-    const stat = fs.statSync(fullPath);
-    if (stat.isFile()) {
-      results.push(fullPath);
+    if (typeof filePath === 'string') {
+      const fullPath = path.join(dir, filePath);
+      const stat = fs.statSync(fullPath);
+      if (stat.isFile()) {
+        results.push(fullPath);
+      }
     }
   }
   return results;
@@ -39,7 +44,7 @@ function normalizeImports() {
     });
   }
   console.info('Import normalization has been completed.');
-};
+}
 
 function runPreBuildTasks() {
   console.info('Starting pre-build tasks...');

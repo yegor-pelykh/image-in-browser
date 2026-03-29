@@ -379,7 +379,7 @@ export class PixelFloat64 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
       0,
       -image.numChannels,
       image.data instanceof MemoryImageDataFloat64
-        ? (image.data as MemoryImageDataFloat64)
+        ? image.data
         : new MemoryImageDataFloat64(0, 0, 0)
     );
   }
@@ -443,7 +443,7 @@ export class PixelFloat64 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @param {number} y - The normalized y-coordinate.
    */
   public setPositionNormalized(x: number, y: number): void {
-    return this.setPosition(
+    this.setPosition(
       Math.floor(x * (this.width - 1)),
       Math.floor(y * (this.height - 1))
     );
@@ -455,7 +455,7 @@ export class PixelFloat64 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number} The channel value.
    */
   public getChannel(channel: number | Channel): number {
-    if (channel === Channel.luminance) {
+    if (channel === (Channel.luminance as number)) {
       return this.luminance;
     } else {
       return channel < this.numChannels ? this.data[this._index + channel] : 0;

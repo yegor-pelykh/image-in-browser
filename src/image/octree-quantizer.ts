@@ -282,12 +282,12 @@ export class OctreeQuantizer implements Quantizer {
         ((g & bit) !== 0 ? 1 : 0) * 4 +
         ((r & bit) !== 0 ? 1 : 0) * 2 +
         ((b & bit) !== 0 ? 1 : 0);
-      if (root!.children[i] === undefined) {
+      if (root.children[i] === undefined) {
         break;
       }
-      root = root!.children[i];
+      root = root.children[i];
     }
-    return root?.paletteIndex ?? 0;
+    return root.paletteIndex;
   }
 
   /**
@@ -306,15 +306,15 @@ export class OctreeQuantizer implements Quantizer {
         ((g & bit) !== 0 ? 1 : 0) * 4 +
         ((r & bit) !== 0 ? 1 : 0) * 2 +
         ((b & bit) !== 0 ? 1 : 0);
-      if (root!.children[i] === undefined) {
+      if (root.children[i] === undefined) {
         break;
       }
-      root = root!.children[i];
+      root = root.children[i];
     }
 
-    r = root!.r;
-    g = root!.g;
-    b = root!.b;
+    r = root.r;
+    g = root.g;
+    b = root.b;
 
     return new ColorRgb8(r, g, b);
   }
@@ -338,10 +338,11 @@ export class OctreeQuantizer implements Quantizer {
 
     const imageIt = image[Symbol.iterator]();
     const targetIt = target[Symbol.iterator]();
-    let imageItRes: IteratorResult<Pixel> | undefined = undefined;
-    let targetItRes: IteratorResult<Pixel> | undefined = undefined;
+    let imageItRes: IteratorResult<Pixel, Pixel> | undefined = undefined;
+    let targetItRes: IteratorResult<Pixel, Pixel> | undefined = undefined;
     while (
-      (((imageItRes = imageIt.next()), (targetItRes = targetIt.next())),
+      ((imageItRes = imageIt.next()),
+      (targetItRes = targetIt.next()),
       !imageItRes.done && !targetItRes.done)
     ) {
       const t = targetItRes.value;

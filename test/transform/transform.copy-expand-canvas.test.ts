@@ -192,7 +192,7 @@ describe('Transform', () => {
         newHeight: image.height * 2,
         padding: 50,
       })
-    ).toThrowError(LibError);
+    ).toThrow(LibError);
   });
 
   /**

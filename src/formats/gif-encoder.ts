@@ -12,6 +12,7 @@ import { Filter } from '../filter/filter.js';
 import { LibError } from '../error/lib-error.js';
 import { DitherKernel } from '../filter/dither-kernel.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
+import { Pixel } from '../image/pixel.js';
 
 /**
  * Interface for initializing GifEncoder options.
@@ -318,7 +319,7 @@ export class GifEncoder implements Encoder {
     const hTab = new Int32Array(GifEncoder._hSize);
     const codeTab = new Int32Array(GifEncoder._hSize);
     const pIter = image[Symbol.iterator]();
-    let pIterRes = pIter.next();
+    let pIterRes: IteratorResult<Pixel, Pixel> = pIter.next();
 
     this._initBits = initCodeSize + 1;
     this._nBits = this._initBits;
@@ -680,7 +681,7 @@ export class GifEncoder implements Encoder {
 
       this._lastImage = Filter.ditherImage({
         image: image,
-        quantizer: this._lastColorMap!,
+        quantizer: this._lastColorMap,
         kernel: this._dither,
         serpentine: this._ditherSerpentine,
       });

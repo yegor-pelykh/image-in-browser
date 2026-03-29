@@ -15,6 +15,7 @@ describe('injectExif realistic tags roundtrip', () => {
     if (v === null || v === undefined) return undefined;
     if (typeof v === 'string') return v;
     if (v instanceof IfdAsciiValue) return v.toString();
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return v.toString();
   }
 

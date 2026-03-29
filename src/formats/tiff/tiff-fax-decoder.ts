@@ -687,7 +687,7 @@ export class TiffFaxDecoder {
       bitsFromNextByte = 8;
     }
 
-    this._bytePointer = this._bytePointer! + 1;
+    this._bytePointer += 1;
 
     const i1 = (b & TiffFaxDecoder._table1[bitsLeft]) << (bitsToGet - bitsLeft);
     let i2 =
@@ -927,7 +927,7 @@ export class TiffFaxDecoder {
         break;
       }
 
-      while (isWhite === false) {
+      while (!isWhite) {
         // Black run
         current = this.nextLesserThan8Bits(4);
         entry = TiffFaxDecoder._initBlack[current];
@@ -1100,7 +1100,7 @@ export class TiffFaxDecoder {
 
     let i = start;
     for (; i < ces; i += 2) {
-      const temp = pce![i]!;
+      const temp = pce![i];
       if (temp > a0!) {
         this._lastChangingElement = i;
         ret[0] = temp;
@@ -1531,7 +1531,7 @@ export class TiffFaxDecoder {
           // Pass
           // We always assume WhiteIsZero format for fax.
           if (!isWhite) {
-            this.setToBlack(out, lineOffset, bitOffset, b2! - bitOffset);
+            this.setToBlack(out, lineOffset, bitOffset, b2 - bitOffset);
           }
           a0 = b2;
           bitOffset = a0;
