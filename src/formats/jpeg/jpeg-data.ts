@@ -71,32 +71,32 @@ export class JpegData {
     return this._input;
   }
 
-  private _jfif!: JpegJfif;
-  public get jfif(): JpegJfif {
+  private _jfif: JpegJfif | undefined;
+  public get jfif(): JpegJfif | undefined {
     return this._jfif;
   }
 
-  private _adobe!: JpegAdobe;
-  public get adobe(): JpegAdobe {
+  private _adobe: JpegAdobe | undefined;
+  public get adobe(): JpegAdobe | undefined {
     return this._adobe;
   }
 
-  private _frame?: JpegFrame;
+  private _frame: JpegFrame | undefined;
   public get frame(): JpegFrame | undefined {
     return this._frame;
   }
 
-  private _resetInterval!: number;
-  public get resetInterval(): number {
+  private _resetInterval: number | undefined;
+  public get resetInterval(): number | undefined {
     return this._resetInterval;
   }
 
-  private _comment?: string;
+  private _comment: string | undefined;
   public get comment(): string | undefined {
     return this._comment;
   }
 
-  private _iccProfile?: IccProfile;
+  private _iccProfile: IccProfile | undefined;
   public get iccProfile(): IccProfile | undefined {
     return this._iccProfile;
   }
