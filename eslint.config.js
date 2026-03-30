@@ -3,9 +3,9 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import config from 'eslint/config';
-import prettier from 'eslint-plugin-prettier/recommended';
 
 export default config.defineConfig(
+  config.globalIgnores(['lib/**/*'], 'Ignore Build Directory'),
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -83,16 +83,5 @@ export default config.defineConfig(
       '@typescript-eslint/prefer-literal-enum-member': ['off'],
       '@typescript-eslint/restrict-template-expressions': ['off'],
     },
-  },
-  prettier,
-  {
-    ignores: [
-      'dist/',
-      'build/',
-      'node_modules/',
-      'coverage/',
-      '*.min.js',
-      'package-lock.json',
-    ],
   }
 );
