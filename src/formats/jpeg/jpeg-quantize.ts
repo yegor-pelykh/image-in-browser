@@ -361,7 +361,10 @@ export abstract class JpegQuantize {
       case 3:
         {
           // The default transform for three components is true
-          colorTransform = jpeg.adobe.transformCode === 1;
+          colorTransform = true;
+          if (jpeg.adobe !== undefined) {
+            colorTransform = jpeg.adobe.transformCode === 1;
+          }
 
           component1 = jpeg.components[0];
           component2 = jpeg.components[1];
@@ -412,6 +415,9 @@ export abstract class JpegQuantize {
         break;
       case 4:
         {
+          if (jpeg.adobe === undefined) {
+            throw new LibError('Unsupported color mode (4 components)');
+          }
           // The default transform for four components is false
           colorTransform = false;
           // The adobe transform marker overrides any previous setting
