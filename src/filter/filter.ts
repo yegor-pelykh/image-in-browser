@@ -747,7 +747,13 @@ export abstract class Filter {
         continue;
       }
       if (mode === HistogramEqualizeMode.grayscale) {
-        const newl = Hmap[Math.round(p.luminance)];
+        const oriLuminance = MathUtils.clamp(p.luminance, 0, maxChannelValue);
+        const baseIndex = Math.min(Math.floor(oriLuminance), Hmap.length - 1);
+        const frac = oriLuminance - baseIndex;
+        const newl = Math.round(
+          Hmap[baseIndex] * (1 - frac) +
+            Hmap[Math.min(baseIndex + 1, Hmap.length - 1)] * frac
+        );
         const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(_maskChannel);
         if (msk === undefined) {
           p.r = newl;
@@ -760,7 +766,13 @@ export abstract class Filter {
         }
       } else {
         const hsl = ColorUtils.rgbToHsl(p.r, p.g, p.b);
-        const newl = Hmap[Math.round(hsl[2] * maxChannelValue)];
+        const oriLuminance = MathUtils.clamp(hsl[2], 0, 1) * maxChannelValue;
+        const baseIndex = Math.min(Math.floor(oriLuminance), Hmap.length - 1);
+        const frac = oriLuminance - baseIndex;
+        const newl = Math.round(
+          Hmap[baseIndex] * (1 - frac) +
+            Hmap[Math.min(baseIndex + 1, Hmap.length - 1)] * frac
+        );
         const newRGB = [0, 0, 0];
         ColorUtils.hslToRgb(hsl[0], hsl[1], newl / maxChannelValue, newRGB);
         const msk = mask?.getPixel(p.x, p.y).getChannelNormalized(_maskChannel);
@@ -3626,6 +3638,7 @@ export abstract class Filter {
         H[Math.round(l)]++;
         validPixelCounts++;
       }
+      if (validPixelCounts === 0) continue;
       const numPixelPerBin = validPixelCounts / numOutputBin;
       const Hmap = ArrayUtils.generate<number>(
         Math.ceil(image.maxChannelValue) + 1,
@@ -3713,6 +3726,7 @@ export abstract class Filter {
         H[Math.round(l)]++;
         validPixelCounts++;
       }
+      if (validPixelCounts === 0) continue;
       let lowPercentileBin = 0;
       let highPercentileBin = 0;
       let pCounter = 0;
@@ -3745,7 +3759,7 @@ export abstract class Filter {
           outputRangeMin;
         Hmap[l] = Math.max(
           outputRangeMin,
-          Math.min(Math.round(newIntensityLv), outputDynamicRange)
+          Math.min(Math.round(newIntensityLv), outputRangeMax)
         );
       }
       Filter.applyHistogramTransform(

@@ -614,6 +614,7 @@ describe('Filter', () => {
     for (let l = 221; l < 256; ++l) {
       expect(H[l]).toEqual(0);
     }
+    expect(H[220]).toBeGreaterThan(0);
 
     const output = encodeJpg({
       image: i0,
