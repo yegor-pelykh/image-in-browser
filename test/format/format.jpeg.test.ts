@@ -51,13 +51,19 @@ describe('Format: JPEG', () => {
     let ed2 = image2.exifData.imageIfd.get('XResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
-    expect(ed1!.equals(ed2!)).toBeTruthy();
+    if (ed1 === undefined || ed2 === undefined) {
+      return;
+    }
+    expect(ed1.equals(ed2)).toBeTruthy();
 
     ed1 = exifData.imageIfd.get('YResolution');
     ed2 = image2.exifData.imageIfd.get('YResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
-    expect(ed1!.equals(ed2!)).toBeTruthy();
+    if (ed1 === undefined || ed2 === undefined) {
+      return;
+    }
+    expect(ed1.equals(ed2)).toBeTruthy();
   });
 
   /**
@@ -91,13 +97,19 @@ describe('Format: JPEG', () => {
     let ed2 = image2.exifData.imageIfd.get('XResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
-    expect(ed1!.equals(ed2!)).toBeTruthy();
+    if (ed1 === undefined || ed2 === undefined) {
+      return;
+    }
+    expect(ed1.equals(ed2)).toBeTruthy();
 
     ed1 = exifData.imageIfd.get('YResolution');
     ed2 = image2.exifData.imageIfd.get('YResolution');
     expect(ed1).toBeDefined();
     expect(ed2).toBeDefined();
-    expect(ed1!.equals(ed2!)).toBeTruthy();
+    if (ed1 === undefined || ed2 === undefined) {
+      return;
+    }
+    expect(ed1.equals(ed2)).toBeTruthy();
   });
 
   // Test to verify the decoding of a PNG image with an ICC profile and its conversion to JPEG
