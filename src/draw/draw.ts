@@ -948,17 +948,24 @@ export abstract class Draw {
     mask?: MemoryImage
   ): void {
     let p: Pixel | undefined = undefined;
+    const dw = dst.width;
+    const dh = dst.height;
     if (mask !== undefined) {
       for (let y = 0; y < dstH; ++y) {
         for (let x = 0; x < dstW; ++x) {
+          const dx = dstX + x;
+          const dy = dstY + y;
+          if (dx >= dw || dy >= dh) {
+            continue;
+          }
           const sx = xCache[x];
           const sy = yCache[y];
           p = src.getPixel(sx, sy, p);
           const m = mask.getPixel(sx, sy).getChannelNormalized(maskChannel);
           if (m === 1) {
-            dst.setPixel(dstX + x, dstY + y, p);
+            dst.setPixel(dx, dy, p);
           } else {
-            const dp = dst.getPixel(dstX + x, dstY + y);
+            const dp = dst.getPixel(dx, dy);
             dp.r = MathUtils.mix(dp.r, p.r, m);
             dp.g = MathUtils.mix(dp.g, p.g, m);
             dp.b = MathUtils.mix(dp.b, p.b, m);
@@ -969,8 +976,13 @@ export abstract class Draw {
     } else {
       for (let y = 0; y < dstH; ++y) {
         for (let x = 0; x < dstW; ++x) {
+          const dx = dstX + x;
+          const dy = dstY + y;
+          if (dx >= dw || dy >= dh) {
+            continue;
+          }
           p = src.getPixel(xCache[x], yCache[y], p);
-          dst.setPixel(dstX + x, dstY + y, p);
+          dst.setPixel(dx, dy, p);
         }
       }
     }
