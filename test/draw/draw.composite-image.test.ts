@@ -20,6 +20,34 @@ import { TestUtils } from '../_utils/test-utils';
  */
 describe('Draw', () => {
   /**
+   * Test case for the compositeImage function with a large foreground image.
+   */
+  test('compositeImage large foreground', () => {
+    const i0 = new MemoryImage({
+      width: 256,
+      height: 256,
+    });
+    const i1 = new MemoryImage({
+      width: 512,
+      height: 512,
+      numChannels: 4,
+    });
+    i0.clear(new ColorRgba8(255, 0, 0, 255));
+    for (const p of i1) {
+      p.r = p.x;
+      p.g = p.y;
+      p.a = p.y;
+    }
+    Draw.compositeImage({
+      dst: i0,
+      src: i1,
+      dstX: 50,
+      dstY: 50,
+      blend: BlendMode.direct,
+    });
+  });
+
+  /**
    * Test case for the compositeImage function with synthesized images.
    */
   test('compositeImage', () => {
