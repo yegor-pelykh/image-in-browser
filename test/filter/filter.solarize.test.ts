@@ -1,17 +1,28 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, encodePng, Filter, SolarizeMode } from '../../src';
+import {
+  ColorRgb8,
+  decodePng,
+  encodePng,
+  Filter,
+  SolarizeMode,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import {
+  expectSolidColor,
+  horizontalGradient,
+  solidImage,
+} from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * Filter functionality.
  */
 describe('Filter', () => {
   /**
-   * Test case for solarizing highlights in an image.
+   * Solarizing highlights in an image.
    */
   test('solarize highlights', () => {
     const input = TestUtils.readFromFile(
@@ -45,7 +56,7 @@ describe('Filter', () => {
   });
 
   /**
-   * Test case for solarizing shadows in an image.
+   * Solarizing shadows in an image.
    */
   test('solarize shadows', () => {
     const input = TestUtils.readFromFile(
@@ -77,5 +88,24 @@ describe('Filter', () => {
       'solarize_shadows.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions and numChannels after solarize.
+   */
+  test('solarize preserves image dimensions and numChannels', () => {
+    const src = horizontalGradient(32, 8);
+    Filter.solarize({ image: src, threshold: 100 });
+    expect(src.width).toBe(32);
+    expect(src.height).toBe(8);
+  });
+
+  /**
+   * White pixels above threshold become black after solarize highlights.
+   */
+  test('solarize highlights: solid white above threshold inverts to black', () => {
+    const white = solidImage(8, 8, new ColorRgb8(255, 255, 255));
+    Filter.solarize({ image: white, threshold: 10 });
+    expectSolidColor(white, new ColorRgb8(0, 0, 0));
   });
 });

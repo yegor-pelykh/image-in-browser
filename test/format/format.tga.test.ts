@@ -1,13 +1,13 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodeTga, encodePng } from '../../src';
+import { decodeTga, encodePng, encodeTga } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for TGA format.
+ * TGA format decode, TGA round-trip, and PNG export.
  */
 describe('Format: TGA', () => {
   /**
@@ -19,33 +19,38 @@ describe('Format: TGA', () => {
     '.tga'
   );
 
-  // Iterate over each TGA file found
   for (const f of resFiles) {
     /**
-     * Test case for each TGA file.
-     * @param {string} f.nameExt - The name of the file with extension.
+     * Decodes TGA, round-trip re-encodes/re-decodes to verify dimensions, exports as PNG and TGA.
      */
     test(f.nameExt, () => {
-      // Read the input file
       const input = TestUtils.readFromFilePath(f.path);
 
-      // Decode the TGA file
       const image = decodeTga({
         data: input,
       });
 
-      // Ensure the image is defined
       expect(image).toBeDefined();
       if (image === undefined) {
         return;
       }
 
-      // Encode the image to PNG format
+      const tgaBytes = encodeTga({
+        image: image,
+      });
+      const rtImage = decodeTga({
+        data: tgaBytes,
+      });
+      expect(rtImage).toBeDefined();
+      if (rtImage !== undefined) {
+        expect(rtImage.width).toBe(image.width);
+        expect(rtImage.height).toBe(image.height);
+      }
+
       const output = encodePng({
         image: image,
       });
 
-      // Write the PNG output to the output test folder
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tga,
@@ -53,7 +58,6 @@ describe('Format: TGA', () => {
         output
       );
 
-      // Write the original TGA file to the output test folder
       TestUtils.writeToFile(
         TestFolder.output,
         TestSection.tga,

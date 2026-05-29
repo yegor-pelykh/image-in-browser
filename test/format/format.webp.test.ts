@@ -53,11 +53,11 @@ type WebPFileInfo = {
 };
 
 /**
- * Test suite for WEBP format handling.
+ * WEBP format handling.
  */
 describe('Format: WEBP', () => {
   /**
-   * Test for reading EXIF data from a WEBP image.
+   * Decodes buck_24.webp and verifies Orientation EXIF tag equals 1.
    */
   test('exif', () => {
     const input = TestUtils.readFromFile(
@@ -79,7 +79,7 @@ describe('Format: WEBP', () => {
   });
 
   /**
-   * Test for decoding and processing animated lossy WEBP images.
+   * Decoding and processing animated lossy WEBP images.
    */
   test('animated_lossy', () => {
     const input = TestUtils.readFromFile(
@@ -107,8 +107,8 @@ describe('Format: WEBP', () => {
     }
   });
 
-  /*
-   * Test for lossless compression with the subtractGreen transform.
+  /**
+   * Decodes test_animated.webp and verifies at least one visible non-transparent pixel exists.
    */
   test('lossless with subtractGreen transform', () => {
     const input = TestUtils.readFromFile(
@@ -135,7 +135,7 @@ describe('Format: WEBP', () => {
   });
 
   /**
-   * Test for validating the decoding of a WEBP image.
+   * Decodes 2b.webp, re-encodes, and compares pixel data against reference 2b.png.
    */
   test('validate', () => {
     const input = TestUtils.readFromFile(
@@ -161,7 +161,6 @@ describe('Format: WEBP', () => {
       output
     );
 
-    // Validate decoding
     const bytes = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.webp,
@@ -178,8 +177,8 @@ describe('Format: WEBP', () => {
   });
 
   /**
-   * Test for decoding a WebP image with an invalid last row,
-   * ensuring pixel alpha values are correctly processed.
+   * Decoding a WebP image with an invalid last row,
+   * Ensuring pixel alpha values are correctly processed.
    */
   test('webp invalid decode', () => {
     const input = TestUtils.readFromFile(
@@ -203,7 +202,7 @@ describe('Format: WEBP', () => {
   });
 
   /**
-   * Test for decoding a transparent animated WEBP image.
+   * Decodes animated_transparency.webp, verifies 20 frames, and checks frame 2 pixel is fully transparent.
    */
   test('decode transparent animation', () => {
     const input = TestUtils.readFromFile(
@@ -244,7 +243,7 @@ describe('Format: WEBP', () => {
 
   for (const file of resFiles) {
     /**
-     * Test for retrieving information from a WEBP file.
+     * Retrieving information from a WEBP file.
      */
     test(`get info - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(file.path);
@@ -270,7 +269,7 @@ describe('Format: WEBP', () => {
     });
 
     /**
-     * Test for decoding a WEBP file and saving it as a PNG.
+     * Decoding a WEBP file and saving it as a PNG.
      */
     test(`decode webp - ${file.nameExt}`, () => {
       const input = TestUtils.readFromFile(
@@ -324,10 +323,12 @@ describe('Format: WEBP', () => {
 
       expect(image.width).toBe(png4.width);
       expect(image.height).toBe(png4.height);
-      // TODO: Implement image comparison
     });
   }
 
+  /**
+   * Round-trip encodes/decodes 1_webp_ll.webp and verifies pixel-perfect RGBA equality.
+   */
   test('encode round-trip lossless', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -368,6 +369,9 @@ describe('Format: WEBP', () => {
     }
   });
 
+  /**
+   * Encodes a 4×4 RGB image to WebP and verifies pixel-perfect round-trip.
+   */
   test('encode rgb image', () => {
     const image = new MemoryImage({
       width: 4,
@@ -408,6 +412,9 @@ describe('Format: WEBP', () => {
     }
   });
 
+  /**
+   * Encodes a 4×4 RGBA image with varying per-pixel alpha and verifies round-trip.
+   */
   test('encode rgba image with alpha', () => {
     const image = new MemoryImage({
       width: 4,
@@ -450,6 +457,9 @@ describe('Format: WEBP', () => {
     }
   });
 
+  /**
+   * Encodes a 2×2 RGBA image to WebP, writes to disk, and verifies decode.
+   */
   test('encodeWebP', () => {
     const image = new MemoryImage({
       width: 2,

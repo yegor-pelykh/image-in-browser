@@ -17,12 +17,12 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for JPEG format handling.
+ * JPEG format handling.
  */
 describe('Format: JPEG', () => {
   /**
    * Test to inject new EXIF data into a JPEG image that does not have EXIF,
-   * and verify that the injected EXIF data is present and correct.
+   * And verify that the injected EXIF data is present and correct.
    */
   test('inject new EXIF', () => {
     const exifData = new ExifData();
@@ -68,7 +68,7 @@ describe('Format: JPEG', () => {
 
   /**
    * Test to replace existing EXIF data in a JPEG image with new EXIF data,
-   * and verify that the replacement EXIF data is present and correct.
+   * And verify that the replacement EXIF data is present and correct.
    */
   test('inject replacement EXIF', () => {
     const exifData = new ExifData();
@@ -112,7 +112,9 @@ describe('Format: JPEG', () => {
     expect(ed1.equals(ed2)).toBeTruthy();
   });
 
-  // Test to verify the decoding of a PNG image with an ICC profile and its conversion to JPEG
+  /**
+   * Decodes a PNG with an ICC profile and re-encodes as JPEG.
+   */
   test('png icc_profile', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,
@@ -139,7 +141,9 @@ describe('Format: JPEG', () => {
     );
   });
 
-  // Test to verify the decoding and re-encoding of a JPEG image with an ICC profile
+  /**
+   * Decodes and re-encodes a JPEG with an ICC profile.
+   */
   test('icc_profile', () => {
     const input = TestUtils.readFromFile(
       TestFolder.input,

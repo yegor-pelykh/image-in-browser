@@ -5,11 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ColorFloat64 } from '../../src';
 
 /**
- * Test suite for the Color class.
+ * Color immutability tests — float64 format.
  */
 describe('Color', () => {
   /**
-   * Test case for the ColorFloat64 class.
+   * ColorFloat64 with length 0 is immutable; setting r has no effect and all channels remain 0.
    */
   test('ColorFloat64', () => {
     const c0 = new ColorFloat64(0);

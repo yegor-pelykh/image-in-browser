@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * convolution filter: applies arbitrary convolution kernel matrices.
  */
 describe('Filter', () => {
   /**
-   * Test case for the convolution filter.
+   * Applies contrast then a Laplacian edge-detect kernel [0,1,0, 1,-4,1, 0,1,0] and writes output PNG.
    */
   test('convolution', () => {
-    // Read input image from file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,16 +29,13 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply contrast filter to the image
     Filter.contrast({
       image: i0,
       contrast: 150,
     });
 
-    // Define convolution filter matrix
     const filter = [0, 1, 0, 1, -4, 1, 0, 1, 0];
 
-    // Apply convolution filter to the image
     Filter.convolution({
       image: i0,
       filter: filter,
@@ -47,17 +43,26 @@ describe('Filter', () => {
       offset: 0,
     });
 
-    // Encode the processed image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image to file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'convolution.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after convolution filter.
+   */
+  test('convolution preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+    Filter.convolution({ image: src, filter: kernel, div: 1, offset: 0 });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

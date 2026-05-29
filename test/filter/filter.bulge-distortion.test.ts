@@ -1,27 +1,32 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, encodePng, Filter, Interpolation } from '../../src';
+import {
+  ColorRgb8,
+  decodePng,
+  encodePng,
+  Filter,
+  Interpolation,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { solidImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * bulgeDistortion filter: spherical lens distortion effect.
  */
 describe('Filter', () => {
   /**
-   * Test case for the bulgeDistortion filter.
+   * Applies bulgeDistortion with cubic interpolation and writes output PNG.
    */
   test('bulgeDistortion', () => {
-    // Read the input image from the file system.
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image.
     const i0 = decodePng({
       data: input,
     });
@@ -30,23 +35,30 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the bulgeDistortion filter to the image.
     Filter.bulgeDistortion({
       image: i0,
       interpolation: Interpolation.cubic,
     });
 
-    // Encode the processed image back to PNG format.
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image to the file system.
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'bulgeDistortion.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after bulge distortion.
+   */
+  test('bulgeDistortion preserves dimensions', () => {
+    const src = solidImage(40, 30, new ColorRgb8(100, 150, 200));
+    Filter.bulgeDistortion({ image: src });
+    expect(src.width).toBe(40);
+    expect(src.height).toBe(30);
   });
 });

@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage, imagesAreEqual } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * Filter functionality.
  */
 describe('Filter', () => {
   /**
-   * Test case for the grayscale filter.
+   * Grayscale filter.
    */
   test('grayscale', () => {
-    // Read the input PNG file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the PNG file into an image object
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,40 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the grayscale filter to the image
     Filter.grayscale({
       image: i0,
     });
 
-    // Encode the modified image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output PNG file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'grayscale.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after grayscale filter.
+   */
+  test('grayscale preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.grayscale({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
+  });
+
+  /**
+   * Applying grayscale twice equals applying once.
+   */
+  test('grayscale is idempotent', () => {
+    const src = checkerImage(32, 32);
+    Filter.grayscale({ image: src });
+    const after = src.clone();
+    Filter.grayscale({ image: src });
+    expect(imagesAreEqual(src, after)).toBe(true);
   });
 });

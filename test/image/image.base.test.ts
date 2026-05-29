@@ -18,7 +18,7 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for the MemoryImage class.
+ * Core MemoryImage construction, pixel access, byte conversion, and resize tests.
  */
 describe('MemoryImage', () => {
   /**
@@ -322,5 +322,27 @@ describe('MemoryImage', () => {
     expect(b1[1]).toBe(32);
     expect(b1[2]).toBe(64);
     expect(b1[3]).toBe(128);
+  });
+
+  /**
+   * Convert applies an explicit alpha value to all pixels.
+   */
+  test('convert applies an explicit alpha', () => {
+    const img = new MemoryImage({ width: 8, height: 8, numChannels: 4 });
+    for (const p of img) {
+      p.setRgba(10, 20, 30, 255);
+    }
+    const faded = img.convert({ alpha: 128 });
+    for (const p of faded) {
+      expect(p.r).toBe(10);
+      expect(p.g).toBe(20);
+      expect(p.b).toBe(30);
+      expect(p.a).toBe(128);
+    }
+    const rgb = new MemoryImage({ width: 4, height: 4 });
+    for (const p of rgb) {
+      p.setRgb(1, 2, 3);
+    }
+    expect(rgb.convert({ alpha: 128 }).numChannels).toBe(3);
   });
 });

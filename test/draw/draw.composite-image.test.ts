@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ArrayUtils,
   BlendMode,
+  ColorRgb8,
   ColorRgba8,
   decodePng,
   decodeTga,
@@ -14,13 +15,14 @@ import {
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { solidImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Draw module.
+ * Draw compositeImage operations.
  */
 describe('Draw', () => {
   /**
-   * Test case for the compositeImage function with a large foreground image.
+   * Composites a 512×512 source onto a 256×256 destination at offset (50,50) with direct blend.
    */
   test('compositeImage large foreground', () => {
     const i0 = new MemoryImage({
@@ -48,10 +50,68 @@ describe('Draw', () => {
   });
 
   /**
-   * Test case for the compositeImage function with synthesized images.
+   * Composited region exactly matches the source color.
+   */
+  test('compositeImage direct: region becomes source color', () => {
+    const dst = solidImage(32, 32, new ColorRgb8(0, 0, 255));
+    const src = solidImage(8, 8, new ColorRgb8(255, 0, 0));
+
+    Draw.compositeImage({
+      dst,
+      src,
+      dstX: 4,
+      dstY: 4,
+      blend: BlendMode.direct,
+    });
+
+    for (let y = 4; y < 12; y++) {
+      for (let x = 4; x < 12; x++) {
+        const p = dst.getPixel(x, y);
+        expect(p.r).toBe(255);
+        expect(p.g).toBe(0);
+        expect(p.b).toBe(0);
+      }
+    }
+
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 32; x++) {
+        const p = dst.getPixel(x, y);
+        expect(p.b).toBe(255);
+        expect(p.r).toBe(0);
+      }
+    }
+  });
+
+  /**
+   * Pixels outside the destination rectangle remain untouched.
+   */
+  test('compositeImage direct: pixels outside dst rect are unchanged', () => {
+    const dst = solidImage(20, 20, new ColorRgb8(255, 255, 255));
+    const src = solidImage(4, 4, new ColorRgb8(0, 0, 0));
+
+    Draw.compositeImage({
+      dst,
+      src,
+      dstX: 8,
+      dstY: 8,
+      blend: BlendMode.direct,
+    });
+
+    const corner = dst.getPixel(0, 0);
+    expect(corner.r).toBe(255);
+    expect(corner.g).toBe(255);
+    expect(corner.b).toBe(255);
+
+    const center = dst.getPixel(8, 8);
+    expect(center.r).toBe(0);
+    expect(center.g).toBe(0);
+    expect(center.b).toBe(0);
+  });
+
+  /**
+   * Composites synthesized and file-based TGA/PNG images with all blend modes.
    */
   test('compositeImage', () => {
-    // Create two MemoryImage instances with specified dimensions
     const i0 = new MemoryImage({
       width: 256,
       height: 256,
@@ -62,17 +122,14 @@ describe('Draw', () => {
       numChannels: 4,
     });
 
-    // Clear the first image with a solid red color
     i0.clear(new ColorRgba8(255, 0, 0, 255));
 
-    // Modify the second image's pixels
     for (const p of i1) {
       p.r = p.x;
       p.g = p.y;
       p.a = p.y;
     }
 
-    // Composite the second image onto the first image at specified positions and sizes
     Draw.compositeImage({
       dst: i0,
       src: i1,
@@ -91,7 +148,6 @@ describe('Draw', () => {
       dstH: 100,
     });
 
-    // Encode the resulting image to PNG format and write to file
     const output = encodePng({
       image: i0,
     });
@@ -103,7 +159,6 @@ describe('Draw', () => {
       output
     );
 
-    // Read and decode a TGA image file
     const fgBytes = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.tga,
@@ -117,19 +172,16 @@ describe('Draw', () => {
       return;
     }
 
-    // Convert the TGA image to have 4 channels
     fg = fg.convert({
       numChannels: 4,
     });
 
-    // Modify the alpha channel of the TGA image
     for (const p of fg) {
       if (p.r === 0 && p.g === 0 && p.b === 0) {
         p.a = 0;
       }
     }
 
-    // Read and decode a PNG image file
     const origBgBytes = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
@@ -143,7 +195,6 @@ describe('Draw', () => {
       return;
     }
 
-    // Composite the TGA image onto the PNG image at specified positions and sizes
     {
       const bg = origBg.clone();
       Draw.compositeImage({
@@ -184,7 +235,6 @@ describe('Draw', () => {
       );
     }
 
-    // Composite the TGA image onto the PNG image using different blend modes
     for (const blend of ArrayUtils.getNumEnumValues(BlendMode)) {
       const bg = origBg.clone();
       Draw.compositeImage({
@@ -207,7 +257,7 @@ describe('Draw', () => {
   });
 
   /**
-   * Test case for the compositeImage function with image files.
+   * Composites a foreground PNG onto a background PNG using a mask image.
    */
   test('compositeImage2', () => {
     const maskBytes = TestUtils.readFromFile(

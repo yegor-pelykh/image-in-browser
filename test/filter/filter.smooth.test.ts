@@ -1,27 +1,31 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, encodePng, Filter } from '../../src';
+import { ColorRgb8, decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import {
+  checkerImage,
+  imageVariance,
+  imagesAreEqual,
+  solidImage,
+} from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * smooth filter: applies edge-preserving smoothing.
  */
 describe('Filter', () => {
   /**
-   * Test case for the smooth filter.
+   * Applies smooth filter with weight=0.5 and writes output PNG.
    */
   test('smooth', () => {
-    // Read the input PNG file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the PNG file into an image object
     const i0 = decodePng({
       data: input,
     });
@@ -30,23 +34,50 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the smooth filter to the image
     Filter.smooth({
       image: i0,
       weight: 0.5,
     });
 
-    // Encode the modified image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output PNG file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'smooth.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after smooth filter.
+   */
+  test('smooth preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.smooth({ image: src, weight: 0.5 });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
+  });
+
+  /**
+   * Smooth has no effect on a uniformly colored image.
+   */
+  test('smooth on a solid-color image leaves it unchanged', () => {
+    const src = solidImage(32, 32, new ColorRgb8(80, 160, 40));
+    const orig = src.clone();
+    Filter.smooth({ image: src, weight: 0.5 });
+    expect(imagesAreEqual(src, orig)).toBe(true);
+  });
+
+  /**
+   * Smooth filter decreases pixel variance.
+   */
+  test('smooth reduces variance of a checker image', () => {
+    const src = checkerImage(64, 64, 4);
+    const before = imageVariance(src);
+    Filter.smooth({ image: src, weight: 0.5 });
+    expect(imageVariance(src)).toBeLessThan(before);
   });
 });

@@ -20,11 +20,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 
 /**
- * Test suite for GIF format operations.
+ * GIF format operations.
  */
 describe('Format: GIF', () => {
   /**
-   * Test case for bounce.gif animation.
+   * Decodes bounce.gif, re-encodes as GIF, and extracts each frame as PNG.
    */
   test('bounce', () => {
     const input1 = TestUtils.readFromFile(
@@ -66,7 +66,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for animated.gif animation.
+   * Decodes animated.gif, re-encodes as GIF, and extracts each frame as PNG.
    */
   test('animated', () => {
     const input1 = TestUtils.readFromFile(
@@ -108,7 +108,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for anim_palette GIF.
+   * Decodes anim_palette.gif and re-encodes as GIF.
    */
   test('anim_palette', () => {
     const input1 = TestUtils.readFromFile(
@@ -137,7 +137,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for hand_anim GIF.
+   * Decodes hand_anim.gif and re-encodes as GIF.
    */
   test('hand_anim', () => {
     const input1 = TestUtils.readFromFile(
@@ -166,7 +166,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for resizing hand_anim GIF.
+   * Decodes hand_anim.gif, halve dimensions, and re-encodes.
    */
   test('hand_anim resize', () => {
     const input1 = TestUtils.readFromFile(
@@ -219,7 +219,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for transparency animation using PNGs.
+   * Composes a multi-frame GIF from three PNGs with transparency.
    */
   test('transparencyAnim', () => {
     const input1 = TestUtils.readFromFile(
@@ -279,7 +279,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for resizing cars GIF.
+   * Decodes cars.gif, resizes to width 64, and re-encodes.
    */
   test('resizing', () => {
     const input = TestUtils.readFromFile(
@@ -313,7 +313,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for converting animated GIF to PNG.
+   * Decodes cars.gif, converts to RGBA uint8, and re-encodes frames as GIF.
    */
   test('convert animated', () => {
     const input = TestUtils.readFromFile(
@@ -362,7 +362,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for encoding animation with fixed number of frames.
+   * Encoding animation with fixed number of frames.
    */
   test('encodeAnimation', () => {
     const anim = new MemoryImage({
@@ -404,7 +404,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for encoding animation with variable FPS.
+   * Encoding animation with variable FPS.
    */
   test('encodeAnimation with variable FPS', () => {
     const anim = new MemoryImage({
@@ -449,7 +449,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for encoding small GIF.
+   * Decodes buck_24.gif, resizes to 16×16, and encodes back to GIF.
    */
   test('encode_small_gif', () => {
     const input = TestUtils.readFromFile(
@@ -480,8 +480,8 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for a regression preventing exception when decoding animated GIFs
-   * with varying local color palettes due to an incorrectly built remapColors map.
+   * A regression preventing exception when decoding animated GIFs
+   * With varying local color palettes due to an incorrectly built remapColors map.
    */
   test('palette_remap', () => {
     const input = TestUtils.readFromFile(
@@ -503,7 +503,7 @@ describe('Format: GIF', () => {
   });
 
   /**
-   * Test case for encoding and decoding all GIF files in the input folder.
+   * Encoding and decoding all GIF files in the input folder.
    */
   const inputFiles = TestUtils.listFiles(
     TestFolder.input,

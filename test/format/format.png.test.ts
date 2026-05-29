@@ -25,14 +25,14 @@ import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 
 /**
- * Test suite for PNG format.
+ * PNG encoding and decoding across bit depths, filter types, animations, metadata, and color profiles.
  */
 describe('Format: PNG', () => {
   const buck24Hash = 817446904;
   let buck24Image: MemoryImage | undefined = undefined;
 
   /**
-   * Test for PNG with luminance and alpha channels.
+   * PNG with luminance and alpha channels.
    */
   test('luminanceAlpha', () => {
     const input = TestUtils.readFromFile(
@@ -66,7 +66,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for flipping a PNG image horizontally.
+   * Flipping a PNG image horizontally.
    */
   test('hungry_180', () => {
     const input = TestUtils.readFromFile(
@@ -99,7 +99,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for creating a PNG animation with transparency.
+   * Creating a PNG animation with transparency.
    */
   test('transparencyAnim', () => {
     const input1 = TestUtils.readFromFile(
@@ -158,7 +158,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test suite for PNG with 1-bit depth grayscale.
+   * PNG with 1-bit depth grayscale.
    */
   describe('b1_1', () => {
     const image = new MemoryImage({
@@ -200,7 +200,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test suite for PNG with 1-bit depth grayscale and palette.
+   * PNG with 1-bit depth grayscale and palette.
    */
   describe('b1_1p', () => {
     const image = new MemoryImage({
@@ -237,14 +237,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 2-bit depth grayscale.
+   * PNG with 2-bit depth grayscale.
    */
   describe('b2_1', () => {
     const image = new MemoryImage({
@@ -279,14 +277,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 2-bit depth grayscale and palette.
+   * PNG with 2-bit depth grayscale and palette.
    */
   describe('b2_1p', () => {
     const image = new MemoryImage({
@@ -323,14 +319,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 4-bit depth grayscale.
+   * PNG with 4-bit depth grayscale.
    */
   describe('b4_1', () => {
     const image = new MemoryImage({
@@ -365,14 +359,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 4-bit depth grayscale and palette.
+   * PNG with 4-bit depth grayscale and palette.
    */
   describe('b4_1p', () => {
     const image = new MemoryImage({
@@ -409,14 +401,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 8-bit depth RGB.
+   * PNG with 8-bit depth RGB.
    */
   describe('b8_3', () => {
     const image = new MemoryImage({
@@ -451,14 +441,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 8-bit depth RGB and palette.
+   * PNG with 8-bit depth RGB and palette.
    */
   describe('b8_3p', () => {
     const image = new MemoryImage({
@@ -494,14 +482,12 @@ describe('Format: PNG', () => {
         if (image2 === undefined) {
           return;
         }
-
-        // ImageTestUtils.testImageEquals(image, image2);
       });
     }
   });
 
   /**
-   * Test suite for PNG with 16-bit depth RGB.
+   * PNG with 16-bit depth RGB.
    */
   describe('b16_3', () => {
     const image = new MemoryImage({
@@ -544,7 +530,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for decoding a PNG image.
+   * Decodes buck_24.png, verifies width/height/channels/format, and hashes against known value.
    */
   test('decode', () => {
     const input = TestUtils.readFromFile(
@@ -573,7 +559,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for encoding a PNG image with a palette.
+   * Encoding a PNG image with a palette.
    */
   test('encode palette', () => {
     const palette = new PaletteUint8(256, 3);
@@ -615,7 +601,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for decoding a PNG image with a palette.
+   * Decoding a PNG image with a palette.
    */
   test('decode palette', () => {
     const input = TestUtils.readFromFile(
@@ -650,7 +636,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for encoding a PNG image with no filter.
+   * Encoding a PNG image with no filter.
    */
   test('encode filter:none', () => {
     const data = encodePng({
@@ -679,7 +665,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for encoding a PNG image with sub filter.
+   * Encoding a PNG image with sub filter.
    */
   test('encode filter:sub', () => {
     const data = encodePng({
@@ -708,7 +694,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test for encoding a PNG image with up filter.
+   * Encoding a PNG image with up filter.
    */
   test('encode filter:up', () => {
     const data = encodePng({
@@ -795,7 +781,7 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test decoding an animated PNG image.
+   * Decodes known APNG test files and verifies frame count matches expected values.
    */
   test('decodeAnimation', () => {
     type TestExampleInfo = {
@@ -945,8 +931,8 @@ describe('Format: PNG', () => {
   });
 
   /**
-   * Test case for verifying the pHYs (physical pixel dimensions) chunk
-   * in PNG encoding and decoding.
+   * Verifying the pHYs (physical pixel dimensions) chunk
+   * In PNG encoding and decoding.
    */
   test('pHYs', () => {
     const img = new MemoryImage({
@@ -1040,7 +1026,6 @@ describe('Format: PNG', () => {
   for (const file of resFiles) {
     test(`PNG ${file.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(file.path);
-      // X* png's are corrupted and are supposed to crash.
       if (file.nameExt.toLowerCase().startsWith('x')) {
         expect(() => {
           const image = decodePng({

@@ -22,11 +22,11 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for image filter operations.
+ * Image filter operations.
  */
 describe('Filter', () => {
-  /*
-   * Test case for basic histogram equalization on a JPEG image.
+  /**
+   * Basic histogram equalization on a JPEG image.
    */
   test('histogramEqualization_jpg1', () => {
     const bytes = TestUtils.readFromFile(
@@ -55,9 +55,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization with specified
-   * output min/max range on a JPEG image.
+  /**
+   * Histogram equalization with specified output min/max range on a JPEG
+   * image.
    */
   test('histogramEqualization_minmax', () => {
     const bytes = TestUtils.readFromFile(
@@ -88,9 +88,8 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for color histogram equalization
-   * with custom output range on a PNG image.
+  /**
+   * Color histogram equalization with custom output range on a PNG image.
    */
   test('histogramEqualization Color', () => {
     const bytes = TestUtils.readFromFile(
@@ -122,9 +121,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on a synthetic image
-   * to verify pixel distribution.
+  /**
+   * Histogram equalization on a synthetic image to verify pixel
+   * distribution.
    */
   test('histogramEqualization synthetic1', () => {
     const i0 = new MemoryImage({
@@ -169,9 +168,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on a synthetic image
-   * with output range constraints and histogram verification.
+  /**
+   * Histogram equalization on a synthetic image with output range
+   * constraints and histogram verification.
    */
   test('histogramEqualization synthetic2', () => {
     const i0 = new MemoryImage({
@@ -229,9 +228,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on another synthetic image
-   * with detailed histogram distribution verification.
+  /**
+   * Histogram equalization on a synthetic image with detailed histogram
+   * distribution verification.
    */
   test('histogramEqualization synthetic3', () => {
     const i0 = new MemoryImage({
@@ -283,9 +282,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on a single-channel PNG image,
-   * verifying luminance computation and pixel distribution.
+  /**
+   * Histogram equalization on a single-channel PNG image, verifying
+   * luminance computation and pixel distribution.
    */
   test('histogramEqualization format1', () => {
     const bytes = TestUtils.readFromFile(
@@ -332,8 +331,8 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for color histogram equalization on a multi-channel
+  /**
+   * Color histogram equalization on a multi-channel
    * PNG image, verifying pixel distribution.
    */
   test('histogramEqualization format2', () => {
@@ -382,8 +381,8 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on a 4-bit grayscale PNG image.
+  /**
+   * Histogram equalization on a 4-bit grayscale PNG image.
    */
   test('histogramEqualization format3', () => {
     const bytes = TestUtils.readFromFile(
@@ -413,8 +412,8 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on a 4-channel TGA image.
+  /**
+   * Histogram equalization on a 4-channel TGA image.
    */
   test('histogramEqualization format4', () => {
     const bytes = TestUtils.readFromFile(
@@ -444,9 +443,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for color histogram equalization on an animated GIF image,
-   * checking a specific frame's pixel distribution.
+  /**
+   * Color histogram equalization on an animated GIF image, checking a
+   * specific frame's pixel distribution.
    */
   test('histogramEqualization format5', () => {
     const bytes = TestUtils.readFromFile(
@@ -494,8 +493,8 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram equalization on an animated GIF with transparency,
+  /**
+   * Histogram equalization on an animated GIF with transparency,
    * accounting for valid pixels in histogram calculation.
    */
   test('histogramEqualization format6', () => {
@@ -547,8 +546,8 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for basic histogram stretching on a JPEG image.
+  /**
+   * Basic histogram stretching on a JPEG image.
    */
   test('histogramStretch_jpg1', () => {
     const bytes = TestUtils.readFromFile(
@@ -577,9 +576,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for histogram stretching with specified output min/max range
-   * on a JPEG image, verifying pixel bounds.
+  /**
+   * Histogram stretching with specified output min/max range on a JPEG
+   * image, verifying pixel bounds.
    */
   test('histogramStretch_minmax', () => {
     const bytes = TestUtils.readFromFile(
@@ -627,9 +626,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for color histogram stretching with a stretch clip ratio
-   * on a PNG image, verifying pixel distribution at output extremes.
+  /**
+   * Color histogram stretching with a stretch clip ratio on a PNG image,
+   * verifying pixel distribution at output extremes.
    */
   test('histogramStretch Color', () => {
     const bytes = TestUtils.readFromFile(
@@ -675,9 +674,9 @@ describe('Filter', () => {
     );
   });
 
-  /*
-   * Test case for color histogram stretching on an animated GIF with transparency
-   * and output range maximum, accounting for valid pixels.
+  /**
+   * Color histogram stretching on an animated GIF with transparency and
+   * output range maximum, accounting for valid pixels.
    */
   test('histogramStretch format1', () => {
     const bytes = TestUtils.readFromFile(

@@ -1,63 +1,96 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, encodePng, Transform } from '../../src';
+import {
+  ColorRgb8,
+  decodePng,
+  encodePng,
+  MemoryImage,
+  Transform,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { imagesAreEqual, solidImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Transform module.
+ * Transform copyCropCircle operations.
  */
 describe('Transform', () => {
   /**
-   * Test case for the copyCropCircle function.
+   * Crops a PNG to a circle and validates resulting dimensions.
    */
   test('copyCropCircle', () => {
-    // Read the input image from file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input image
     const image = decodePng({
       data: input,
     });
 
-    // Ensure the image is defined
     expect(image).toBeDefined();
     if (image === undefined) {
       return;
     }
 
-    // Convert the image to have 4 channels
     const i0 = image.convert({
       numChannels: 4,
     });
 
-    // Apply the copyCropCircle transformation
     const i0_1 = Transform.copyCropCircle({
       image: i0,
     });
 
-    // Validate the dimensions and format of the transformed image
     expect(i0_1.width).toBe(186);
     expect(i0_1.height).toBe(186);
     expect(i0_1.format).toBe(i0.format);
 
-    // Encode the transformed image to PNG format
     const output = encodePng({
       image: i0_1,
     });
 
-    // Write the output image to file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.transform,
       'copyCropCircle.png',
       output
     );
+  });
+
+  /**
+   * Result dimensions equal the diameter of the circle.
+   */
+  test('result dimensions equal diameter of the circle', () => {
+    const src = solidImage(64, 64, new ColorRgb8(255, 0, 0), 4);
+    const r = 20;
+    const result = Transform.copyCropCircle({
+      image: src,
+      radius: r,
+    });
+    expect(result.width).toBe(r * 2);
+    expect(result.height).toBe(r * 2);
+  });
+
+  /**
+   * Default radius uses half the shorter side of the image.
+   */
+  test('default radius uses half the shorter side', () => {
+    const src = solidImage(40, 30, new ColorRgb8(0, 255, 0), 4);
+    const result = Transform.copyCropCircle({ image: src });
+    expect(result.width).toBe(30);
+    expect(result.height).toBe(30);
+  });
+
+  /**
+   * CopyCropCircle does not mutate the source image.
+   */
+  test('copyCropCircle does not mutate source', () => {
+    const src = solidImage(32, 32, new ColorRgb8(100, 150, 200), 4);
+    const orig = src.clone();
+    Transform.copyCropCircle({ image: src, radius: 12 });
+    expect(imagesAreEqual(src, orig)).toBe(true);
   });
 });

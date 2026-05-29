@@ -5,11 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { Format, MemoryImage } from '../../src';
 
 /**
- * Test suite for the MemoryImage class.
+ * MemoryImage — uint4 pixel format tests.
  */
 describe('MemoryImage', () => {
   /**
-   * Test case for a 32x32 image with uint4 format and 1 channel.
+   * A 32x32 image with uint4 format and 1 channel.
    */
   test('uint4 nc:1', () => {
     const i1 = new MemoryImage({
@@ -43,7 +43,7 @@ describe('MemoryImage', () => {
   });
 
   /**
-   * Test case for a 32x32 image with uint4 format and 2 channels.
+   * A 32x32 image with uint4 format and 2 channels.
    */
   test('uint4 nc:2', () => {
     const i2 = new MemoryImage({
@@ -79,7 +79,7 @@ describe('MemoryImage', () => {
   });
 
   /**
-   * Test case for a 32x32 image with uint4 format and 3 channels.
+   * A 32x32 image with uint4 format and 3 channels.
    */
   test('uint4 nc:3', () => {
     const i3 = new MemoryImage({
@@ -120,7 +120,7 @@ describe('MemoryImage', () => {
   });
 
   /**
-   * Test case for a 32x32 image with uint4 format and 4 channels.
+   * A 32x32 image with uint4 format and 4 channels.
    */
   test('uint4 nc:4', () => {
     const i4 = new MemoryImage({
@@ -157,7 +157,7 @@ describe('MemoryImage', () => {
   });
 
   /**
-   * Test case for a 32x32 image with uint4 format, 3 channels, and a palette.
+   * A 32x32 image with uint4 format, 3 channels, and a palette.
    */
   test('uint4 nc:3 palette', () => {
     const i5 = new MemoryImage({
@@ -200,7 +200,7 @@ describe('MemoryImage', () => {
   });
 
   /**
-   * Test case for a 32x32 image with uint4 format, 4 channels, and a palette.
+   * A 32x32 image with uint4 format, 4 channels, and a palette.
    */
   test('uint4 nc:4 palette', () => {
     const i6 = new MemoryImage({

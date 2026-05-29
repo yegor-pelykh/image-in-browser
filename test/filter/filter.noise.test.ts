@@ -5,13 +5,14 @@ import { decodePng, encodePng, Filter, NoiseType } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage, imageVariance } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter module.
+ * Filter module.
  */
 describe('Filter', () => {
   /**
-   * Test case for applying Gaussian noise to an image.
+   * Applying Gaussian noise to an image.
    */
   test('noise gaussian', () => {
     const input = TestUtils.readFromFile(
@@ -45,7 +46,7 @@ describe('Filter', () => {
   });
 
   /**
-   * Test case for applying uniform noise to an image.
+   * Applying uniform noise to an image.
    */
   test('noise uniform', () => {
     const input = TestUtils.readFromFile(
@@ -80,7 +81,7 @@ describe('Filter', () => {
   });
 
   /**
-   * Test case for applying salt and pepper noise to an image.
+   * Applying salt and pepper noise to an image.
    */
   test('noise saltAndPepper', () => {
     const input = TestUtils.readFromFile(
@@ -115,7 +116,7 @@ describe('Filter', () => {
   });
 
   /**
-   * Test case for applying Poisson noise to an image.
+   * Applying Poisson noise to an image.
    */
   test('noise poisson', () => {
     const input = TestUtils.readFromFile(
@@ -150,7 +151,7 @@ describe('Filter', () => {
   });
 
   /**
-   * Test case for applying Rice noise to an image.
+   * Applying Rice noise to an image.
    */
   test('noise rice', () => {
     const input = TestUtils.readFromFile(
@@ -182,5 +183,25 @@ describe('Filter', () => {
       'noise_rice.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after noise filter.
+   */
+  test('noise preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.noise({ image: src, type: NoiseType.gaussian, sigma: 10 });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
+  });
+
+  /**
+   * Gaussian noise increases pixel variance of a checker image.
+   */
+  test('gaussian noise increases variance of a checker image', () => {
+    const src = checkerImage(32, 32, 4);
+    const varianceBefore = imageVariance(src);
+    Filter.noise({ image: src, type: NoiseType.gaussian, sigma: 30 });
+    expect(imageVariance(src)).not.toBe(varianceBefore);
   });
 });

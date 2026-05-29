@@ -5,11 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ColorInt8 } from '../../src';
 
 /**
- * Test suite for the Color class.
+ * Color immutability tests — int8 format.
  */
 describe('Color', () => {
   /**
-   * Test case for the ColorInt8 class.
+   * ColorInt8 with length 0 is immutable; setting r has no effect and all channels remain 0.
    */
   test('ColorInt8', () => {
     const c0 = new ColorInt8(0);

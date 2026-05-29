@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * edgeGlow filter: applies a neon-like glow to detected edges.
  */
 describe('Filter', () => {
   /**
-   * Test case for the edgeGlow filter.
+   * Applies edgeGlow with default parameters and writes output PNG.
    */
   test('edgeGlow', () => {
-    // Read the input PNG file for testing
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the PNG file into an image object
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,29 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the edgeGlow filter to the image
     Filter.edgeGlow({
       image: i0,
     });
 
-    // Encode the modified image back into a PNG file
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output PNG file to the specified location
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'edgeGlow.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after edgeGlow filter.
+   */
+  test('edgeGlow preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.edgeGlow({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

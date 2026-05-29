@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter, PixelateMode } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * pixelate filter: creates blocky pixelation effect.
  */
 describe('Filter', () => {
   /**
-   * Test case for the pixelate filter.
+   * Applies pixelate in upperLeft and average modes (size=10) and writes both variants.
    */
   test('pixelate', () => {
-    // Read the input image from file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,16 +29,13 @@ describe('Filter', () => {
       return;
     }
 
-    // Clone the decoded image
     const i1 = i0.clone();
 
-    // Apply pixelate filter with default settings
     Filter.pixelate({
       image: i0,
       size: 10,
     });
 
-    // Encode the pixelated image and write to file
     let output = encodePng({
       image: i0,
     });
@@ -50,14 +46,12 @@ describe('Filter', () => {
       output
     );
 
-    // Apply pixelate filter with average mode
     Filter.pixelate({
       image: i1,
       size: 10,
       mode: PixelateMode.average,
     });
 
-    // Encode the pixelated image with average mode and write to file
     output = encodePng({
       image: i1,
     });
@@ -67,5 +61,15 @@ describe('Filter', () => {
       'pixelate_average.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after pixelate filter.
+   */
+  test('pixelate preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.pixelate({ image: src, size: 8 });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * bumpToNormal filter: converts a heightmap to a normal map.
  */
 describe('Filter', () => {
   /**
-   * Test case for the bumpToNormal function.
+   * Converts a sample image to a normal map and writes output PNG.
    */
   test('bumpToNormal', () => {
-    // Read the input PNG file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG file
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,29 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the bumpToNormal filter
     const i1 = Filter.bumpToNormal({
       image: i0,
     });
 
-    // Encode the filtered image back to PNG
     const output = encodePng({
       image: i1,
     });
 
-    // Write the output PNG file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'bumpToNormal.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after bumpToNormal.
+   */
+  test('bumpToNormal preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.bumpToNormal({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

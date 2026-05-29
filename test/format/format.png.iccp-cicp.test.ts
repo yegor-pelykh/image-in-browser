@@ -40,37 +40,21 @@ describe('Format: PNG (ICCP/CICP)', () => {
       expect(p.a).toBe(a);
     };
 
-    // Row 0 – fully-opaque colour pixels
-    // red
     checkPixel(0, 0, 255, 0, 0, 255);
-    // green
     checkPixel(1, 0, 0, 255, 0, 255);
-    // blue
     checkPixel(2, 0, 0, 0, 255, 255);
-    // white
     checkPixel(3, 0, 255, 255, 255, 255);
 
-    // Row 1 – mixed opacity
-    // black opaque
     checkPixel(0, 1, 0, 0, 0, 255);
-    // grey
     checkPixel(1, 1, 128, 128, 128, 255);
-    // yellow
     checkPixel(2, 1, 255, 255, 0, 255);
-    // fully transparent
     checkPixel(3, 1, 0, 0, 0, 0);
 
-    // Row 2 – more colours
-    // cyan
     checkPixel(0, 2, 0, 255, 255, 255);
-    // magenta
     checkPixel(1, 2, 255, 0, 255, 255);
-    // orange
     checkPixel(2, 2, 255, 128, 0, 255);
-    // semi-transparent red
     checkPixel(3, 2, 200, 0, 0, 128);
 
-    // Row 3 – all transparent
     for (let x = 0; x < 4; x++) {
       checkPixel(x, 3, 0, 0, 0, 0);
     }
@@ -114,8 +98,6 @@ describe('Format: PNG (ICCP/CICP)', () => {
 
     const cicp = decoder.info.cicpData;
 
-    // Our test PNG has cICP = [12, 13, 0, 1] (Display P3, sRGB transfer,
-    // identity matrix, full range).
     expect(cicp.colorPrimaries).toBe(12);
     expect(cicp.transferCharacteristics).toBe(13);
     expect(cicp.matrixCoefficients).toBe(0);
@@ -150,7 +132,6 @@ describe('Format: PNG (ICCP/CICP)', () => {
       })
     );
 
-    // Decode the re-encoded PNG
     const reDecoder = new PngDecoder();
     reDecoder.startDecode(encoded);
 

@@ -1,17 +1,17 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePvr, encodePng } from '../../src';
+import { decodePvr, encodePng, PvrDecoder } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for PVR (PVRTC) format.
+ * PVR (PVRTC) format.
  */
 describe('Format: PVR (PVRTC)', () => {
   /**
-   * Test case for decoding and encoding a specific PVR file (globe.pvr).
+   * Decoding and encoding a specific PVR file (globe.pvr).
    */
   test('globe', () => {
     const input = TestUtils.readFromFile(
@@ -49,10 +49,7 @@ describe('Format: PVR (PVRTC)', () => {
   );
   for (const file of resFiles) {
     /**
-     * Test case for decoding and encoding each PVR file found in the input folder.
-     * @param {Object} file - The file object containing file details.
-     * @param {string} file.nameExt - The name of the file with extension.
-     * @param {string} file.path - The full path to the file.
+     * Decodes PVR, encodes to PNG, verifies deterministic re-decode yields same dimensions.
      */
     test(`decode ${file.nameExt}`, () => {
       const input = TestUtils.readFromFilePath(file.path);
@@ -74,6 +71,14 @@ describe('Format: PVR (PVRTC)', () => {
         `${file.name}.png`,
         output
       );
+
+      const pvr2 = new PvrDecoder();
+      const img2 = pvr2.decode({ bytes: input });
+      expect(img2).toBeDefined();
+      if (img2 !== undefined) {
+        expect(img2.width).toBe(pvr.width);
+        expect(img2.height).toBe(pvr.height);
+      }
     });
   }
 });

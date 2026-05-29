@@ -59,11 +59,11 @@ type TiffFileInfo = {
 };
 
 /**
- * Test suite for TIFF format handling.
+ * TIFF format handling.
  */
 describe('Format: TIFF', () => {
   /**
-   * Test case for decoding a TIFF file with deflate compression and encoding it to PNG.
+   * Decoding a TIFF file with deflate compression and encoding it to PNG.
    */
   test('deflate', () => {
     const input = TestUtils.readFromFile(
@@ -91,7 +91,7 @@ describe('Format: TIFF', () => {
   });
 
   /**
-   * Test case for decoding a 16-bit colormap TIFF file and encoding it to PNG.
+   * Decoding a 16-bit colormap TIFF file and encoding it to PNG.
    */
   test('16bit colormap', () => {
     const input = TestUtils.readFromFile(
@@ -123,7 +123,7 @@ describe('Format: TIFF', () => {
   });
 
   /**
-   * Test case for encoding and decoding various TIFF images.
+   * Encoding and decoding various TIFF images.
    */
   test('encode', () => {
     const i0 = new MemoryImage({
@@ -243,7 +243,7 @@ describe('Format: TIFF', () => {
   });
 
   /**
-   * Test case for decoding a CMYK TIFF file and encoding it to PNG.
+   * Decoding a CMYK TIFF file and encoding it to PNG.
    */
   test('cmyk', () => {
     const input = TestUtils.readFromFile(
@@ -277,7 +277,7 @@ describe('Format: TIFF', () => {
   });
 
   /**
-   * Test case for getting information from all TIFF files in the input folder.
+   * Getting information from all TIFF files in the input folder.
    */
   const resFiles = TestUtils.listFiles(
     TestFolder.input,
@@ -320,7 +320,7 @@ describe('Format: TIFF', () => {
   }
 
   /**
-   * Test case for decoding all TIFF files in the input folder and re-encoding them to PNG and TIFF.
+   * Decoding all TIFF files in the input folder and re-encoding them to PNG and TIFF.
    */
   for (const file of resFiles) {
     test(`decode ${file.nameExt}`, () => {
@@ -393,7 +393,7 @@ describe('Format: TIFF', () => {
   }
 
   /**
-   * Test for reading a multipage TIFF file. Ensures that all pages are correctly detected and parsed.
+   * Reading a multipage TIFF file. Ensures that all pages are correctly detected and parsed.
    */
   test('multipageTiff', () => {
     const input = TestUtils.readFromFile(

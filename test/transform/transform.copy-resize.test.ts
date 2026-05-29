@@ -14,11 +14,11 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for the Transform module.
+ * Transform copyResize operations.
  */
 describe('Transform', () => {
   /**
-   * Test case for the copyResize function using nearest neighbor interpolation.
+   * CopyResize function using nearest neighbor interpolation.
    */
   test('copyResize nearest', () => {
     const input = TestUtils.readFromFile(
@@ -54,7 +54,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function using average interpolation.
+   * CopyResize function using average interpolation.
    */
   test('copyResize average', () => {
     const input = TestUtils.readFromFile(
@@ -91,7 +91,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function using linear interpolation.
+   * CopyResize function using linear interpolation.
    */
   test('copyResize linear', () => {
     const input = TestUtils.readFromFile(
@@ -128,7 +128,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function using cubic interpolation.
+   * CopyResize function using cubic interpolation.
    */
   test('copyResize cubic', () => {
     const input = TestUtils.readFromFile(
@@ -165,7 +165,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio.
+   * CopyResize function maintaining aspect ratio.
    */
   test('copyResize maintainAspect', () => {
     const input = TestUtils.readFromFile(
@@ -204,7 +204,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with a palette image.
+   * CopyResize function maintaining aspect ratio with a palette image.
    */
   test('copyResize maintainAspect palette', () => {
     const input = TestUtils.readFromFile(
@@ -243,7 +243,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with a different image size.
+   * Maintains aspect ratio scaling a 100×50 wide image into a 200×200 square.
    */
   test('copyResize maintainAspect 2', () => {
     const i0 = new MemoryImage({
@@ -275,7 +275,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with another different image size.
+   * Maintains aspect ratio scaling a 50×100 tall image into a 200×200 square.
    */
   test('copyResize maintainAspect 3', () => {
     const i0 = new MemoryImage({
@@ -307,7 +307,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with yet another different image size.
+   * Maintains aspect ratio scaling a 100×50 wide image into a 50×100 taller canvas.
    */
   test('copyResize maintainAspect 4', () => {
     const i0 = new MemoryImage({
@@ -339,7 +339,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with another different image size.
+   * Maintains aspect ratio scaling a 50×100 tall image into a 100×50 wider canvas.
    */
   test('copyResize maintainAspect 5', () => {
     const i0 = new MemoryImage({
@@ -371,7 +371,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with a tall image.
+   * Maintains aspect ratio scaling a 50×100 tall image into a 100×500 extremely tall canvas.
    */
   test('copyResize maintainAspect 6', () => {
     const i0 = new MemoryImage({
@@ -403,7 +403,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function maintaining aspect ratio with a wide image.
+   * Maintains aspect ratio scaling a 100×50 wide image into a 500×100 extremely wide canvas.
    */
   test('copyResize maintainAspect 7', () => {
     const i0 = new MemoryImage({
@@ -435,7 +435,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResize function with a palette image.
+   * Copy-resizes a palette image using cubic interpolation.
    */
   test('copyResize palette', () => {
     const input = TestUtils.readFromFile(

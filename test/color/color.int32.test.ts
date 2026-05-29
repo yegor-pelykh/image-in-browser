@@ -5,11 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ColorInt32 } from '../../src';
 
 /**
- * Test suite for the Color class.
+ * Color immutability tests — int32 format.
  */
 describe('Color', () => {
   /**
-   * Test case for the ColorInt32 class.
+   * ColorInt32 with length 0 is immutable; setting r has no effect and all channels remain 0.
    */
   test('ColorInt32', () => {
     const c0 = new ColorInt32(0);

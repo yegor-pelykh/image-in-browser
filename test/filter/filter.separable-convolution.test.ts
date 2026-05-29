@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter, SeparableKernel } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter module.
+ * separableConvolution filter: efficient separable kernel convolution.
  */
 describe('Filter', () => {
   /**
-   * Test case for the separableConvolution function.
+   * Applies a Gaussian separable convolution kernel (radius=5) and writes output PNG.
    */
   test('separableConvolution', () => {
-    // Read input image from file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -33,7 +32,6 @@ describe('Filter', () => {
     const radius = 5;
     const kernel = new SeparableKernel(radius);
 
-    // Compute coefficients for the separable kernel
     const sigma = radius * (2 / 3);
     const s = 2 * sigma * sigma;
 
@@ -44,26 +42,36 @@ describe('Filter', () => {
       kernel.setCoefficient(x + radius, c);
     }
 
-    // Normalize the coefficients
     kernel.scaleCoefficients(1 / sum);
 
-    // Apply the separable convolution filter
     Filter.separableConvolution({
       image: i0,
       kernel: kernel,
     });
 
-    // Encode the output image to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image to file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'separableConvolution.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after separable convolution.
+   */
+  test('separableConvolution preserves dimensions', () => {
+    const src = checkerImage(32, 32);
+    const kernel = new SeparableKernel(1);
+    kernel.setCoefficient(0, 1);
+    kernel.setCoefficient(1, 2);
+    kernel.setCoefficient(2, 1);
+    Filter.separableConvolution({ image: src, kernel });
+    expect(src.width).toBe(32);
+    expect(src.height).toBe(32);
   });
 });

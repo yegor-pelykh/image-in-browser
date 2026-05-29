@@ -5,12 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ColorUint1 } from '../../src';
 
 /**
- * Test suite for the Color class.
+ * Color immutability tests — uint1 format.
  */
 describe('Color', () => {
   /**
-   * Test case for the ColorUint1 class.
-   * This test verifies the properties and methods of the ColorUint1 class.
+   * ColorUint1 with length 0 is immutable; rgba(1,0,1,1) creates a 4-channel instance.
    */
   test('ColorUint1', () => {
     const c0 = new ColorUint1(0);

@@ -6,6 +6,7 @@ import {
   ColorRgb8,
   decodePng,
   encodePng,
+  ExifData,
   LibError,
   MemoryImage,
   Transform,
@@ -14,17 +15,21 @@ import { ExpandCanvasPosition } from '../../src/transform/expand-canvas-position
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import {
+  imagesAreEqual,
+  quadrantImage,
+  solidImage,
+} from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Transform module.
+ * Transform copyExpandCanvas operations.
  */
 describe('Transform', () => {
-  // Loop through each position in ExpandCanvasPosition enum
   for (const position of ArrayUtils.getNumEnumValues(ExpandCanvasPosition)) {
     const strPosition = ExpandCanvasPosition[position];
 
     /**
-     * Test the copyExpandCanvas function with different positions.
+     * Expands canvas and places image at the specified position alignment.
      */
     test(`copyExpandCanvas - ${strPosition}`, () => {
       const input = TestUtils.readFromFile(
@@ -61,7 +66,7 @@ describe('Transform', () => {
   }
 
   /**
-   * Test the copyExpandCanvas function with default parameters.
+   * Expands canvas to double size with default center alignment.
    */
   test('copyExpandCanvas - default parameters', () => {
     const input = TestUtils.readFromFile(
@@ -135,7 +140,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test the copyExpandCanvas function with padding.
+   * Expands canvas by 50px padding on all sides.
    */
   test('copyExpandCanvas - with padding', () => {
     const input = TestUtils.readFromFile(
@@ -168,8 +173,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test the copyExpandCanvas function with new dimensions and padding.
-   * Expect an error to be thrown.
+   * Throws error when both new dimensions and padding are specified.
    */
   test('copyExpandCanvas - with new dimensions and padding', () => {
     const input = TestUtils.readFromFile(
@@ -196,8 +200,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test the copyExpandCanvas function with an alpha image.
-   * The function should expand the canvas and fill the background with white color.
+   * Expands canvas of an alpha PNG with a white background fill.
    */
   test('copyExpandCanvas - alpha image', () => {
     const input = TestUtils.readFromFile(
@@ -229,5 +232,59 @@ describe('Transform', () => {
       'copyExpandCanvas_alpha.png',
       output
     );
+  });
+
+  /**
+   * EXIF metadata is preserved after expanding the canvas.
+   */
+  test('EXIF metadata preserved after expand canvas', () => {
+    const img = new MemoryImage({ width: 16, height: 16 });
+    const exif = new ExifData();
+    exif.imageIfd.orientation = 6;
+    img.exifData = exif;
+    const expanded = Transform.copyExpandCanvas({
+      image: img,
+      padding: 8,
+    });
+    expect(expanded.exifData).toBeDefined();
+    expect(expanded.exifData?.imageIfd.orientation).toBe(6);
+  });
+
+  /**
+   * Expanded canvas result dimensions exceed the source.
+   */
+  test('result dimensions are larger than the source', () => {
+    const src = solidImage(20, 20, new ColorRgb8(100, 150, 200));
+    const result = Transform.copyExpandCanvas({
+      image: src,
+      newWidth: 40,
+      newHeight: 50,
+    });
+    expect(result.width).toBe(40);
+    expect(result.height).toBe(50);
+  });
+
+  /**
+   * Padding mode produces the correctly computed dimensions.
+   */
+  test('padding mode produces correct dimensions', () => {
+    const src = solidImage(10, 10, new ColorRgb8(255, 0, 0));
+    const pad = 5;
+    const result = Transform.copyExpandCanvas({
+      image: src,
+      padding: pad,
+    });
+    expect(result.width).toBe(10 + pad * 2);
+    expect(result.height).toBe(10 + pad * 2);
+  });
+
+  /**
+   * CopyExpandCanvas does not mutate the source image.
+   */
+  test('copyExpandCanvas does not mutate source', () => {
+    const src = solidImage(8, 8, new ColorRgb8(200, 100, 50));
+    const orig = src.clone();
+    Transform.copyExpandCanvas({ image: src, padding: 4 });
+    expect(imagesAreEqual(src, orig)).toBe(true);
   });
 });

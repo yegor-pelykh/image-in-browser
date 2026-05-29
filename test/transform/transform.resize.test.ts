@@ -14,7 +14,7 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for the Transform module.
+ * Transform resize operations.
  */
 describe('Transform', () => {
   /**
@@ -206,7 +206,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test resizing a MemoryImage while maintaining aspect ratio (case 2)
+   * Maintains aspect ratio scaling a 100×50 wide image into a 200×200 square.
    */
   test('resize maintainAspect 2', () => {
     const i0 = new MemoryImage({
@@ -238,7 +238,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test resizing a MemoryImage while maintaining aspect ratio (case 3)
+   * Maintains aspect ratio scaling a 50×100 tall image into a 200×200 square.
    */
   test('resize maintainAspect 3', () => {
     const i0 = new MemoryImage({
@@ -270,7 +270,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test resizing a MemoryImage while maintaining aspect ratio (case 4)
+   * Maintains aspect ratio scaling a 100×50 wide image into a 50×100 taller canvas.
    */
   test('resize maintainAspect 4', () => {
     const i0 = new MemoryImage({
@@ -302,7 +302,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test resizing a MemoryImage while maintaining aspect ratio (case 5)
+   * Maintains aspect ratio scaling a 50×100 tall image into a 100×50 wider canvas.
    */
   test('resize maintainAspect 5', () => {
     const i0 = new MemoryImage({
@@ -334,7 +334,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test resizing a MemoryImage while maintaining aspect ratio (case 6)
+   * Maintains aspect ratio scaling a 50×100 tall image into a 100×500 extremely tall canvas.
    */
   test('resize maintainAspect 6', () => {
     const i0 = new MemoryImage({
@@ -366,7 +366,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test resizing a MemoryImage while maintaining aspect ratio (case 7)
+   * Maintains aspect ratio scaling a 100×50 wide image into a 500×100 extremely wide canvas.
    */
   test('resize maintainAspect 7', () => {
     const i0 = new MemoryImage({

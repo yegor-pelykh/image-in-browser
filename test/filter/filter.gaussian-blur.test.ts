@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage, imageVariance } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter module.
+ * gaussianBlur filter: applies Gaussian blur with configurable radius.
  */
 describe('Filter', () => {
   /**
-   * Test case for the gaussianBlur function.
+   * Applies gaussianBlur with radius 10 and writes output PNG.
    */
   test('gaussianBlur', () => {
-    // Read the input image file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,23 +29,40 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply Gaussian blur filter to the image
     Filter.gaussianBlur({
       image: i0,
       radius: 10,
     });
 
-    // Encode the processed image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'gaussianBlur.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after gaussianBlur.
+   */
+  test('gaussianBlur preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.gaussianBlur({ image: src, radius: 3 });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
+  });
+
+  /**
+   * Gaussian blur reduces pixel variance of a checker image.
+   */
+  test('gaussianBlur reduces variance of a checker image', () => {
+    const src = checkerImage(64, 64, 4);
+    const before = imageVariance(src);
+    Filter.gaussianBlur({ image: src, radius: 2 });
+    expect(imageVariance(src)).toBeLessThan(before);
   });
 });

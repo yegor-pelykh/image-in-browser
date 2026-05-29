@@ -1,26 +1,32 @@
 /** @format */
 
-import { describe, test } from 'vitest';
-import { ColorRgba8, Draw, encodePng, MemoryImage, Point } from '../../src';
+import { describe, expect, test } from 'vitest';
+import {
+  BlendMode,
+  ColorRgb8,
+  ColorRgba8,
+  Draw,
+  encodePng,
+  MemoryImage,
+  Point,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for drawing operations.
+ * Draw drawCircle operations.
  */
 describe('Draw', () => {
   /**
-   * Test case for drawing circles on an image.
+   * Draws two concentric circles with different colors and radii.
    */
   test('drawCircle', () => {
-    // Create a new image with specified width and height
     const i0 = new MemoryImage({
       width: 256,
       height: 256,
     });
 
-    // Draw a red circle with radius 50 at the center of the image
     Draw.drawCircle({
       image: i0,
       center: new Point(128, 128),
@@ -28,7 +34,6 @@ describe('Draw', () => {
       color: new ColorRgba8(255, 0, 0, 255),
     });
 
-    // Draw a green circle with radius 100 at the center of the image
     Draw.drawCircle({
       image: i0,
       center: new Point(128, 128),
@@ -36,17 +41,43 @@ describe('Draw', () => {
       color: new ColorRgba8(0, 255, 0, 255),
     });
 
-    // Encode the image to PNG format
+    expect(i0.width).toBe(256);
+    expect(i0.height).toBe(256);
+
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output PNG file to the specified location
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.draw,
       'drawCircle.png',
       output
     );
+  });
+
+  /**
+   * DrawCircle draws only the outline ring; axis points painted, center not.
+   */
+  test('drawCircle draws only outline: axis points painted, center not', () => {
+    const image = new MemoryImage({ width: 100, height: 100 });
+    const cx = 50;
+    const cy = 50;
+    const r = 20;
+
+    Draw.drawCircle({
+      image,
+      center: new Point(cx, cy),
+      radius: r,
+      color: new ColorRgb8(255, 0, 0),
+      blend: BlendMode.direct,
+    });
+
+    expect(image.getPixel(cx - r, cy).equals([255, 0, 0])).toBe(true);
+    expect(image.getPixel(cx + r, cy).equals([255, 0, 0])).toBe(true);
+    expect(image.getPixel(cx, cy - r).equals([255, 0, 0])).toBe(true);
+    expect(image.getPixel(cx, cy + r).equals([255, 0, 0])).toBe(true);
+    expect(image.getPixel(cx, cy).equals([0, 0, 0])).toBe(true);
+    expect(image.getPixel(0, 0).equals([0, 0, 0])).toBe(true);
   });
 });

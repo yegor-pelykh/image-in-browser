@@ -5,11 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ColorUint4 } from '../../src';
 
 /**
- * Test suite for the Color class.
+ * Color immutability tests — uint4 format.
  */
 describe('Color', () => {
   /**
-   * Test case for the ColorUint4 class.
+   * ColorUint4 with length 0 is immutable; rgba(15,1,15,8) yields correct per-channel values.
    */
   test('ColorUint4', () => {
     const c0 = new ColorUint4(0);

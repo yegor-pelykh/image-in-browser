@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * emboss filter: creates a 3D embossed relief effect.
  */
 describe('Filter', () => {
   /**
-   * Test case for the emboss filter.
+   * Applies emboss with default parameters and writes output PNG.
    */
   test('emboss', () => {
-    // Read the input image file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,29 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the emboss filter to the image
     Filter.emboss({
       image: i0,
     });
 
-    // Encode the processed image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'emboss.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after emboss filter.
+   */
+  test('emboss preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.emboss({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

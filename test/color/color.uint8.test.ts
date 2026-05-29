@@ -5,11 +5,11 @@ import { TestUtils } from '../_utils/test-utils';
 import { ColorUint8 } from '../../src';
 
 /**
- * Test suite for the Color class.
+ * ColorUint8 immutability, factory methods, and equality.
  */
 describe('Color', () => {
   /**
-   * Test cases for the ColorUint8 class.
+   * ColorUint8: zero-length immutable guard, default alpha=255, rgb/rgba factories, set, and maxChannelValue ratio.
    */
   test('ColorUint8', () => {
     const c0 = new ColorUint8(0);

@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage, imagesAreEqual } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter module.
+ * bleachBypass filter: simulates bleach bypass film processing.
  */
 describe('Filter', () => {
   /**
-   * Test case for the bleachBypass filter.
+   * Applies bleachBypass with default parameters and writes output PNG.
    */
   test('bleachBypass', () => {
-    // Read the input image file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,39 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the bleachBypass filter to the image
     Filter.bleachBypass({
       image: i0,
     });
 
-    // Encode the modified image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'bleachBypass.png',
       output
     );
+  });
+
+  /**
+   * Preserves dimensions after bleach-bypass filter.
+   */
+  test('bleachBypass preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.bleachBypass({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
+  });
+
+  /**
+   * Amount 0 produces no pixel change.
+   */
+  test('bleachBypass with amount 0 leaves image unchanged', () => {
+    const src = checkerImage(32, 32);
+    const orig = src.clone();
+    Filter.bleachBypass({ image: src, amount: 0 });
+    expect(imagesAreEqual(src, orig)).toBe(true);
   });
 });

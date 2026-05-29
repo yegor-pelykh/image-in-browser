@@ -8,7 +8,7 @@ import { TestSection } from '../_utils/test-section';
 import { ExifData, IfdAsciiValue, JpegUtils } from '../../src';
 
 /**
- * Test suite for realistic EXIF tag roundtrip in JPEG files.
+ * Realistic EXIF tag roundtrip in JPEG files.
  */
 describe('injectExif realistic tags roundtrip', () => {
   function getAsciiValue(v: unknown): string | undefined {

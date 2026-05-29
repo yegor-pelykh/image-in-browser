@@ -14,13 +14,11 @@ import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 
 /**
- * Test suite for the Transform module.
+ * Transform copyResizeCropSquare operations.
  */
 describe('Transform', () => {
   /**
-   * Test case for the copyResizeCropSquare function.
-   * Reads an input PNG file, decodes it, resizes and crops it to a square of size 64,
-   * and writes the output to a file.
+   * Resizes and crops an image to a 64×64 square.
    */
   test('copyResizeCropSquare', () => {
     const input = TestUtils.readFromFile(
@@ -53,9 +51,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResizeCropSquare function with rounded corners.
-   * Reads an input PNG file, decodes it, converts it to 4 channels, resizes and crops it to a square of size 64 with rounded corners,
-   * composites it onto a white background, and writes the output to a file.
+   * Resizes, crops to 64×64 square, rounds corners, and composites onto white.
    */
   test('copyResizeCropSquare rounded', () => {
     const input = TestUtils.readFromFile(
@@ -104,9 +100,7 @@ describe('Transform', () => {
   });
 
   /**
-   * Test case for the copyResizeCropSquare function with rounded corners and alpha channel.
-   * Reads an input PNG file, decodes it, converts it to 4 channels, resizes and crops it to a square of size 300 with rounded corners,
-   * and writes the output to a file.
+   * Resizes and crops to a 300×300 square with rounded corners and preserved alpha.
    */
   test('copyResizeCropSquare rounded alpha', () => {
     const input = TestUtils.readFromFile(
@@ -141,5 +135,18 @@ describe('Transform', () => {
       'copyResizeCropSquare_rounded_alpha.png',
       output
     );
+  });
+
+  /**
+   * Result is a square of the requested size.
+   */
+  test('copyResizeCropSquare result is square of requested size', () => {
+    const src = new MemoryImage({ width: 120, height: 300 });
+    const out = Transform.copyResizeCropSquare({
+      image: src,
+      size: 64,
+    });
+    expect(out.width).toBe(64);
+    expect(out.height).toBe(64);
   });
 });

@@ -12,23 +12,22 @@ import {
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * dropShadow filter: adds a blurred drop shadow to image content.
  */
 describe('Filter', () => {
   /**
-   * Test case for the dropShadow filter.
+   * Draws a red rectangle, applies dropShadow with hShadow=-5, vShadow=5, blur=3.
    */
   test('dropShadow', () => {
-    // Create a new image with specified width, height, and number of channels.
     const i0 = new MemoryImage({
       width: 256,
       height: 256,
       numChannels: 4,
     });
 
-    // Draw a red rectangle on the image with specified dimensions and thickness.
     Draw.drawRect({
       image: i0,
       rect: Rectangle.fromXYWH(80, 100, 130, 100),
@@ -36,7 +35,6 @@ describe('Filter', () => {
       thickness: 3,
     });
 
-    // Apply a drop shadow filter to the image with specified horizontal and vertical shadow offsets and blur radius.
     const id = Filter.dropShadow({
       image: i0,
       hShadow: -5,
@@ -44,30 +42,36 @@ describe('Filter', () => {
       blur: 3,
     });
 
-    // Create a new blank image with specified width and height, and clear it with a white color.
     const i1 = new MemoryImage({
       width: 256,
       height: 256,
     });
     i1.clear(new ColorRgb8(255, 255, 255));
 
-    // Composite the drop shadow image onto the blank image.
     Draw.compositeImage({
       dst: i1,
       src: id,
     });
 
-    // Encode the final image to PNG format.
     const output = encodePng({
       image: i1,
     });
 
-    // Write the output PNG file to the specified test folder and section.
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'dropShadow.png',
       output
     );
+  });
+
+  /**
+   * Preserves source dimensions after dropShadow filter.
+   */
+  test('dropShadow preserves source dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.dropShadow({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * normalize filter: stretches pixel range to specified min/max.
  */
 describe('Filter', () => {
   /**
-   * Test case for the normalize function.
+   * Applies normalize with min=50, max=150 and writes output PNG.
    */
   test('normalize', () => {
-    // Read input PNG file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the PNG file
     const i0 = decodePng({
       data: input,
     });
@@ -30,24 +29,31 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply normalization filter to the image
     Filter.normalize({
       image: i0,
       min: 50,
       max: 150,
     });
 
-    // Encode the image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output PNG file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'normalize.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after normalize filter.
+   */
+  test('normalize preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.normalize({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

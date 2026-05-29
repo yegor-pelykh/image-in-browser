@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter functionality.
+ * colorHalftone filter: CMYK halftone screen effect.
  */
 describe('Filter', () => {
   /**
-   * Test case for the colorHalftone filter.
+   * Applies colorHalftone with default parameters and writes output PNG.
    */
   test('colorHalftone', () => {
-    // Read the input image file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,29 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the colorHalftone filter to the image
     Filter.colorHalftone({
       image: i0,
     });
 
-    // Encode the filtered image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'colorHalftone.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after colorHalftone filter.
+   */
+  test('colorHalftone preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.colorHalftone({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });

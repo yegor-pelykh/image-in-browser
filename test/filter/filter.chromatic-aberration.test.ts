@@ -5,23 +5,22 @@ import { decodePng, encodePng, Filter } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { checkerImage } from '../_utils/test-helpers.js';
 
 /**
- * Test suite for the Filter module.
+ * chromaticAberration filter: shifts red/blue channels to simulate lens aberration.
  */
 describe('Filter', () => {
   /**
-   * Test case for the chromaticAberration filter.
+   * Applies chromaticAberration with default parameters and writes output PNG.
    */
   test('chromaticAberration', () => {
-    // Read the input image file
     const input = TestUtils.readFromFile(
       TestFolder.input,
       TestSection.png,
       'buck_24.png'
     );
 
-    // Decode the input PNG image
     const i0 = decodePng({
       data: input,
     });
@@ -30,22 +29,29 @@ describe('Filter', () => {
       return;
     }
 
-    // Apply the chromatic aberration filter to the image
     Filter.chromaticAberration({
       image: i0,
     });
 
-    // Encode the processed image back to PNG format
     const output = encodePng({
       image: i0,
     });
 
-    // Write the output image file
     TestUtils.writeToFile(
       TestFolder.output,
       TestSection.filter,
       'chromaticAberration.png',
       output
     );
+  });
+
+  /**
+   * Preserves image dimensions after chromatic aberration filter.
+   */
+  test('chromaticAberration preserves dimensions', () => {
+    const src = checkerImage(64, 48);
+    Filter.chromaticAberration({ image: src });
+    expect(src.width).toBe(64);
+    expect(src.height).toBe(48);
   });
 });
