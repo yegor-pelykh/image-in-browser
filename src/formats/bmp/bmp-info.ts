@@ -226,7 +226,7 @@ export class BmpInfo implements DecodeInfo {
     this._height = p.readInt32();
     this._planes = p.readUint16();
     this._bitsPerPixel = p.readUint16();
-    this._compression = p.readUint32();
+    this._compression = BmpInfo.compressionFromValue(p.readUint32());
     this._imageSize = p.readUint32();
     this._xppm = p.readInt32();
     this._yppm = p.readInt32();
@@ -442,5 +442,22 @@ export class BmpInfo implements DecodeInfo {
         `Unsupported bitsPerPixel (${this._bitsPerPixel}) or compression (${this._compression}).`
       );
     }
+  }
+
+  /**
+   * Validates a raw BMP compression value and returns it as a
+   * BmpCompressionMode, or throws a LibError if unsupported.
+   * @param {number} value - The raw compression value from the BMP header.
+   * @returns {BmpCompressionMode} The validated compression mode.
+   * @throws {LibError} If the compression type is unsupported.
+   */
+  private static compressionFromValue(value: number): BmpCompressionMode {
+    const maxCompression = Math.max(
+      ...Object.values(BmpCompressionMode).filter((v) => typeof v === 'number')
+    );
+    if (value > maxCompression) {
+      throw new LibError(`Unsupported BMP compression type: ${value}`);
+    }
+    return value as BmpCompressionMode;
   }
 }

@@ -157,6 +157,10 @@ export interface TrimOptions extends TransformOptions {
   mode?: TrimMode;
   /** The sides to trim. */
   sides?: TrimSide;
+  /** The fuzzy tolerance for trim color matching (0..1). */
+  fuzzy?: number;
+  /** The padding around the trimmed area in pixels. */
+  padding?: number;
 }
 
 /**
@@ -251,12 +255,16 @@ export abstract class Transform {
    * @param {TrimOptions} opt - The trim options.
    * @param {TrimMode} opt.mode - The mode of trimming.
    * @param {TrimSide} opt.sides - The sides of the image to trim.
+   * @param {number} [opt.fuzzy] - The fuzzy tolerance for trim color matching (0..1).
+   * @param {number} [opt.padding] - The padding around the trimmed area in pixels.
    * @param {MemoryImage} opt.image - The image to be trimmed.
    * @returns {Rectangle} The Rectangle. You could pass these constraints to the **copyCrop** function to crop the image.
    */
   private static findTrim(opt: TrimOptions): Rectangle {
     const mode = opt.mode ?? TrimMode.transparent;
     const sides = opt.sides ?? TrimSide.all;
+    const fuzzy = opt.fuzzy ?? 0;
+    const padding = opt.padding ?? 0;
 
     let h = opt.image.height;
     let w = opt.image.width;
@@ -277,10 +285,19 @@ export abstract class Transform {
       let first = true;
       for (let x = 0; x < w; ++x) {
         const c = opt.image.getPixel(x, y);
-        if (
-          (mode === TrimMode.transparent && c.a !== 0) ||
-          (mode !== TrimMode.transparent && (bg === undefined || !c.equals(bg)))
-        ) {
+        let isContent = false;
+        if (mode === TrimMode.transparent) {
+          isContent = c.a !== 0;
+        } else if (fuzzy > 0 && bg !== undefined) {
+          isContent =
+            Math.abs(c.rNormalized - bg.rNormalized) > fuzzy ||
+            Math.abs(c.gNormalized - bg.gNormalized) > fuzzy ||
+            Math.abs(c.bNormalized - bg.bNormalized) > fuzzy ||
+            Math.abs(c.aNormalized - bg.aNormalized) > fuzzy;
+        } else {
+          isContent = bg === undefined || !c.equals(bg);
+        }
+        if (isContent) {
           if (xMin > x) {
             xMin = x;
           }
@@ -315,6 +332,13 @@ export abstract class Transform {
     }
     if (!(sides & TrimSide.right)) {
       xMax = w - 1;
+    }
+
+    if (padding > 0) {
+      xMin = MathUtils.clamp(xMin - padding, 0, w - 1);
+      yMin = MathUtils.clamp(yMin - padding, 0, h - 1);
+      xMax = MathUtils.clamp(xMax + padding, 0, w - 1);
+      yMax = MathUtils.clamp(yMax + padding, 0, h - 1);
     }
 
     // Image width in pixels
@@ -736,6 +760,11 @@ export abstract class Transform {
           });
         }
       }
+    }
+
+    // Preserve the source image's EXIF metadata
+    if (srcConverted.hasExif) {
+      expandedCanvas.exifData = srcConverted.exifData.clone();
     }
 
     return expandedCanvas;
@@ -1169,7 +1198,7 @@ export abstract class Transform {
         const c4x = x1 + rad - 1;
         const c4y = y2 - rad + 1;
 
-        const iter = dst.getRange(x1, y1, width, height);
+        const iter = dst.getRange(x1, y1, opt.size, opt.size);
         let iterRes: IteratorResult<Pixel> | undefined = undefined;
         while (((iterRes = iter.next()), !iterRes.done)) {
           const p = iterRes.value;
@@ -1208,8 +1237,8 @@ export abstract class Transform {
             const sp = frame.getPixel(scaleX![p.x], sy);
             p.setRgba(sp.r, sp.g, sp.b, sp.a * a);
           } else {
-            const x = p.x * dx;
-            const y = p.y * dy;
+            const x = (p.x + xOffset) * dx;
+            const y = (p.y + yOffset) * dy;
             const sp = frame.getPixelInterpolate(x, y, interpolation);
             const spa = sp.a * a;
             p.setRgba(sp.r, sp.g, sp.b, spa);
@@ -1228,8 +1257,8 @@ export abstract class Transform {
         }
       } else {
         for (const p of dst) {
-          const x = p.x * dx;
-          const y = p.y * dy;
+          const x = (p.x + xOffset) * dx;
+          const y = (p.y + yOffset) * dy;
           p.set(frame.getPixelInterpolate(x, y, interpolation));
         }
       }
@@ -1514,6 +1543,8 @@ export abstract class Transform {
    * @param {MemoryImage} opt.image - The image to be trimmed.
    * @param {TrimMode} opt.mode - The mode to use for trimming.
    * @param {TrimSide} opt.sides - The sides of the image to trim.
+   * @param {number} [opt.fuzzy] - The fuzzy tolerance for trim color matching (0..1).
+   * @param {number} [opt.padding] - The padding around the trimmed area in pixels.
    * @returns {MemoryImage} The trimmed image.
    */
   public static trim(opt: TrimOptions): MemoryImage {
@@ -1528,6 +1559,8 @@ export abstract class Transform {
       image: opt.image,
       mode: mode,
       sides: sides,
+      fuzzy: opt.fuzzy,
+      padding: opt.padding,
     });
 
     let firstFrame: MemoryImage | undefined = undefined;

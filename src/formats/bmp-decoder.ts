@@ -57,11 +57,20 @@ export class BmpDecoder implements Decoder {
    * @returns {boolean} True if the file is a valid BMP image, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    return BmpFileHeader.isValidFile(
-      new InputBuffer<Uint8Array>({
-        buffer: bytes,
-      })
-    );
+    const fileHeader = new InputBuffer<Uint8Array>({
+      buffer: bytes,
+    });
+    if (!BmpFileHeader.isValidFile(fileHeader)) {
+      return false;
+    }
+    const dibHeaderSize = new InputBuffer<Uint8Array>({
+      buffer: bytes,
+      offset: 14,
+    }).readUint32();
+    if (dibHeaderSize < 12 || dibHeaderSize > 124) {
+      return false;
+    }
+    return true;
   }
 
   /**

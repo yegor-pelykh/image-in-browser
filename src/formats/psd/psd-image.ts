@@ -85,7 +85,7 @@ export class PsdImage implements DecodeInfo {
     return this._colorMode;
   }
 
-  private _layers!: PsdLayer[];
+  private _layers: PsdLayer[] = [];
   public get layers(): PsdLayer[] {
     return this._layers;
   }
@@ -721,7 +721,7 @@ export class PsdImage implements DecodeInfo {
 
     const layerData = this._layerAndMaskData!.readRange(len);
 
-    this._layers = [];
+    this._layers.length = 0;
     if (len > 0) {
       let count = layerData.readInt16();
       // If it is a negative number, its absolute value is the number of

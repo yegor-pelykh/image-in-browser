@@ -527,9 +527,9 @@ export abstract class ColorUtils {
     const _x = x / 100;
     const _y = y / 100;
     const _z = z / 100;
-    let r = 3.2406 * _x + -1.5372 * _y + -0.4986 * _z;
-    let g = -0.9689 * _x + 1.8758 * _y + 0.0415 * _z;
-    let b = 0.0557 * _x + -0.204 * _y + 1.057 * _z;
+    let r = 3.240454836 * _x + -1.53713885 * _y + -0.498531547 * _z;
+    let g = -0.96926639 * _x + 1.87601093 * _y + 0.041556082 * _z;
+    let b = 0.05564342 * _x + -0.20402585 * _y + 1.05722516 * _z;
     if (r > 0.0031308) {
       r = 1.055 * Math.pow(r, 0.4166666667) - 0.055;
     } else {
@@ -547,9 +547,9 @@ export abstract class ColorUtils {
     }
 
     return [
-      MathUtils.clampInt255(r * 255),
-      MathUtils.clampInt255(g * 255),
-      MathUtils.clampInt255(b * 255),
+      Math.round(MathUtils.clamp(r * 255, 0, 255)),
+      Math.round(MathUtils.clamp(g * 255, 0, 255)),
+      Math.round(MathUtils.clamp(b * 255, 0, 255)),
     ];
   }
 
@@ -625,9 +625,9 @@ export abstract class ColorUtils {
     z /= 100;
 
     // xyz to rgb
-    let R = x * 3.2406 + y * -1.5372 + z * -0.4986;
-    let G = x * -0.9689 + y * 1.8758 + z * 0.0415;
-    let B = x * 0.0557 + y * -0.204 + z * 1.057;
+    let R = x * 3.240454836 + y * -1.53713885 + z * -0.498531547;
+    let G = x * -0.96926639 + y * 1.87601093 + z * 0.041556082;
+    let B = x * 0.05564342 + y * -0.20402585 + z * 1.05722516;
 
     if (R > 0.0031308) {
       R = 1.055 * Math.pow(R, 1 / 2.4) - 0.055;
@@ -648,9 +648,9 @@ export abstract class ColorUtils {
     }
 
     return [
-      MathUtils.clampInt255(R * 255),
-      MathUtils.clampInt255(G * 255),
-      MathUtils.clampInt255(B * 255),
+      Math.round(MathUtils.clamp(R * 255, 0, 255)),
+      Math.round(MathUtils.clamp(G * 255, 0, 255)),
+      Math.round(MathUtils.clamp(B * 255, 0, 255)),
     ];
   }
 
@@ -691,9 +691,9 @@ export abstract class ColorUtils {
     _b *= 100;
 
     return [
-      _r * 0.4124 + _g * 0.3576 + _b * 0.1805,
-      _r * 0.2126 + _g * 0.7152 + _b * 0.0722,
-      _r * 0.0193 + _g * 0.1192 + _b * 0.9505,
+      _r * 0.4124564 + _g * 0.3575761 + _b * 0.1804375,
+      _r * 0.2126729 + _g * 0.7151522 + _b * 0.072175,
+      _r * 0.0193339 + _g * 0.119192 + _b * 0.9503041,
     ];
   }
 
@@ -762,9 +762,9 @@ export abstract class ColorUtils {
     _g *= 100;
     _b *= 100;
 
-    let x = _r * 0.4124 + _g * 0.3576 + _b * 0.1805;
-    let y = _r * 0.2126 + _g * 0.7152 + _b * 0.0722;
-    let z = _r * 0.0193 + _g * 0.1192 + _b * 0.9505;
+    let x = _r * 0.4124564 + _g * 0.3575761 + _b * 0.1804375;
+    let y = _r * 0.2126729 + _g * 0.7151522 + _b * 0.072175;
+    let z = _r * 0.0193339 + _g * 0.119192 + _b * 0.9503041;
 
     x /= 95.047;
     y /= 100;

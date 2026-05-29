@@ -1397,19 +1397,24 @@ export abstract class Filter {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     for (const frame of image.frames) {
       for (const p of frame) {
+        const scale = p.maxChannelValue / 255;
+        const r = red * scale;
+        const g = green * scale;
+        const b = blue * scale;
+        const a = alpha * scale;
         const msk = opt.mask
           ?.getPixel(p.x, p.y)
           .getChannelNormalized(maskChannel);
         if (msk === undefined) {
-          p.r += red;
-          p.g += green;
-          p.b += blue;
-          p.a += alpha;
+          p.r += r;
+          p.g += g;
+          p.b += b;
+          p.a += a;
         } else {
-          p.r = MathUtils.mix(p.r, p.r + red, msk);
-          p.g = MathUtils.mix(p.g, p.g + green, msk);
-          p.b = MathUtils.mix(p.b, p.b + blue, msk);
-          p.a = MathUtils.mix(p.a, p.a + alpha, msk);
+          p.r = MathUtils.mix(p.r, p.r + r, msk);
+          p.g = MathUtils.mix(p.g, p.g + g, msk);
+          p.b = MathUtils.mix(p.b, p.b + b, msk);
+          p.a = MathUtils.mix(p.a, p.a + a, msk);
         }
       }
     }
@@ -2646,21 +2651,14 @@ export abstract class Filter {
           }
           for (const p of frame) {
             if (Math.random() * 100 < nSigma) {
-              const r = MathUtils.clamp(
+              const v = MathUtils.clamp(
                 Math.random() < 0.5 ? max : min,
                 0,
                 p.maxChannelValue
               );
-              const g = MathUtils.clamp(
-                Math.random() < 0.5 ? max : min,
-                0,
-                p.maxChannelValue
-              );
-              const b = MathUtils.clamp(
-                Math.random() < 0.5 ? max : min,
-                0,
-                p.maxChannelValue
-              );
+              const r = v;
+              const g = v;
+              const b = v;
               const a = p.a;
               const msk = opt.mask
                 ?.getPixel(p.x, p.y)

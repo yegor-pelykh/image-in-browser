@@ -940,6 +940,37 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
 
   return undefined;
 }
+
+/**
+ * Return an Encoder that can encode an image to the same format as the
+ * given data. Returns undefined if the data isn't a recognized image
+ * format, or if that format does not have an encoder.
+ */
+export function findEncoderForData(data: TypedArray): Encoder | undefined {
+  switch (findFormatForData(data)) {
+    case ImageFormat.bmp:
+      return new BmpEncoder();
+    case ImageFormat.gif:
+      return new GifEncoder();
+    case ImageFormat.ico:
+      return new IcoEncoder();
+    case ImageFormat.jpg:
+      return new JpegEncoder();
+    case ImageFormat.png:
+      return new PngEncoder();
+    case ImageFormat.pvr:
+      return new PvrEncoder();
+    case ImageFormat.tga:
+      return new TgaEncoder();
+    case ImageFormat.tiff:
+      return new TiffEncoder();
+    case ImageFormat.webp:
+      return new WebPEncoder();
+    default:
+      return undefined;
+  }
+}
+
 /**
  * Decode the given image file bytes by first identifying the format of the
  * file and using that decoder to decode the file into a single frame MemoryImage.

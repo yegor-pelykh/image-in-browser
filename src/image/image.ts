@@ -363,6 +363,14 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
   }
 
   /**
+   * Indicates whether this MemoryImage has EXIF metadata.
+   * @returns {boolean} True if the image has EXIF data, otherwise false.
+   */
+  public get hasExif(): boolean {
+    return this._exifData !== undefined;
+  }
+
+  /**
    * Named non-color channels used by this image.
    */
   private _extraChannels?: Map<string, MemoryImageData>;
@@ -1613,6 +1621,8 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     }
     */
 
+    const setAlpha = opt.alpha !== undefined;
+
     if (
       format === this.format &&
       numChannels === this.numChannels &&
@@ -1620,7 +1630,15 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
         (withPalette && this.palette !== undefined))
     ) {
       // Same format and number of channels
-      return MemoryImage.from(this);
+      const newImage = MemoryImage.from(this);
+      if (setAlpha && newImage.hasAlpha) {
+        for (const frame of newImage.frames) {
+          for (const p of frame) {
+            p.a = alpha as number;
+          }
+        }
+      }
+      return newImage;
     }
 
     let firstFrame: MemoryImage | undefined = undefined;
@@ -1727,8 +1745,8 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
         if (first || c > max) {
           max = c;
         }
+        first = false;
       }
-      first = false;
     }
     return {
       min: min,

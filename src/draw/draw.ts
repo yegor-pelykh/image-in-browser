@@ -1352,7 +1352,7 @@ export abstract class Draw {
         }
 
         // Set up line thickness
-        let wstart = Math.trunc(y - wid / 2);
+        let wstart = y - Math.trunc(wid / 2);
         for (let w = wstart; w < wstart + wid; w++) {
           Draw.drawPixel({
             image: opt.image,
@@ -1373,7 +1373,7 @@ export abstract class Draw {
               y++;
               d += incr2;
             }
-            wstart = Math.trunc(y - wid / 2);
+            wstart = y - Math.trunc(wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
               Draw.drawPixel({
                 image: opt.image,
@@ -1394,7 +1394,7 @@ export abstract class Draw {
               y--;
               d += incr2;
             }
-            wstart = Math.trunc(y - wid / 2);
+            wstart = y - Math.trunc(wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
               Draw.drawPixel({
                 image: opt.image,
@@ -1440,7 +1440,7 @@ export abstract class Draw {
         }
 
         // Set up line thickness
-        let wstart = Math.trunc(x - wid / 2);
+        let wstart = x - Math.trunc(wid / 2);
         for (let w = wstart; w < wstart + wid; w++) {
           Draw.drawPixel({
             image: opt.image,
@@ -1461,7 +1461,7 @@ export abstract class Draw {
               x++;
               d += incr2;
             }
-            wstart = Math.trunc(x - wid / 2);
+            wstart = x - Math.trunc(wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
               Draw.drawPixel({
                 image: opt.image,
@@ -1482,7 +1482,7 @@ export abstract class Draw {
               x--;
               d += incr2;
             }
-            wstart = Math.trunc(x - wid / 2);
+            wstart = x - Math.trunc(wid / 2);
             for (let w = wstart; w < wstart + wid; w++) {
               Draw.drawPixel({
                 image: opt.image,

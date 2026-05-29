@@ -184,23 +184,28 @@ export class ExifData extends IfdContainer {
     let ifdOffset = block.readUint32();
     let index = 0;
     while (ifdOffset > 0) {
-      block.offset = blockOffset + ifdOffset;
-      if (block.length < 2) break;
-      const directory = new IfdDirectory();
-      const numEntries = block.readUint16();
-      const dir = new Array<ExifEntry>();
-      for (let i = 0; i < numEntries; i++) {
-        const entry = this.readEntry(block, blockOffset);
-        dir.push(entry);
+      try {
+        block.offset = blockOffset + ifdOffset;
+        if (block.length < 2) break;
+        const directory = new IfdDirectory();
+        const numEntries = block.readUint16();
+        if (numEntries * 12 > block.length) break;
+        const dir = new Array<ExifEntry>();
+        for (let i = 0; i < numEntries; i++) {
+          const entry = this.readEntry(block, blockOffset);
+          dir.push(entry);
+        }
+        for (const entry of dir) {
+          if (entry.value !== undefined) directory.set(entry.tag, entry.value);
+        }
+        this.directories.set(`ifd${index}`, directory);
+        index++;
+        const nextIfdOffset = block.readUint32();
+        if (nextIfdOffset === ifdOffset) break;
+        else ifdOffset = nextIfdOffset;
+      } catch {
+        break;
       }
-      for (const entry of dir) {
-        if (entry.value !== undefined) directory.set(entry.tag, entry.value);
-      }
-      this.directories.set(`ifd${index}`, directory);
-      index++;
-      const nextIfdOffset = block.readUint32();
-      if (nextIfdOffset === ifdOffset) break;
-      else ifdOffset = nextIfdOffset;
     }
     const subTags = new Map<number, string>([
       [0x8769, 'exif'],
@@ -352,7 +357,7 @@ export class ExifData extends IfdContainer {
     const format = block.readUint16();
     const count = block.readUint32();
     const entry = new ExifEntry(tag, undefined);
-    if (format > Object.keys(IfdValueType).length) return entry;
+    if ((format as IfdValueType) > IfdValueType.ifd) return entry;
     const f = format as IfdValueType;
     const fsize = IfdValueTypeSize[format];
     const size = count * fsize;

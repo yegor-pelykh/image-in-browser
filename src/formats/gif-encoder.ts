@@ -28,6 +28,8 @@ export interface GifEncoderInitOptions {
   dither?: DitherKernel;
   /** Whether to use serpentine dithering. */
   ditherSerpentine?: boolean;
+  /** The dispose method for frames. 0 = no action, 1 = leave, 2 = clear, 3 = restore. */
+  dispose?: number;
 }
 
 /**
@@ -96,6 +98,11 @@ export class GifEncoder implements Encoder {
    * Repeat count for the GIF.
    */
   private _repeat: number;
+
+  /**
+   * Dispose method for frames.
+   */
+  private _dispose: number;
 
   /**
    * Number of colors in the palette.
@@ -232,10 +239,12 @@ export class GifEncoder implements Encoder {
    * @param {number} [opt.samplingFactor] - The factor by which to downsample the image. Default is 10.
    * @param {string} [opt.dither] - The dithering algorithm to use. Default is Floyd-Steinberg.
    * @param {boolean} [opt.ditherSerpentine] - Whether to use serpentine dithering. Default is false.
+   * @param {number} [opt.dispose] - The dispose method for frames. 0 = no action, 1 = leave, 2 = clear, 3 = restore. Default is 2.
    */
   constructor(opt?: GifEncoderInitOptions) {
     this._delay = opt?.delay ?? 80;
     this._repeat = opt?.repeat ?? 0;
+    this._dispose = opt?.dispose ?? 2;
     this._numColors = 256;
     this._quantizerType = QuantizerType.neural;
     this._samplingFactor = opt?.samplingFactor ?? 10;
@@ -536,14 +545,11 @@ export class GifEncoder implements Encoder {
       }
     }
 
-    // dispose: 0 = no action, 2 = clear
-    const dispose = 2;
-
     // 1:3 reserved
     const fields =
       0 |
       // 4:6 disposal
-      (dispose << 2) |
+      (this._dispose << 2) |
       // 7   user input - 0 = none
       0 |
       // 8   transparency flag
