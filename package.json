@@ -9,7 +9,7 @@
     "url": "https://github.com/yegor-pelykh/image-in-browser"
   },
   "type": "module",
-  "main": "lib/index.js",
+  "main": "lib/src/index.js",
   "files": [
     "lib/**/*.js",
     "lib/**/*d.ts"
