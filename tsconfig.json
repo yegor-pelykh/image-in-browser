@@ -7,7 +7,7 @@
       "ES6",
     ],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noUnusedLocals": false,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
