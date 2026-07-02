@@ -638,10 +638,9 @@ export class JpegScan {
       const m1 = this._input.get(0);
       const m2 = this._input.get(1);
       if (m1 === 0xff) {
-        if (
-          (m2 as JpegMarker) >= JpegMarker.rst0 &&
-          (m2 as JpegMarker) <= JpegMarker.rst7
-        ) {
+        const rst0: number = JpegMarker.rst0;
+        const rst7: number = JpegMarker.rst7;
+        if (m2 >= rst0 && m2 <= rst7) {
           this._input.skip(2);
         } else {
           break;

@@ -273,8 +273,7 @@ export class TgaInfo implements DecodeInfo {
     this._colorMapType = header.read();
     const it = header.read();
     // 2
-    this._imageType =
-      it < TgaImageTypeLength ? (it as TgaImageType) : TgaImageType.none;
+    this._imageType = it < TgaImageTypeLength ? it : TgaImageType.none;
     // 3
     this._colorMapOrigin = header.readUint16();
     // 5

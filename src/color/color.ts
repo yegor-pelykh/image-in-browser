@@ -115,16 +115,16 @@ export interface Color {
    * Gets a channel value from the color by its index or Channel enum.
    * If the channel isn't available, 0 will be returned.
    */
-  getChannel(channel: number | Channel): number;
+  getChannel(channel: Channel): number;
   /**
    * Sets a channel value in the color by its index or Channel enum.
    */
-  setChannel(channel: number | Channel, value: number): void;
+  setChannel(channel: Channel, value: number): void;
   /**
    * Gets the normalized [0, 1] value of a channel from the color.
    * If the channel isn't available, 0 will be returned.
    */
-  getChannelNormalized(channel: number | Channel): number;
+  getChannelNormalized(channel: Channel): number;
   /**
    * Sets the values of this color to the given Color.
    */

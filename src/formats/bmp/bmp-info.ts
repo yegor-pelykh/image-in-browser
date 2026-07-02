@@ -458,6 +458,6 @@ export class BmpInfo implements DecodeInfo {
     if (value > maxCompression) {
       throw new LibError(`Unsupported BMP compression type: ${value}`);
     }
-    return value as BmpCompressionMode;
+    return value;
   }
 }

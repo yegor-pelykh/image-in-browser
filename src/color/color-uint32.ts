@@ -2,7 +2,7 @@
 
 import { ArrayUtils } from '../common/array-utils.js';
 import { Palette } from '../image/palette.js';
-import { Channel } from './channel.js';
+import { Channel, channelLuminance } from './channel.js';
 import { Color, ColorConvertOptions } from './color.js';
 import { ColorUtils } from './color-utils.js';
 import { Format } from './format.js';
@@ -300,8 +300,8 @@ export class ColorUint32 implements Color {
    * @param {number | Channel} channel - The channel index or Channel enum.
    * @returns {number} The value of the specified channel.
    */
-  public getChannel(channel: number | Channel): number {
-    if (channel === (Channel.luminance as number)) {
+  public getChannel(channel: number): number {
+    if (channel === channelLuminance) {
       return this.luminance;
     } else {
       return channel < this.data.length ? this.data[channel] : 0;
@@ -313,7 +313,7 @@ export class ColorUint32 implements Color {
    * @param {number | Channel} channel - The channel index or Channel enum.
    * @returns {number} The normalized value of the specified channel.
    */
-  public getChannelNormalized(channel: number | Channel): number {
+  public getChannelNormalized(channel: number): number {
     return this.getChannel(channel) / this.maxChannelValue;
   }
 

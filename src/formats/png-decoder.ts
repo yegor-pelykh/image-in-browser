@@ -231,7 +231,7 @@ export class PngDecoder implements Decoder {
       srcY < passHeight;
       ++srcY, dstY += yStep, ri = 1 - ri, this._progressY++
     ) {
-      const filterType = input.read() as PngFilterType;
+      const filterType = input.read();
       inData[ri] = input.readRange(rowBytes).toUint8Array();
 
       const row = inData[ri]!;
@@ -305,7 +305,7 @@ export class PngDecoder implements Decoder {
     const pIter = image[Symbol.iterator]();
     let pIterRes = pIter.next();
     for (let y = 0, ri = 0; y < h; ++y, ri = 1 - ri) {
-      const filterType = input.read() as PngFilterType;
+      const filterType = input.read();
       inData[ri] = input.readRange(rowBytes).toUint8Array();
 
       const row = inData[ri];
@@ -678,8 +678,8 @@ export class PngDecoder implements Decoder {
           const yOffset = this._input.readUint32();
           const delayNum = this._input.readUint16();
           const delayDen = this._input.readUint16();
-          const dispose = this._input.read() as PngDisposeMode;
-          const blend = this._input.read() as PngBlendMode;
+          const dispose = this._input.read();
+          const blend = this._input.read();
           // CRC
           this._input.skip(4);
 

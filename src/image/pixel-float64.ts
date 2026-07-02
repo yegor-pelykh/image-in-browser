@@ -1,6 +1,6 @@
 /** @format */
 
-import { Channel } from '../color/channel.js';
+import { Channel, channelLuminance } from '../color/channel.js';
 import { Color, ColorConvertOptions } from '../color/color.js';
 import { ColorUtils } from '../color/color-utils.js';
 import { Format } from '../color/format.js';
@@ -454,8 +454,8 @@ export class PixelFloat64 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @param {number | Channel} channel - The channel number or type.
    * @returns {number} The channel value.
    */
-  public getChannel(channel: number | Channel): number {
-    if (channel === (Channel.luminance as number)) {
+  public getChannel(channel: number): number {
+    if (channel === channelLuminance) {
       return this.luminance;
     } else {
       return channel < this.numChannels ? this.data[this._index + channel] : 0;

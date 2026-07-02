@@ -354,11 +354,11 @@ export class ExifData extends IfdContainer {
     blockOffset: number
   ): ExifEntry {
     const tag = block.readUint16();
-    const format = block.readUint16();
+    const format: IfdValueType = block.readUint16();
     const count = block.readUint32();
     const entry = new ExifEntry(tag, undefined);
-    if ((format as IfdValueType) > IfdValueType.ifd) return entry;
-    const f = format as IfdValueType;
+    if (format > IfdValueType.ifd) return entry;
+    const f = format;
     const fsize = IfdValueTypeSize[format];
     const size = count * fsize;
     const endOffset = block.offset + 4;

@@ -242,7 +242,7 @@ describe('Draw', () => {
         src: fg,
         dstX: 50,
         dstY: 50,
-        blend: blend as BlendMode,
+        blend: blend,
       });
       const output = encodePng({
         image: bg,

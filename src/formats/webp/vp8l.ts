@@ -502,7 +502,7 @@ export class VP8L {
     this._transformsSeen |= 1 << type;
     const transform = new VP8LTransform();
     this._transforms.push(transform);
-    transform.type = type as VP8LImageTransformType;
+    transform.type = type;
     transform.xsize = transformSize[0];
     transform.ysize = transformSize[1];
     switch (transform.type) {

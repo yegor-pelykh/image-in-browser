@@ -186,7 +186,7 @@ export class IcoDecoder implements Decoder {
       const line = bmpInfo.readBottomUp ? y : image.height - 1 - y;
       const row = inp.readRange(rowLength);
       const p = image.getPixel(0, line);
-      for (let x = 0; x < bmpInfo.width; ) {
+      for (let x = 0; x < bmpInfo.width;) {
         const b = row.read();
         for (let j = 7; j > -1 && x < bmpInfo.width; j--) {
           if ((b & (1 << j)) !== 0) {

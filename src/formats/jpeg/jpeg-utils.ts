@@ -102,12 +102,12 @@ export class JpegUtils {
    * Reads the next marker from the input buffer and optionally writes it to the output buffer.
    * @param {InputBuffer<Uint8Array>} input - The input buffer to read from.
    * @param {OutputBuffer} [output] - The optional output buffer to write to.
-   * @returns {number} The next marker value.
+   * @returns {JpegMarker} The next marker value.
    */
   private nextMarker(
     input: InputBuffer<Uint8Array>,
     output?: OutputBuffer
-  ): number {
+  ): JpegMarker {
     let c = 0;
     if (input.isEOS) {
       return c;
@@ -151,14 +151,14 @@ export class JpegUtils {
     }
 
     let marker = this.nextMarker(input);
-    if ((marker as JpegMarker) !== JpegMarker.soi) {
+    if (marker !== JpegMarker.soi) {
       return undefined;
     }
 
     let exif: ExifData | undefined = undefined;
     marker = this.nextMarker(input);
-    while ((marker as JpegMarker) !== JpegMarker.eoi && !input.isEOS) {
-      switch (marker as JpegMarker) {
+    while (marker !== JpegMarker.eoi && !input.isEOS) {
+      switch (marker) {
         case JpegMarker.app1:
           exif = this.readExifData(this.readBlock(input));
           if (exif !== undefined) {
@@ -200,7 +200,7 @@ export class JpegUtils {
     });
 
     let marker = this.nextMarker(input);
-    if ((marker as JpegMarker) !== JpegMarker.soi) {
+    if (marker !== JpegMarker.soi) {
       return undefined;
     }
 
@@ -210,8 +210,8 @@ export class JpegUtils {
     const startOffset = input.offset;
     let exifBlockStartOffset = startOffset;
     marker = this.nextMarker(input);
-    while ((marker as JpegMarker) !== JpegMarker.eoi && !input.isEOS) {
-      if ((marker as JpegMarker) === JpegMarker.app1) {
+    while (marker !== JpegMarker.eoi && !input.isEOS) {
+      if (marker === JpegMarker.app1) {
         const block = this.readBlock(input);
         const signature = block?.readUint32();
         if (signature === JpegUtils._exifSignature) {

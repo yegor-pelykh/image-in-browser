@@ -672,7 +672,7 @@ export class PsdImage implements DecodeInfo {
     this._height = this._input!.readUint32();
     this._width = this._input!.readUint32();
     this._depth = this._input!.readUint16();
-    this._colorMode = this._input!.readUint16() as PsdColorMode;
+    this._colorMode = this._input!.readUint16();
   }
 
   /**

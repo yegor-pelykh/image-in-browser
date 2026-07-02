@@ -847,7 +847,7 @@ export abstract class Draw {
       // of the single cell at the end of the second row, i.e. at (4,1)
       if (rowLength < lastRowLength) {
         // 'end' is the end of the previous row, so scan the current row to
-        for (const end = _x + lastRowLength; ++sx < end; ) {
+        for (const end = _x + lastRowLength; ++sx < end;) {
           // there. any clear cells would have been connected to the previous
           if (!array(_y, sx)) {
             // row. the cells up and left must be set so use FillCore
@@ -860,7 +860,7 @@ export abstract class Draw {
       // |*****|
       else if (rowLength > lastRowLength && _y !== 0) {
         // if this row is longer and we're not already at the top...
-        for (let ux = _x + lastRowLength; ++ux < sx; ) {
+        for (let ux = _x + lastRowLength; ++ux < sx;) {
           // sx is the end of the current row
           if (!array(_y - 1, ux)) {
             // since there may be clear cells up and left, use _Fill

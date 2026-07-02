@@ -44,15 +44,4 @@ export type BufferEncoding =
 
 /** Type representing various compression levels */
 export type CompressionLevel =
-  | -1
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | undefined;
+  -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined;

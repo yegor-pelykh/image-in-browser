@@ -79,12 +79,12 @@ export class TiffImage {
   /**
    * Compression type of the image.
    */
-  private _compression = 1;
+  private _compression: TiffCompression = TiffCompression.none;
 
   /**
    * Gets the compression type of the image.
    */
-  public get compression(): number {
+  public get compression(): TiffCompression {
     return this._compression;
   }
 
@@ -403,7 +403,7 @@ export class TiffImage {
         p.skip(4);
         continue;
       }
-      const type = ti as IfdValueType;
+      const type = ti;
       const typeSize = IfdValueTypeSize[ti];
       let valueOffset = 0;
       // The value for the tag is either stored in another location,
@@ -437,13 +437,13 @@ export class TiffImage {
         } else {
           const pt = v.toInt();
           if (pt < TiffPhotometricTypeLength) {
-            this._photometricType = pt as TiffPhotometricType;
+            this._photometricType = pt;
           } else {
             this._photometricType = TiffPhotometricType.unknown;
           }
         }
       } else if (tag === ExifTagNameToID.get('Compression')) {
-        this._compression = entry.read()?.toInt() ?? 0;
+        this._compression = entry.read()?.toInt() ?? TiffCompression.none;
       } else if (tag === ExifTagNameToID.get('BitsPerSample')) {
         this._bitsPerSample = entry.read()?.toInt() ?? 0;
       } else if (tag === ExifTagNameToID.get('SamplesPerPixel')) {
@@ -452,7 +452,7 @@ export class TiffImage {
         this._predictor = entry.read()?.toInt() ?? 0;
       } else if (tag === ExifTagNameToID.get('SampleFormat')) {
         const v = entry.read()?.toInt() ?? 0;
-        this._sampleFormat = v as TiffFormat;
+        this._sampleFormat = v;
       } else if (tag === ExifTagNameToID.get('ColorMap')) {
         const v = entry.read();
         if (v !== undefined) {
@@ -594,7 +594,7 @@ export class TiffImage {
         break;
       case TiffPhotometricType.yCbCr:
         if (
-          (this._compression as TiffCompression) === TiffCompression.jpeg &&
+          this._compression === TiffCompression.jpeg &&
           this._bitsPerSample === 8 &&
           this._samplesPerPixel === 3
         ) {
@@ -689,7 +689,7 @@ export class TiffImage {
     const byteCount = this._tileByteCounts![tileIndex];
 
     let byteData: InputBuffer<Uint8Array> | undefined = undefined;
-    if ((this._compression as TiffCompression) === TiffCompression.packBits) {
+    if (this._compression === TiffCompression.packBits) {
       // Since the decompressed data will still be packed
       // 8 pixels into 1 byte, calculate bytesInThisTile
       let bytesInThisTile = 0;
@@ -703,7 +703,7 @@ export class TiffImage {
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
       this.decodePackBits(p, bytesInThisTile, byteData.buffer);
-    } else if ((this._compression as TiffCompression) === TiffCompression.lzw) {
+    } else if (this._compression === TiffCompression.lzw) {
       byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
@@ -728,9 +728,7 @@ export class TiffImage {
           }
         }
       }
-    } else if (
-      (this._compression as TiffCompression) === TiffCompression.ccittRle
-    ) {
+    } else if (this._compression === TiffCompression.ccittRle) {
       byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
@@ -744,9 +742,7 @@ export class TiffImage {
       } catch (_) {
         // skip
       }
-    } else if (
-      (this._compression as TiffCompression) === TiffCompression.ccittFax3
-    ) {
+    } else if (this._compression === TiffCompression.ccittFax3) {
       byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
@@ -760,9 +756,7 @@ export class TiffImage {
       } catch (_) {
         // skip
       }
-    } else if (
-      (this._compression as TiffCompression) === TiffCompression.ccittFax4
-    ) {
+    } else if (this._compression === TiffCompression.ccittFax4) {
       byteData = new InputBuffer<Uint8Array>({
         buffer: new Uint8Array(this._tileWidth * this._tileHeight),
       });
@@ -776,23 +770,19 @@ export class TiffImage {
       } catch (_) {
         // skip
       }
-    } else if ((this._compression as TiffCompression) === TiffCompression.zip) {
+    } else if (this._compression === TiffCompression.zip) {
       const data = p.toUint8Array(0, byteCount);
       const outData = inflate(data);
       byteData = new InputBuffer<Uint8Array>({
         buffer: outData,
       });
-    } else if (
-      (this._compression as TiffCompression) === TiffCompression.deflate
-    ) {
+    } else if (this._compression === TiffCompression.deflate) {
       const data = p.toUint8Array(0, byteCount);
       const outData = inflate(data);
       byteData = new InputBuffer<Uint8Array>({
         buffer: outData,
       });
-    } else if (
-      (this._compression as TiffCompression) === TiffCompression.none
-    ) {
+    } else if (this._compression === TiffCompression.none) {
       byteData = p;
     } else {
       throw new LibError(`Unsupported Compression Type: ${this._compression}`);
@@ -860,11 +850,9 @@ export class TiffImage {
       this._bitsPerSample === 32 ||
       this._bitsPerSample === 64
     ) {
-      if ((this._compression as TiffCompression) === TiffCompression.none) {
+      if (this._compression === TiffCompression.none) {
         byteData = p;
-      } else if (
-        (this._compression as TiffCompression) === TiffCompression.lzw
-      ) {
+      } else if (this._compression === TiffCompression.lzw) {
         byteData = new InputBuffer<Uint8Array>({
           buffer: new Uint8Array(bytesInThisTile),
         });
@@ -889,32 +877,26 @@ export class TiffImage {
             }
           }
         }
-      } else if (
-        (this._compression as TiffCompression) === TiffCompression.packBits
-      ) {
+      } else if (this._compression === TiffCompression.packBits) {
         byteData = new InputBuffer<Uint8Array>({
           buffer: new Uint8Array(bytesInThisTile),
         });
         this.decodePackBits(p, bytesInThisTile, byteData.buffer);
-      } else if (
-        (this._compression as TiffCompression) === TiffCompression.deflate
-      ) {
+      } else if (this._compression === TiffCompression.deflate) {
+        const data = p.toUint8Array(0, byteCount);
+        const outData = inflate(data);
+        byteData = new InputBuffer<Uint8Array>({
+          buffer: outData,
+        });
+      } else if (this._compression === TiffCompression.zip) {
         const data = p.toUint8Array(0, byteCount);
         const outData = inflate(data);
         byteData = new InputBuffer<Uint8Array>({
           buffer: outData,
         });
       } else if (
-        (this._compression as TiffCompression) === TiffCompression.zip
-      ) {
-        const data = p.toUint8Array(0, byteCount);
-        const outData = inflate(data);
-        byteData = new InputBuffer<Uint8Array>({
-          buffer: outData,
-        });
-      } else if (
-        (this._compression as TiffCompression) === TiffCompression.oldJpeg ||
-        (this._compression as TiffCompression) === TiffCompression.jpeg
+        this._compression === TiffCompression.oldJpeg ||
+        this._compression === TiffCompression.jpeg
       ) {
         const data = p.toUint8Array(0, byteCount);
         const tile = new JpegDecoder().decode({

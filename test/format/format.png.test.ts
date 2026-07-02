@@ -176,7 +176,7 @@ describe('Format: PNG', () => {
       test(`b1_1_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
 
         TestUtils.writeToFile(
@@ -221,7 +221,7 @@ describe('Format: PNG', () => {
       test(`b1_1p_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -261,7 +261,7 @@ describe('Format: PNG', () => {
       test(`b2_1_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -303,7 +303,7 @@ describe('Format: PNG', () => {
       test(`b2_1p_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -343,7 +343,7 @@ describe('Format: PNG', () => {
       test(`b4_1_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -385,7 +385,7 @@ describe('Format: PNG', () => {
       test(`b4_1p_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -425,7 +425,7 @@ describe('Format: PNG', () => {
       test(`b8_3_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -466,7 +466,7 @@ describe('Format: PNG', () => {
       test(`b8_3p_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,
@@ -507,7 +507,7 @@ describe('Format: PNG', () => {
       test(`b16_3_${PngFilterType[filter]}`, () => {
         const png = encodePng({
           image,
-          filter: filter as PngFilterType,
+          filter: filter,
         });
         TestUtils.writeToFile(
           TestFolder.output,

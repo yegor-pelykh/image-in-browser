@@ -84,7 +84,7 @@ export class IcoInfo implements DecodeInfo {
     if (t >= IcoTypeLength) {
       return undefined;
     }
-    const type = t as IcoType;
+    const type: IcoType = t;
     if (type === IcoType.cur) {
       // CUR format not yet supported.
       return undefined;

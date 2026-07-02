@@ -154,15 +154,15 @@ export class JpegData {
    */
   private readMarkers(): void {
     let marker = this.nextMarker();
-    if ((marker as JpegMarker) !== JpegMarker.soi) {
+    if (marker !== JpegMarker.soi) {
       // SOI (Start of Image)
       throw new LibError('Start Of Image marker not found.');
     }
 
     marker = this.nextMarker();
-    while ((marker as JpegMarker) !== JpegMarker.eoi && !this._input.isEOS) {
+    while (marker !== JpegMarker.eoi && !this._input.isEOS) {
       const block = this.readBlock();
-      switch (marker as JpegMarker) {
+      switch (marker) {
         case JpegMarker.app0:
         case JpegMarker.app1:
         case JpegMarker.app2:
@@ -246,8 +246,11 @@ export class JpegData {
             break;
           }
 
-          if (marker !== 0) {
-            throw new LibError(`Unknown JPEG marker ${marker.toString(16)}`);
+          {
+            const markerValue: number = marker;
+            if (markerValue !== 0) {
+              throw new LibError(`Unknown JPEG marker ${marker.toString(16)}`);
+            }
           }
           break;
       }
@@ -286,7 +289,7 @@ export class JpegData {
     }
 
     let marker = this.nextMarker();
-    if ((marker as JpegMarker) !== JpegMarker.soi) {
+    if (marker !== JpegMarker.soi) {
       return false;
     }
 
@@ -294,7 +297,7 @@ export class JpegData {
     let hasSOS = false;
 
     marker = this.nextMarker();
-    while ((marker as JpegMarker) !== JpegMarker.eoi && !this._input.isEOS) {
+    while (marker !== JpegMarker.eoi && !this._input.isEOS) {
       // EOI (End of image)
       const sectionByteSize = this._input.readUint16();
       if (sectionByteSize < 2) {
@@ -305,7 +308,7 @@ export class JpegData {
 
       this._input.skip(sectionByteSize - 2);
 
-      switch (marker as JpegMarker) {
+      switch (marker) {
         // SOF0 (Start of Frame, Baseline DCT)
         case JpegMarker.sof0:
         // SOF1 (Start of Frame, Extended DCT)
@@ -341,7 +344,7 @@ export class JpegData {
     });
 
     let marker = this.nextMarker();
-    if ((marker as JpegMarker) !== JpegMarker.soi) {
+    if (marker !== JpegMarker.soi) {
       return undefined;
     }
 
@@ -351,9 +354,9 @@ export class JpegData {
     let hasSOS = false;
 
     marker = this.nextMarker();
-    while ((marker as JpegMarker) !== JpegMarker.eoi && !this._input.isEOS) {
+    while (marker !== JpegMarker.eoi && !this._input.isEOS) {
       // EOI (End of image)
-      switch (marker as JpegMarker) {
+      switch (marker) {
         // SOF0 (Start of Frame, Baseline DCT)
         case JpegMarker.sof0:
         // SOF1 (Start of Frame, Extended DCT)
@@ -552,7 +555,7 @@ export class JpegData {
    * Reads the next marker from the input buffer.
    * @returns {number} The next marker.
    */
-  private nextMarker(): number {
+  private nextMarker(): JpegMarker {
     let c = 0;
     if (this._input.isEOS) {
       return c;
@@ -618,13 +621,16 @@ export class JpegData {
 
   /**
    * Reads application-specific data from the JPEG file based on the marker provided.
-   * @param {number} marker - The marker indicating the type of application data.
+   * @param {JpegMarker} marker - The marker indicating the type of application data.
    * @param {InputBuffer<Uint8Array>} block - The input buffer containing the application data.
    */
-  private readAppData(marker: number, block: InputBuffer<Uint8Array>): void {
+  private readAppData(
+    marker: JpegMarker,
+    block: InputBuffer<Uint8Array>
+  ): void {
     const appData = block;
 
-    if ((marker as JpegMarker) === JpegMarker.app0) {
+    if (marker === JpegMarker.app0) {
       // 'JFIF\0'
       if (
         appData.get(0) === 0x4a &&
@@ -655,12 +661,12 @@ export class JpegData {
           thumbData
         );
       }
-    } else if ((marker as JpegMarker) === JpegMarker.app1) {
+    } else if (marker === JpegMarker.app1) {
       // 'EXIF\0'
       this.readExifData(appData);
-    } else if ((marker as JpegMarker) === JpegMarker.app2) {
+    } else if (marker === JpegMarker.app2) {
       this.readIccProfile(appData);
-    } else if ((marker as JpegMarker) === JpegMarker.app14) {
+    } else if (marker === JpegMarker.app14) {
       // 'Adobe\0'
       if (
         appData.get(0) === 0x41 &&
@@ -676,7 +682,7 @@ export class JpegData {
         const transformCode = appData.get(11);
         this._adobe = new JpegAdobe(version, flags0, flags1, transformCode);
       }
-    } else if ((marker as JpegMarker) === JpegMarker.com) {
+    } else if (marker === JpegMarker.com) {
       // Comment
       try {
         this._comment = appData.readStringUtf8();
@@ -724,17 +730,17 @@ export class JpegData {
   /**
    * Reads a JPEG frame from the input buffer and initializes the frame data.
    * Throws an error if a duplicate frame is found.
-   * @param {number} marker - The JPEG marker indicating the type of frame.
+   * @param {JpegMarker} marker - The JPEG marker indicating the type of frame.
    * @param {InputBuffer<Uint8Array>} block - The input buffer containing the frame data.
    * @throws {LibError} If duplicate JPEG frame data is found.
    */
-  private readFrame(marker: number, block: InputBuffer<Uint8Array>): void {
+  private readFrame(marker: JpegMarker, block: InputBuffer<Uint8Array>): void {
     if (this._frame !== undefined) {
       throw new LibError('Duplicate JPG frame data found.');
     }
 
-    const extended = (marker as JpegMarker) === JpegMarker.sof1;
-    const progressive = (marker as JpegMarker) === JpegMarker.sof2;
+    const extended = marker === JpegMarker.sof1;
+    const progressive = marker === JpegMarker.sof2;
     const precision = block.read();
     const scanLines = block.readUint16();
     const samplesPerLine = block.readUint16();
