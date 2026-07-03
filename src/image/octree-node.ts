@@ -104,7 +104,7 @@ export class OctreeNode {
   /**
    * Index of this node in the palette.
    */
-  private _paletteIndex = 0;
+  private _paletteIndex = -1;
   /**
    * Gets the palette index.
    * @returns {number} The palette index.

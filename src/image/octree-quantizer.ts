@@ -64,16 +64,39 @@ export class OctreeQuantizer implements Quantizer {
       got.b = Math.round(got.b / c);
     }
 
-    const nodes: OctreeNode[] = [];
-    this.getNodes(nodes, this._root);
-
-    this._palette = new PaletteUint8(nodes.length, 3);
-    const l = nodes.length;
-    for (let i = 0; i < l; ++i) {
-      nodes[i].paletteIndex = i;
-      const n = nodes[i];
-      this._palette.setRgb(i, n.r, n.g, n.b);
+    this._palette = new PaletteUint8(heap.n - 1, 3);
+    for (let i = 1; i < heap.n; ++i) {
+      const n = heap.buf[i]!;
+      n.paletteIndex = i - 1;
+      this._palette.setRgb(i - 1, n.r, n.g, n.b);
     }
+
+    this._fillPaletteIndex(this._root);
+  }
+
+  /**
+   * Recursively assigns palette indices to internal nodes.
+   * @param {OctreeNode} node - The starting node.
+   * @returns {number} The palette index assigned to this node.
+   */
+  private _fillPaletteIndex(node: OctreeNode): number {
+    if (node.childCount > 0) {
+      let bestCount = -1;
+      let bestIndex = -1;
+      for (const child of node.children) {
+        if (child !== undefined) {
+          const childIndex = this._fillPaletteIndex(child);
+          if (child.count > bestCount) {
+            bestCount = child.count;
+            bestIndex = childIndex;
+          }
+        }
+      }
+      if (node.paletteIndex < 0) {
+        node.paletteIndex = bestIndex;
+      }
+    }
+    return node.paletteIndex;
   }
 
   /**
@@ -239,23 +262,6 @@ export class OctreeQuantizer implements Quantizer {
   }
 
   /**
-   * Gets all leaf nodes of the octree.
-   * @param {OctreeNode[]} nodes - The array to store the nodes.
-   * @param {OctreeNode} node - The current node.
-   */
-  private getNodes(nodes: OctreeNode[], node: OctreeNode): void {
-    if (node.childCount === 0) {
-      nodes.push(node);
-      return;
-    }
-    for (const n of node.children) {
-      if (n !== undefined) {
-        this.getNodes(nodes, n);
-      }
-    }
-  }
-
-  /**
    * Gets the index of the color in the palette.
    * @param {Color} c - The color.
    * @returns {number} The index of the color in the palette.
@@ -276,18 +282,20 @@ export class OctreeQuantizer implements Quantizer {
    * @returns {number} The index of the color in the palette.
    */
   public getColorIndexRgb(r: number, g: number, b: number): number {
-    let root: OctreeNode | undefined = this._root;
+    let node: OctreeNode = this._root;
     for (let bit = 1 << 7; bit !== 0; bit >>>= 1) {
       const i =
         ((g & bit) !== 0 ? 1 : 0) * 4 +
         ((r & bit) !== 0 ? 1 : 0) * 2 +
         ((b & bit) !== 0 ? 1 : 0);
-      if (root.children[i] === undefined) {
+      const child = node.children[i];
+      if (child === undefined) {
         break;
       }
-      root = root.children[i];
+      node = child;
     }
-    return root.paletteIndex;
+    const index = node.paletteIndex;
+    return index < 0 ? 0 : index;
   }
 
   /**
@@ -296,27 +304,15 @@ export class OctreeQuantizer implements Quantizer {
    * @returns {Color} The closest color in the palette.
    */
   public getQuantizedColor(c: Color): Color {
-    let r = Math.trunc(c.r);
-    let g = Math.trunc(c.g);
-    let b = Math.trunc(c.b);
-    let root: OctreeNode | undefined = this._root;
-
-    for (let bit = 1 << 7; bit !== 0; bit >>>= 1) {
-      const i =
-        ((g & bit) !== 0 ? 1 : 0) * 4 +
-        ((r & bit) !== 0 ? 1 : 0) * 2 +
-        ((b & bit) !== 0 ? 1 : 0);
-      if (root.children[i] === undefined) {
-        break;
-      }
-      root = root.children[i];
+    if (this._palette.numColors === 0) {
+      return new ColorRgb8(0, 0, 0);
     }
-
-    r = root.r;
-    g = root.g;
-    b = root.b;
-
-    return new ColorRgb8(r, g, b);
+    const i = this.getColorIndex(c);
+    return new ColorRgb8(
+      Math.trunc(this._palette.get(i, 0)),
+      Math.trunc(this._palette.get(i, 1)),
+      Math.trunc(this._palette.get(i, 2))
+    );
   }
 
   /**
