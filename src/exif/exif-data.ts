@@ -27,6 +27,12 @@ import { IfdValue } from './ifd-value/ifd-value.js';
  * Class representing ExifData and providing methods for reading, writing, and manipulating Exif metadata.
  */
 export class ExifData extends IfdContainer {
+  private _thumbnailData: Uint8Array | undefined;
+
+  public get thumbnailData(): Uint8Array | undefined {
+    return this._thumbnailData;
+  }
+
   /** Returns the image IFD directory. */
   public get imageIfd(): IfdDirectory {
     return this.get('ifd0');
@@ -102,6 +108,19 @@ export class ExifData extends IfdContainer {
     out.writeUint32(8);
     if (this.directories.get('ifd0') === undefined)
       this.directories.set('ifd0', new IfdDirectory());
+    const thumbnailIfd = this.directories.get('ifd1');
+    const thumbnail = this._thumbnailData;
+    const hasThumbnail =
+      thumbnail !== undefined &&
+      thumbnail.length > 0 &&
+      thumbnailIfd !== undefined;
+    if (hasThumbnail) {
+      thumbnailIfd.set(0x0201, new IfdLongValue(0));
+      thumbnailIfd.set(0x0202, new IfdLongValue(thumbnail.length));
+    } else if (thumbnailIfd !== undefined) {
+      thumbnailIfd.set(0x0201, undefined);
+      thumbnailIfd.set(0x0202, undefined);
+    }
     const dirNames: string[] = ['ifd0'];
     dirNames.push(
       ...Array.from(this.directories.keys()).filter((k) => k !== 'ifd0')
@@ -132,6 +151,12 @@ export class ExifData extends IfdContainer {
         dataOffset += subSize;
       }
     }
+    let thumbnailOffset = 0;
+    if (hasThumbnail) {
+      thumbnailOffset = dataOffset;
+      thumbnailIfd.get(0x0201)!.setInt(thumbnailOffset);
+      dataOffset += thumbnail.length;
+    }
     const numIfd = dirNames.length;
     for (let i = 0; i < numIfd; ++i) {
       const name = dirNames[i];
@@ -152,6 +177,9 @@ export class ExifData extends IfdContainer {
         this.writeDirectory(out, subDir, dataOffset);
         this.writeDirectoryLargeValues(out, subDir);
       }
+    }
+    if (hasThumbnail) {
+      out.writeBytes(thumbnail);
     }
     out.bigEndian = saveEndian;
   }
@@ -232,6 +260,27 @@ export class ExifData extends IfdContainer {
         }
       }
     }
+    this._thumbnailData = undefined;
+    const thumbnailIfd = this.directories.get('ifd1');
+    if (
+      thumbnailIfd !== undefined &&
+      thumbnailIfd.has(0x0201) &&
+      thumbnailIfd.has(0x0202)
+    ) {
+      const thumbnailOffset = thumbnailIfd.get(0x0201)!.toInt();
+      const thumbnailLength = thumbnailIfd.get(0x0202)!.toInt();
+      const start = blockOffset + thumbnailOffset;
+      if (
+        thumbnailLength > 0 &&
+        start >= blockOffset &&
+        start + thumbnailLength <= block.end
+      ) {
+        const saveOffset = block.offset;
+        block.offset = start;
+        this._thumbnailData = block.readRange(thumbnailLength).toUint8Array();
+        block.offset = saveOffset;
+      }
+    }
     block.bigEndian = saveEndian;
     return false;
   }
@@ -272,7 +321,12 @@ export class ExifData extends IfdContainer {
    */
   public static from(other: ExifData): ExifData {
     const dirs = new Map<string, IfdDirectory>(other.directories);
-    return new ExifData(dirs);
+    const thumb = other.thumbnailData;
+    const data = new ExifData(dirs);
+    if (thumb !== undefined) {
+      data._thumbnailData = thumb.slice();
+    }
+    return data;
   }
 
   /**

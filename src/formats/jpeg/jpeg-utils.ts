@@ -222,7 +222,7 @@ export class JpegUtils {
       } else {
         this.skipBlock(input);
       }
-      exifBlockStartOffset = startOffset;
+      exifBlockStartOffset = input.offset;
       marker = this.nextMarker(input);
     }
 
