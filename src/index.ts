@@ -918,6 +918,11 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
     return bmp;
   }
 
+  const pnm = new PnmDecoder();
+  if (pnm.isValidFile(bytes)) {
+    return pnm;
+  }
+
   const tga = new TgaDecoder();
   if (tga.isValidFile(bytes)) {
     return tga;
@@ -931,11 +936,6 @@ export function findDecoderForData(data: TypedArray): Decoder | undefined {
   const pvr = new PvrDecoder();
   if (pvr.isValidFile(bytes)) {
     return pvr;
-  }
-
-  const pnm = new PnmDecoder();
-  if (pnm.isValidFile(bytes)) {
-    return pnm;
   }
 
   return undefined;
