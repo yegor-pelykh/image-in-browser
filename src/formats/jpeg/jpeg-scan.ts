@@ -633,6 +633,8 @@ export class JpegScan {
         }
       }
 
+      if (mcu >= mcuExpected) break;
+
       // Find marker
       this._bitsCount = 0;
       const m1 = this._input.get(0);
