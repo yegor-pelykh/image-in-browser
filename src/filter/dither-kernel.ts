@@ -14,6 +14,7 @@ export enum DitherKernel {
   stucki,
   /** Atkinson dithering */
   atkinson,
+  jarvisJudiceNinke,
 }
 
 /**
@@ -62,5 +63,20 @@ export const DitherKernels = [
     [1 / 8, 0, 1],
     [1 / 8, 1, 1],
     [1 / 8, 0, 2],
+  ],
+  // jarvisJudiceNinke
+  [
+    [7 / 48, 1, 0],
+    [5 / 48, 2, 0],
+    [3 / 48, -2, 1],
+    [5 / 48, -1, 1],
+    [7 / 48, 0, 1],
+    [5 / 48, 1, 1],
+    [3 / 48, 2, 1],
+    [1 / 48, -2, 2],
+    [3 / 48, -1, 2],
+    [5 / 48, 0, 2],
+    [3 / 48, 1, 2],
+    [1 / 48, 2, 2],
   ],
 ];
