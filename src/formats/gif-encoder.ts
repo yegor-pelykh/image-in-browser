@@ -13,6 +13,7 @@ import { LibError } from '../error/lib-error.js';
 import { DitherKernel } from '../filter/dither-kernel.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
 import { Pixel } from '../image/pixel.js';
+import { DitherScanOrder } from '../filter/dither-scan-order.js';
 
 /**
  * Interface for initializing GifEncoder options.
@@ -28,6 +29,10 @@ export interface GifEncoderInitOptions {
   dither?: DitherKernel;
   /** Whether to use serpentine dithering. */
   ditherSerpentine?: boolean;
+  /** The scan order for error-diffusion dithering. */
+  ditherScanOrder?: DitherScanOrder;
+  /** The strength of the Bayer dither effect. */
+  ditherStrength?: number;
   /** The dispose method for frames. 0 = no action, 1 = leave, 2 = clear, 3 = restore. */
   dispose?: number;
 }
@@ -220,9 +225,35 @@ export class GifEncoder implements Encoder {
   private _ditherSerpentine: boolean;
 
   /**
+   * The order in which pixels are visited by the error-diffusion dither
+   * kernels. When not set, ditherSerpentine is used as fallback.
+   */
+  private _ditherScanOrder?: DitherScanOrder;
+
+  /**
+   * Scales the dither offset for the Bayer kernels; ignored by the
+   * error-diffusion kernels.
+   */
+  private _ditherStrength: number;
+
+  /**
    * Does this encoder support animation?
    */
   private readonly _supportsAnimation = true;
+
+  /**
+   * Resolves the effective dither scan order: the explicit ditherScanOrder
+   * option takes priority; when it is not set, the legacy ditherSerpentine
+   * flag is used for backward compatibility.
+   */
+  private get scanOrder(): DitherScanOrder {
+    return (
+      this._ditherScanOrder ??
+      (this._ditherSerpentine
+        ? DitherScanOrder.serpentine
+        : DitherScanOrder.raster)
+    );
+  }
 
   /**
    * Getter for supportsAnimation.
@@ -250,6 +281,7 @@ export class GifEncoder implements Encoder {
     this._samplingFactor = opt?.samplingFactor ?? 10;
     this._dither = opt?.dither ?? DitherKernel.floydSteinberg;
     this._ditherSerpentine = opt?.ditherSerpentine ?? false;
+    this._ditherStrength = opt?.ditherStrength ?? 1;
     this._encodedFrames = 0;
   }
 
@@ -649,7 +681,8 @@ export class GifEncoder implements Encoder {
           image: image,
           quantizer: this._lastColorMap,
           kernel: this._dither,
-          serpentine: this._ditherSerpentine,
+          scanOrder: this.scanOrder,
+          strength: this._ditherStrength,
         });
       } else {
         this._lastImage = image;
@@ -689,7 +722,7 @@ export class GifEncoder implements Encoder {
         image: image,
         quantizer: this._lastColorMap,
         kernel: this._dither,
-        serpentine: this._ditherSerpentine,
+        scanOrder: this.scanOrder,
       });
     } else {
       this._lastImage = image;

@@ -12,7 +12,11 @@ import type { Quantizer } from '../image/quantizer.js';
 import { RandomUtils } from '../common/random-utils.js';
 import { Draw } from '../draw/draw.js';
 import { MemoryImage } from '../image/image.js';
-import { DitherKernel, DitherKernels } from './dither-kernel.js';
+import {
+  bayerMatrices,
+  errorDiffusionKernels,
+  DitherKernel,
+} from './dither-kernel.js';
 import { NoiseType } from './noise-type.js';
 import { PixelateMode } from './pixelate-mode.js';
 import { QuantizeMethod } from './quantize-method.js';
@@ -24,6 +28,7 @@ import { ContrastMode } from './contrast-mode.js';
 import { HistogramEqualizeMode } from './histogram-equalize-mode.js';
 import { Format, FormatType } from '../color/format.js';
 import { ArrayUtils } from '../common/array-utils.js';
+import { DitherScanOrder } from './dither-scan-order.js';
 
 /**
  * Interface representing a cache for contrast adjustments.
@@ -248,15 +253,27 @@ export interface CopyImageChannelsOptions {
 /**
  * Options for dithering an image.
  */
-export interface DitherImageOptions {
+export interface DitherImageBayerOptions {
   /** The image to dither. */
   image: MemoryImage;
   /** The quantizer to use for dithering. */
   quantizer?: Quantizer;
   /** The dithering kernel to use. */
   kernel?: DitherKernel;
-  /** Whether to use serpentine dithering. */
+  /** The strength of the Bayer dither effect. */
+  strength?: number;
+}
+
+/**
+ * Options for dithering an image.
+ */
+export interface DitherImageOptions extends DitherImageBayerOptions {
+  /** Whether to use serpentine scanning. */
   serpentine?: boolean;
+  /** The scan order for error-diffusion dithering. */
+  scanOrder?: DitherScanOrder;
+  /** The strength of the Bayer dither effect. */
+  strength?: number;
 }
 
 /**
@@ -507,6 +524,10 @@ export interface QuantizeOptions {
   dither?: DitherKernel;
   /** Whether to use serpentine dithering. */
   ditherSerpentine?: boolean;
+  /** The scan order for error-diffusion dithering. */
+  ditherScanOrder?: DitherScanOrder;
+  /** The strength of the Bayer dither effect. */
+  ditherStrength?: number;
 }
 
 /**
@@ -722,6 +743,37 @@ export abstract class Filter {
    */
   private static readonly _gaussianKernelCache: Map<number, SeparableKernel> =
     new Map<number, SeparableKernel>();
+
+  /**
+   * Converts a Hilbert curve index to (x, y) coordinates for an nxn grid,
+   * where n MUST be a power of 2. The result is written into out in-place
+   * (out[0] = x, out[1] = y) to avoid per-pixel allocations.
+   *
+   * @param {number} n - The size of the grid (must be a power of 2).
+   * @param {number} d - The Hilbert curve index.
+   * @param {Array<number>} out - The output array, mutated in-place.
+   */
+  private static hilbertDtoXY(n: number, d: number, out: Array<number>): void {
+    out[0] = 0;
+    out[1] = 0;
+    let t: number = d;
+    for (let s = 1; s < n; s <<= 1) {
+      const rx = (t >> 1) & 1;
+      const ry = (t ^ rx) & 1;
+      if (ry === 0) {
+        if (rx === 1) {
+          out[0] = s - 1 - out[0];
+          out[1] = s - 1 - out[1];
+        }
+        const temp = out[0];
+        out[0] = out[1];
+        out[1] = temp;
+      }
+      out[0] += s * rx;
+      out[1] += s * ry;
+      t >>= 2;
+    }
+  }
 
   /**
    * Applies a histogram transformation map to an image frame.
@@ -1635,31 +1687,120 @@ export abstract class Filter {
   }
 
   /**
+   * Dither an image using an ordered (Bayer) threshold matrix. Unlike the
+   * error-diffusion kernels, the dither pattern is position-based and does
+   * not propagate error to neighboring pixels, making it deterministic and
+   * fast.
+   *
+   * kernel must be one of the Bayer variants
+   * (DitherKernel.bayer2x2, DitherKernel.bayer4x4 or DitherKernel.bayer8x8);
+   * passing any other DitherKernel may produce unexpected results.
+   *
+   * quantizer is the color reducer used to map each pixel to the palette;
+   * if undefined (the default) a NeuralQuantizer is built from the image.
+   *
+   * strength scales the dither offset (defaults to 1.0 for the classic
+   * full-range Bayer look; smaller values give subtler banding reduction).
+   *
+   * @param {DitherImageBayerOptions} opt - Options for Bayer dithering.
+   * @param {MemoryImage} opt.image - The image to be dithered.
+   * @param {Quantizer} [opt.quantizer] - Optional quantizer to use.
+   * @param {DitherKernel} [opt.kernel] - The dithering kernel to use.
+   * @param {number} [opt.strength] - The strength of the dither effect.
+   * @returns {MemoryImage} The Bayer-dithered image.
+   */
+  public static ditherImageBayer(opt: DitherImageBayerOptions): MemoryImage {
+    const kernel: DitherKernel = opt.kernel ?? DitherKernel.bayer4x4;
+    const strength: number = opt.strength ?? 1;
+    const quantizer = opt.quantizer ?? new NeuralQuantizer(opt.image);
+
+    const matrix = bayerMatrices.get(kernel)!;
+    const n = matrix.length;
+
+    const height = opt.image.height;
+    const width = opt.image.width;
+
+    const palette = quantizer.palette;
+    const indexedImage = new MemoryImage({
+      width: width,
+      height: height,
+      numChannels: 1,
+      palette: palette,
+    });
+
+    for (let y = 0; y < height; y++) {
+      const row = matrix[y % n];
+      for (let x = 0; x < width; x++) {
+        const pc = opt.image.getPixel(x, y);
+        // Centered threshold in the range [-0.5, 0.5).
+        const t = row[x % n] - 0.5;
+        const d = t * 255 * strength;
+        const r = Math.round(MathUtils.clamp(pc.getChannel(0) + d, 0, 255));
+        const g = Math.round(MathUtils.clamp(pc.getChannel(1) + d, 0, 255));
+        const b = Math.round(MathUtils.clamp(pc.getChannel(2) + d, 0, 255));
+        const idx = quantizer.getColorIndexRgb(r, g, b);
+        indexedImage.setPixelIndex(x, y, idx);
+      }
+    }
+
+    return indexedImage;
+  }
+
+  /**
    * Dither an image to reduce banding patterns when reducing the number of
    * colors.
    * Derived from http://jsbin.com/iXofIji/2/edit
+   *
+   * kernel selects the dithering algorithm: error-diffusion kernels
+   * (e.g. DitherKernel.floydSteinberg) propagate quantization error to
+   * neighbors, while the ordered Bayer kernels (DitherKernel.bayer2x2,
+   * DitherKernel.bayer4x4, DitherKernel.bayer8x8) use a fixed
+   * position-based threshold matrix.
+   *
+   * scanOrder selects the order in which pixels are visited by the
+   * error-diffusion kernels (DitherScanOrder.raster,
+   * DitherScanOrder.serpentine, the diagonal DitherScanOrder.zigzag, or
+   * the space-filling DitherScanOrder.hilbert curve).
+   * It has no effect on the Bayer kernels.
+   *
+   * strength scales the dither offset and is only used for the Bayer
+   * kernels; it is ignored by the error-diffusion kernels.
    *
    * @param {DitherImageOptions} opt - Options for dithering the image
    * @param {MemoryImage} opt.image - The image to be dithered
    * @param {Quantizer} [opt.quantizer] - Optional quantizer to use
    * @param {DitherKernel} [opt.kernel] - Optional dithering kernel to use
    * @param {boolean} [opt.serpentine] - Optional flag to use serpentine scanning
+   * @param {DitherScanOrder} [opt.scanOrder] - Optional scan order for error-diffusion dithering
+   * @param {number} [opt.strength] - Optional strength of the Bayer dither effect
    * @returns {MemoryImage} The dithered image
    */
   public static ditherImage(opt: DitherImageOptions): MemoryImage {
     const quantizer = opt.quantizer ?? new NeuralQuantizer(opt.image);
     const kernel = opt.kernel ?? DitherKernel.floydSteinberg;
     const serpentine = opt.serpentine ?? false;
+    const scanOrder = opt.scanOrder ?? DitherScanOrder.zigzag;
+    const strength = opt.strength ?? 1;
 
     if (kernel === DitherKernel.none) {
       return quantizer.getIndexImage(opt.image);
     }
 
-    const ds = DitherKernels[kernel];
+    if (bayerMatrices.has(kernel)) {
+      return this.ditherImageBayer({
+        image: opt.image,
+        quantizer,
+        kernel,
+        strength,
+      });
+    }
+
+    const order = serpentine ? DitherScanOrder.serpentine : scanOrder;
+
+    const q = quantizer;
+    const ds = errorDiffusionKernels.get(kernel)!;
     const height = opt.image.height;
     const width = opt.image.width;
-
-    let direction = serpentine ? -1 : 1;
 
     const palette = quantizer.palette;
     const indexedImage = new MemoryImage({
@@ -1670,51 +1811,98 @@ export abstract class Filter {
     });
 
     const imageCopy = opt.image.clone();
+
+    const diffusePixel = (x: number, y: number, direction: number) => {
+      // Get original color
+      const pc = imageCopy.getPixel(x, y);
+      const r1 = Math.trunc(pc.getChannel(0));
+      const g1 = Math.trunc(pc.getChannel(1));
+      const b1 = Math.trunc(pc.getChannel(2));
+
+      // Get converted color
+      const idx = q.getColorIndexRgb(r1, g1, b1);
+      indexedImage.setPixelIndex(x, y, idx);
+
+      const r2 = palette.get(idx, 0);
+      const g2 = palette.get(idx, 1);
+      const b2 = palette.get(idx, 2);
+
+      const er = r1 - r2;
+      const eg = g1 - g2;
+      const eb = b1 - b2;
+
+      if (er === 0 && eg === 0 && eb === 0) {
+        return;
+      }
+
+      const i0 = direction === 1 ? 0 : ds.length - 1;
+      const i1 = direction === 1 ? ds.length : 0;
+      for (let i = i0; i !== i1; i += direction) {
+        const x1 = Math.trunc(ds[i][1]);
+        const y1 = Math.trunc(ds[i][2]);
+        if (x1 + x >= 0 && x1 + x < width && y1 + y >= 0 && y1 + y < height) {
+          const d = ds[i][0];
+          const nx = x + x1;
+          const ny = y + y1;
+          const p2 = imageCopy.getPixel(nx, ny);
+          p2.r += er * d;
+          p2.g += eg * d;
+          p2.b += eb * d;
+        }
+      }
+    };
+
+    if (order === DitherScanOrder.zigzag) {
+      // Walk the anti-diagonals x + y == d, alternating their direction.
+      const numDiagonals = width + height - 1;
+      for (let d = 0; d < numDiagonals; d++) {
+        const xMin = d < height ? 0 : d - height + 1;
+        const xMax = d < width ? d : width - 1;
+        if (MathUtils.isEven(d)) {
+          for (let x = xMin; x <= xMax; x++) {
+            diffusePixel(x, d - x, 1);
+          }
+        } else {
+          for (let x = xMax; x >= xMin; x--) {
+            diffusePixel(x, d - x, 1);
+          }
+        }
+      }
+      return indexedImage;
+    }
+
+    if (order === DitherScanOrder.hilbert) {
+      // Walk pixels in Hilbert space-filling curve order.
+      // The curve is defined on a power-of-2 square; pixels outside the image
+      // bounds are simply skipped.
+      const maxDim = Math.max(width, height);
+      let n = 1;
+      while (n < maxDim) {
+        n <<= 1;
+      }
+      const xy = [0, 0];
+      const total = n * n;
+      for (let d = 0; d < total; d++) {
+        Filter.hilbertDtoXY(n, d, xy);
+        if (xy[0] < width && xy[1] < height) {
+          diffusePixel(xy[0], xy[1], 1);
+        }
+      }
+      return indexedImage;
+    }
+
+    const isSerpentine = order === DitherScanOrder.serpentine;
+    let direction = isSerpentine ? -1 : 1;
+
     for (let y = 0; y < height; y++) {
-      if (serpentine) {
+      if (isSerpentine) {
         direction *= -1;
       }
 
       const x0 = direction === 1 ? 0 : width - 1;
       const x1 = direction === 1 ? width : 0;
       for (let x = x0; x !== x1; x += direction) {
-        // Get original color
-        const pc = imageCopy.getPixel(x, y);
-        const r1 = Math.trunc(pc.getChannel(0));
-        const g1 = Math.trunc(pc.getChannel(1));
-        const b1 = Math.trunc(pc.getChannel(2));
-
-        // Get converted color
-        const idx = quantizer.getColorIndexRgb(r1, g1, b1);
-        indexedImage.setPixelIndex(x, y, idx);
-
-        const r2 = palette.get(idx, 0);
-        const g2 = palette.get(idx, 1);
-        const b2 = palette.get(idx, 2);
-
-        const er = r1 - r2;
-        const eg = g1 - g2;
-        const eb = b1 - b2;
-
-        if (er === 0 && eg === 0 && eb === 0) {
-          continue;
-        }
-
-        const i0 = direction === 1 ? 0 : ds.length - 1;
-        const i1 = direction === 1 ? ds.length : 0;
-        for (let i = i0; i !== i1; i += direction) {
-          const x1 = Math.trunc(ds[i][1]);
-          const y1 = Math.trunc(ds[i][2]);
-          if (x1 + x >= 0 && x1 + x < width && y1 + y >= 0 && y1 + y < height) {
-            const d = ds[i][0];
-            const nx = x + x1;
-            const ny = y + y1;
-            const p2 = imageCopy.getPixel(nx, ny);
-            p2.r += er * d;
-            p2.g += eg * d;
-            p2.b += eb * d;
-          }
-        }
+        diffusePixel(x, y, direction);
       }
     }
 
@@ -2926,6 +3114,8 @@ export abstract class Filter {
    * @param {QuantizeMethod} [opt.method=QuantizeMethod.neuralNet] - The method to use for quantization. Default is QuantizeMethod.neuralNet.
    * @param {DitherKernel} [opt.dither=DitherKernel.none] - The dithering kernel to use. Default is DitherKernel.none.
    * @param {boolean} [opt.ditherSerpentine=false] - Whether to use serpentine dithering. Default is false.
+   * @param {DitherScanOrder} [opt.ditherScanOrder] - The scan order for error-diffusion dithering.
+   * @param {number} [opt.ditherStrength=1] - The strength of the Bayer dither effect. Default is 1.
    * @returns {MemoryImage} The quantized image.
    */
   public static quantize(opt: QuantizeOptions): MemoryImage {
@@ -2933,6 +3123,7 @@ export abstract class Filter {
     const method = opt.method ?? QuantizeMethod.neuralNet;
     const dither = opt.dither ?? DitherKernel.none;
     const ditherSerpentine = opt.ditherSerpentine ?? false;
+    const ditherStrength = opt.ditherStrength ?? 1;
 
     let quantizer: Quantizer | undefined = undefined;
     if (method === QuantizeMethod.octree || numberOfColors < 4) {
@@ -2943,11 +3134,16 @@ export abstract class Filter {
       quantizer = new BinaryQuantizer();
     }
 
+    const order =
+      opt.ditherScanOrder ??
+      (ditherSerpentine ? DitherScanOrder.serpentine : DitherScanOrder.raster);
+
     return Filter.ditherImage({
       image: opt.image,
       quantizer: quantizer,
       kernel: dither,
-      serpentine: ditherSerpentine,
+      scanOrder: order,
+      strength: ditherStrength,
     });
   }
 

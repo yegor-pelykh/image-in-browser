@@ -93,6 +93,50 @@ describe('Filter', () => {
 
     id = Filter.ditherImage({
       image: i0,
+      kernel: DitherKernel.burkes,
+    });
+
+    output = encodePng({
+      image: id,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'dither_Burkes.png',
+      output
+    );
+
+    id = Filter.ditherImage({
+      image: i0,
+    });
+
+    output = encodePng({
+      image: id,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'dither_FloydSteinberg_zigzag.png',
+      output
+    );
+
+    id = Filter.ditherImage({
+      image: i0,
+      kernel: DitherKernel.bayer8x8,
+    });
+
+    output = encodePng({
+      image: id,
+    });
+    TestUtils.writeToFile(
+      TestFolder.output,
+      TestSection.filter,
+      'dither_Bayer8x8.png',
+      output
+    );
+
+    id = Filter.ditherImage({
+      image: i0,
       kernel: DitherKernel.none,
     });
 

@@ -143,7 +143,12 @@ export {
 
 // Export types from 'filter' directory
 export { ContrastMode } from './filter/contrast-mode.js';
-export { DitherKernel, DitherKernels } from './filter/dither-kernel.js';
+export {
+  DitherKernel,
+  bayerMatrices,
+  errorDiffusionKernels,
+} from './filter/dither-kernel.js';
+export { DitherScanOrder } from './filter/dither-scan-order.js';
 export {
   Filter,
   AdjustColorOptions,
