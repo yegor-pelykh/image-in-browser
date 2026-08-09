@@ -9,7 +9,7 @@ const srcDirectory = 'src';
 /**
  * Returns a list of files in a folder (with recursive traversal).
  */
-function getFiles(dir: string) {
+function getFiles(dir) {
   const results = [];
   const files = fs.readdirSync(dir, {
     recursive: true,

@@ -12,6 +12,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "outDir": "lib",
+    "rootDir": ".",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
@@ -29,7 +30,6 @@
   },
   "include": [
     "eslint.config.js",
-    "pre-build.ts",
     "vitest.config.ts",
     "src/**/*.ts",
     "test/**/*.ts"

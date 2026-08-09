@@ -5,7 +5,8 @@ import tseslint from 'typescript-eslint';
 import config from 'eslint/config';
 
 export default config.defineConfig(
-  config.globalIgnores(['lib/**/*'], 'Ignore Build Directory'),
+  config.globalIgnores(['lib/**/*', 'pre-build.js'], 'Ignore Build Directory'),
+
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

@@ -2,6 +2,6 @@
   "extends": "./tsconfig.json",
   "exclude": [
     "vitest.config.ts",
-    "test/**/*.ts",
+    "test/**/*.ts"
   ]
 }
