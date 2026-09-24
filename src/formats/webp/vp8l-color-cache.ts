@@ -1,5 +1,7 @@
 /** @format */
 
+import { colorCacheKey } from './vp8l-color-hash.js';
+
 /**
  * Class representing a VP8L color cache.
  */
@@ -30,9 +32,7 @@ export class VP8LColorCache {
    * @param {number} argb - The color value in ARGB format.
    */
   public insert(argb: number): void {
-    const a = (argb * VP8LColorCache.hashMultiplier) & 0xffffffff;
-    const key = a >>> this._hashShift;
-    this._colors[key] = argb;
+    this._colors[colorCacheKey(argb, this._hashShift)] = argb;
   }
 
   /**
@@ -43,11 +43,4 @@ export class VP8LColorCache {
   public lookup(key: number): number {
     return this._colors[key];
   }
-
-  /**
-   * Multiplier used in the hash function.
-   * @private
-   * @static
-   */
-  private static readonly hashMultiplier = 0x1e35a7bd;
 }

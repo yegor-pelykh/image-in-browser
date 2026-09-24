@@ -3,6 +3,7 @@
 import { ArrayUtils } from '../../common/array-utils.js';
 import { VP8 } from './vp8.js';
 import { VP8BandProbas } from './vp8-band-probas.js';
+import { numBands, numTypes } from './vp8-tables.js';
 
 /**
  * Struct collecting all frame-persistent probabilities
@@ -23,11 +24,8 @@ export class VP8Proba {
    * Constructor to initialize bands and segments
    */
   constructor() {
-    this.bands = ArrayUtils.generate<Array<VP8BandProbas>>(VP8.numTypes, () =>
-      ArrayUtils.generate<VP8BandProbas>(
-        VP8.numBands,
-        () => new VP8BandProbas()
-      )
+    this.bands = ArrayUtils.generate<Array<VP8BandProbas>>(numTypes, () =>
+      ArrayUtils.generate<VP8BandProbas>(numBands, () => new VP8BandProbas())
     );
     this.segments.fill(255, 0, this.segments.length);
   }

@@ -1,7 +1,7 @@
 /** @format */
 
 import { ArrayUtils } from '../../common/array-utils.js';
-import { VP8 } from './vp8.js';
+import { numCtx, numProbas } from './vp8-tables.js';
 
 /**
  * Represents all the probabilities associated with one band.
@@ -16,9 +16,6 @@ export class VP8BandProbas {
    * Constructs a new instance of VP8BandProbas.
    */
   constructor() {
-    this.probas = ArrayUtils.generate(
-      VP8.numCtx,
-      () => new Uint8Array(VP8.numProbas)
-    );
+    this.probas = ArrayUtils.generate(numCtx, () => new Uint8Array(numProbas));
   }
 }

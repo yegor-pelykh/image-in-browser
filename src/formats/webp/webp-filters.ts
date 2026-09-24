@@ -21,6 +21,14 @@ export class WebPFilters {
   /** Fast filter constant. */
   public static readonly filterFast = 6;
 
+  /** Array of filter functions. */
+  public static readonly filters = [
+    undefined,
+    WebPFilters.horizontalFilter.bind(this),
+    WebPFilters.verticalFilter.bind(this),
+    WebPFilters.gradientFilter.bind(this),
+  ];
+
   /** Array of unfilter functions. */
   public static readonly unfilters = [
     undefined,
@@ -63,7 +71,10 @@ export class WebPFilters {
     const startOffset = _row * stride;
     const lastRow = _row + numRows;
     const s = new InputBuffer<Uint8Array>({ buffer: src, offset: startOffset });
-    const o = new InputBuffer<Uint8Array>({ buffer: src, offset: startOffset });
+    const o = new InputBuffer<Uint8Array>({
+      buffer: _out,
+      offset: startOffset,
+    });
     const preds = InputBuffer.from(inverse ? o : s);
     if (_row === 0) {
       o.set(0, s.get(0));
@@ -199,7 +210,7 @@ export class WebPFilters {
   /**
    * Applies horizontal filter to image data.
    */
-  private static horizontalFilter(
+  public static horizontalFilter(
     data: Uint8Array,
     width: number,
     height: number,
@@ -244,7 +255,7 @@ export class WebPFilters {
   /**
    * Applies vertical filter to image data.
    */
-  private static verticalFilter(
+  public static verticalFilter(
     data: Uint8Array,
     width: number,
     height: number,
@@ -289,7 +300,7 @@ export class WebPFilters {
   /**
    * Applies gradient filter to image data.
    */
-  private static gradientFilter(
+  public static gradientFilter(
     data: Uint8Array,
     width: number,
     height: number,

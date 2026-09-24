@@ -342,11 +342,20 @@ export class VP8L {
   ): boolean {
     let row = Math.trunc(this._lastPixel / width);
     let col = this._lastPixel % width;
-    let htreeGroup = this.getHtreeGroupForPos(col, row);
     let src = this._lastPixel;
     let lastCached = src;
     const srcEnd = width * height;
     const srcLast = width * lastRow;
+
+    // A backward reference at the end of the previous band can run past this
+    // one, as far as the end of the image, where there is no group to look up.
+    // Nothing is left to decode, only the rows it filled in to hand on.
+    if (src >= srcLast) {
+      processFunc?.(lastRow, false);
+      return true;
+    }
+
+    let htreeGroup = this.getHtreeGroupForPos(col, row);
     const lenCodeLimit = VP8L.numLiteralCodes + VP8L.numLengthCodes;
     const colorCacheLimit = lenCodeLimit + this._colorCacheSize;
     const colorCache = this._colorCacheSize > 0 ? this._colorCache : undefined;
@@ -912,9 +921,10 @@ export class VP8L {
           const blue = htrees[VP8L.blue].get(0).value;
           const alpha = htrees[VP8L.alpha].get(0).value;
           htreeGroup.literalArb = (alpha << 24) | (red << 16) | blue;
+          // Trivial means the one green symbol is a literal.
           if (
             totalSize === 0 &&
-            htrees[VP8L.green].get(0).value < VP8L.numLengthCodes
+            htrees[VP8L.green].get(0).value < VP8L.numLiteralCodes
           ) {
             htreeGroup.isTrivialCode = true;
             htreeGroup.literalArb |= htrees[VP8L.green].get(0).value << 8;
@@ -1116,10 +1126,19 @@ export class VP8L {
   ): boolean {
     let row = Math.trunc(this._lastPixel / width);
     let col = this._lastPixel % width;
-    let htreeGroup = this.getHtreeGroupForPos(col, row);
     let pos = this._lastPixel;
     const end = width * height;
     const last = width * lastRow;
+
+    // A backward reference at the end of the previous band can run past this
+    // one, as far as the end of the image, where there is no group to look up.
+    // Nothing is left to decode, only the rows it filled in to hand on.
+    if (pos >= last) {
+      this.extractPalettedAlphaRows(row);
+      return true;
+    }
+
+    let htreeGroup = this.getHtreeGroupForPos(col, row);
     const lenCodeLimit = VP8L.numLiteralCodes + VP8L.numLengthCodes;
     const mask = this._huffmanMask;
     while (!this._br.isEOS && pos < last) {

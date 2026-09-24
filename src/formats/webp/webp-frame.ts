@@ -109,6 +109,20 @@ export class WebPFrame {
   }
 
   /**
+   * If true, the frame is alpha blended over what is already on the canvas.
+   * If false, it replaces those pixels outright, alpha included.
+   */
+  private _blendFrame: boolean;
+
+  /**
+   * If true, the frame is alpha blended over what is already on the canvas.
+   * If false, it replaces those pixels outright, alpha included.
+   */
+  public get blendFrame(): boolean {
+    return this._blendFrame;
+  }
+
+  /**
    * Reserved field for future use
    */
   private _reserved: number = 1;
@@ -134,6 +148,8 @@ export class WebPFrame {
     const b = input.read();
     this._reserved = (b & 0x7f) >>> 7;
     this._clearFrame = (b & 0x1) !== 0;
+    // The bit is set when the frame must not be blended
+    this._blendFrame = (b & 0x2) === 0;
     this._framePosition = input.position;
     this._frameSize = size - WebPFrame.animFrameHeaderSize;
   }

@@ -2,7 +2,13 @@
 
 import { ColorRgba8 } from '../color/color-rgba8.js';
 import { InputBuffer } from '../common/input-buffer.js';
+import { Rectangle } from '../common/rectangle.js';
+import { StringUtils } from '../common/string-utils.js';
+import { BlendMode } from '../draw/blend-mode.js';
 import { Draw } from '../draw/draw.js';
+import { ExifData } from '../exif/exif-data.js';
+import { IccProfile } from '../image/icc-profile.js';
+import { IccProfileCompression } from '../image/icc-profile-compression.js';
 import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
 import { Decoder, DecoderDecodeOptions } from './decoder.js';
@@ -260,11 +266,12 @@ export class WebPDecoder implements Decoder {
    */
   private getAnimInfo(input: InputBuffer<Uint8Array>, webp: WebPInfo): boolean {
     const c = input.readUint32();
-    // Color is stored in [blue, green, red, alpha] order.
-    const a = c & 0xff;
-    const r = (c >>> 8) & 0xff;
-    const g = (c >>> 16) & 0xff;
-    const b = (c >>> 24) & 0xff;
+    // Blue, green, red, alpha in that byte order, read little endian, so blue
+    // arrives in the low byte.
+    const b = c & 0xff;
+    const g = (c >>> 8) & 0xff;
+    const r = (c >>> 16) & 0xff;
+    const a = (c >>> 24) & 0xff;
     webp.backgroundColor = new ColorRgba8(r, g, b, a);
     webp.animLoopCount = input.readUint16();
     return true;
@@ -374,6 +381,9 @@ export class WebPDecoder implements Decoder {
 
     let firstImage: MemoryImage | undefined = undefined;
     let lastImage: MemoryImage | undefined = undefined;
+    // Not frames[i - 1]: an undecodable frame is skipped, and must not dispose
+    // in place of the frame that was actually drawn
+    let previous: WebPFrame | undefined = undefined;
     for (let i = 0; i < this._info.numFrames; ++i) {
       this._info.frame = i;
       const frame = this._info.frames[i];
@@ -391,27 +401,82 @@ export class WebPDecoder implements Decoder {
           numChannels: image.numChannels,
           format: image.format,
           frameDuration: image.frameDuration,
+          // This canvas is built rather than decoded, so the file's own
+          // fields have to be carried onto it or the round trip drops them
+          loopCount: this._info.animLoopCount,
+          backgroundColor: this._info.backgroundColor,
+          exifData: WebPDecoder.exifOf(this._info),
+          iccProfile: WebPDecoder.iccProfileOf(this._info),
         });
         lastImage = firstImage;
       } else {
         lastImage = MemoryImage.from(lastImage);
 
-        if (frame.clearFrame) {
-          lastImage.clear();
+        // Disposal happens after its own frame is shown, so the previous frame
+        // is the one that decides
+        if (previous !== undefined && previous.clearFrame) {
+          // Clearing the whole canvas instead wipes the background of any
+          // animation built from partial frames
+          Draw.fillRect({
+            image: lastImage,
+            rect: Rectangle.fromXYWH(
+              previous.x,
+              previous.y,
+              previous.width,
+              previous.height
+            ),
+            // libwebp clears to transparent, not to the ANIM colour
+            color: new ColorRgba8(0, 0, 0, 0),
+            alphaBlend: false,
+          });
         }
       }
+
+      // Image.from carries the previous frame's duration over, so take this
+      // frame's from the chunk that actually holds it.
+      lastImage.frameDuration = frame.duration;
 
       Draw.compositeImage({
         dst: lastImage,
         src: image,
         dstX: frame.x,
         dstY: frame.y,
+        blend: frame.blendFrame ? BlendMode.alpha : BlendMode.direct,
       });
 
-      firstImage.addFrame(lastImage);
+      // lastImage is firstImage here, already in frames[0]. addFrame declines
+      // to add it twice but still sets frameIndex, numbering frame 0 as 1
+      if (lastImage !== firstImage) {
+        firstImage.addFrame(lastImage);
+      }
+      previous = frame;
     }
 
     return firstImage;
+  }
+
+  /**
+   * Returns the EXIF data from WebP info, if any.
+   */
+  private static exifOf(info: WebPInfo): ExifData | undefined {
+    if (info.exifData.length === 0) {
+      return undefined;
+    }
+    return ExifData.fromInputBuffer(
+      new InputBuffer({
+        buffer: StringUtils.getCodePoints(info.exifData),
+      })
+    );
+  }
+
+  /**
+   * Returns the ICC profile from WebP info, if any.
+   */
+  private static iccProfileOf(info: WebPInfo): IccProfile | undefined {
+    const iccp = info.iccpData;
+    return iccp === undefined
+      ? undefined
+      : new IccProfile('', IccProfileCompression.none, iccp);
   }
 
   /**
