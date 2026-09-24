@@ -217,7 +217,9 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the alpha channel value.
    */
   public get a(): number {
-    return this.getChannel(3);
+    return this.palette === undefined && this.numChannels < 4
+      ? this.maxChannelValue
+      : this.getChannel(3);
   }
 
   /**

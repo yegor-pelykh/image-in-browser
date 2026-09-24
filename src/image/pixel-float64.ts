@@ -247,7 +247,9 @@ export class PixelFloat64 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number} The alpha channel value.
    */
   public get a(): number {
-    return this.numChannels > 3 ? this.data[this._index + 3] : 0;
+    return this.numChannels > 3
+      ? this.data[this._index + 3]
+      : this.maxChannelValue;
   }
 
   /**

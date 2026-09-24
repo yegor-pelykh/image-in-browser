@@ -96,4 +96,21 @@ describe('MemoryImage', () => {
     expect(i4.getPixel(0, 1).equals([12, 52, 5, 52])).toBeTruthy();
     expect(i4.getPixel(1, 1).equals([100, 84, 94, 82])).toBeTruthy();
   });
+
+  /**
+   * The float16 alpha setter must write the alpha value, not the green value.
+   */
+  test('float16 alpha setter writes alpha', () => {
+    const image = new MemoryImage({
+      width: 1,
+      height: 1,
+      format: Format.float16,
+      numChannels: 4,
+    });
+    const p = image.getPixel(0, 0);
+    p.g = 0.25;
+    p.a = 0.75;
+    expect(p.a).toEqual(0.75);
+    expect(p.g).toEqual(0.25);
+  });
 });

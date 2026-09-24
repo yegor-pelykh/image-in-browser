@@ -240,7 +240,7 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public get a(): number {
     return this.numChannels > 3
       ? Float16.float16ToDouble(this.data[this._index + 3])
-      : 0;
+      : this.maxChannelValue;
   }
 
   /**

@@ -231,7 +231,9 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the alpha channel value of the pixel.
    */
   public get a(): number {
-    return this.numChannels > 3 ? this.data[this._index + 3] : 0;
+    return this.numChannels > 3
+      ? this.data[this._index + 3]
+      : this.maxChannelValue;
   }
 
   /**
