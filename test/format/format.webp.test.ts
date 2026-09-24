@@ -3,6 +3,8 @@
 import { existsSync } from 'fs';
 import { describe, expect, test } from 'vitest';
 import {
+  ColorRgb8,
+  Format,
   IfdShortValue,
   MemoryImage,
   Pixel,
@@ -11,7 +13,16 @@ import {
   encodeWebP,
 } from '../../src';
 import { WebPDecoder } from '../../src/formats/webp-decoder';
+import { VP8Config } from '../../src/formats/webp/vp8-config';
+import { encodeVP8 } from '../../src/formats/webp/vp8-encoder';
 import { WebPFormat } from '../../src/formats/webp/webp-format';
+import { VP8LEncoder } from '../../src/formats/webp/vp8l-encoder';
+import {
+  WebPChunk,
+  buildRiff,
+  vp8xChunkData,
+  vp8xFlags,
+} from '../../src/formats/webp/webp-chunk';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
@@ -458,7 +469,164 @@ describe('Format: WEBP', () => {
   });
 
   /**
-   * Encodes a 2×2 RGBA image to WebP, writes to disk, and verifies decode.
+   * A plane whose last backward reference reaches the end of the image decodes
+   * correctly for a variety of sizes.
+   */
+  for (const size of [
+    [65, 32],
+    [65, 64],
+    [32, 32],
+    [32, 64],
+  ]) {
+    const w = size[0];
+    const h = size[1];
+    test(`a plane whose last backward reference reaches the end of the image decodes, at ${w}x${h}`, () => {
+      const source = new MemoryImage({
+        width: w,
+        height: h,
+        numChannels: 4,
+      });
+      for (const pixel of source) {
+        pixel.r = 128;
+        pixel.g = 128;
+        pixel.b = 128;
+        pixel.a = (pixel.y * w + pixel.x) % 256;
+      }
+
+      const encoded = encodeWebP({
+        image: source,
+        lossless: false,
+        quality: 100,
+        method: 6,
+      });
+      const decoded = decodeWebP({
+        data: encoded,
+      });
+      expect(decoded).toBeDefined();
+      if (decoded === undefined) {
+        return;
+      }
+      expect(decoded.width).toBe(w);
+      expect(decoded.height).toBe(h);
+      for (const pixel of source) {
+        const q = decoded.getPixel(pixel.x, pixel.y);
+        expect(q.a).toBe(pixel.a);
+      }
+    });
+  }
+
+  /**
+   * The same end of band case on the full ARGB path, which a plane that is not
+   * a bare palette takes.
+   */
+  test('a plane without a palette whose last backward reference reaches the end of the image decodes', () => {
+    // The encoder here always writes the alpha plane as a palette, so noise in
+    // red keeps it from being one; only green is read back as alpha. The bottom
+    // half repeats the top, so the plane ends on a long backward reference.
+    const w = 16;
+    const h = 64;
+    const plane = new Uint8Array(w * h);
+    const red = new Uint8Array(w * h);
+    let seed = 1;
+    for (let y = 0; y < h; y++) {
+      const sy = y >= h >> 1 ? y - (h >> 1) : y;
+      for (let x = 0; x < w; x++) {
+        plane[y * w + x] = (x + sy) & 0xff;
+        if (sy === y) {
+          seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff;
+          red[y * w + x] = (seed >> 16) & 0xff;
+        } else {
+          red[y * w + x] = red[sy * w + x];
+        }
+      }
+    }
+    // The encoder transforms its input in place
+    const stream = new VP8LEncoder({ exact: true }).encodeStream(
+      red.slice(),
+      plane.slice(),
+      new Uint8Array(w * h),
+      new Uint8Array(w * h),
+      w,
+      h,
+      true
+    );
+    // The first transform is not color indexing
+    expect(stream[0] & 7).not.toBe(7);
+
+    const opaque = new MemoryImage({ width: w, height: h });
+    opaque.clear(new ColorRgb8(128, 128, 128));
+    const bytes = buildRiff([
+      new WebPChunk(
+        'VP8X',
+        vp8xChunkData(vp8xFlags(false, true, false, false, false), w, h)
+      ),
+      // Lossless compression, no filter
+      new WebPChunk('ALPH', new Uint8Array([1, ...stream])),
+      new WebPChunk('VP8 ', encodeVP8(opaque, new VP8Config()).bitstream),
+    ]);
+
+    const decoded = decodeWebP({ data: bytes });
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+    for (let i = 0; i < w * h; i++) {
+      expect(decoded.getPixel(i % w, Math.trunc(i / w)).a).toBe(plane[i]);
+    }
+  });
+
+  /**
+   * Sixteen-bit two-channel grey+alpha images keep their transparency when
+   * round-tripped through the lossless WebP encoder.
+   */
+  for (const name of [
+    'basi4a16.png',
+    'basn4a16.png',
+    'bgai4a16.png',
+    'bggn4a16.png',
+  ]) {
+    test(`a sixteen bit two channel image keeps its transparency, ${name}`, () => {
+      const input = TestUtils.readFromFile(
+        TestFolder.input,
+        TestSection.png,
+        name
+      );
+      const source = decodePng({
+        data: input,
+      });
+      expect(source).toBeDefined();
+      if (source === undefined) {
+        return;
+      }
+      expect(source.format).toBe(Format.uint16);
+      expect(source.numChannels).toBe(2);
+
+      const encoded = encodeWebP({
+        image: source,
+      });
+      const back = decodeWebP({
+        data: encoded,
+      });
+      expect(back).toBeDefined();
+      if (back === undefined) {
+        return;
+      }
+      expect(back.width).toBe(source.width);
+      expect(back.height).toBe(source.height);
+      for (const p of source) {
+        const grey = Math.round((p.r * 255) / 65535);
+        const alpha = Math.round((p.a * 255) / 65535);
+        const q = back.getPixel(p.x, p.y);
+        expect(q.a).toBe(alpha);
+        if (alpha !== 0) {
+          expect([q.r, q.g, q.b]).toEqual([grey, grey, grey]);
+        }
+      }
+    });
+  }
+
+  /**
+   * Encodes a 2�-2 RGBA image to WebP, writes to disk, and verifies decode.
    */
   test('encodeWebP', () => {
     const image = new MemoryImage({

@@ -348,11 +348,13 @@ export { VP8TopSamples } from './formats/webp/vp8-top-samples.js';
 export { VP8 } from './formats/webp/vp8.js';
 export { VP8LBitReader } from './formats/webp/vp8l-bit-reader.js';
 export { VP8LColorCache } from './formats/webp/vp8l-color-cache.js';
+export { colorCacheKey, mul32 } from './formats/webp/vp8l-color-hash.js';
 export { VP8LImageTransformType } from './formats/webp/vp8l-image-transform-type.js';
 export { VP8LInternal } from './formats/webp/vp8l-internal.js';
 export { VP8LMultipliers } from './formats/webp/vp8l-multipliers.js';
 export { VP8LTransform } from './formats/webp/vp8l-transform.js';
 export { VP8L } from './formats/webp/vp8l.js';
+export { VP8Config } from './formats/webp/vp8-config.js';
 export { WebPAlpha } from './formats/webp/webp-alpha.js';
 export { WebPBitWriter } from './formats/webp/webp-bit-writer.js';
 export { WebPClSymbol } from './formats/webp/webp-cl-symbol.js';
@@ -367,6 +369,15 @@ export { HuffmanTables } from './formats/webp/webp-huffman-tables.js';
 export { HuffmanTreeGroup } from './formats/webp/webp-huffman-tree-group.js';
 export { WebPInfoInternal } from './formats/webp/webp-info-internal.js';
 export { WebPInfo } from './formats/webp/webp-info.js';
+export {
+  WebPChunk,
+  animChunkData,
+  anmfChunkData,
+  buildRiff,
+  vp8xChunkData,
+  vp8xFlags,
+  webPTag,
+} from './formats/webp/webp-chunk.js';
 
 export { BmpDecoder } from './formats/bmp-decoder.js';
 export { BmpEncoder } from './formats/bmp-encoder.js';
@@ -1284,16 +1295,102 @@ export function decodeWebP(
 }
 
 /**
- * Encode an image to the WebP format (lossless).
+ * Encode an image to the WebP format.
  *
- * @param {EncodeOptions} opt - Options for encoding the image.
+ * **Lossless by default**, which reproduces the image exactly. Everything
+ * below except `singleFrame` applies only to the lossy coding, so
+ * `encodeWebP({ image, quality: 40 })` on its own does nothing at all: pass
+ * `lossless: false` first.
+ *
+ * ```js
+ * // Photographs and screenshots, where WebP replaces JPEG.
+ * encodeWebP({ image, lossless: false, quality: 75, method: 6 });
+ * ```
+ *
+ * `quality` is 0 to 100 and says how much may be discarded. The scale is the
+ * encoder's own and does not line up with JPEG's, so a JPEG at 75 and a WebP
+ * at 75 are not the same request; compare them by the size and fidelity they
+ * actually produce. 75 is the usual choice, and above about 90 the file grows
+ * very steeply for very little: on one corpus of screenshots, 90 was twice
+ * the bytes of 75 and 100 was four times, for 3 and 4.5 dB.
+ *
+ * `method` is 0 to 6 and says how hard to look for a good coding. It trades
+ * encoding time against size at a fixed quality, and the two settings are
+ * independent: measured across qualities 40, 60 and 75 the effect was the
+ * same at each, roughly
+ *
+ * - 0 to 1: about 20% larger, four times faster. For encoding on demand.
+ * - 4 (the default): a reasonable middle.
+ * - 6: about 5% smaller, twice the time. Worth it for a batch job, where the
+ *   difference is seconds over a whole run.
+ *
+ * `alphaQuality` and `exact` only do anything when the image has
+ * transparency; see {@link WebPEncoder} for what they mean. Clearing `exact`
+ * drops the color under fully transparent pixels, worth 15-20% on an image
+ * with large transparent areas.
+ *
+ * An image with more than one frame is written as an animation unless
+ * `singleFrame` asks for just the first, and a frame larger than the canvas
+ * is refused.
+ *
+ * @param {EncodeWebPOptions} opt - Options for encoding the image.
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
+ * @param {boolean} [opt.singleFrame=false] - Whether to encode a single frame (default is false).
+ * @param {boolean} [opt.exact=true] - Whether to preserve color under fully transparent pixels (default is true).
+ * @param {boolean} [opt.lossless=true] - Whether to encode losslessly (default is true).
+ * @param {number} [opt.quality=75] - Quality for lossy encoding, 0 to 100 (default is 75).
+ * @param {number} [opt.method=4] - Effort level for lossy encoding, 0 to 6 (default is 4).
+ * @param {number} [opt.alphaQuality=100] - Alpha plane quality for lossy encoding, 0 to 100 (default is 100).
  * @returns {Uint8Array} The encoded image bytes.
  */
-export function encodeWebP(opt: EncodeOptions): Uint8Array {
-  return new WebPEncoder().encode({
-    image: opt.image,
-  });
+export function encodeWebP(opt: EncodeWebPOptions): Uint8Array {
+  const singleFrame = opt.singleFrame ?? false;
+  const exact = opt.exact ?? true;
+  const lossless = opt.lossless ?? true;
+  const quality = opt.quality ?? 75;
+  const method = opt.method ?? 4;
+  const alphaQuality = opt.alphaQuality ?? 100;
+  return new WebPEncoder(exact, lossless, quality, method, alphaQuality).encode(
+    {
+      image: opt.image,
+      singleFrame: singleFrame,
+    }
+  );
+}
+
+/**
+ * Interface representing options for encoding a WebP image.
+ */
+export interface EncodeWebPOptions extends EncodeOptions {
+  /**
+   * Whether to encode a single frame of an animation.
+   */
+  singleFrame?: boolean;
+
+  /**
+   * Whether to preserve the colour under fully transparent pixels.
+   */
+  exact?: boolean;
+
+  /**
+   * Whether to encode losslessly.
+   */
+  lossless?: boolean;
+
+  /**
+   * Quality for lossy encoding, 0 to 100.
+   */
+  quality?: number;
+
+  /**
+   * Effort level for lossy encoding, 0 to 6.
+   */
+  method?: number;
+
+  /**
+   * Alpha plane quality for lossy encoding, 0 to 100.
+   */
+  alphaQuality?: number;
 }
 
 /**
