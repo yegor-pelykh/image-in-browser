@@ -5,6 +5,12 @@ import { Rational } from './rational.js';
 import { TypedArray } from './typings.js';
 
 /**
+ * Longest range copied with a plain loop rather than `set`: above it the
+ * subarray view `set` needs is cheaper than the per-element writes.
+ */
+const _directCopyMax = 16;
+
+/**
  * Abstract class containing utility methods for array operations.
  */
 export abstract class ArrayUtils {
@@ -176,8 +182,19 @@ export abstract class ArrayUtils {
     toStart: number,
     length: number
   ): void {
-    const viewFrom = from.subarray(fromStart, fromStart + length);
-    to.set(viewFrom, toStart);
+    if (
+      length > 0 &&
+      length <= _directCopyMax &&
+      from.buffer !== to.buffer &&
+      fromStart >= 0 &&
+      fromStart + length <= from.length
+    ) {
+      for (let i = 0; i < length; i++) {
+        to[toStart + i] = from[fromStart + i];
+      }
+    } else {
+      to.set(from.subarray(fromStart, fromStart + length), toStart);
+    }
   }
 
   /**
