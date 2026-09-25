@@ -166,7 +166,11 @@ export class PvrPacket {
    * @param {TypedArray} data - TypedArray containing the raw data
    */
   constructor(data: TypedArray) {
-    this._rawData = new Uint32Array(data.buffer);
+    this._rawData = new Uint32Array(
+      data.buffer,
+      data.byteOffset,
+      Math.trunc(data.byteLength / 4)
+    );
   }
 
   /**
