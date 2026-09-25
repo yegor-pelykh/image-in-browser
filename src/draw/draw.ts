@@ -1920,19 +1920,21 @@ export abstract class Draw {
       const lor = Math.pow(overlayR, 2.2);
       const log = Math.pow(overlayG, 2.2);
       const lob = Math.pow(overlayB, 2.2);
-      const r = Math.pow(lor * overlayA + lbr * baseA * invA, 1 / 2.2);
-      const g = Math.pow(log * overlayA + lbg * baseA * invA, 1 / 2.2);
-      const b = Math.pow(lob * overlayA + lbb * baseA * invA, 1 / 2.2);
       const a = overlayA + baseA * invA;
+      const s = a > 0 ? 1 / a : 0;
+      const r = Math.pow((lor * overlayA + lbr * baseA * invA) * s, 1 / 2.2);
+      const g = Math.pow((log * overlayA + lbg * baseA * invA) * s, 1 / 2.2);
+      const b = Math.pow((lob * overlayA + lbb * baseA * invA) * s, 1 / 2.2);
       dst.rNormalized = r;
       dst.gNormalized = g;
       dst.bNormalized = b;
       dst.aNormalized = a;
     } else {
-      const r = overlayR * overlayA + baseR * baseA * invA;
-      const g = overlayG * overlayA + baseG * baseA * invA;
-      const b = overlayB * overlayA + baseB * baseA * invA;
       const a = overlayA + baseA * invA;
+      const s = a > 0 ? 1 / a : 0;
+      const r = (overlayR * overlayA + baseR * baseA * invA) * s;
+      const g = (overlayG * overlayA + baseG * baseA * invA) * s;
+      const b = (overlayB * overlayA + baseB * baseA * invA) * s;
       dst.rNormalized = r;
       dst.gNormalized = g;
       dst.bNormalized = b;
