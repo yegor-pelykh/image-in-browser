@@ -2,9 +2,11 @@
 
 import { describe, expect, test } from 'vitest';
 import {
+  ColorUint8,
   ExifData,
   JpegChroma,
   JpegDecoder,
+  MemoryImage,
   decodeJpg,
   decodeJpgExif,
   decodePng,
@@ -342,5 +344,38 @@ describe('Format: JPEG', () => {
       'progressive.png',
       output
     );
+  });
+
+  /**
+   * Test that RSTn and TEM markers before EOI are skipped.
+   * https://github.com/brendan-duncan/image/issues/805
+   */
+  test('restart marker before EOI', () => {
+    const src = new MemoryImage({ width: 32, height: 32, numChannels: 3 });
+    src.clear(ColorUint8.rgb(200, 100, 50));
+    const jpg = encodeJpg({ image: src });
+    expect(jpg[jpg.length - 2]).toBe(0xff);
+    expect(jpg[jpg.length - 1]).toBe(0xd9);
+
+    for (let rst = 0xd0; rst <= 0xd7; ++rst) {
+      const bytes = new Uint8Array([
+        ...jpg.subarray(0, jpg.length - 2),
+        0xff,
+        rst,
+        0xff,
+        0xd9,
+      ]);
+      const image = new JpegDecoder().decode({ bytes: bytes });
+      expect(image).toBeDefined();
+      if (image === undefined) {
+        return;
+      }
+      expect(image.width).toBe(32);
+      expect(image.height).toBe(32);
+      const p = image.getPixel(16, 16);
+      expect(p.r).toBeCloseTo(200, -1);
+      expect(p.g).toBeCloseTo(100, -1);
+      expect(p.b).toBeCloseTo(50, -1);
+    }
   });
 });
