@@ -93,7 +93,8 @@ export function analyzeEntropy(
   const redPredSubGreen = histo[_redPredSubGreen];
   const bluePredSubGreen = histo[_bluePredSubGreen];
 
-  let pixPrev = argb[0]; // Skips the first pixel, which has no predecessor.
+  // Skips the first pixel, which has no predecessor.
+  let pixPrev = argb[0];
   for (let y = 0; y < height; y++) {
     const row = y * width;
     for (let x = 0; x < width; x++) {
@@ -181,8 +182,8 @@ export function analyzeEntropy(
 
   // Cross-color has nothing to remove if the winning hypothesis already leaves
   // red and blue at zero everywhere.
-  let chosenRed: Uint32Array;
-  let chosenBlue: Uint32Array;
+  let chosenRed: Uint32Array = red;
+  let chosenBlue: Uint32Array = blue;
   if (usePredictor && useSubtractGreen) {
     chosenRed = redPredSubGreen;
     chosenBlue = bluePredSubGreen;
@@ -192,9 +193,6 @@ export function analyzeEntropy(
   } else if (useSubtractGreen) {
     chosenRed = redSubGreen;
     chosenBlue = blueSubGreen;
-  } else {
-    chosenRed = red;
-    chosenBlue = blue;
   }
   let redAndBlueAlwaysZero = true;
   for (let i = 1; i < 256; i++) {

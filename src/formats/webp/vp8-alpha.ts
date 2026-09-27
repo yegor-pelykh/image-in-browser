@@ -56,23 +56,24 @@ export function encodeAlphaChunk(
   quality = 100
 ): Uint8Array {
   let reducedLevels = false;
+  let plane = alpha;
   if (quality < 100) {
     // libwebp's mapping: sixteen levels already give a low error against the
     // original, so that is where the moderate quality 70 lands.
     const levels =
       quality <= 70 ? 2 + Math.trunc(quality / 5) : 16 + (quality - 70) * 8;
-    alpha = quantizeLevels(alpha, levels);
+    plane = quantizeLevels(alpha, levels);
     reducedLevels = true;
   }
-  const candidates = _filtersToTry(alpha, width, height, filtering);
+  const candidates = _filtersToTry(plane, width, height, filtering);
   const scratch =
     candidates.length === 1 && candidates[0] === 0
       ? undefined
       : new Uint8Array(width * height);
 
-  let best: Uint8Array | undefined;
+  let best: Uint8Array | undefined = undefined;
   for (const filter of candidates) {
-    const source = _applyFilter(alpha, width, height, filter, scratch);
+    const source = _applyFilter(plane, width, height, filter, scratch);
     const chunk = _encodeOne(
       source,
       width,
@@ -241,7 +242,7 @@ function _encodeOne(
   reducedLevels: boolean
 ): Uint8Array {
   let method = compress ? _alphaLosslessCompression : _alphaNoCompression;
-  let data: Uint8Array;
+  let data: Uint8Array = source;
   if (compress) {
     const zero = new Uint8Array(width * height);
     // The plane travels in the green channel, which is the one the lossless
@@ -262,8 +263,6 @@ function _encodeOne(
       method = _alphaNoCompression;
       data = source;
     }
-  } else {
-    data = source;
   }
 
   const out = new Uint8Array(1 + data.length);

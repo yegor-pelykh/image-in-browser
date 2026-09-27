@@ -18,10 +18,12 @@ import { WebPClSymbol } from './webp-cl-symbol.js';
  * VP8L green-channel symbol for a back-reference of [length].
  */
 export function lengthSymbol(length: number): number {
-  if (length <= 4) return 255 + length; // symbols 256..259
+  // Symbols 256..259.
+  if (length <= 4) return 255 + length;
   const msb = _log2Floor(length - 1);
   const half = ((length - 1) >> (msb - 1)) & 1;
-  return 256 + 2 * msb + half; // symbols 260..279
+  // Symbols 260..279.
+  return 256 + 2 * msb + half;
 }
 
 /**
@@ -197,21 +199,26 @@ export function writeHuffmanCode(
   }
 
   if (used.length <= 2 && (used.length === 0 || used[used.length - 1] <= 255)) {
-    // Simple code format.
-    bw.writeBits(1, 1); // is_simple_code = 1
+    // Simple code format, with is_simple_code = 1.
+    bw.writeBits(1, 1);
     if (used.length === 0) {
-      bw.writeBits(0, 1); // 1 symbol
-      bw.writeBits(0, 1); // 1-bit symbol
-      bw.writeBits(0, 1); // symbol = 0
+      // A single symbol, coded as a one-bit zero.
+      bw.writeBits(0, 1);
+      bw.writeBits(0, 1);
+      bw.writeBits(0, 1);
       return;
     }
-    bw.writeBits(used.length - 1, 1); // num_symbols - 1
+    // num_symbols - 1.
+    bw.writeBits(used.length - 1, 1);
     const sym0 = used[0];
     if (sym0 <= 1) {
-      bw.writeBits(0, 1); // first_symbol_len_code = 0 (1-bit symbol)
-      bw.writeBits(sym0, 1); // symbol
+      // first_symbol_len_code = 0, so a one-bit symbol.
+      bw.writeBits(0, 1);
+      // Symbol.
+      bw.writeBits(sym0, 1);
     } else {
-      bw.writeBits(1, 1); // first_symbol_len_code = 1 (8-bit symbol)
+      // first_symbol_len_code = 1, so an eight-bit symbol.
+      bw.writeBits(1, 1);
       bw.writeBits(sym0, 8);
     }
     if (used.length === 2) {
@@ -245,14 +252,17 @@ export function writeHuffmanCode(
     }
   }
 
-  bw.writeBits(0, 1); // is_simple_code = 0
-  bw.writeBits(numClCl - 4, 4); // num_code_lengths - 4
+  // Normal code format, with is_simple_code = 0.
+  bw.writeBits(0, 1);
+  // num_code_lengths - 4.
+  bw.writeBits(numClCl - 4, 4);
 
   for (let k = 0; k < numClCl; k++) {
     bw.writeBits(clCl[kCodeLengthOrder[k]], 3);
   }
 
-  bw.writeBits(0, 1); // use_length = 0
+  // use_length = 0.
+  bw.writeBits(0, 1);
 
   for (const s of clSymbols) {
     bw.writeBits(clCodes[s.symbol], clCl[s.symbol]);

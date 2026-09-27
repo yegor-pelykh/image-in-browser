@@ -39,15 +39,16 @@ import {
 } from './vp8-dsp.js';
 import { VP8EncIterator } from './vp8-iterator.js';
 import { bitCost } from './vp8-enc-proba.js';
+import { VP8Matrix } from './vp8-matrix.js';
+import { maxCost, VP8ModeScore } from './vp8-mode-score.js';
 import {
   errorDescale,
   maxLevel,
   quantize2Blocks,
   quantizeBlock,
   quantizeSingleDC,
-  VP8Matrix,
-  VP8SegmentInfo,
 } from './vp8-quant.js';
+import { VP8SegmentInfo } from './vp8-segment-info.js';
 import {
   getResidualCost,
   typeChroma,
@@ -75,16 +76,7 @@ import {
   yOffEnc,
 } from './vp8-tables.js';
 
-/**
- * Larger than any real score, but small enough that scores can be added to it
- * without leaving the range an int is exact to on the web, where an int is a
- * double.
- *
- * Written out rather than as `1 << 50`: on the web `<<` is a 32-bit shift, so
- * that expression is zero there, and a zero ceiling makes every mode lose its
- * comparison and the search return no mode at all.
- */
-export const maxCost = 1125899906842624; // 2^50
+export { maxCost, VP8ModeScore };
 
 /**
  * How much a unit of distortion weighs against a bit.
@@ -108,109 +100,8 @@ const _flatnessPenalty = 140;
  * Weights of the spectral distortion, matching [distoFrom].
  */
 const _weightTrellis = [
-  30,
-  27,
-  19,
-  11, //
-  27,
-  24,
-  17,
-  10,
-  19,
-  17,
-  12,
-  8,
-  11,
-  10,
-  8,
-  6,
+  30, 27, 19, 11, 27, 24, 17, 10, 19, 17, 12, 8, 11, 10, 8, 6,
 ];
-
-/**
- * The decisions and coefficients of one candidate coding of a macroblock.
- */
-export class VP8ModeScore {
-  /**
-   * Squared error, and spectral distortion.
-   */
-  public d: number = 0;
-  public sd: number = 0;
-
-  /**
-   * Cost of the header bits (the mode itself) and of the coefficients.
-   */
-  public h: number = 0;
-  public r: number = 0;
-
-  /**
-   * `(r + h) * lambda + distortion`.
-   */
-  public score: number = 0;
-
-  /**
-   * Quantized levels: the luma DC block, the sixteen luma blocks, and the
-   * four U then four V blocks.
-   */
-  public readonly yDcLevels = new Int16Array(16);
-  public readonly yAcLevels = new Int16Array(16 * 16);
-  public readonly uvLevels = new Int16Array(8 * 16);
-
-  public modeI16: number = 0;
-  public readonly modesI4 = new Uint8Array(16);
-  public modeUv: number = 0;
-
-  /**
-   * The three chroma DC errors this coding passes to its neighbours, U then
-   * V. Only kept when error diffusion is on.
-   */
-  public readonly derr = new Int8Array(6);
-
-  /**
-   * One bit per block that has a non-zero coefficient, in the layout
-   * [VP8EncIterator.nzToBytes] describes.
-   */
-  public nz: number = 0;
-
-  public init(): void {
-    this.d = 0;
-    this.sd = 0;
-    this.r = 0;
-    this.h = 0;
-    this.nz = 0;
-    this.score = maxCost;
-  }
-
-  /**
-   * Copies the score fields only, leaving the levels alone.
-   */
-  public copyScore(src: VP8ModeScore): void {
-    this.d = src.d;
-    this.sd = src.sd;
-    this.r = src.r;
-    this.h = src.h;
-    this.nz = src.nz;
-    this.score = src.score;
-  }
-
-  public addScore(src: VP8ModeScore): void {
-    this.d += src.d;
-    this.sd += src.sd;
-    this.r += src.r;
-    this.h += src.h;
-    this.nz |= src.nz;
-    this.score += src.score;
-  }
-
-  public copyFrom(src: VP8ModeScore): void {
-    this.copyScore(src);
-    this.yDcLevels.set(src.yDcLevels, 0);
-    this.yAcLevels.set(src.yAcLevels, 0);
-    this.uvLevels.set(src.uvLevels, 0);
-    this.modeI16 = src.modeI16;
-    this.modesI4.set(src.modesI4, 0);
-    this.modeUv = src.modeUv;
-  }
-}
 
 function _mult8b(a: number, b: number): number {
   return (a * b + 128) >> 8;
@@ -400,7 +291,8 @@ export class VP8Decimate {
             dqm.y1,
             dqm.lambdaTrellisI16
           );
-          this.it.topNz[x] = this.it.leftNz[y] = nonZero;
+          this.it.topNz[x] = nonZero;
+          this.it.leftNz[y] = nonZero;
           rd.yAcLevels[n * 16] = 0;
           nz |= nonZero << n;
         }
@@ -448,7 +340,7 @@ export class VP8Decimate {
     // Reusing _tmp as the coefficient scratch would clash with the 16x16
     // search, so the 4x4 path keeps its own block.
     const coeffs = this._tmpLevels;
-    let nz: number;
+    let nz: number = 0;
     if (this.it.doTrellis) {
       const x = this.it.i4 & 3;
       const y = this.it.i4 >> 2;
@@ -591,11 +483,14 @@ export class VP8Decimate {
     for (let ch = 0; ch <= 1; ch++) {
       const t = this.it.x * 4 + ch * 2;
       const l = ch * 2;
-      left[l] = rd.derr[ch * 3]; // err1, to the block on the right
+      // err1, to the block on the right.
+      left[l] = rd.derr[ch * 3];
       // Three quarters of err3, which is signed.
       left[l + 1] = sar(3 * rd.derr[ch * 3 + 2], 2);
-      top[t] = rd.derr[ch * 3 + 1]; // err2, to the block below
-      top[t + 1] = rd.derr[ch * 3 + 2] - left[l + 1]; // the last quarter
+      // err2, to the block below.
+      top[t] = rd.derr[ch * 3 + 1];
+      // The last quarter.
+      top[t + 1] = rd.derr[ch * 3 + 2] - left[l + 1];
     }
   }
 
@@ -628,13 +523,14 @@ export class VP8Decimate {
     let bestPathLast = -1;
     let bestPathNode = -1;
     let bestPathPrev = -1;
-    let bestScore: number;
+    let bestScore: number = 0;
 
     // Only two candidates per coefficient: the rounded level and one above it.
     // Levels below never win, since they cost as much and distort more.
     const minDelta = 0;
     const maxDelta = 1;
-    let ssCur = 0; // index into _stateScore/_stateCost of the current pair
+    // Index into _stateScore/_stateCost of the current pair.
+    let ssCur = 0;
     let ssPrev = 2;
 
     let last = first - 1;
@@ -756,7 +652,8 @@ export class VP8Decimate {
       out.fill(0, outOff, outOff + 16);
     }
     if (bestPathLast === -1) {
-      return 0; // the whole block is dropped
+      // The whole block is dropped.
+      return 0;
     }
 
     let nz = 0;
@@ -802,7 +699,9 @@ export class VP8Decimate {
         const ctx = this.it.topNz[x] + this.it.leftNz[y];
         this._res.setCoeffs(rd.yAcLevels, (x + y * 4) * 16);
         r += getResidualCost(proba, this._res, ctx);
-        this.it.topNz[x] = this.it.leftNz[y] = this._res.last >= 0 ? 1 : 0;
+        const nz = this._res.last >= 0 ? 1 : 0;
+        this.it.topNz[x] = nz;
+        this.it.leftNz[y] = nz;
       }
     }
     return r;
@@ -832,8 +731,9 @@ export class VP8Decimate {
           const ctx = this.it.topNz[4 + ch + x] + this.it.leftNz[4 + ch + y];
           this._res.setCoeffs(rd.uvLevels, (ch * 2 + x + y * 2) * 16);
           r += getResidualCost(proba, this._res, ctx);
-          this.it.topNz[4 + ch + x] = this.it.leftNz[4 + ch + y] =
-            this._res.last >= 0 ? 1 : 0;
+          const nz = this._res.last >= 0 ? 1 : 0;
+          this.it.topNz[4 + ch + x] = nz;
+          this.it.leftNz[4 + ch + y] = nz;
         }
       }
     }
@@ -1043,8 +943,9 @@ export class VP8Decimate {
         );
       }
       rd.modesI4[this.it.i4] = bestMode;
-      this.it.topNz[this.it.i4 & 3] = this.it.leftNz[this.it.i4 >> 2] =
-        this._rdI4.nz !== 0 ? 1 : 0;
+      const nz = this._rdI4.nz !== 0 ? 1 : 0;
+      this.it.topNz[this.it.i4 & 3] = nz;
+      this.it.leftNz[this.it.i4 >> 2] = nz;
     } while (this.it.rotateI4(this.it.yuvOut2, yOffEnc));
 
     rd.copyScore(rdBest);

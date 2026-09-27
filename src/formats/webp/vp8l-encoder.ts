@@ -19,12 +19,10 @@ import {
   applyCrossColor,
   selectCrossColor,
 } from './vp8l-cross-color.js';
-import {
-  VP8LClustering,
-  VP8LHistogram,
-  clusterHistograms,
-} from './vp8l-histogram.js';
+import { VP8LHuffmanCodes } from './vp8l-huffman-codes.js';
 import * as huffman from './vp8l-huffman-encoder.js';
+import { VP8LHistogram, clusterHistograms } from './vp8l-histogram.js';
+import { VP8LMetaHuffman } from './vp8l-meta-huffman.js';
 import { optimalCover } from './vp8l-optimal-parse.js';
 import * as predictor from './vp8l-predictor.js';
 import { clearTransparentPixels } from './vp8l-transparency.js';
@@ -245,24 +243,29 @@ export class VP8LEncoder {
     // first.
     const bw = new VP8LBitWriter();
     if (analysis.useSubtractGreen) {
-      bw.writeBits(1, 1); // has_transform = 1
-      bw.writeBits(2, 2); // transform_type = 2 (SUBTRACT_GREEN)
+      // has_transform = 1, then transform_type = 2 (SUBTRACT_GREEN).
+      bw.writeBits(1, 1);
+      bw.writeBits(2, 2);
     }
     if (predModes !== undefined) {
-      bw.writeBits(1, 1); // has_transform = 1
-      bw.writeBits(0, 2); // transform_type = 0 (PREDICTOR)
-      bw.writeBits(predSizeBits - 2, 3); // predictor block size bits
+      // has_transform = 1, then transform_type = 0 (PREDICTOR).
+      bw.writeBits(1, 1);
+      bw.writeBits(0, 2);
+      // Predictor block size bits.
+      bw.writeBits(predSizeBits - 2, 3);
       predictor.writePredictorSubImage(bw, predBlockW, predBlockH, predModes);
     }
     if (multipliers !== undefined) {
       const crossBlockW = (width + (1 << crossBits) - 1) >> crossBits;
       const crossBlockH = (height + (1 << crossBits) - 1) >> crossBits;
-      bw.writeBits(1, 1); // has_transform = 1
-      bw.writeBits(1, 2); // transform_type = 1 (CROSS_COLOR)
+      // has_transform = 1, then transform_type = 1 (CROSS_COLOR).
+      bw.writeBits(1, 1);
+      bw.writeBits(1, 2);
       bw.writeBits(crossBits - 2, 3);
       this._writeCrossColorSubImage(bw, crossBlockW, crossBlockH, multipliers);
     }
-    bw.writeBits(0, 1); // has_transform = 0
+    // has_transform = 0.
+    bw.writeBits(0, 1);
 
     this._writeImageStream(bw, r, g, b, a, width, numPixels, true);
     bw.flush();
@@ -342,10 +345,12 @@ export class VP8LEncoder {
     const greenAlphabetSize = 280 + (cacheBits > 0 ? 1 << cacheBits : 0);
 
     if (cacheBits > 0) {
-      bw.writeBits(1, 1); // color cache present
+      // Color cache present, followed by its size in bits.
+      bw.writeBits(1, 1);
       bw.writeBits(cacheBits, 4);
     } else {
-      bw.writeBits(0, 1); // no color cache
+      // No color cache.
+      bw.writeBits(0, 1);
     }
 
     // One set of codes has to serve the whole image unless meta Huffman splits
@@ -371,7 +376,8 @@ export class VP8LEncoder {
 
     if (isLevel0) {
       if (meta === undefined) {
-        bw.writeBits(0, 1); // no meta Huffman codes
+        // No meta Huffman codes.
+        bw.writeBits(0, 1);
       } else {
         bw.writeBits(1, 1);
         bw.writeBits(meta.bits - _minHuffmanBits, _numHuffmanBits);
@@ -430,9 +436,9 @@ export class VP8LEncoder {
 
     // Build and write the code definitions, one full set per group, in the
     // order the decoder reads them.
-    const codes: _HuffmanCodes[] = [];
+    const codes: VP8LHuffmanCodes[] = [];
     for (const h of histograms) {
-      const c = new _HuffmanCodes(h, greenAlphabetSize);
+      const c = new VP8LHuffmanCodes(h, greenAlphabetSize);
       c.write(bw);
       codes.push(c);
     }
@@ -524,9 +530,9 @@ export class VP8LEncoder {
     width: number,
     numPixels: number,
     greenAlphabetSize: number
-  ): _MetaHuffman | undefined {
+  ): VP8LMetaHuffman | undefined {
     const height = Math.trunc(numPixels / width);
-    let best: _MetaHuffman | undefined = undefined;
+    let best: VP8LMetaHuffman | undefined = undefined;
 
     for (const bits of VP8LEncoder._metaHuffmanCandidates) {
       const xsize = VP8LEncoder._subSampleSize(width, bits);
@@ -577,7 +583,7 @@ export class VP8LEncoder {
         clustering !== undefined &&
         (best === undefined || clustering.cost < best.clustering.cost)
       ) {
-        best = new _MetaHuffman(bits, xsize, ysize, clustering);
+        best = new VP8LMetaHuffman(bits, xsize, ysize, clustering);
       }
     }
 
@@ -588,7 +594,7 @@ export class VP8LEncoder {
    * Writes the entropy image, which tells the decoder which group each block
    * belongs to. The index is carried in the red and green bytes.
    */
-  private _writeEntropyImage(bw: VP8LBitWriter, meta: _MetaHuffman): void {
+  private _writeEntropyImage(bw: VP8LBitWriter, meta: VP8LMetaHuffman): void {
     const n = meta.xsize * meta.ysize;
     const er = new Uint8Array(n);
     const eg = new Uint8Array(n);
@@ -679,8 +685,9 @@ export class VP8LEncoder {
   ): void {
     const numColors = palette.length;
 
-    bw.writeBits(1, 1); // has_transform = 1
-    bw.writeBits(3, 2); // transform_type = 3 (COLOR_INDEXING)
+    // has_transform = 1, then transform_type = 3 (COLOR_INDEXING).
+    bw.writeBits(1, 1);
+    bw.writeBits(3, 2);
     bw.writeBits(numColors - 1, 8);
 
     // Palette entries are stored as per-channel differences to the previous
@@ -710,7 +717,8 @@ export class VP8LEncoder {
     }
     this._writeImageStream(bw, pr, pg, pb, pa, numColors, numColors, false);
 
-    bw.writeBits(0, 1); // has_transform = 0
+    // has_transform = 0.
+    bw.writeBits(0, 1);
 
     const indexOf = new Map<number, number>();
     for (let i = 0; i < numColors; i++) {
@@ -809,93 +817,5 @@ export class VP8LEncoder {
       cb[i] = multipliers[i].blue;
     }
     this._writeImageStream(bw, cr, cg, cb, ca, blockW, n, false);
-  }
-}
-
-/**
- * A chosen meta Huffman layout: the block size and which group each block
- * belongs to.
- */
-class _MetaHuffman {
-  /**
-   * Blocks span 2^bits pixels each way.
-   */
-  public readonly bits: number;
-  public readonly xsize: number;
-  public readonly ysize: number;
-  public readonly clustering: VP8LClustering;
-
-  constructor(
-    bits: number,
-    xsize: number,
-    ysize: number,
-    clustering: VP8LClustering
-  ) {
-    this.bits = bits;
-    this.xsize = xsize;
-    this.ysize = ysize;
-    this.clustering = clustering;
-  }
-}
-
-/**
- * One meta Huffman group's five Huffman codes, ready to write with.
- */
-class _HuffmanCodes {
-  public readonly greenAlphabetSize: number;
-  public readonly greenLen: number[];
-  public readonly redLen: number[];
-  public readonly blueLen: number[];
-  public readonly alphaLen: number[];
-  public readonly distLen: number[];
-
-  public green: number[] = [];
-  public red: number[] = [];
-  public blue: number[] = [];
-  public alpha: number[] = [];
-  public dist: number[] = [];
-
-  constructor(h: VP8LHistogram, greenAlphabetSize: number) {
-    this.greenAlphabetSize = greenAlphabetSize;
-    this.greenLen = huffman.buildHuffmanCodeLengths(
-      Array.from(h.green),
-      greenAlphabetSize
-    );
-    this.redLen = huffman.buildHuffmanCodeLengths(Array.from(h.red), 256);
-    this.blueLen = huffman.buildHuffmanCodeLengths(Array.from(h.blue), 256);
-    this.alphaLen = huffman.buildHuffmanCodeLengths(Array.from(h.alpha), 256);
-    this.distLen = huffman.buildHuffmanCodeLengths(Array.from(h.dist), 40);
-  }
-
-  /**
-   * Writes the code definitions and derives the codes used to encode with.
-   *
-   * The two go together because writing a single-symbol code zeroes its length
-   * in place, which the canonical codes then have to reflect.
-   */
-  public write(bw: VP8LBitWriter): void {
-    huffman.writeHuffmanCode(bw, this.greenAlphabetSize, this.greenLen);
-    huffman.writeHuffmanCode(bw, 256, this.redLen);
-    huffman.writeHuffmanCode(bw, 256, this.blueLen);
-    huffman.writeHuffmanCode(bw, 256, this.alphaLen);
-    huffman.writeHuffmanCode(bw, 40, this.distLen);
-
-    this.green = huffman.canonicalCodes(
-      Int32Array.from(this.greenLen),
-      this.greenAlphabetSize
-    );
-    this.red = huffman.canonicalCodes(Int32Array.from(this.redLen), 256);
-    this.blue = huffman.canonicalCodes(Int32Array.from(this.blueLen), 256);
-    this.alpha = huffman.canonicalCodes(Int32Array.from(this.alphaLen), 256);
-    this.dist = huffman.canonicalCodes(Int32Array.from(this.distLen), 40);
-  }
-
-  public writeSymbol(
-    bw: VP8LBitWriter,
-    codes: number[],
-    lengths: number[],
-    symbol: number
-  ): void {
-    bw.writeBits(codes[symbol], lengths[symbol]);
   }
 }

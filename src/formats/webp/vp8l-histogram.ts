@@ -1,6 +1,9 @@
 /** @format */
 
 import { ArrayUtils } from '../../common/array-utils.js';
+import { VP8LClustering } from './vp8l-clustering.js';
+
+export { VP8LClustering };
 
 /**
  * Symbol statistics for a VP8L stream, and the clustering that turns
@@ -400,25 +403,3 @@ export function clusterHistograms(
  * more code tables to describe.
  */
 const _newGroupCost = 5 * 32.0;
-
-/**
- * A block-to-group assignment and what it is estimated to cost.
- */
-export class VP8LClustering {
-  /**
-   * Meta Huffman group index for each block, in raster order.
-   */
-  public readonly assignment: Int32Array;
-  public readonly numGroups: number;
-
-  /**
-   * Estimated bits to code the image this way, entropy image included.
-   */
-  public readonly cost: number;
-
-  constructor(assignment: Int32Array, numGroups: number, cost: number) {
-    this.assignment = assignment;
-    this.numGroups = numGroups;
-    this.cost = cost;
-  }
-}

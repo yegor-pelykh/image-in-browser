@@ -15,24 +15,7 @@ import {
 /**
  * Where the top sample of each 4x4 block sits inside the boundary array.
  */
-const topLeftI4 = [
-  17,
-  21,
-  25,
-  29, //
-  13,
-  17,
-  21,
-  25,
-  9,
-  13,
-  17,
-  21,
-  5,
-  9,
-  13,
-  17,
-];
+const topLeftI4 = [17, 21, 25, 29, 13, 17, 21, 25, 9, 13, 17, 21, 5, 9, 13, 17];
 
 /**
  * The current macroblock, its neighbours, and the scratch buffers the search
@@ -184,10 +167,10 @@ export class VP8EncIterator {
 
   private initLeft(): void {
     // Left of the first column: the standard's fixed values.
-    this.yLeft[0] =
-      this.uvLeft[VP8EncIterator.uLeftOff - 1] =
-      this.uvLeft[VP8EncIterator.vLeftOff - 1] =
-        this.y > 0 ? 129 : 127;
+    const v = this.y > 0 ? 129 : 127;
+    this.yLeft[0] = v;
+    this.uvLeft[VP8EncIterator.uLeftOff - 1] = v;
+    this.uvLeft[VP8EncIterator.vLeftOff - 1] = v;
     this.yLeft.fill(129, VP8EncIterator.yLeftOff, VP8EncIterator.yLeftOff + 16);
     this.uvLeft.fill(129, VP8EncIterator.uLeftOff, VP8EncIterator.uLeftOff + 8);
     this.uvLeft.fill(129, VP8EncIterator.vLeftOff, VP8EncIterator.vLeftOff + 8);
@@ -251,10 +234,9 @@ export class VP8EncIterator {
       this.initLeft();
     } else {
       if (this.y === 0) {
-        this.yLeft[0] =
-          this.uvLeft[VP8EncIterator.uLeftOff - 1] =
-          this.uvLeft[VP8EncIterator.vLeftOff - 1] =
-            127;
+        this.yLeft[0] = 127;
+        this.uvLeft[VP8EncIterator.uLeftOff - 1] = 127;
+        this.uvLeft[VP8EncIterator.vLeftOff - 1] = 127;
       } else {
         this.yLeft[0] = pic.y[ySrc - 1 - yStride];
         this.uvLeft[VP8EncIterator.uLeftOff - 1] = pic.u[uvSrc - 1 - uvStride];
@@ -336,20 +318,22 @@ export class VP8EncIterator {
     h: number,
     size: number
   ): void {
+    let so = srcOff;
+    let doff = dstOff;
     for (let i = 0; i < h; i++) {
-      ArrayUtils.copyRange(src, srcOff, dst, dstOff, w);
+      ArrayUtils.copyRange(src, so, dst, doff, w);
       if (w < size) {
-        const last = dst[dstOff + w - 1];
+        const last = dst[doff + w - 1];
         for (let j = w; j < size; j++) {
-          dst[dstOff + j] = last;
+          dst[doff + j] = last;
         }
       }
-      dstOff += kBps;
-      srcOff += srcStride;
+      doff += kBps;
+      so += srcStride;
     }
     for (let i = h; i < size; i++) {
-      ArrayUtils.copyRange(dst, dstOff - kBps, dst, dstOff, size);
-      dstOff += kBps;
+      ArrayUtils.copyRange(dst, doff - kBps, dst, doff, size);
+      doff += kBps;
     }
   }
 

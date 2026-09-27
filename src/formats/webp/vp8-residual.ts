@@ -159,8 +159,8 @@ export function putCoeffs(
           bw.putBit((v & 1) === 0 ? 1 : 0, 145);
         }
       } else {
-        let mask: number;
-        let tab: number[];
+        let mask: number = 0;
+        let tab: number[] = _cat3;
         if (v < 3 + (8 << 1)) {
           bw.putBit(0, probas[p + 8]);
           bw.putBit(0, probas[p + 9]);
@@ -196,7 +196,8 @@ export function putCoeffs(
     }
     bw.putBitUniform(sign ? 1 : 0);
     if (n === 16 || bw.putBit(n <= res.last ? 1 : 0, probas[p]) === 0) {
-      return 1; // end of block
+      // End of block.
+      return 1;
     }
   }
   return 1;
@@ -297,8 +298,8 @@ export function recordCoeffTokens(
           tokens.addConstant((v & 1) === 0 ? 1 : 0, 145);
         }
       } else {
-        let mask: number;
-        let tab: number[];
+        let mask: number = 0;
+        let tab: number[] = _cat3;
         let residue = v - 3;
         if (residue < 8 << 1) {
           tokens.add(proba, 0, id + 8);
@@ -335,7 +336,8 @@ export function recordCoeffTokens(
     }
     tokens.addConstant(sign ? 1 : 0, 128);
     if (n === 16 || tokens.add(proba, n <= last ? 1 : 0, id) === 0) {
-      return 1; // end of block
+      // End of block.
+      return 1;
     }
   }
   return 1;

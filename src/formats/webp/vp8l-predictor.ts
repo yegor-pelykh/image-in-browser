@@ -273,7 +273,7 @@ export function applyPredictorTransform(
     const modeRow = (y >> shift) * blockW;
     for (let x = 0; x < width; x++) {
       const i = row + x;
-      let p: number;
+      let p: number = 0;
       if (y === 0) {
         p = x === 0 ? argbBlack : argb[i - 1];
       } else if (x === 0) {
@@ -317,25 +317,29 @@ export function writePredictorSubImage(
 
   // Sub-image format (decoded with isLevel0=false, allowRecursion=false):
   // no color cache, then 5 Huffman groups, then pixel data.
-  bw.writeBits(0, 1); // no color cache
+  bw.writeBits(0, 1);
   // Green (280): normal Huffman for the mode values.
   huffman.writeHuffmanCode(bw, 280, greenCl);
   // Red/Blue (256): all 0 → simple, 1-bit symbol = 0.
   // Alpha (256): all 255 → simple, 8-bit symbol = 255.
   // Dist (40): unused → simple, 1-bit symbol = 0.
-  bw.writeBits(1, 1); // red: is_simple=1
-  bw.writeBits(0, 1); // 1 symbol
-  bw.writeBits(0, 1); // 1-bit symbol
-  bw.writeBits(0, 1); // symbol = 0
-  bw.writeBits(1, 1); // blue: is_simple=1
+  // Red.
+  bw.writeBits(1, 1);
   bw.writeBits(0, 1);
   bw.writeBits(0, 1);
   bw.writeBits(0, 1);
-  bw.writeBits(1, 1); // alpha: is_simple=1
+  // Blue.
+  bw.writeBits(1, 1);
   bw.writeBits(0, 1);
-  bw.writeBits(1, 1); // 8-bit symbol
+  bw.writeBits(0, 1);
+  bw.writeBits(0, 1);
+  // Alpha.
+  bw.writeBits(1, 1);
+  bw.writeBits(0, 1);
+  bw.writeBits(1, 1);
   bw.writeBits(255, 8);
-  bw.writeBits(1, 1); // dist: is_simple=1
+  // Dist.
+  bw.writeBits(1, 1);
   bw.writeBits(0, 1);
   bw.writeBits(0, 1);
   bw.writeBits(0, 1);
@@ -343,6 +347,7 @@ export function writePredictorSubImage(
   // Red/blue/alpha each have a 1-symbol code → 1 bit each.
   for (let i = 0; i < n; i++) {
     const m = modes[i];
-    bw.writeBits(greenCodes[m], greenCl[m]); // green = predictor mode
+    // Green carries the predictor mode.
+    bw.writeBits(greenCodes[m], greenCl[m]);
   }
 }

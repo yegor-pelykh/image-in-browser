@@ -91,7 +91,8 @@ export function analyzeSegments(enc: VP8EncState): void {
 
 function _resetAllMBInfo(enc: VP8EncState): void {
   const n = enc.mbW * enc.mbH;
-  enc.mbType.fill(1, 0, n); // intra 16x16
+  // Intra 16x16.
+  enc.mbType.fill(1, 0, n);
   enc.mbUvMode.fill(0, 0, n);
   enc.mbSkip.fill(0, 0, n);
   enc.mbSegment.fill(0, 0, n);
@@ -124,7 +125,8 @@ class MBAnalyzer {
   }
 
   public analyze(alphas: Int32Array): void {
-    this.it.setIntra16Mode(0); // default: intra 16x16, DC
+    // Default: intra 16x16, DC.
+    this.it.setIntra16Mode(0);
     this.it.setSkip(false);
     this.it.setSegment(0);
 
@@ -252,7 +254,8 @@ class MBAnalyzer {
       m2 += dc[k] * dc[k];
     }
     if (threshold * m2 < m * m) {
-      this.it.setIntra16Mode(0); // flat: DC over the whole macroblock
+      // Flat: DC over the whole macroblock.
+      this.it.setIntra16Mode(0);
     } else {
       this.it.setIntra4Mode(new Uint8Array(16));
     }
@@ -334,7 +337,8 @@ function _assignSegments(enc: VP8EncState, alphas: Int32Array): void {
   for (let i = 0; i < enc.mbW * enc.mbH; i++) {
     const alpha = enc.mbAlpha[i];
     enc.mbSegment[i] = map[alpha];
-    enc.mbAlpha[i] = centers[map[alpha]]; // for the record
+    // For the record.
+    enc.mbAlpha[i] = centers[map[alpha]];
   }
 
   _setSegmentAlphas(enc, centers, weightedAverage);

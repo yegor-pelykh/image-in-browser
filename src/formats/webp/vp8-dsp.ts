@@ -60,11 +60,13 @@ export function fTransform(
   out: Int16Array,
   outOff: number
 ): void {
+  let so = srcOff;
+  let ro = refOff;
   // Rows.
-  let d0 = src[srcOff] - ref[refOff];
-  let d1 = src[srcOff + 1] - ref[refOff + 1];
-  let d2 = src[srcOff + 2] - ref[refOff + 2];
-  let d3 = src[srcOff + 3] - ref[refOff + 3];
+  let d0 = src[so] - ref[ro];
+  let d1 = src[so + 1] - ref[ro + 1];
+  let d2 = src[so + 2] - ref[ro + 2];
+  let d3 = src[so + 3] - ref[ro + 3];
   let a0 = d0 + d3;
   let a1 = d1 + d2;
   let a2 = d1 - d2;
@@ -74,12 +76,12 @@ export function fTransform(
   const t2 = (a0 - a1) * 8;
   const t3 = sar(a3 * 2217 - a2 * 5352 + 937, 9);
 
-  srcOff += kBps;
-  refOff += kBps;
-  d0 = src[srcOff] - ref[refOff];
-  d1 = src[srcOff + 1] - ref[refOff + 1];
-  d2 = src[srcOff + 2] - ref[refOff + 2];
-  d3 = src[srcOff + 3] - ref[refOff + 3];
+  so += kBps;
+  ro += kBps;
+  d0 = src[so] - ref[ro];
+  d1 = src[so + 1] - ref[ro + 1];
+  d2 = src[so + 2] - ref[ro + 2];
+  d3 = src[so + 3] - ref[ro + 3];
   a0 = d0 + d3;
   a1 = d1 + d2;
   a2 = d1 - d2;
@@ -89,12 +91,12 @@ export function fTransform(
   const t6 = (a0 - a1) * 8;
   const t7 = sar(a3 * 2217 - a2 * 5352 + 937, 9);
 
-  srcOff += kBps;
-  refOff += kBps;
-  d0 = src[srcOff] - ref[refOff];
-  d1 = src[srcOff + 1] - ref[refOff + 1];
-  d2 = src[srcOff + 2] - ref[refOff + 2];
-  d3 = src[srcOff + 3] - ref[refOff + 3];
+  so += kBps;
+  ro += kBps;
+  d0 = src[so] - ref[ro];
+  d1 = src[so + 1] - ref[ro + 1];
+  d2 = src[so + 2] - ref[ro + 2];
+  d3 = src[so + 3] - ref[ro + 3];
   a0 = d0 + d3;
   a1 = d1 + d2;
   a2 = d1 - d2;
@@ -104,12 +106,12 @@ export function fTransform(
   const t10 = (a0 - a1) * 8;
   const t11 = sar(a3 * 2217 - a2 * 5352 + 937, 9);
 
-  srcOff += kBps;
-  refOff += kBps;
-  d0 = src[srcOff] - ref[refOff];
-  d1 = src[srcOff + 1] - ref[refOff + 1];
-  d2 = src[srcOff + 2] - ref[refOff + 2];
-  d3 = src[srcOff + 3] - ref[refOff + 3];
+  so += kBps;
+  ro += kBps;
+  d0 = src[so] - ref[ro];
+  d1 = src[so + 1] - ref[ro + 1];
+  d2 = src[so + 2] - ref[ro + 2];
+  d3 = src[so + 3] - ref[ro + 3];
   a0 = d0 + d3;
   a1 = d1 + d2;
   a2 = d1 - d2;
@@ -169,11 +171,12 @@ export function fTransformWHT(
   outOff: number
 ): void {
   const tmp = new Int32Array(16);
-  for (let i = 0; i < 4; i++, inOff += 64) {
-    const a0 = inp[inOff] + inp[inOff + 2 * 16];
-    const a1 = inp[inOff + 16] + inp[inOff + 3 * 16];
-    const a2 = inp[inOff + 16] - inp[inOff + 3 * 16];
-    const a3 = inp[inOff] - inp[inOff + 2 * 16];
+  let off = inOff;
+  for (let i = 0; i < 4; i++, off += 64) {
+    const a0 = inp[off] + inp[off + 2 * 16];
+    const a1 = inp[off + 16] + inp[off + 3 * 16];
+    const a2 = inp[off + 16] - inp[off + 3 * 16];
+    const a3 = inp[off] - inp[off + 2 * 16];
     tmp[0 + i * 4] = a0 + a1;
     tmp[1 + i * 4] = a3 + a2;
     tmp[2 + i * 4] = a3 - a2;
@@ -212,17 +215,19 @@ export function transformWHT(
     tmp[4 + i] = a3 + a2;
     tmp[12 + i] = a3 - a2;
   }
+  let oo = outOff;
   for (let i = 0; i < 4; i++) {
-    const dc = tmp[i * 4] + 3; // with rounder
+    // The added three is the rounding term.
+    const dc = tmp[i * 4] + 3;
     const a0 = dc + tmp[3 + i * 4];
     const a1 = tmp[1 + i * 4] + tmp[2 + i * 4];
     const a2 = tmp[1 + i * 4] - tmp[2 + i * 4];
     const a3 = dc - tmp[3 + i * 4];
-    out[outOff] = sar(a0 + a1, 3);
-    out[outOff + 16] = sar(a3 + a2, 3);
-    out[outOff + 32] = sar(a0 - a1, 3);
-    out[outOff + 48] = sar(a3 - a2, 3);
-    outOff += 64;
+    out[oo] = sar(a0 + a1, 3);
+    out[oo + 16] = sar(a3 + a2, 3);
+    out[oo + 32] = sar(a0 - a1, 3);
+    out[oo + 48] = sar(a3 - a2, 3);
+    oo += 64;
   }
 }
 
@@ -231,13 +236,14 @@ export function transformWHT(
  */
 export function isFlatSource16(src: Uint8Array, off: number): boolean {
   const v = src[off];
+  let o = off;
   for (let j = 0; j < 16; j++) {
     for (let i = 0; i < 16; i++) {
-      if (src[off + i] !== v) {
+      if (src[o + i] !== v) {
         return false;
       }
     }
-    off += kBps;
+    o += kBps;
   }
   return true;
 }
@@ -253,16 +259,17 @@ export function isFlat(
   thresh: number
 ): boolean {
   let score = 0;
+  let o = off;
   for (let b = 0; b < numBlocks; b++) {
     for (let i = 1; i < 16; i++) {
-      if (levels[off + i] !== 0) {
+      if (levels[o + i] !== 0) {
         score++;
         if (score > thresh) {
           return false;
         }
       }
     }
-    off += 16;
+    o += 16;
   }
   return true;
 }
@@ -472,12 +479,13 @@ function trueMotion(
   }
   const clip = clipTable;
   const base = 255 - left[leftOff - 1];
+  let doff = dstOff;
   for (let y = 0; y < size; y++) {
     const row = base + left[leftOff + y];
     for (let x = 0; x < size; x++) {
-      dst[dstOff + x] = clip[row + top[topOff + x]];
+      dst[doff + x] = clip[row + top[topOff + x]];
     }
-    dstOff += kBps;
+    doff += kBps;
   }
 }
 
@@ -807,14 +815,16 @@ export function getSSE4x4(
   bOff: number
 ): number {
   let count = 0;
+  let ao = aOff;
+  let bo = bOff;
   for (let y = 0; y < 4; y++) {
-    const d0 = a[aOff] - b[bOff];
-    const d1 = a[aOff + 1] - b[bOff + 1];
-    const d2 = a[aOff + 2] - b[bOff + 2];
-    const d3 = a[aOff + 3] - b[bOff + 3];
+    const d0 = a[ao] - b[bo];
+    const d1 = a[ao + 1] - b[bo + 1];
+    const d2 = a[ao + 2] - b[bo + 2];
+    const d3 = a[ao + 3] - b[bo + 3];
     count += d0 * d0 + d1 * d1 + d2 * d2 + d3 * d3;
-    aOff += kBps;
-    bOff += kBps;
+    ao += kBps;
+    bo += kBps;
   }
   return count;
 }
@@ -831,13 +841,15 @@ export function getSSE(
   h: number
 ): number {
   let count = 0;
+  let ao = aOff;
+  let bo = bOff;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const diff = a[aOff + x] - b[bOff + x];
+      const diff = a[ao + x] - b[bo + x];
       count += diff * diff;
     }
-    aOff += kBps;
-    bOff += kBps;
+    ao += kBps;
+    bo += kBps;
   }
   return count;
 }
@@ -846,41 +858,42 @@ export function getSSE(
  * A weighted sum of the absolute Hadamard coefficients of one 4x4 block.
  */
 function tTransform(src: Uint8Array, off: number): number {
+  let o = off;
   // Horizontal pass.
-  let a0 = src[off] + src[off + 2];
-  let a1 = src[off + 1] + src[off + 3];
-  let a2 = src[off + 1] - src[off + 3];
-  let a3 = src[off] - src[off + 2];
+  let a0 = src[o] + src[o + 2];
+  let a1 = src[o + 1] + src[o + 3];
+  let a2 = src[o + 1] - src[o + 3];
+  let a3 = src[o] - src[o + 2];
   const t0 = a0 + a1;
   const t1 = a3 + a2;
   const t2 = a3 - a2;
   const t3 = a0 - a1;
 
-  off += kBps;
-  a0 = src[off] + src[off + 2];
-  a1 = src[off + 1] + src[off + 3];
-  a2 = src[off + 1] - src[off + 3];
-  a3 = src[off] - src[off + 2];
+  o += kBps;
+  a0 = src[o] + src[o + 2];
+  a1 = src[o + 1] + src[o + 3];
+  a2 = src[o + 1] - src[o + 3];
+  a3 = src[o] - src[o + 2];
   const t4 = a0 + a1;
   const t5 = a3 + a2;
   const t6 = a3 - a2;
   const t7 = a0 - a1;
 
-  off += kBps;
-  a0 = src[off] + src[off + 2];
-  a1 = src[off + 1] + src[off + 3];
-  a2 = src[off + 1] - src[off + 3];
-  a3 = src[off] - src[off + 2];
+  o += kBps;
+  a0 = src[o] + src[o + 2];
+  a1 = src[o + 1] + src[o + 3];
+  a2 = src[o + 1] - src[o + 3];
+  a3 = src[o] - src[o + 2];
   const t8 = a0 + a1;
   const t9 = a3 + a2;
   const t10 = a3 - a2;
   const t11 = a0 - a1;
 
-  off += kBps;
-  a0 = src[off] + src[off + 2];
-  a1 = src[off + 1] + src[off + 3];
-  a2 = src[off + 1] - src[off + 3];
-  a3 = src[off] - src[off + 2];
+  o += kBps;
+  a0 = src[o] + src[o + 2];
+  a1 = src[o + 1] + src[o + 3];
+  a2 = src[o + 1] - src[o + 3];
+  a3 = src[o] - src[o + 2];
   const t12 = a0 + a1;
   const t13 = a3 + a2;
   const t14 = a3 - a2;
@@ -950,15 +963,16 @@ export function mean16x4(
   dc: Uint32Array,
   dcOff: number
 ): void {
+  let o = off;
   for (let k = 0; k < 4; k++) {
     let avg = 0;
     for (let y = 0; y < 4; y++) {
       for (let x = 0; x < 4; x++) {
-        avg += ref[off + x + y * kBps];
+        avg += ref[o + x + y * kBps];
       }
     }
     dc[dcOff + k] = avg;
-    off += 4;
+    o += 4;
   }
 }
 
@@ -974,13 +988,15 @@ export function copy4x4(
   dst: Uint8Array,
   dstOff: number
 ): void {
+  let so = srcOff;
+  let doff = dstOff;
   for (let y = 0; y < 4; y++) {
-    dst[dstOff] = src[srcOff];
-    dst[dstOff + 1] = src[srcOff + 1];
-    dst[dstOff + 2] = src[srcOff + 2];
-    dst[dstOff + 3] = src[srcOff + 3];
-    srcOff += kBps;
-    dstOff += kBps;
+    dst[doff] = src[so];
+    dst[doff + 1] = src[so + 1];
+    dst[doff + 2] = src[so + 2];
+    dst[doff + 3] = src[so + 3];
+    so += kBps;
+    doff += kBps;
   }
 }
 
@@ -993,9 +1009,11 @@ export function copy16x8(
   dst: Uint8Array,
   dstOff: number
 ): void {
+  let so = srcOff;
+  let doff = dstOff;
   for (let y = 0; y < 8; y++) {
-    ArrayUtils.copyRange(src, srcOff, dst, dstOff, 16);
-    srcOff += kBps;
-    dstOff += kBps;
+    ArrayUtils.copyRange(src, so, dst, doff, 16);
+    so += kBps;
+    doff += kBps;
   }
 }

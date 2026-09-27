@@ -3,6 +3,7 @@
 import { LibError } from '../../error/lib-error.js';
 import { MemoryImage } from '../../image/image.js';
 import { encodeAlphaChunk } from './vp8-alpha.js';
+import { VP8Lossy } from './vp8-lossy.js';
 import { VP8BoolEncoder } from './vp8-bool-encoder.js';
 import { VP8Config } from './vp8-config.js';
 import { bitCost } from './vp8-enc-proba.js';
@@ -58,23 +59,7 @@ const _averageBytesPerMb = [50, 24, 16, 9, 7, 5, 3, 2];
  */
 const _minRefreshCount = 96;
 
-/**
- * A coded lossy frame: the VP8 bitstream, and the alpha plane that VP8 itself
- * cannot carry.
- */
-export class VP8Lossy {
-  public readonly bitstream: Uint8Array;
-
-  /**
-   * The payload of an `ALPH` chunk, or undefined if the picture is opaque.
-   */
-  public readonly alpha: Uint8Array | undefined;
-
-  constructor(bitstream: Uint8Array, alpha: Uint8Array | undefined) {
-    this.bitstream = bitstream;
-    this.alpha = alpha;
-  }
-}
+export { VP8Lossy };
 
 /**
  * Encodes [image] as a VP8 keyframe.
@@ -243,12 +228,9 @@ export class VP8Encoder {
       const ctx = it.topNz[8] + it.leftNz[8];
       this._res.init(0, typeI16DC);
       this._res.setCoeffs(rd.yDcLevels, 0);
-      it.topNz[8] = it.leftNz[8] = recordCoeffTokens(
-        proba,
-        this._res,
-        ctx,
-        this._tokens
-      );
+      const nz = recordCoeffTokens(proba, this._res, ctx, this._tokens);
+      it.topNz[8] = nz;
+      it.leftNz[8] = nz;
       this._res.init(1, typeI16AC);
     } else {
       this._res.init(0, typeI4AC);
@@ -258,12 +240,9 @@ export class VP8Encoder {
       for (let x = 0; x < 4; x++) {
         const ctx = it.topNz[x] + it.leftNz[y];
         this._res.setCoeffs(rd.yAcLevels, (x + y * 4) * 16);
-        it.topNz[x] = it.leftNz[y] = recordCoeffTokens(
-          proba,
-          this._res,
-          ctx,
-          this._tokens
-        );
+        const nz = recordCoeffTokens(proba, this._res, ctx, this._tokens);
+        it.topNz[x] = nz;
+        it.leftNz[y] = nz;
       }
     }
 
@@ -273,12 +252,9 @@ export class VP8Encoder {
         for (let x = 0; x < 2; x++) {
           const ctx = it.topNz[4 + ch + x] + it.leftNz[4 + ch + y];
           this._res.setCoeffs(rd.uvLevels, (ch * 2 + x + y * 2) * 16);
-          it.topNz[4 + ch + x] = it.leftNz[4 + ch + y] = recordCoeffTokens(
-            proba,
-            this._res,
-            ctx,
-            this._tokens
-          );
+          const nz = recordCoeffTokens(proba, this._res, ctx, this._tokens);
+          it.topNz[4 + ch + x] = nz;
+          it.leftNz[4 + ch + y] = nz;
         }
       }
     }
@@ -295,13 +271,9 @@ export class VP8Encoder {
     }
 
     const out = new Uint8Array(10 + part0.length + tokenPartition.length);
-    // Paragraph 9.1: a keyframe, its profile, that it is shown, and how long
-    // partition #0 is.
-    const bits =
-      0 | // key frame
-      (this.enc.profile << 1) |
-      (1 << 4) | // visible
-      (part0.length << 5);
+    // Paragraph 9.1: a keyframe (bit 0 clear), its profile, that it is shown,
+    // and how long partition #0 is.
+    const bits = (this.enc.profile << 1) | (1 << 4) | (part0.length << 5);
     out[0] = bits & 0xff;
     out[1] = (bits >> 8) & 0xff;
     out[2] = (bits >> 16) & 0xff;
@@ -322,13 +294,16 @@ export class VP8Encoder {
     const bw = new VP8BoolEncoder(
       Math.trunc((this.enc.mbW * this.enc.mbH * 7) / 8)
     );
-    bw.putBitUniform(0); // colour space
-    bw.putBitUniform(0); // clamping type
+    // Colour space and clamping type, both zero.
+    bw.putBitUniform(0);
+    bw.putBitUniform(0);
     this._putSegmentHeader(bw);
     this._putFilterHeader(bw);
-    bw.putBits(0, 2); // one token partition
+    // One token partition.
+    bw.putBits(0, 2);
     this._putQuant(bw);
-    bw.putBitUniform(0); // the probabilities are not carried to a next frame
+    // The probabilities are not carried to a next frame.
+    bw.putBitUniform(0);
     this.enc.proba.write(bw);
     this._codeIntraModes(bw);
     return bw.finish();
@@ -340,8 +315,10 @@ export class VP8Encoder {
       return;
     }
     bw.putBitUniform(this.enc.updateMap ? 1 : 0);
-    bw.putBitUniform(1); // the quantizer and filter values follow
-    bw.putBitUniform(1); // as absolute values, not deltas
+    // The quantizer and filter values follow, as absolute values rather than
+    // deltas.
+    bw.putBitUniform(1);
+    bw.putBitUniform(1);
     for (let s = 0; s < 4; s++) {
       bw.putSignedBits(quant.dqm[s].quant, 7);
     }
@@ -432,16 +409,19 @@ export class VP8Encoder {
 
   private static _putI16Mode(bw: VP8BoolEncoder, mode: number): void {
     if (bw.putBit(mode === tmPred || mode === hPred ? 1 : 0, 156) !== 0) {
-      bw.putBit(mode === tmPred ? 1 : 0, 128); // true motion or horizontal
+      // True motion or horizontal.
+      bw.putBit(mode === tmPred ? 1 : 0, 128);
     } else {
-      bw.putBit(mode === vPred ? 1 : 0, 163); // vertical or DC
+      // Vertical or DC.
+      bw.putBit(mode === vPred ? 1 : 0, 163);
     }
   }
 
   private static _putUVMode(bw: VP8BoolEncoder, mode: number): void {
     if (bw.putBit(mode !== dcPred ? 1 : 0, 142) !== 0) {
       if (bw.putBit(mode !== vPred ? 1 : 0, 114) !== 0) {
-        bw.putBit(mode !== hPred ? 1 : 0, 183); // otherwise true motion
+        // Otherwise true motion.
+        bw.putBit(mode !== hPred ? 1 : 0, 183);
       }
     }
   }

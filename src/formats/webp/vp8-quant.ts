@@ -1,13 +1,13 @@
 /** @format */
 
 import { VP8Config } from './vp8-config.js';
+import { qFix, VP8Matrix } from './vp8-matrix.js';
 import { sar } from './vp8-sar.js';
+import { VP8SegmentInfo } from './vp8-segment-info.js';
 import { kAcTable, kDcTable } from './vp8-tables.js';
 
-/**
- * Fixed-point precision of the reciprocal quantizer.
- */
-const _qFix = 17;
+export { VP8Matrix };
+export { VP8SegmentInfo };
 
 /**
  * Largest codable coefficient level.
@@ -32,31 +32,6 @@ const _acTable2 = [
   203, 207, 212, 217, 221, 226, 230, 235, 240, 244, 249, 254, 258, 263, 268,
   274, 280, 286, 292, 299, 305, 311, 317, 323, 330, 336, 342, 348, 354, 362,
   370, 379, 385, 393, 401, 409, 416, 424, 432, 440,
-];
-
-/**
- * Rounding bias per matrix kind, as [dc, ac] in 1/256ths.
- */
-const _biasMatrices = [
-  // luma AC
-  [96, 110],
-  // luma DC (second transform)
-  [96, 108],
-  // chroma
-  [110, 115],
-];
-
-/**
- * Number of bits the sharpening bias is descaled by.
- */
-const _sharpenBits = 11;
-
-/**
- * A small boost of the high-frequency coefficients, which keeps detail that
- * the quantizer would otherwise round away in the mid-quality range.
- */
-const _freqSharpening = [
-  0, 30, 60, 90, 30, 60, 90, 90, 60, 90, 90, 90, 90, 90, 90, 90,
 ];
 
 /**
@@ -128,67 +103,6 @@ function _clip(v: number, m: number, M: number): number {
   return v < m ? m : v > M ? M : v;
 }
 
-/**
- * One quantization matrix: a step size per coefficient position, plus the
- * derived values that make quantizing a multiply and a shift.
- */
-export class VP8Matrix {
-  /**
-   * Step sizes.
-   */
-  public readonly q: Int32Array = new Int32Array(16);
-
-  /**
-   * Reciprocals of [q] in fixed point.
-   */
-  public readonly iq: Int32Array = new Int32Array(16);
-
-  /**
-   * Rounding bias.
-   */
-  public readonly bias: Int32Array = new Int32Array(16);
-
-  /**
-   * Value at or below which a coefficient quantizes to zero.
-   */
-  public readonly zthresh: Int32Array = new Int32Array(16);
-
-  /**
-   * High-frequency boost added before quantizing.
-   */
-  public readonly sharpen: Int32Array = new Int32Array(16);
-
-  /**
-   * Fills in every position from the DC and first AC step already in [q],
-   * and returns the average step size.
-   *
-   * [type] is 0 for luma AC, 1 for the luma DC block and 2 for chroma.
-   */
-  public expand(type: number): number {
-    for (let i = 0; i < 2; i++) {
-      const b = _biasMatrices[type][i > 0 ? 1 : 0];
-      this.iq[i] = (1 << _qFix) / this.q[i];
-      this.bias[i] = b << (_qFix - 8);
-      // The exact value at which the quantized level turns non-zero.
-      this.zthresh[i] = ((1 << _qFix) - 1 - this.bias[i]) / this.iq[i];
-    }
-    for (let i = 2; i < 16; i++) {
-      this.q[i] = this.q[1];
-      this.iq[i] = this.iq[1];
-      this.bias[i] = this.bias[1];
-      this.zthresh[i] = this.zthresh[1];
-    }
-    let sum = 0;
-    for (let i = 0; i < 16; i++) {
-      // Sharpening applies to luma AC only.
-      this.sharpen[i] =
-        type === 0 ? (_freqSharpening[i] * this.q[i]) >> _sharpenBits : 0;
-      sum += this.q[i];
-    }
-    return (sum + 8) >> 4;
-  }
-}
-
 function _step(
   inp: Int16Array,
   at: number,
@@ -204,7 +118,7 @@ function _step(
   const sign = v < 0;
   const coeff = (sign ? -v : v) + sharpen;
   if (coeff > zthresh) {
-    let level = (coeff * iq + bias) >> _qFix;
+    let level = (coeff * iq + bias) >> qFix;
     if (level > maxLevel) {
       level = maxLevel;
     }
@@ -351,7 +265,7 @@ export function quantizeSingleDC(
     value = -value;
   }
   if (value > mtx.zthresh[0]) {
-    let level = (value * mtx.iq[0] + mtx.bias[0]) >> _qFix;
+    let level = (value * mtx.iq[0] + mtx.bias[0]) >> qFix;
     if (level > maxLevel) {
       level = maxLevel;
     }
@@ -378,75 +292,6 @@ export function quantize2Blocks(
   const high =
     quantizeBlock(inp, inOff + 16, out, outOff + 16, mtx) >= 0 ? 2 : 0;
   return low | high;
-}
-
-/**
- * Everything one quantizer segment decides: its step sizes, the weights that
- * balance rate against distortion at those steps, and its filter strength.
- */
-export class VP8SegmentInfo {
-  public readonly y1: VP8Matrix = new VP8Matrix();
-  public readonly y2: VP8Matrix = new VP8Matrix();
-  public readonly uv: VP8Matrix = new VP8Matrix();
-
-  /**
-   * Quantization susceptibility, -127 to 127. Lower means less risk of
-   * visible blurring, so the segment can take a coarser quantizer.
-   */
-  public alpha: number = 0;
-
-  /**
-   * Filter susceptibility, 0 to 255.
-   */
-  public beta: number = 0;
-
-  /**
-   * The segment's quantizer index.
-   */
-  public quant: number = 0;
-
-  /**
-   * In-loop filtering strength signalled for this segment.
-   */
-  public fstrength: number = 0;
-
-  /**
-   * Largest edge step seen, used to pick the filter strength.
-   */
-  public maxEdge: number = 0;
-
-  /**
-   * Distortion below which filtering statistics are not recorded.
-   */
-  public minDisto: number = 0;
-
-  public lambdaI16: number = 0;
-  public lambdaI4: number = 0;
-  public lambdaUv: number = 0;
-  public lambdaMode: number = 0;
-  public lambdaTrellis: number = 0;
-  public tlambda: number = 0;
-  public lambdaTrellisI16: number = 0;
-  public lambdaTrellisI4: number = 0;
-  public lambdaTrellisUv: number = 0;
-
-  /**
-   * What choosing intra 4x4 has to beat, in score units.
-   */
-  public i4Penalty: number = 0;
-
-  public equivalentTo(other: VP8SegmentInfo): boolean {
-    return this.quant === other.quant && this.fstrength === other.fstrength;
-  }
-
-  public copyFrom(other: VP8SegmentInfo): void {
-    this.alpha = other.alpha;
-    this.beta = other.beta;
-    this.quant = other.quant;
-    this.fstrength = other.fstrength;
-    this.maxEdge = other.maxEdge;
-    this.minDisto = other.minDisto;
-  }
 }
 
 /**
