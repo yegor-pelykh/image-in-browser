@@ -10,15 +10,15 @@ import * as huffman from './vp8l-huffman-encoder.js';
  */
 
 /**
- * Cache sizes considered by [selectColorCacheBits]. A small image cannot
+ * Cache sizes considered by {@link selectColorCacheBits}. A small image cannot
  * pay back the cost of describing a large alphabet, so a mid size is offered
  * as well. libwebp never emits more than 10 bits, so neither does this.
  */
-const _colorCacheCandidates = [0, 8, 10];
+const colorCacheCandidates = [0, 8, 10];
 
 /**
  * Picks the color cache size that codes the token stream most compactly and
- * fills [outKeys] with the cache key of every literal that becomes a cache
+ * fills {@link outKeys} with the cache key of every literal that becomes a cache
  * reference, or -1 for literals that stay full pixels. Returns the chosen
  * number of cache bits, or 0 when no cache pays for itself.
  */
@@ -38,25 +38,15 @@ export function selectColorCacheBits(
   let bestCost = Infinity;
   let bestKeys: Int32Array | undefined = undefined;
 
-  for (const bits of _colorCacheCandidates) {
+  for (const bits of colorCacheCandidates) {
     const keys = new Int32Array(outKeys.length);
     if (bits > 0) {
-      _walkColorCache(
-        r,
-        g,
-        b,
-        a,
-        tokenIsLit,
-        tokenLitIdx,
-        tokenLen,
-        bits,
-        keys
-      );
+      walkColorCache(r, g, b, a, tokenIsLit, tokenLitIdx, tokenLen, bits, keys);
     } else {
       keys.fill(-1, 0, keys.length);
     }
 
-    const cost = _estimateCost(
+    const cost = estimateCost(
       r,
       g,
       b,
@@ -84,7 +74,7 @@ export function selectColorCacheBits(
  * Replays the token stream while maintaining the decoder's color cache, and
  * records for each literal the key that would reproduce it, or -1.
  */
-function _walkColorCache(
+function walkColorCache(
   r: Uint8Array,
   g: Uint8Array,
   b: Uint8Array,
@@ -137,7 +127,7 @@ function _walkColorCache(
  * configuration. Extra bits for lengths and distances are the same for every
  * configuration and are left out.
  */
-function _estimateCost(
+function estimateCost(
   r: Uint8Array,
   g: Uint8Array,
   b: Uint8Array,
@@ -181,11 +171,11 @@ function _estimateCost(
   }
 
   let bits =
-    _entropy(greenFreq) +
-    _entropy(redFreq) +
-    _entropy(blueFreq) +
-    _entropy(alphaFreq) +
-    _entropy(distFreq);
+    entropy(greenFreq) +
+    entropy(redFreq) +
+    entropy(blueFreq) +
+    entropy(alphaFreq) +
+    entropy(distFreq);
 
   // Every symbol a tree actually uses has to be described in the header,
   // which is what stops an oversized cache from looking free.
@@ -201,9 +191,9 @@ function _estimateCost(
 }
 
 /**
- * Shannon entropy of [freq] in bits: what an ideal prefix code would cost.
+ * Shannon entropy of {@link freq} in bits: what an ideal prefix code would cost.
  */
-function _entropy(freq: number[]): number {
+function entropy(freq: number[]): number {
   let total = 0;
   for (const f of freq) {
     total += f;

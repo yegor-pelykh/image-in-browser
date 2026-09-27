@@ -10,15 +10,15 @@ export function mul32(a: number, b: number): number {
   return (lo + hi * 0x10000) & 0xffffffff;
 }
 
-const _hashMultiplier = 0x1e35a7bd;
+const hashMultiplier = 0x1e35a7bd;
 
 /**
- * The cache slot [argb] belongs in, for a cache of `32 - hashShift` bits.
+ * The cache slot {@link argb} belongs in, for a cache of `32 - hashShift` bits.
  *
  * The encoder writes the slot it computed and the decoder answers from the
  * slot it computed, so the two have to agree to the bit. The product reaches
  * 2^62, which a plain multiply rounds on the web.
  */
 export function colorCacheKey(argb: number, hashShift: number): number {
-  return mul32(argb, _hashMultiplier) >>> hashShift;
+  return mul32(argb, hashMultiplier) >>> hashShift;
 }

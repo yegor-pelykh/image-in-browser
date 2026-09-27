@@ -84,7 +84,7 @@ export class VP8BoolEncoder {
       this._value <<= shift;
       this._nbBits += shift;
       if (this._nbBits > 0) {
-        this._flush();
+        this.flush();
       }
     }
     return bit;
@@ -103,7 +103,7 @@ export class VP8BoolEncoder {
       this._value <<= 1;
       this._nbBits += 1;
       if (this._nbBits > 0) {
-        this._flush();
+        this.flush();
       }
     }
     return bit;
@@ -126,14 +126,14 @@ export class VP8BoolEncoder {
     }
   }
 
-  private _flush(): void {
+  private flush(): void {
     const s = 8 + this._nbBits;
     const bits = this._value >> s;
     this._value -= bits << s;
     this._nbBits -= 8;
     if ((bits & 0xff) !== 0xff) {
       let pos = this._pos;
-      this._reserve(this._run + 1);
+      this.reserve(this._run + 1);
       if ((bits & 0x100) !== 0) {
         // Overflow: propagate the carry back over the pending 0xff bytes.
         if (pos > 0) {
@@ -153,7 +153,7 @@ export class VP8BoolEncoder {
     }
   }
 
-  private _reserve(extra: number): void {
+  private reserve(extra: number): void {
     const needed = this._pos + extra;
     if (needed <= this._buf.length) {
       return;
@@ -168,10 +168,10 @@ export class VP8BoolEncoder {
   }
 
   /**
-   * Appends raw bytes. Only valid once [finish] has flushed the coder.
+   * Appends raw bytes. Only valid once {@link finish} has flushed the coder.
    */
   public append(data: Uint8Array): void {
-    this._reserve(data.length);
+    this.reserve(data.length);
     this._buf.set(data, this._pos);
     this._pos += data.length;
   }
@@ -180,13 +180,12 @@ export class VP8BoolEncoder {
    * Flushes the pending bits and returns everything written.
    *
    * The returned array is a view on the internal buffer; the coder must not be
-   * used again except through [append].
+   * used again except through {@link append}.
    */
   public finish(): Uint8Array {
     this.putBits(0, 9 - this._nbBits);
-    // pad with zeroes
     this._nbBits = 0;
-    this._flush();
+    this.flush();
     return this._buf.subarray(0, this._pos);
   }
 }

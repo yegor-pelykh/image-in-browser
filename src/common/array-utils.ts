@@ -8,7 +8,7 @@ import { TypedArray } from './typings.js';
  * Longest range copied with a plain loop rather than `set`: above it the
  * subarray view `set` needs is cheaper than the per-element writes.
  */
-const _directCopyMax = 16;
+const directCopyMax = 16;
 
 /**
  * Abstract class containing utility methods for array operations.
@@ -184,7 +184,7 @@ export abstract class ArrayUtils {
   ): void {
     if (
       length > 0 &&
-      length <= _directCopyMax &&
+      length <= directCopyMax &&
       from.buffer !== to.buffer &&
       fromStart >= 0 &&
       fromStart + length <= from.length

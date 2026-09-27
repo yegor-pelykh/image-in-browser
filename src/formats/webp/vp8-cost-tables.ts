@@ -1,8 +1,11 @@
 /** @format */
 
-/** The cost tables of the lossy encoder: what a symbol is worth, in bits. */
-/** /// Every rate-distortion decision compares a distortion in squared error */
-/** against a rate in these units, which are 1/256ths of a bit. */
+/**
+ * The cost tables of the lossy encoder: what a symbol is worth, in bits.
+ *
+ * Every rate-distortion decision compares a distortion in squared error against
+ * a rate in these units, which are 1/256ths of a bit.
+ */
 
 /** The cost of coding a bit whose probability of being zero is the index. */
 export const kEntropyCost = new Uint16Array([
@@ -25,9 +28,12 @@ export const kEntropyCost = new Uint16Array([
   12, 10, 9, 7, 6, 4, 3,
 ]);
 
-/** The part of a coefficient's cost that does not depend on its context. */
-/** /// Above level 67 the variable part is constant, so this table carries the */
-/** whole remainder for the large levels. */
+/**
+ * The part of a coefficient's cost that does not depend on its context.
+ *
+ * Above level 67 the variable part is constant, so this table carries the whole
+ * remainder for the large levels.
+ */
 export const kLevelFixedCosts = new Uint16Array([
   0, 256, 256, 256, 256, 432, 618, 630, 731, 640, 640, 828, 901, 948, 1021,
   1101, 1174, 1221, 1294, 1042, 1085, 1115, 1158, 1202, 1245, 1275, 1318, 1337,
@@ -189,8 +195,10 @@ export const kLevelFixedCosts = new Uint16Array([
   7729, 7735, 7744, 7750, 7761,
 ]);
 
-/** For each level, which contexts code it (first entry) and the bit to send in */
-/** each (second entry). */
+/**
+ * For each level, which contexts code it (first entry) and the bit to send in
+ * each (second entry).
+ */
 export const kLevelCodes = [
   [0x001, 0x000],
   [0x007, 0x001],
@@ -270,7 +278,6 @@ export const kFixedCostsI16 = [663, 919, 872, 919];
 /** The cost of a 4x4 mode given the modes of the blocks above and to the left. */
 export const kFixedCostsI4 = [
   [
-    //
     [40, 1151, 1723, 1874, 2103, 2019, 1628, 1777, 2226, 2137],
     [192, 469, 1296, 1308, 1849, 1794, 1781, 1703, 1713, 1522],
     [142, 910, 762, 1684, 1849, 1576, 1460, 1305, 1801, 1657],

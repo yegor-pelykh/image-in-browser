@@ -41,88 +41,88 @@ export class VP8Yuv {
 }
 
 // Fixed-point precision of the RGB->YUV matrix.
-const _yuvFix = 16;
-const _yuvHalf = 1 << (_yuvFix - 1);
+const yuvFix = 16;
+const yuvHalf = 1 << (yuvFix - 1);
 
 // Chroma is averaged in a lightly compressed space rather than on the raw
 // bytes: averaging gamma-encoded values darkens edges, and at 4:2:0 that shows
 // up as a colour shift along every hard boundary. libwebp uses an exponent of
 // 0.80 with a 12-bit linear representation.
 // fixed-point precision of a linear value
-const _gammaFix = 12;
+const gammaFix = 12;
 // fractional bits of the table index
-const _gammaTabFix = 7;
-const _gammaTabSize = 1 << (_gammaFix - _gammaTabFix);
-const _gammaScale = (1 << _gammaFix) - 1;
-const _gammaTabRounder = 1 << (_gammaTabFix - 1);
-const _gamma = 0.8;
+const gammaTabFix = 7;
+const gammaTabSize = 1 << (gammaFix - gammaTabFix);
+const gammaScale = (1 << gammaFix) - 1;
+const gammaTabRounder = 1 << (gammaTabFix - 1);
+const gamma = 0.8;
 
-// (1 << _alphaFix) / a, so the alpha-weighted average is a multiply and a
+// (1 << alphaFix) / a, so the alpha-weighted average is a multiply and a
 // shift. The factor of four that turns a 2x2 sum into a scaled average is
 // folded into the shift.
-const _alphaFix = 19;
+const alphaFix = 19;
 
-function _buildGammaToLinear(): Uint16Array {
+function buildGammaToLinear(): Uint16Array {
   const table = new Uint16Array(256);
   for (let v = 0; v <= 255; v++) {
-    table[v] = Math.round(Math.pow(v / 255, _gamma) * _gammaScale);
+    table[v] = Math.round(Math.pow(v / 255, gamma) * gammaScale);
   }
   return table;
 }
 
-function _buildLinearToGamma(): Int32Array {
-  const table = new Int32Array(_gammaTabSize + 1);
-  const scale = (1 << _gammaTabFix) / _gammaScale;
-  for (let v = 0; v <= _gammaTabSize; v++) {
-    table[v] = Math.round(255 * Math.pow(scale * v, 1 / _gamma));
+function buildLinearToGamma(): Int32Array {
+  const table = new Int32Array(gammaTabSize + 1);
+  const scale = (1 << gammaTabFix) / gammaScale;
+  for (let v = 0; v <= gammaTabSize; v++) {
+    table[v] = Math.round(255 * Math.pow(scale * v, 1 / gamma));
   }
   return table;
 }
 
-function _buildInvAlpha(): Int32Array {
+function buildInvAlpha(): Int32Array {
   const table = new Int32Array(4 * 0xff + 1);
   for (let a = 1; a < table.length; a++) {
-    table[a] = (1 << _alphaFix) / a;
+    table[a] = (1 << alphaFix) / a;
   }
   return table;
 }
 
-const _gammaToLinear = _buildGammaToLinear();
-const _linearToGamma = _buildLinearToGamma();
-const _invAlpha = _buildInvAlpha();
+const gammaToLinear = buildGammaToLinear();
+const linearToGamma = buildLinearToGamma();
+const invAlpha = buildInvAlpha();
 
 /**
  * Converts a sum of up to four linear values back to gamma space, keeping the
  * factor of four in the result (so the output is scaled by 4).
  */
-function _toGamma(sum: number, shift: number): number {
+function toGamma(sum: number, shift: number): number {
   const v = sum << shift;
-  const pos = v >> (_gammaTabFix + 2);
-  const x = v & ((1 << (_gammaTabFix + 2)) - 1);
-  const v0 = _linearToGamma[pos];
-  const v1 = _linearToGamma[pos + 1];
+  const pos = v >> (gammaTabFix + 2);
+  const x = v & ((1 << (gammaTabFix + 2)) - 1);
+  const v0 = linearToGamma[pos];
+  const v1 = linearToGamma[pos + 1];
   return (
-    (v1 * x + v0 * ((1 << (_gammaTabFix + 2)) - x) + _gammaTabRounder) >>
-    _gammaTabFix
+    (v1 * x + v0 * ((1 << (gammaTabFix + 2)) - x) + gammaTabRounder) >>
+    gammaTabFix
   );
 }
 
-function _rgbToY(r: number, g: number, b: number): number {
+function rgbToY(r: number, g: number, b: number): number {
   return (
-    (16839 * r + 33059 * g + 6420 * b + _yuvHalf + (16 << _yuvFix)) >> _yuvFix
+    (16839 * r + 33059 * g + 6420 * b + yuvHalf + (16 << yuvFix)) >> yuvFix
   );
 }
 
 /**
- * Clips a chroma value given at [_yuvFix] + 2 precision.
+ * Clips a chroma value given at {@link yuvFix} + 2 precision.
  */
-function _clipUV(uv: number): number {
-  const v = (uv + (_yuvHalf << 2) + (128 << (_yuvFix + 2))) >> (_yuvFix + 2);
+function clipUV(uv: number): number {
+  const v = (uv + (yuvHalf << 2) + (128 << (yuvFix + 2))) >> (yuvFix + 2);
   return (v & ~0xff) === 0 ? v : v < 0 ? 0 : 255;
 }
 
 /**
- * Converts [image] to the planes VP8 codes.
+ * Converts {@link image} to the planes VP8 codes.
  *
  * Chroma is the average of each 2x2 block, weighted by alpha where the block
  * is partly transparent so that the colour of invisible pixels cannot bleed
@@ -134,7 +134,7 @@ export function importYuv(image: MemoryImage): VP8Yuv {
   const uvWidth = (width + 1) >> 1;
   const uvHeight = (height + 1) >> 1;
 
-  const rgba = _rgbaBytes(image);
+  const rgba = rgbaBytes(image);
   const y = new Uint8Array(width * height);
   const u = new Uint8Array(uvWidth * uvHeight);
   const v = new Uint8Array(uvWidth * uvHeight);
@@ -164,26 +164,26 @@ export function importYuv(image: MemoryImage): VP8Yuv {
   let uvRow = 0;
   for (; row + 1 < height; row += 2, uvRow++) {
     const top = row * stride;
-    _rowToY(rgba, top, y, row * width, width);
-    _rowToY(rgba, top + stride, y, (row + 1) * width, width);
-    if (hasAlpha && _rowsHaveAlpha(rgba, top, width, 2, stride)) {
-      _accumulateRGBA(rgba, top, stride, tmp, width);
+    rowToY(rgba, top, y, row * width, width);
+    rowToY(rgba, top + stride, y, (row + 1) * width, width);
+    if (hasAlpha && rowsHaveAlpha(rgba, top, width, 2, stride)) {
+      accumulateRGBA(rgba, top, stride, tmp, width);
     } else {
-      _accumulateRGB(rgba, top, stride, tmp, width);
+      accumulateRGB(rgba, top, stride, tmp, width);
     }
-    _rowsToUV(tmp, u, v, uvRow * uvWidth, uvWidth);
+    rowsToUV(tmp, u, v, uvRow * uvWidth, uvWidth);
   }
   if (row < height) {
     // Odd last row: the 2x2 block degenerates to 1x2, so the pair sum is
     // doubled to stay on the same scale.
     const top = row * stride;
-    _rowToY(rgba, top, y, row * width, width);
-    if (hasAlpha && _rowsHaveAlpha(rgba, top, width, 1, stride)) {
-      _accumulateRGBA(rgba, top, 0, tmp, width);
+    rowToY(rgba, top, y, row * width, width);
+    if (hasAlpha && rowsHaveAlpha(rgba, top, width, 1, stride)) {
+      accumulateRGBA(rgba, top, 0, tmp, width);
     } else {
-      _accumulateRGB(rgba, top, 0, tmp, width);
+      accumulateRGB(rgba, top, 0, tmp, width);
     }
-    _rowsToUV(tmp, u, v, uvRow * uvWidth, uvWidth);
+    rowsToUV(tmp, u, v, uvRow * uvWidth, uvWidth);
   }
 
   return new VP8Yuv(width, height, y, u, v, a);
@@ -192,7 +192,7 @@ export function importYuv(image: MemoryImage): VP8Yuv {
 /**
  * Size of the block the transparent-area cleanup works on.
  */
-const _cleanupBlock = 8;
+const cleanupBlock = 8;
 
 /**
  * Replaces what sits under transparent pixels with something cheaper to code.
@@ -211,7 +211,7 @@ export function cleanupTransparentArea(pic: VP8Yuv): void {
   const width = pic.width;
   const height = pic.height;
   const uvStride = pic.uvWidth;
-  const size = _cleanupBlock;
+  const size = cleanupBlock;
   const half = size >> 1;
 
   let y = 0;
@@ -224,32 +224,32 @@ export function cleanupTransparentArea(pic: VP8Yuv): void {
     for (; x + size <= width; x += size) {
       const yOff = y * width + x;
       const uvOff = (y >> 1) * uvStride + (x >> 1);
-      if (_smoothenBlock(a, pic.y, yOff, width, size, size)) {
+      if (smoothenBlock(a, pic.y, yOff, width, size, size)) {
         if (needReset) {
           yv = pic.y[yOff];
           uv = pic.u[uvOff];
           vv = pic.v[uvOff];
           needReset = false;
         }
-        _flatten(pic.y, yOff, yv, width, size);
-        _flatten(pic.u, uvOff, uv, uvStride, half);
-        _flatten(pic.v, uvOff, vv, uvStride, half);
+        flatten(pic.y, yOff, yv, width, size);
+        flatten(pic.u, uvOff, uv, uvStride, half);
+        flatten(pic.v, uvOff, vv, uvStride, half);
       } else {
         needReset = true;
       }
     }
     if (x < width) {
-      _smoothenBlock(a, pic.y, y * width + x, width, width - x, size);
+      smoothenBlock(a, pic.y, y * width + x, width, width - x, size);
     }
   }
   if (y < height) {
     const subHeight = height - y;
     let x = 0;
     for (; x + size <= width; x += size) {
-      _smoothenBlock(a, pic.y, y * width + x, width, size, subHeight);
+      smoothenBlock(a, pic.y, y * width + x, width, size, subHeight);
     }
     if (x < width) {
-      _smoothenBlock(a, pic.y, y * width + x, width, width - x, subHeight);
+      smoothenBlock(a, pic.y, y * width + x, width, width - x, subHeight);
     }
   }
 }
@@ -258,7 +258,7 @@ export function cleanupTransparentArea(pic: VP8Yuv): void {
  * Flattens the luma of the transparent pixels in one block to the average of
  * the visible ones. Returns true if the block has no visible pixel at all.
  */
-function _smoothenBlock(
+function smoothenBlock(
   a: Uint8Array,
   luma: Uint8Array,
   off: number,
@@ -291,7 +291,7 @@ function _smoothenBlock(
   return count === 0;
 }
 
-function _flatten(
+function flatten(
   plane: Uint8Array,
   off: number,
   value: number,
@@ -310,7 +310,7 @@ function _flatten(
  * 8-bit image is already stored interleaved in the order wanted, so it needs
  * at most a widening pass, and a four-channel one needs nothing at all.
  */
-function _rgbaBytes(image: MemoryImage): Uint8Array {
+function rgbaBytes(image: MemoryImage): Uint8Array {
   const numChannels = image.numChannels;
   if (image.format === Format.uint8 && image.palette === undefined) {
     const src = image.data?.getBytes();
@@ -355,7 +355,7 @@ function _rgbaBytes(image: MemoryImage): Uint8Array {
   return out;
 }
 
-function _rowToY(
+function rowToY(
   rgba: Uint8Array,
   src: number,
   y: Uint8Array,
@@ -364,11 +364,11 @@ function _rowToY(
 ): void {
   let s = src;
   for (let i = 0; i < width; i++, s += 4) {
-    y[dst + i] = _rgbToY(rgba[s], rgba[s + 1], rgba[s + 2]);
+    y[dst + i] = rgbToY(rgba[s], rgba[s + 1], rgba[s + 2]);
   }
 }
 
-function _rowsHaveAlpha(
+function rowsHaveAlpha(
   rgba: Uint8Array,
   src: number,
   width: number,
@@ -387,36 +387,36 @@ function _rowsHaveAlpha(
 }
 
 /**
- * Averages each 2x2 block in linear space. [stride] is zero on the last row of
+ * Averages each 2x2 block in linear space. {@link stride} is zero on the last row of
  * an odd-height image, which makes every read hit the same row twice.
  */
-function _accumulateRGB(
+function accumulateRGB(
   rgba: Uint8Array,
   src: number,
   stride: number,
   dst: Int32Array,
   width: number
 ): void {
-  const toLinear = _gammaToLinear;
+  const toLinear = gammaToLinear;
   let i = 0;
   let j = src;
   for (; i < width >> 1; i++, j += 8) {
     const k = j + stride;
-    dst[4 * i] = _toGamma(
+    dst[4 * i] = toGamma(
       toLinear[rgba[j]] +
         toLinear[rgba[j + 4]] +
         toLinear[rgba[k]] +
         toLinear[rgba[k + 4]],
       0
     );
-    dst[4 * i + 1] = _toGamma(
+    dst[4 * i + 1] = toGamma(
       toLinear[rgba[j + 1]] +
         toLinear[rgba[j + 5]] +
         toLinear[rgba[k + 1]] +
         toLinear[rgba[k + 5]],
       0
     );
-    dst[4 * i + 2] = _toGamma(
+    dst[4 * i + 2] = toGamma(
       toLinear[rgba[j + 2]] +
         toLinear[rgba[j + 6]] +
         toLinear[rgba[k + 2]] +
@@ -426,17 +426,17 @@ function _accumulateRGB(
   }
   if ((width & 1) !== 0) {
     const k = j + stride;
-    dst[4 * i] = _toGamma(toLinear[rgba[j]] + toLinear[rgba[k]], 1);
-    dst[4 * i + 1] = _toGamma(toLinear[rgba[j + 1]] + toLinear[rgba[k + 1]], 1);
-    dst[4 * i + 2] = _toGamma(toLinear[rgba[j + 2]] + toLinear[rgba[k + 2]], 1);
+    dst[4 * i] = toGamma(toLinear[rgba[j]] + toLinear[rgba[k]], 1);
+    dst[4 * i + 1] = toGamma(toLinear[rgba[j + 1]] + toLinear[rgba[k + 1]], 1);
+    dst[4 * i + 2] = toGamma(toLinear[rgba[j + 2]] + toLinear[rgba[k + 2]], 1);
   }
 }
 
 /**
- * As [_accumulateRGB], but weights each pixel by its alpha, so that the colour
+ * As {@link accumulateRGB}, but weights each pixel by its alpha, so that the colour
  * stored under a transparent pixel does not pull the visible average.
  */
-function _accumulateRGBA(
+function accumulateRGBA(
   rgba: Uint8Array,
   src: number,
   stride: number,
@@ -449,11 +449,11 @@ function _accumulateRGBA(
     const k = j + stride;
     const a = rgba[j + 3] + rgba[j + 7] + rgba[k + 3] + rgba[k + 7];
     if (a === 4 * 0xff || a === 0) {
-      _accumulate4(rgba, j, k, dst, 4 * i);
+      accumulate4(rgba, j, k, dst, 4 * i);
     } else {
-      dst[4 * i] = _weighted(rgba, j, k, 4, a, 0);
-      dst[4 * i + 1] = _weighted(rgba, j, k, 4, a, 1);
-      dst[4 * i + 2] = _weighted(rgba, j, k, 4, a, 2);
+      dst[4 * i] = weighted(rgba, j, k, 4, a, 0);
+      dst[4 * i + 1] = weighted(rgba, j, k, 4, a, 1);
+      dst[4 * i + 2] = weighted(rgba, j, k, 4, a, 2);
     }
     dst[4 * i + 3] = a;
   }
@@ -461,35 +461,35 @@ function _accumulateRGBA(
     const k = j + stride;
     const a = 2 * (rgba[j + 3] + rgba[k + 3]);
     if (a === 4 * 0xff || a === 0) {
-      const toLinear = _gammaToLinear;
-      dst[4 * i] = _toGamma(toLinear[rgba[j]] + toLinear[rgba[k]], 1);
-      dst[4 * i + 1] = _toGamma(
+      const toLinear = gammaToLinear;
+      dst[4 * i] = toGamma(toLinear[rgba[j]] + toLinear[rgba[k]], 1);
+      dst[4 * i + 1] = toGamma(
         toLinear[rgba[j + 1]] + toLinear[rgba[k + 1]],
         1
       );
-      dst[4 * i + 2] = _toGamma(
+      dst[4 * i + 2] = toGamma(
         toLinear[rgba[j + 2]] + toLinear[rgba[k + 2]],
         1
       );
     } else {
-      dst[4 * i] = _weighted(rgba, j, k, 0, a, 0);
-      dst[4 * i + 1] = _weighted(rgba, j, k, 0, a, 1);
-      dst[4 * i + 2] = _weighted(rgba, j, k, 0, a, 2);
+      dst[4 * i] = weighted(rgba, j, k, 0, a, 0);
+      dst[4 * i + 1] = weighted(rgba, j, k, 0, a, 1);
+      dst[4 * i + 2] = weighted(rgba, j, k, 0, a, 2);
     }
     dst[4 * i + 3] = a;
   }
 }
 
-function _accumulate4(
+function accumulate4(
   rgba: Uint8Array,
   j: number,
   k: number,
   dst: Int32Array,
   at: number
 ): void {
-  const toLinear = _gammaToLinear;
+  const toLinear = gammaToLinear;
   for (let c = 0; c < 3; c++) {
-    dst[at + c] = _toGamma(
+    dst[at + c] = toGamma(
       toLinear[rgba[j + c]] +
         toLinear[rgba[j + 4 + c]] +
         toLinear[rgba[k + c]] +
@@ -501,9 +501,9 @@ function _accumulate4(
 
 /**
  * The alpha-weighted linear average of one channel over a 2x2 block, back in
- * gamma space. [step] is 0 for the half block of an odd-width image.
+ * gamma space. {@link step} is 0 for the half block of an odd-width image.
  */
-function _weighted(
+function weighted(
   rgba: Uint8Array,
   j: number,
   k: number,
@@ -511,16 +511,16 @@ function _weighted(
   a: number,
   c: number
 ): number {
-  const toLinear = _gammaToLinear;
+  const toLinear = gammaToLinear;
   const sum =
     rgba[j + 3] * toLinear[rgba[j + c]] +
     rgba[j + step + 3] * toLinear[rgba[j + step + c]] +
     rgba[k + 3] * toLinear[rgba[k + c]] +
     rgba[k + step + 3] * toLinear[rgba[k + step + c]];
-  return _toGamma((sum * _invAlpha[a]) >> (_alphaFix - 2), 0);
+  return toGamma((sum * invAlpha[a]) >> (alphaFix - 2), 0);
 }
 
-function _rowsToUV(
+function rowsToUV(
   rgb: Int32Array,
   u: Uint8Array,
   v: Uint8Array,
@@ -531,7 +531,7 @@ function _rowsToUV(
     const r = rgb[4 * i];
     const g = rgb[4 * i + 1];
     const b = rgb[4 * i + 2];
-    u[dst + i] = _clipUV(-9719 * r - 19081 * g + 28800 * b);
-    v[dst + i] = _clipUV(28800 * r - 24116 * g - 4684 * b);
+    u[dst + i] = clipUV(-9719 * r - 19081 * g + 28800 * b);
+    v[dst + i] = clipUV(28800 * r - 24116 * g - 4684 * b);
   }
 }

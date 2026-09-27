@@ -626,7 +626,7 @@ describe('Format: WEBP', () => {
   }
 
   /**
-   * Encodes a 2�-2 RGBA image to WebP, writes to disk, and verifies decode.
+   * Encodes a 2×2 RGBA image to WebP, writes to disk, and verifies decode.
    */
   test('encodeWebP', () => {
     const image = new MemoryImage({

@@ -42,7 +42,7 @@ export class VP8LColorMultipliers {
   }
 }
 
-function _int8(v: number): number {
+function int8(v: number): number {
   return v < 128 ? v : v - 256;
 }
 
@@ -50,7 +50,7 @@ function _int8(v: number): number {
  * Rounds to the nearest integer, away from zero on a tie, as Dart's
  * `num.round` does.
  */
-function _roundHalfAwayFromZero(v: number): number {
+function roundHalfAwayFromZero(v: number): number {
   return v < 0 ? -Math.round(-v) : Math.round(v);
 }
 
@@ -63,18 +63,18 @@ function _roundHalfAwayFromZero(v: number): number {
  * which is everywhere it is used.
  */
 export function colorTransformDelta(multiplier: number, color: number): number {
-  return (_int8(multiplier) * _int8(color)) >> 5;
+  return (int8(multiplier) * int8(color)) >> 5;
 }
 
 /**
- * Fits the multiplier that best predicts the first [n] of [target] from
- * [source].
+ * Fits the multiplier that best predicts the first {@link n} of {@link target} from
+ * {@link source}.
  *
  * The least squares estimate lands close, and the handful of neighbours around
  * it are then scored on what they actually cost to code, which the closed form
  * cannot see because of the shift and the wrap to eight bits.
  */
-function _fitMultiplier(
+function fitMultiplier(
   source: Uint8Array,
   target: Uint8Array,
   n: number,
@@ -85,8 +85,8 @@ function _fitMultiplier(
   let sumXY = 0;
   let sumXX = 0;
   for (let k = 0; k < n; k++) {
-    const x = _int8(source[k]);
-    const y = _int8(target[k]);
+    const x = int8(source[k]);
+    const y = int8(target[k]);
     sumXY += x * y;
     sumXX += x * x;
   }
@@ -95,7 +95,7 @@ function _fitMultiplier(
   }
 
   const estimate = MathUtils.clamp(
-    _roundHalfAwayFromZero((32 * sumXY) / sumXX),
+    roundHalfAwayFromZero((32 * sumXY) / sumXX),
     -128,
     127
   );
@@ -109,7 +109,7 @@ function _fitMultiplier(
   let numCandidates = 1;
   for (let t = estimate - 2; t <= estimate + 2; t++) {
     if (t >= -128 && t <= 127) {
-      signed[numCandidates] = _int8(t & 0xff);
+      signed[numCandidates] = int8(t & 0xff);
       candidates[numCandidates++] = t;
     }
   }
@@ -119,7 +119,7 @@ function _fitMultiplier(
   // block for every block of the image.
   costs.fill(0, 0, numCandidates);
   for (let k = 0; k < n; k++) {
-    const s = _int8(source[k]);
+    const s = int8(source[k]);
     const t = target[k];
     for (let c = 0; c < numCandidates; c++) {
       const d = (t - ((signed[c] * s) >> 5)) & 0xff;
@@ -190,7 +190,7 @@ export function selectCrossColor(
         }
       }
 
-      const greenToRed = _fitMultiplier(
+      const greenToRed = fitMultiplier(
         blockG,
         blockR,
         n,
@@ -201,7 +201,7 @@ export function selectCrossColor(
 
       // Blue is predicted from green first, then from red, matching the order
       // the decoder undoes them in.
-      const greenToBlue = _fitMultiplier(
+      const greenToBlue = fitMultiplier(
         blockG,
         blockB,
         n,
@@ -213,7 +213,7 @@ export function selectCrossColor(
         blueAfterGreen[k] =
           (blockB[k] - colorTransformDelta(greenToBlue, blockG[k])) & 0xff;
       }
-      const redToBlue = _fitMultiplier(
+      const redToBlue = fitMultiplier(
         blockR,
         blueAfterGreen,
         n,
@@ -244,17 +244,17 @@ export function selectCrossColor(
 
   // Storing the sub-image costs something too; charge three bytes a block.
   const gain =
-    _entropy(before, 256) +
-    _entropy(before, 256, 256) -
-    _entropy(after, 256) -
-    _entropy(after, 256, 256);
+    entropy(before, 256) +
+    entropy(before, 256, 256) -
+    entropy(after, 256) -
+    entropy(after, 256, 256);
   return gain > blockW * blockH * 24 ? result : undefined;
 }
 
 /**
- * Shannon entropy in bits of a slice of [freq].
+ * Shannon entropy in bits of a slice of {@link freq}.
  */
-function _entropy(freq: Uint32Array, size: number, offset = 0): number {
+function entropy(freq: Uint32Array, size: number, offset = 0): number {
   let total = 0;
   for (let i = 0; i < size; i++) {
     total += freq[offset + i];

@@ -8,7 +8,7 @@ export const qFix = 17;
 /**
  * Rounding bias per matrix kind, as [dc, ac] in 1/256ths.
  */
-const _biasMatrices = [
+const biasMatrices = [
   // luma AC
   [96, 110],
   // luma DC (second transform)
@@ -20,13 +20,13 @@ const _biasMatrices = [
 /**
  * Number of bits the sharpening bias is descaled by.
  */
-const _sharpenBits = 11;
+const sharpenBits = 11;
 
 /**
  * A small boost of the high-frequency coefficients, which keeps detail that
  * the quantizer would otherwise round away in the mid-quality range.
  */
-const _freqSharpening = [
+const freqSharpening = [
   0, 30, 60, 90, 30, 60, 90, 90, 60, 90, 90, 90, 90, 90, 90, 90,
 ];
 
@@ -41,7 +41,7 @@ export class VP8Matrix {
   public readonly q: Int32Array = new Int32Array(16);
 
   /**
-   * Reciprocals of [q] in fixed point.
+   * Reciprocals of {@link q} in fixed point.
    */
   public readonly iq: Int32Array = new Int32Array(16);
 
@@ -61,14 +61,14 @@ export class VP8Matrix {
   public readonly sharpen: Int32Array = new Int32Array(16);
 
   /**
-   * Fills in every position from the DC and first AC step already in [q],
+   * Fills in every position from the DC and first AC step already in {@link q},
    * and returns the average step size.
    *
-   * [type] is 0 for luma AC, 1 for the luma DC block and 2 for chroma.
+   * {@link type} is 0 for luma AC, 1 for the luma DC block and 2 for chroma.
    */
   public expand(type: number): number {
     for (let i = 0; i < 2; i++) {
-      const b = _biasMatrices[type][i > 0 ? 1 : 0];
+      const b = biasMatrices[type][i > 0 ? 1 : 0];
       this.iq[i] = (1 << qFix) / this.q[i];
       this.bias[i] = b << (qFix - 8);
       // The exact value at which the quantized level turns non-zero.
@@ -84,7 +84,7 @@ export class VP8Matrix {
     for (let i = 0; i < 16; i++) {
       // Sharpening applies to luma AC only.
       this.sharpen[i] =
-        type === 0 ? (_freqSharpening[i] * this.q[i]) >> _sharpenBits : 0;
+        type === 0 ? (freqSharpening[i] * this.q[i]) >> sharpenBits : 0;
       sum += this.q[i];
     }
     return (sum + 8) >> 4;

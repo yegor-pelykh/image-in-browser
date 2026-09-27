@@ -42,13 +42,13 @@ import { maxDimension } from './vp8l-encoder.js';
  * Partition #0 carries the header and every macroblock's modes, and the
  * format gives its length nineteen bits.
  */
-const _maxPartition0Size = 1 << 19;
+const maxPartition0Size = 1 << 19;
 
 /**
  * A rough number of bytes each macroblock takes, indexed by the quantizer
  * divided by sixteen. Only used to size the output buffer up front.
  */
-const _averageBytesPerMb = [50, 24, 16, 9, 7, 5, 3, 2];
+const averageBytesPerMb = [50, 24, 16, 9, 7, 5, 3, 2];
 
 /**
  * How many macroblocks may pass before the probabilities are refreshed.
@@ -57,12 +57,12 @@ const _averageBytesPerMb = [50, 24, 16, 9, 7, 5, 3, 2];
  * made against, so the tables are recomputed from the statistics collected so
  * far, roughly eight times per picture.
  */
-const _minRefreshCount = 96;
+const minRefreshCount = 96;
 
 export { VP8Lossy };
 
 /**
- * Encodes [image] as a VP8 keyframe.
+ * Encodes {@link image} as a VP8 keyframe.
  */
 export function encodeVP8(image: MemoryImage, config: VP8Config): VP8Lossy {
   if (
@@ -114,8 +114,8 @@ export class VP8Encoder {
    */
   public encode(): Uint8Array {
     analyzeSegments(this.enc);
-    const tokenPartition = this._codeMacroblocks();
-    return this._assemble(tokenPartition);
+    const tokenPartition = this.codeMacroblocks();
+    return this.assemble(tokenPartition);
   }
 
   /**
@@ -126,8 +126,8 @@ export class VP8Encoder {
    * probabilities the coefficients are written with are derived from what the
    * picture turned out to contain.
    */
-  private _codeMacroblocks(): Uint8Array {
-    this._setLoopParams(this.config.quality);
+  private codeMacroblocks(): Uint8Array {
+    this.setLoopParams(this.config.quality);
 
     const it = new VP8EncIterator(this.enc);
     const decimate = new VP8Decimate(this.enc, it);
@@ -135,8 +135,8 @@ export class VP8Encoder {
     const rdOpt = this.config.rdOptLevel;
 
     let maxCount = (this.enc.mbW * this.enc.mbH) >> 3;
-    if (maxCount < _minRefreshCount) {
-      maxCount = _minRefreshCount;
+    if (maxCount < minRefreshCount) {
+      maxCount = minRefreshCount;
     }
     let count = maxCount;
 
@@ -151,19 +151,19 @@ export class VP8Encoder {
         count = maxCount;
       }
       decimate.run(rd, rdOpt);
-      this._recordTokens(it, rd);
+      this.recordTokens(it, rd);
       it.saveBoundary();
     } while (it.next());
 
     this.enc.proba.finalizeTokenProbas();
 
-    const bytesPerMb = _averageBytesPerMb[this.enc.quant.baseQuant >> 4];
+    const bytesPerMb = averageBytesPerMb[this.enc.quant.baseQuant >> 4];
     const bw = new VP8BoolEncoder(this.enc.mbW * this.enc.mbH * bytesPerMb);
     this._tokens.emit(bw, this.enc.proba.coeffs);
     return bw.finish();
   }
 
-  private _setLoopParams(quality: number): void {
+  private setLoopParams(quality: number): void {
     const q = quality < 0 ? 0.0 : quality > 100 ? 100.0 : quality;
     this.enc.quant.setSegmentParams(
       this.config,
@@ -172,7 +172,7 @@ export class VP8Encoder {
       this.enc.uvAlpha,
       this.enc.mbSegment
     );
-    this._setSegmentProbas();
+    this.setSegmentProbas();
     this.enc.proba.calculateLevelCosts();
     this.enc.proba.nbSkip = 0;
   }
@@ -181,7 +181,7 @@ export class VP8Encoder {
    * Derives the probabilities of the segment tree from how many macroblocks
    * ended up in each segment.
    */
-  private _setSegmentProbas(): void {
+  private setSegmentProbas(): void {
     const p = new Int32Array(4);
     const mbs = this.enc.mbW * this.enc.mbH;
     for (let n = 0; n < mbs; n++) {
@@ -189,9 +189,9 @@ export class VP8Encoder {
     }
     if (this.enc.numSegments > 1) {
       const probas = this.enc.proba.segments;
-      probas[0] = VP8Encoder._getProba(p[0] + p[1], p[2] + p[3]);
-      probas[1] = VP8Encoder._getProba(p[0], p[1]);
-      probas[2] = VP8Encoder._getProba(p[2], p[3]);
+      probas[0] = VP8Encoder.getProba(p[0] + p[1], p[2] + p[3]);
+      probas[1] = VP8Encoder.getProba(p[0], p[1]);
+      probas[2] = VP8Encoder.getProba(p[2], p[3]);
       this.enc.updateMap =
         probas[0] !== 255 || probas[1] !== 255 || probas[2] !== 255;
       if (!this.enc.updateMap) {
@@ -209,7 +209,7 @@ export class VP8Encoder {
     }
   }
 
-  private static _getProba(a: number, b: number): number {
+  private static getProba(a: number, b: number): number {
     const total = a + b;
     return total === 0
       ? 255
@@ -219,7 +219,7 @@ export class VP8Encoder {
   /**
    * Records the coefficients of one macroblock into the token buffer.
    */
-  private _recordTokens(it: VP8EncIterator, rd: VP8ModeScore): void {
+  private recordTokens(it: VP8EncIterator, rd: VP8ModeScore): void {
     const proba = this.enc.proba;
     it.nzToBytes();
 
@@ -264,9 +264,9 @@ export class VP8Encoder {
   //----------------------------------------------------------------------------
   // Bitstream assembly.
 
-  private _assemble(tokenPartition: Uint8Array): Uint8Array {
-    const part0 = this._generatePartition0();
-    if (part0.length >= _maxPartition0Size) {
+  private assemble(tokenPartition: Uint8Array): Uint8Array {
+    const part0 = this.generatePartition0();
+    if (part0.length >= maxPartition0Size) {
       throw new LibError('VP8 partition #0 overflow');
     }
 
@@ -290,26 +290,26 @@ export class VP8Encoder {
     return out;
   }
 
-  private _generatePartition0(): Uint8Array {
+  private generatePartition0(): Uint8Array {
     const bw = new VP8BoolEncoder(
       Math.trunc((this.enc.mbW * this.enc.mbH * 7) / 8)
     );
     // Colour space and clamping type, both zero.
     bw.putBitUniform(0);
     bw.putBitUniform(0);
-    this._putSegmentHeader(bw);
-    this._putFilterHeader(bw);
+    this.putSegmentHeader(bw);
+    this.putFilterHeader(bw);
     // One token partition.
     bw.putBits(0, 2);
-    this._putQuant(bw);
+    this.putQuant(bw);
     // The probabilities are not carried to a next frame.
     bw.putBitUniform(0);
     this.enc.proba.write(bw);
-    this._codeIntraModes(bw);
+    this.codeIntraModes(bw);
     return bw.finish();
   }
 
-  private _putSegmentHeader(bw: VP8BoolEncoder): void {
+  private putSegmentHeader(bw: VP8BoolEncoder): void {
     const quant = this.enc.quant;
     if (bw.putBitUniform(this.enc.numSegments > 1 ? 1 : 0) === 0) {
       return;
@@ -335,7 +335,7 @@ export class VP8Encoder {
     }
   }
 
-  private _putFilterHeader(bw: VP8BoolEncoder): void {
+  private putFilterHeader(bw: VP8BoolEncoder): void {
     const quant = this.enc.quant;
     bw.putBitUniform(quant.filterSimple ? 1 : 0);
     bw.putBits(quant.filterLevel, 6);
@@ -345,7 +345,7 @@ export class VP8Encoder {
     bw.putBitUniform(0);
   }
 
-  private _putQuant(bw: VP8BoolEncoder): void {
+  private putQuant(bw: VP8BoolEncoder): void {
     const quant = this.enc.quant;
     bw.putBits(quant.baseQuant, 7);
     bw.putSignedBits(quant.dqY1Dc, 4);
@@ -358,13 +358,13 @@ export class VP8Encoder {
   /**
    * Writes the segment, skip flag and intra modes of every macroblock.
    */
-  private _codeIntraModes(bw: VP8BoolEncoder): void {
+  private codeIntraModes(bw: VP8BoolEncoder): void {
     const it = new VP8EncIterator(this.enc);
     const preds = this.enc.preds;
     const predsW = this.enc.predsW;
     do {
       if (this.enc.updateMap) {
-        VP8Encoder._putSegment(
+        VP8Encoder.putSegment(
           bw,
           this.enc.mbSegment[it.mbPos],
           this.enc.proba.segments
@@ -374,14 +374,14 @@ export class VP8Encoder {
         bw.putBit(this.enc.mbSkip[it.mbPos], this.enc.proba.skipProba);
       }
       if (bw.putBit(it.mbType !== 0 ? 1 : 0, 145) !== 0) {
-        VP8Encoder._putI16Mode(bw, preds[it.predsPos]);
+        VP8Encoder.putI16Mode(bw, preds[it.predsPos]);
       } else {
         let p = it.predsPos;
         let topPred = p - predsW;
         for (let y = 0; y < 4; y++) {
           let left = preds[p - 1];
           for (let x = 0; x < 4; x++) {
-            left = VP8Encoder._putI4Mode(
+            left = VP8Encoder.putI4Mode(
               bw,
               preds[p + x],
               kBModesProba[preds[topPred + x]][left]
@@ -391,11 +391,11 @@ export class VP8Encoder {
           p += predsW;
         }
       }
-      VP8Encoder._putUVMode(bw, it.uvMode);
+      VP8Encoder.putUVMode(bw, it.uvMode);
     } while (it.next());
   }
 
-  private static _putSegment(
+  private static putSegment(
     bw: VP8BoolEncoder,
     s: number,
     p: Uint8Array
@@ -407,7 +407,7 @@ export class VP8Encoder {
     }
   }
 
-  private static _putI16Mode(bw: VP8BoolEncoder, mode: number): void {
+  private static putI16Mode(bw: VP8BoolEncoder, mode: number): void {
     if (bw.putBit(mode === tmPred || mode === hPred ? 1 : 0, 156) !== 0) {
       // True motion or horizontal.
       bw.putBit(mode === tmPred ? 1 : 0, 128);
@@ -417,7 +417,7 @@ export class VP8Encoder {
     }
   }
 
-  private static _putUVMode(bw: VP8BoolEncoder, mode: number): void {
+  private static putUVMode(bw: VP8BoolEncoder, mode: number): void {
     if (bw.putBit(mode !== dcPred ? 1 : 0, 142) !== 0) {
       if (bw.putBit(mode !== vPred ? 1 : 0, 114) !== 0) {
         // Otherwise true motion.
@@ -430,7 +430,7 @@ export class VP8Encoder {
    * Codes one 4x4 mode through the tree of RFC 6386 11.4, and returns it so
    * it can serve as the left context of the next block.
    */
-  private static _putI4Mode(
+  private static putI4Mode(
     bw: VP8BoolEncoder,
     mode: number,
     prob: number[]

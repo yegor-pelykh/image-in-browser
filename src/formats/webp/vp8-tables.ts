@@ -1,14 +1,20 @@
 /** @format */
 
-/** Constant tables shared by the VP8 lossy decoder and encoder. */
-/** These are normative: every one of them is either spelled out in RFC 6386 or */
-/** is the exact table libwebp uses, so decoder and encoder must read the same */
-/** copy. See RFC 6386 for the coefficient probabilities (13.5), the mode trees */
-/** (11.2, 11.4) and the quantizer tables (14.1). */
+/**
+ * Constant tables shared by the VP8 lossy decoder and encoder.
+ *
+ * These are normative: every one of them is either spelled out in RFC 6386 or
+ * is the exact table libwebp uses, so decoder and encoder must read the same
+ * copy. See RFC 6386 for the coefficient probabilities (13.5), the mode trees
+ * (11.2, 11.4) and the quantizer tables (14.1).
+ */
 
-/** The stride of the macroblock sample cache, in bytes. */
-/** One cache line: prediction, source and reconstruction blocks are all laid */
-/** out at this pitch so a 4x4 block is four reads at a fixed distance. */
+/**
+ * The stride of the macroblock sample cache, in bytes.
+ *
+ * One cache line: prediction, source and reconstruction blocks are all laid
+ * out at this pitch so a 4x4 block is four reads at a fixed distance.
+ */
 export const kBps = 32;
 
 // The ten intra 4x4 prediction modes, in the order the mode tree codes them.

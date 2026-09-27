@@ -18,19 +18,19 @@ import { VP8BoolEncoder } from './vp8-bool-encoder.js';
 
 /**
  * Highest level whose cost still varies with its context; above this the
- * variable part is constant and lives in [kLevelFixedCosts].
+ * variable part is constant and lives in {@link kLevelFixedCosts}.
  */
 export const maxVariableLevel = 67;
 
-const _numCoeffProbas = numTypes * numBands * numCtx * numProbas;
+const numCoeffProbas = numTypes * numBands * numCtx * numProbas;
 
 /**
  * One cost table per (type, band, context), holding levels 0..67.
  */
-const _costTableSize = maxVariableLevel + 1;
+const costTableSize = maxVariableLevel + 1;
 
-function _flatten(table: number[][][][]): Uint8Array {
-  const flat = new Uint8Array(_numCoeffProbas);
+function flatten(table: number[][][][]): Uint8Array {
+  const flat = new Uint8Array(numCoeffProbas);
   let i = 0;
   for (const t of table) {
     for (const b of t) {
@@ -44,11 +44,11 @@ function _flatten(table: number[][][][]): Uint8Array {
   return flat;
 }
 
-const _defaultProbas = _flatten(kCoeffsProba0);
-const _updateProbas = _flatten(kCoeffsUpdateProba);
+const defaultProbas = flatten(kCoeffsProba0);
+const updateProbas = flatten(kCoeffsUpdateProba);
 
 /**
- * The cost of coding [bit] when zero has probability [proba] out of 256.
+ * The cost of coding {@link bit} when zero has probability {@link proba} out of 256.
  */
 export function bitCost(bit: number, proba: number): number {
   return bit === 0 ? kEntropyCost[proba] : kEntropyCost[255 - proba];
@@ -62,7 +62,7 @@ export class VP8EncProba {
    * Probabilities, indexed by `((type * numBands + band) * numCtx + ctx) *
    * numProbas + p`.
    */
-  public readonly coeffs: Uint8Array = new Uint8Array(_numCoeffProbas);
+  public readonly coeffs: Uint8Array = new Uint8Array(numCoeffProbas);
 
   /**
    * How often each probability was exercised, and how often the bit was one.
@@ -70,17 +70,17 @@ export class VP8EncProba {
    * The count is in the upper sixteen bits and the number of ones in the
    * lower sixteen, so one add records both.
    */
-  public readonly stats: Uint32Array = new Uint32Array(_numCoeffProbas);
+  public readonly stats: Uint32Array = new Uint32Array(numCoeffProbas);
 
   /**
    * The cost of each level, per (type, band, context).
    */
   public readonly levelCost: Uint16Array = new Uint16Array(
-    numTypes * numBands * numCtx * _costTableSize
+    numTypes * numBands * numCtx * costTableSize
   );
 
   /**
-   * Where in [levelCost] the table for `(type, position, ctx)` starts.
+   * Where in {@link levelCost} the table for `(type, position, ctx)` starts.
    */
   public readonly costBase: Int32Array = new Int32Array(numTypes * 16 * numCtx);
 
@@ -102,12 +102,12 @@ export class VP8EncProba {
   public nbSkip: number = 0;
 
   /**
-   * Whether [coeffs] changed since [levelCost] was last computed.
+   * Whether {@link coeffs} changed since {@link levelCost} was last computed.
    */
   public dirty: boolean = true;
 
   constructor() {
-    this.coeffs.set(_defaultProbas);
+    this.coeffs.set(defaultProbas);
   }
 
   /**
@@ -123,7 +123,7 @@ export class VP8EncProba {
   }
 
   /**
-   * Recomputes [levelCost] from [coeffs].
+   * Recomputes {@link levelCost} from {@link coeffs}.
    */
   public calculateLevelCosts(): void {
     if (!this.dirty) {
@@ -134,21 +134,21 @@ export class VP8EncProba {
         for (let ctx = 0; ctx < numCtx; ctx++) {
           const p = ((ctype * numBands + band) * numCtx + ctx) * numProbas;
           const table =
-            ((ctype * numBands + band) * numCtx + ctx) * _costTableSize;
+            ((ctype * numBands + band) * numCtx + ctx) * costTableSize;
           // A non-zero context has already paid for the "not the end of the
           // block" bit; a zero context has not, so it is added here.
           const cost0 = ctx > 0 ? bitCost(1, this.coeffs[p]) : 0;
           const nonZero = bitCost(1, this.coeffs[p + 1]) + cost0;
           this.levelCost[table] = bitCost(0, this.coeffs[p + 1]) + cost0;
           for (let v = 1; v <= maxVariableLevel; v++) {
-            this.levelCost[table + v] = nonZero + this._variableLevelCost(v, p);
+            this.levelCost[table + v] = nonZero + this.variableLevelCost(v, p);
           }
         }
       }
       for (let n = 0; n < 16; n++) {
         for (let ctx = 0; ctx < numCtx; ctx++) {
           this.costBase[(ctype * 16 + n) * numCtx + ctx] =
-            ((ctype * numBands + kBands[n]) * numCtx + ctx) * _costTableSize;
+            ((ctype * numBands + kBands[n]) * numCtx + ctx) * costTableSize;
         }
       }
     }
@@ -156,9 +156,9 @@ export class VP8EncProba {
   }
 
   /**
-   * The context-dependent part of the cost of coding [level].
+   * The context-dependent part of the cost of coding {@link level}.
    */
-  private _variableLevelCost(level: number, p: number): number {
+  private variableLevelCost(level: number, p: number): number {
     let pattern = kLevelCodes[level - 1][0];
     let bits = kLevelCodes[level - 1][1];
     let cost = 0;
@@ -173,7 +173,7 @@ export class VP8EncProba {
   }
 
   /**
-   * Records that [bit] was coded through the counter at [at].
+   * Records that {@link bit} was coded through the counter at {@link at}.
    */
   public recordStats(bit: number, at: number): number {
     let p = this.stats[at];
@@ -198,16 +198,16 @@ export class VP8EncProba {
   public finalizeTokenProbas(): number {
     let hasChanged = false;
     let size = 0;
-    for (let i = 0; i < _numCoeffProbas; i++) {
+    for (let i = 0; i < numCoeffProbas; i++) {
       const stat = this.stats[i];
       const nb = stat & 0xffff;
       const total = (stat >> 16) & 0xffff;
-      const updateProba = _updateProbas[i];
-      const oldP = _defaultProbas[i];
-      const newP = _calcTokenProba(nb, total);
-      const oldCost = _branchCost(nb, total, oldP) + bitCost(0, updateProba);
+      const updateProba = updateProbas[i];
+      const oldP = defaultProbas[i];
+      const newP = calcTokenProba(nb, total);
+      const oldCost = branchCost(nb, total, oldP) + bitCost(0, updateProba);
       const newCost =
-        _branchCost(nb, total, newP) + bitCost(1, updateProba) + 8 * 256;
+        branchCost(nb, total, newP) + bitCost(1, updateProba) + 8 * 256;
       const useNewP = oldCost > newCost;
       size += bitCost(useNewP ? 1 : 0, updateProba);
       if (useNewP) {
@@ -226,10 +226,10 @@ export class VP8EncProba {
    * Writes the probability updates into the frame header.
    */
   public write(bw: VP8BoolEncoder): void {
-    for (let i = 0; i < _numCoeffProbas; i++) {
+    for (let i = 0; i < numCoeffProbas; i++) {
       const p0 = this.coeffs[i];
-      const update = p0 !== _defaultProbas[i];
-      if (bw.putBit(update ? 1 : 0, _updateProbas[i]) !== 0) {
+      const update = p0 !== defaultProbas[i];
+      if (bw.putBit(update ? 1 : 0, updateProbas[i]) !== 0) {
         bw.putBits(p0, 8);
       }
     }
@@ -239,13 +239,13 @@ export class VP8EncProba {
   }
 }
 
-function _calcTokenProba(nb: number, total: number): number {
+function calcTokenProba(nb: number, total: number): number {
   return nb !== 0 ? 255 - Math.trunc((nb * 255) / total) : 255;
 }
 
 /**
- * The cost of coding [nb] ones and `total - nb` zeroes at [proba].
+ * The cost of coding {@link nb} ones and `total - nb` zeroes at {@link proba}.
  */
-function _branchCost(nb: number, total: number, proba: number): number {
+function branchCost(nb: number, total: number, proba: number): number {
   return nb * bitCost(1, proba) + (total - nb) * bitCost(0, proba);
 }

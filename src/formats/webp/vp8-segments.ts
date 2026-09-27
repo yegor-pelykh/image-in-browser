@@ -27,13 +27,13 @@ import {
 /**
  * Coefficients above this bin are lumped together; they are mostly noise.
  */
-const _maxCoeffThresh = 31;
+const maxCoeffThresh = 31;
 
 /**
  * Susceptibilities use the whole 8-bit range.
  */
-const _maxAlpha = 255;
-const _alphaScale = 2 * _maxAlpha;
+const maxAlpha = 255;
+const alphaScale = 2 * maxAlpha;
 
 /**
  * How many modes to weigh during analysis.
@@ -41,34 +41,34 @@ const _alphaScale = 2 * _maxAlpha;
  * Testing every mode here risks settling into a local optimum that the real
  * search would have avoided, so only the first two of each are tried.
  */
-const _maxIntra16Mode = 2;
-const _maxUVMode = 2;
+const maxIntra16Mode = 2;
+const maxUVMode = 2;
 
-const _maxItersKMeans = 6;
+const maxItersKMeans = 6;
 
 /**
  * Offsets of the sixteen luma blocks followed by the eight chroma blocks.
  */
-const _dspScan = new Uint16Array(24);
-_dspScan.set(kScan, 0);
-_dspScan.set(kScanUV, 16);
+const dspScan = new Uint16Array(24);
+dspScan.set(kScan, 0);
+dspScan.set(kScanUV, 16);
 
-function _clip(v: number, m: number, M: number): number {
+function clip(v: number, m: number, M: number): number {
   return v < m ? m : v > M ? M : v;
 }
 
 /**
- * Chooses segments for every macroblock of [enc].
+ * Chooses segments for every macroblock of {@link enc}.
  */
 export function analyzeSegments(enc: VP8EncState): void {
   const needsSegments =
     enc.config.emulateJpegSize || enc.numSegments > 1 || enc.config.method <= 1;
   if (!needsSegments) {
-    _resetAllMBInfo(enc);
+    resetAllMBInfo(enc);
     return;
   }
 
-  const alphas = new Int32Array(_maxAlpha + 1);
+  const alphas = new Int32Array(maxAlpha + 1);
   const it = new VP8EncIterator(enc);
   const analyzer = new MBAnalyzer(enc, it);
   let alphaSum = 0;
@@ -86,10 +86,10 @@ export function analyzeSegments(enc: VP8EncState): void {
 
   enc.alpha = Math.trunc(alphaSum / totalMb);
   enc.uvAlpha = Math.trunc(uvAlphaSum / totalMb);
-  _assignSegments(enc, alphas);
+  assignSegments(enc, alphas);
 }
 
-function _resetAllMBInfo(enc: VP8EncState): void {
+function resetAllMBInfo(enc: VP8EncState): void {
   const n = enc.mbW * enc.mbH;
   // Intra 16x16.
   enc.mbType.fill(1, 0, n);
@@ -111,7 +111,7 @@ class MBAnalyzer {
   public readonly it: VP8EncIterator;
 
   private readonly _coeffs = new Int16Array(16);
-  private readonly _distribution = new Int32Array(_maxCoeffThresh + 1);
+  private readonly _distribution = new Int32Array(maxCoeffThresh + 1);
 
   /**
    * Susceptibility of the macroblock just analyzed, and of its chroma.
@@ -131,14 +131,12 @@ class MBAnalyzer {
     this.it.setSegment(0);
 
     const luma =
-      this.enc.config.method <= 1
-        ? this._fastAnalyze()
-        : this._bestIntra16Mode();
-    this.bestUvAlpha = this._bestUVMode();
+      this.enc.config.method <= 1 ? this.fastAnalyze() : this.bestIntra16Mode();
+    this.bestUvAlpha = this.bestUVMode();
 
     // Luma dominates the impression, but chroma is not free either.
     let alpha = (3 * luma + this.bestUvAlpha + 2) >> 2;
-    alpha = _clip(_maxAlpha - alpha, 0, _maxAlpha);
+    alpha = clip(maxAlpha - alpha, 0, maxAlpha);
     alphas[alpha]++;
     this.enc.mbAlpha[this.it.mbPos] = alpha;
     this.bestAlpha = alpha;
@@ -148,10 +146,10 @@ class MBAnalyzer {
    * Collects the coefficient histogram of blocks `[start, end)` and returns
    * the susceptibility it implies.
    */
-  private _alphaOf(predOffset: number, start: number, end: number): number {
+  private alphaOf(predOffset: number, start: number, end: number): number {
     this._distribution.fill(0, 0, this._distribution.length);
     for (let j = start; j < end; j++) {
-      const off = _dspScan[j];
+      const off = dspScan[j];
       const srcBase = j < 16 ? yOffEnc : uOffEnc;
       fTransform(
         this.it.yuvIn,
@@ -166,12 +164,12 @@ class MBAnalyzer {
         // up as its own entry in the profile.
         const c = this._coeffs[k];
         const v = (c < 0 ? -c : c) >> 3;
-        this._distribution[v > _maxCoeffThresh ? _maxCoeffThresh : v]++;
+        this._distribution[v > maxCoeffThresh ? maxCoeffThresh : v]++;
       }
     }
     let maxValue = 0;
     let lastNonZero = 1;
-    for (let k = 0; k <= _maxCoeffThresh; k++) {
+    for (let k = 0; k <= maxCoeffThresh; k++) {
       const value = this._distribution[k];
       if (value > 0) {
         if (value > maxValue) {
@@ -182,12 +180,10 @@ class MBAnalyzer {
     }
     // Energy spread over many bins means the block is busy and can take more
     // quantization; energy in one bin means it is flat and cannot.
-    return maxValue > 1
-      ? Math.trunc((_alphaScale * lastNonZero) / maxValue)
-      : 0;
+    return maxValue > 1 ? Math.trunc((alphaScale * lastNonZero) / maxValue) : 0;
   }
 
-  private _bestIntra16Mode(): number {
+  private bestIntra16Mode(): number {
     predLuma16(
       this.it.yuvP,
       this.it.x !== 0 ? this.it.yLeft : undefined,
@@ -197,8 +193,8 @@ class MBAnalyzer {
     );
     let best = -1;
     let bestMode = 0;
-    for (let mode = 0; mode < _maxIntra16Mode; mode++) {
-      const alpha = this._alphaOf(kI16ModeOffsets[mode], 0, 16);
+    for (let mode = 0; mode < maxIntra16Mode; mode++) {
+      const alpha = this.alphaOf(kI16ModeOffsets[mode], 0, 16);
       if (alpha > best) {
         best = alpha;
         bestMode = mode;
@@ -208,7 +204,7 @@ class MBAnalyzer {
     return best;
   }
 
-  private _bestUVMode(): number {
+  private bestUVMode(): number {
     predChroma8(
       this.it.yuvP,
       this.it.x !== 0 ? this.it.uvLeft : undefined,
@@ -219,8 +215,8 @@ class MBAnalyzer {
     let best = -1;
     let smallest = 0;
     let bestMode = 0;
-    for (let mode = 0; mode < _maxUVMode; mode++) {
-      const alpha = this._alphaOf(kUVModeOffsets[mode], 16, 16 + 4 + 4);
+    for (let mode = 0; mode < maxUVMode; mode++) {
+      const alpha = this.alphaOf(kUVModeOffsets[mode], 16, 16 + 4 + 4);
       if (alpha > best) {
         best = alpha;
       }
@@ -239,7 +235,7 @@ class MBAnalyzer {
    * The cheap analysis used at method 0 and 1: compare the variance of the
    * sixteen block means against a threshold.
    */
-  private _fastAnalyze(): number {
+  private fastAnalyze(): number {
     const q = Math.trunc(this.enc.config.quality);
     // Around the block size, favouring 4x4 at high quality.
     const threshold = 8 + Math.trunc(((17 - 8) * q) / 100);
@@ -266,22 +262,22 @@ class MBAnalyzer {
 /**
  * Groups the macroblocks into segments by clustering their susceptibilities.
  */
-function _assignSegments(enc: VP8EncState, alphas: Int32Array): void {
+function assignSegments(enc: VP8EncState, alphas: Int32Array): void {
   const nb = enc.numSegments;
   const centers = new Int32Array(4);
-  const map = new Int32Array(_maxAlpha + 1);
+  const map = new Int32Array(maxAlpha + 1);
   const accum = new Int32Array(4);
   const distAccum = new Int32Array(4);
   let weightedAverage = 0;
 
   let minA = 0;
-  let maxA = _maxAlpha;
+  let maxA = maxAlpha;
   let n = 0;
-  while (n <= _maxAlpha && alphas[n] === 0) {
+  while (n <= maxAlpha && alphas[n] === 0) {
     n++;
   }
   minA = n;
-  n = _maxAlpha;
+  n = maxAlpha;
   while (n > minA && alphas[n] === 0) {
     n--;
   }
@@ -293,7 +289,7 @@ function _assignSegments(enc: VP8EncState, alphas: Int32Array): void {
     centers[k] = minA + Math.trunc((i * rangeA) / (2 * nb));
   }
 
-  for (let k = 0; k < _maxItersKMeans; k++) {
+  for (let k = 0; k < maxItersKMeans; k++) {
     accum.fill(0, 0, nb);
     distAccum.fill(0, 0, nb);
     // The centres stay sorted, so the nearest one can be tracked by walking
@@ -337,18 +333,17 @@ function _assignSegments(enc: VP8EncState, alphas: Int32Array): void {
   for (let i = 0; i < enc.mbW * enc.mbH; i++) {
     const alpha = enc.mbAlpha[i];
     enc.mbSegment[i] = map[alpha];
-    // For the record.
     enc.mbAlpha[i] = centers[map[alpha]];
   }
 
-  _setSegmentAlphas(enc, centers, weightedAverage);
+  setSegmentAlphas(enc, centers, weightedAverage);
 }
 
 /**
  * Turns the cluster centres into the per-segment susceptibilities that drive
  * the quantizer and the filter strength.
  */
-function _setSegmentAlphas(
+function setSegmentAlphas(
   enc: VP8EncState,
   centers: Int32Array,
   mid: number
@@ -372,7 +367,7 @@ function _setSegmentAlphas(
   for (let n = 0; n < nb; n++) {
     const alpha = Math.trunc((255 * (centers[n] - mid)) / (max - min));
     const beta = Math.trunc((255 * (centers[n] - min)) / (max - min));
-    enc.quant.dqm[n].alpha = _clip(alpha, -127, 127);
-    enc.quant.dqm[n].beta = _clip(beta, 0, 255);
+    enc.quant.dqm[n].alpha = clip(alpha, -127, 127);
+    enc.quant.dqm[n].beta = clip(beta, 0, 255);
   }
 }

@@ -16,8 +16,8 @@ import { VP8LEncoder } from './vp8l-encoder.js';
 /**
  * Compression methods of the alpha chunk.
  */
-const _alphaNoCompression = 0;
-const _alphaLosslessCompression = 1;
+const alphaNoCompression = 0;
+const alphaLosslessCompression = 1;
 
 /**
  * How hard to look for a predictive filter.
@@ -30,20 +30,20 @@ export const alphaFilterBest = 2;
  * The value the ALPH header's preprocessing field takes when the plane was
  * reduced to fewer levels.
  */
-const _alphaPreprocessedLevels = 1;
+const alphaPreprocessedLevels = 1;
 
 /**
  * Below this many distinct values, filtering only gets in the way.
  */
-const _minColorsForFilterNone = 16;
+const minColorsForFilterNone = 16;
 
 /**
  * Encodes the alpha plane as the payload of an `ALPH` chunk.
  *
- * [filtering] is [alphaFilterNone], [alphaFilterFast] or [alphaFilterBest];
+ * {@link filtering} is {@link alphaFilterNone}, {@link alphaFilterFast} or {@link alphaFilterBest};
  * the last tries every filter and keeps the smallest result.
  *
- * [quality] below 100 reduces the plane to fewer distinct levels first, which
+ * {@link quality} below 100 reduces the plane to fewer distinct levels first, which
  * costs fidelity in the transparency but compresses much better. At 100 the
  * plane is coded exactly.
  */
@@ -65,7 +65,7 @@ export function encodeAlphaChunk(
     plane = quantizeLevels(alpha, levels);
     reducedLevels = true;
   }
-  const candidates = _filtersToTry(plane, width, height, filtering);
+  const candidates = filtersToTry(plane, width, height, filtering);
   const scratch =
     candidates.length === 1 && candidates[0] === 0
       ? undefined
@@ -73,8 +73,8 @@ export function encodeAlphaChunk(
 
   let best: Uint8Array | undefined = undefined;
   for (const filter of candidates) {
-    const source = _applyFilter(plane, width, height, filter, scratch);
-    const chunk = _encodeOne(
+    const source = applyFilter(plane, width, height, filter, scratch);
+    const chunk = encodeOne(
       source,
       width,
       height,
@@ -90,11 +90,11 @@ export function encodeAlphaChunk(
 }
 
 /**
- * Reduces [data] to at most [levels] distinct values, by Lloyd's algorithm on
+ * Reduces {@link data} to at most {@link levels} distinct values, by Lloyd's algorithm on
  * its histogram.
  *
  * The smallest and largest values are pinned, so a plane that runs from fully
- * transparent to fully opaque still does. Returns [data] itself when it
+ * transparent to fully opaque still does. Returns {@link data} itself when it
  * already has few enough values, and a new list otherwise, so the caller's
  * plane is never modified.
  */
@@ -131,7 +131,7 @@ export function quantizeLevels(data: Uint8Array, levels: number): Uint8Array {
 
   const errThreshold = 1e-4 * data.length;
   let lastErr = 1e38;
-  for (let iter = 0; iter < _maxQuantIters; iter++) {
+  for (let iter = 0; iter < maxQuantIters; iter++) {
     const sum = new Float64Array(256);
     const count = new Float64Array(256);
     let slot = 0;
@@ -183,9 +183,9 @@ export function quantizeLevels(data: Uint8Array, levels: number): Uint8Array {
 /**
  * How many refinement passes the level quantizer may take.
  */
-const _maxQuantIters = 6;
+const maxQuantIters = 6;
 
-function _filtersToTry(
+function filtersToTry(
   alpha: Uint8Array,
   width: number,
   height: number,
@@ -202,11 +202,11 @@ function _filtersToTry(
       WebPFilters.filterGradient,
     ];
   }
-  const numColors = _countColors(alpha);
+  const numColors = countColors(alpha);
   const estimated =
-    numColors <= _minColorsForFilterNone
+    numColors <= minColorsForFilterNone
       ? WebPFilters.filterNone
-      : _estimateBestFilter(alpha, width, height);
+      : estimateBestFilter(alpha, width, height);
   if (estimated === WebPFilters.filterNone) {
     return [WebPFilters.filterNone];
   }
@@ -215,7 +215,7 @@ function _filtersToTry(
   return [WebPFilters.filterNone, estimated];
 }
 
-function _applyFilter(
+function applyFilter(
   alpha: Uint8Array,
   width: number,
   height: number,
@@ -233,7 +233,7 @@ function _applyFilter(
 /**
  * Builds one candidate chunk: the header byte and the coded plane.
  */
-function _encodeOne(
+function encodeOne(
   source: Uint8Array,
   width: number,
   height: number,
@@ -241,7 +241,7 @@ function _encodeOne(
   compress: boolean,
   reducedLevels: boolean
 ): Uint8Array {
-  let method = compress ? _alphaLosslessCompression : _alphaNoCompression;
+  let method = compress ? alphaLosslessCompression : alphaNoCompression;
   let data: Uint8Array = source;
   if (compress) {
     const zero = new Uint8Array(width * height);
@@ -260,21 +260,19 @@ function _encodeOne(
     );
     if (data.length > source.length) {
       // Compression made it bigger, which happens on noisy planes.
-      method = _alphaNoCompression;
+      method = alphaNoCompression;
       data = source;
     }
   }
 
   const out = new Uint8Array(1 + data.length);
   out[0] =
-    method |
-    (filter << 2) |
-    (reducedLevels ? _alphaPreprocessedLevels << 4 : 0);
+    method | (filter << 2) | (reducedLevels ? alphaPreprocessedLevels << 4 : 0);
   out.set(data, 1);
   return out;
 }
 
-function _countColors(alpha: Uint8Array): number {
+function countColors(alpha: Uint8Array): number {
   const seen = new Uint8Array(256);
   for (let i = 0; i < alpha.length; i++) {
     seen[alpha[i]] = 1;
@@ -294,7 +292,7 @@ function _countColors(alpha: Uint8Array): number {
  * filter whose errors stay in the low buckets scores low. Only every other
  * pixel is sampled, which is enough to tell the filters apart.
  */
-function _estimateBestFilter(
+function estimateBestFilter(
   data: Uint8Array,
   width: number,
   height: number
@@ -307,7 +305,7 @@ function _estimateBestFilter(
     let mean = data[p];
     for (let i = 2; i < width - 1; i += 2) {
       const v = data[p + i];
-      const gradient = _clip8(
+      const gradient = clip8(
         data[p + i - 1] + data[p + i - width] - data[p + i - width - 1]
       );
       bins[WebPFilters.filterNone][Math.abs(v - mean) >> 4] = 1;
@@ -337,6 +335,6 @@ function _estimateBestFilter(
   return bestFilter;
 }
 
-function _clip8(v: number): number {
+function clip8(v: number): number {
   return (v & ~0xff) === 0 ? v : v < 0 ? 0 : 255;
 }

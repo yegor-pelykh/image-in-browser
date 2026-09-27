@@ -81,42 +81,42 @@ export { maxCost, VP8ModeScore };
 /**
  * How much a unit of distortion weighs against a bit.
  */
-const _rdDistoMult = 256;
+const rdDistoMult = 256;
 
 /**
  * The four 16x16 luma modes, and the four chroma modes.
  */
-const _numPredModes = 4;
+const numPredModes = 4;
 
 // A block with few non-zero coefficients is "flat"; complex predictions that
 // happen to fit such a block tend to look worse than the simple ones, so they
 // are penalised.
-const _flatnessLimitI16 = 0;
-const _flatnessLimitI4 = 3;
-const _flatnessLimitUV = 2;
-const _flatnessPenalty = 140;
+const flatnessLimitI16 = 0;
+const flatnessLimitI4 = 3;
+const flatnessLimitUV = 2;
+const flatnessPenalty = 140;
 
 /**
- * Weights of the spectral distortion, matching [distoFrom].
+ * Weights of the spectral distortion, matching {@link distoFrom}.
  */
-const _weightTrellis = [
+const weightTrellis = [
   30, 27, 19, 11, 27, 24, 17, 10, 19, 17, 12, 8, 11, 10, 8, 6,
 ];
 
-function _mult8b(a: number, b: number): number {
+function mult8b(a: number, b: number): number {
   return (a * b + 128) >> 8;
 }
 
-function _setRDScore(lambda: number, rd: VP8ModeScore): void {
-  rd.score = (rd.r + rd.h) * lambda + _rdDistoMult * (rd.d + rd.sd);
+function setRDScore(lambda: number, rd: VP8ModeScore): void {
+  rd.score = (rd.r + rd.h) * lambda + rdDistoMult * (rd.d + rd.sd);
 }
 
-function _rdScoreTrellis(
+function rdScoreTrellis(
   lambda: number,
   rate: number,
   distortion: number
 ): number {
-  return rate * lambda + _rdDistoMult * distortion;
+  return rate * lambda + rdDistoMult * distortion;
 }
 
 /**
@@ -176,24 +176,24 @@ export class VP8Decimate {
     // The 16x16 and chroma predictions do not depend on the coding of this
     // macroblock, so they can all be made once; the 4x4 ones cannot, since
     // each block predicts from the reconstruction of the last.
-    this._makeLuma16Preds();
-    this._makeChroma8Preds();
+    this.makeLuma16Preds();
+    this.makeChroma8Preds();
     this._srcSpectrumValid = false;
 
     if (rdOpt > VP8Config.rdOptNone) {
       this.it.doTrellis = rdOpt >= VP8Config.rdOptTrellisAll;
-      this._pickBestIntra16(rd);
+      this.pickBestIntra16(rd);
       if (this.enc.config.method >= 2) {
-        this._pickBestIntra4(rd);
+        this.pickBestIntra4(rd);
       }
-      this._pickBestUV(rd);
+      this.pickBestUV(rd);
       if (rdOpt === VP8Config.rdOptTrellis) {
         // Redo the winner with the trellis on.
         this.it.doTrellis = true;
-        this._simpleQuantize(rd);
+        this.simpleQuantize(rd);
       }
     } else {
-      this._refineUsingDistortion(
+      this.refineUsingDistortion(
         rd,
         this.enc.config.method >= 2,
         this.enc.config.method >= 1
@@ -207,7 +207,7 @@ export class VP8Decimate {
   /**
    * Measures the source spectra, once per macroblock.
    */
-  private _measureSourceSpectrum(): void {
+  private measureSourceSpectrum(): void {
     if (this._srcSpectrumValid) {
       return;
     }
@@ -217,7 +217,7 @@ export class VP8Decimate {
     this._srcSpectrumValid = true;
   }
 
-  private _makeLuma16Preds(): void {
+  private makeLuma16Preds(): void {
     predLuma16(
       this.it.yuvP,
       this.it.x !== 0 ? this.it.yLeft : undefined,
@@ -227,7 +227,7 @@ export class VP8Decimate {
     );
   }
 
-  private _makeChroma8Preds(): void {
+  private makeChroma8Preds(): void {
     predChroma8(
       this.it.yuvP,
       this.it.x !== 0 ? this.it.uvLeft : undefined,
@@ -237,7 +237,7 @@ export class VP8Decimate {
     );
   }
 
-  private _makeIntra4Preds(): void {
+  private makeIntra4Preds(): void {
     predLuma4(this.it.yuvP, this.it.i4Boundary, this.it.i4Top);
   }
 
@@ -250,7 +250,7 @@ export class VP8Decimate {
    * The DC of each of the sixteen blocks is collected into a seventeenth
    * block and transformed again, which is what makes flat areas cheap.
    */
-  private _reconstructIntra16(
+  private reconstructIntra16(
     rd: VP8ModeScore,
     yuvOut: Uint8Array,
     mode: number
@@ -281,7 +281,7 @@ export class VP8Decimate {
       for (let y = 0; y < 4; y++) {
         for (let x = 0; x < 4; x++, n++) {
           const ctx = this.it.topNz[x] + this.it.leftNz[y];
-          const nonZero = this._trellisQuantizeBlock(
+          const nonZero = this.trellisQuantizeBlock(
             this._tmp,
             n * 16,
             rd.yAcLevels,
@@ -326,7 +326,7 @@ export class VP8Decimate {
   /**
    * The same for one 4x4 block, whose prediction is made as we go.
    */
-  private _reconstructIntra4(
+  private reconstructIntra4(
     levels: Int16Array,
     levelsOff: number,
     srcOff: number,
@@ -345,7 +345,7 @@ export class VP8Decimate {
       const x = this.it.i4 & 3;
       const y = this.it.i4 >> 2;
       const ctx = this.it.topNz[x] + this.it.leftNz[y];
-      nz = this._trellisQuantizeBlock(
+      nz = this.trellisQuantizeBlock(
         coeffs,
         0,
         levels,
@@ -365,7 +365,7 @@ export class VP8Decimate {
   /**
    * And for the eight chroma blocks of a macroblock.
    */
-  private _reconstructUV(
+  private reconstructUV(
     rd: VP8ModeScore,
     yuvOut: Uint8Array,
     mode: number
@@ -386,7 +386,7 @@ export class VP8Decimate {
       );
     }
     if (this.enc.topDerr !== undefined) {
-      this._correctDCValues(rd, dqm.uv);
+      this.correctDCValues(rd, dqm.uv);
     }
     for (let n = 0; n < 8; n += 2) {
       nz |=
@@ -422,7 +422,7 @@ export class VP8Decimate {
   // of the quality range.
 
   /**
-   * Fraction of the error sent to the block below, out of 1 << [_dShift].
+   * Fraction of the error sent to the block below, out of 1 << {@link _dShift}.
    */
   private static readonly _c1 = 7;
 
@@ -436,7 +436,7 @@ export class VP8Decimate {
    * Nudges the four DC coefficients of each chroma channel by the error its
    * neighbours left, and records what this macroblock passes on.
    */
-  private _correctDCValues(rd: VP8ModeScore, mtx: VP8Matrix): void {
+  private correctDCValues(rd: VP8ModeScore, mtx: VP8Matrix): void {
     const top = this.enc.topDerr!;
     const left = this.it.leftDerr;
     for (let ch = 0; ch <= 1; ch++) {
@@ -477,7 +477,7 @@ export class VP8Decimate {
   /**
    * Hands the winning mode's errors to the neighbours still to be coded.
    */
-  private _storeDiffusionErrors(rd: VP8ModeScore): void {
+  private storeDiffusionErrors(rd: VP8ModeScore): void {
     const top = this.enc.topDerr!;
     const left = this.it.leftDerr;
     for (let ch = 0; ch <= 1; ch++) {
@@ -506,7 +506,7 @@ export class VP8Decimate {
    * order, keeping for each the best path that ends there, and takes the best
    * ending position at the end.
    */
-  private _trellisQuantizeBlock(
+  private trellisQuantizeBlock(
     inp: Int16Array,
     inOff: number,
     out: Int16Array,
@@ -537,7 +537,7 @@ export class VP8Decimate {
     {
       const thresh = Math.trunc((mtx.q[1] * mtx.q[1]) / 4);
       const lastProba =
-        probas[VP8Decimate._probaIndex(coeffType, kBands[first], ctx0)];
+        probas[VP8Decimate.probaIndex(coeffType, kBands[first], ctx0)];
       for (let n = 15; n >= first; n--) {
         const j = kZigzag[n];
         const err = inp[inOff + j] * inp[inOff + j];
@@ -550,10 +550,10 @@ export class VP8Decimate {
         last++;
       }
       // Coding nothing at all is the score to beat.
-      bestScore = _rdScoreTrellis(lambda, bitCost(0, lastProba), 0);
+      bestScore = rdScoreTrellis(lambda, bitCost(0, lastProba), 0);
       const rate = ctx0 === 0 ? bitCost(1, lastProba) : 0;
       for (let m = 0; m <= maxDelta; m++) {
-        this._stateScore[ssCur + m] = _rdScoreTrellis(lambda, rate, 0);
+        this._stateScore[ssCur + m] = rdScoreTrellis(lambda, rate, 0);
         this._stateCost[ssCur + m] =
           costBase[(coeffType * 16 + first) * numCtx + ctx0];
       }
@@ -599,18 +599,17 @@ export class VP8Decimate {
         // How much coding this level takes off the error of dropping it.
         const newError = coeff0 - level * q;
         const deltaError =
-          _weightTrellis[j] * (newError * newError - coeff0 * coeff0);
-        const baseScore = _rdScoreTrellis(lambda, 0, deltaError);
+          weightTrellis[j] * (newError * newError - coeff0 * coeff0);
+        const baseScore = rdScoreTrellis(lambda, 0, deltaError);
 
         let cost = proba.levelCostAt(this._stateCost[ssPrev + minDelta], level);
         let bestCurScore =
-          this._stateScore[ssPrev + minDelta] +
-          _rdScoreTrellis(lambda, cost, 0);
+          this._stateScore[ssPrev + minDelta] + rdScoreTrellis(lambda, cost, 0);
         let bestPrev = minDelta;
         for (let p = minDelta + 1; p <= maxDelta; p++) {
           cost = proba.levelCostAt(this._stateCost[ssPrev + p], level);
           const score =
-            this._stateScore[ssPrev + p] + _rdScoreTrellis(lambda, cost, 0);
+            this._stateScore[ssPrev + p] + rdScoreTrellis(lambda, cost, 0);
           if (score < bestCurScore) {
             bestCurScore = score;
             bestPrev = p;
@@ -627,12 +626,9 @@ export class VP8Decimate {
         if (level !== 0 && bestCurScore < bestScore) {
           const lastPosCost =
             n < 15
-              ? bitCost(
-                  0,
-                  probas[VP8Decimate._probaIndex(coeffType, band, ctx)]
-                )
+              ? bitCost(0, probas[VP8Decimate.probaIndex(coeffType, band, ctx)])
               : 0;
-          const score = bestCurScore + _rdScoreTrellis(lambda, lastPosCost, 0);
+          const score = bestCurScore + rdScoreTrellis(lambda, lastPosCost, 0);
           if (score < bestScore) {
             bestScore = score;
             bestPathLast = n;
@@ -673,14 +669,14 @@ export class VP8Decimate {
     return nz !== 0 ? 1 : 0;
   }
 
-  private static _probaIndex(type: number, band: number, ctx: number): number {
+  private static probaIndex(type: number, band: number, ctx: number): number {
     return ((type * numBands + band) * numCtx + ctx) * numProbas;
   }
 
   //----------------------------------------------------------------------------
   // Rate.
 
-  private _getCostLuma16(rd: VP8ModeScore): number {
+  private getCostLuma16(rd: VP8ModeScore): number {
     const proba = this.enc.proba;
     let r = 0;
     this.it.nzToBytes();
@@ -707,7 +703,7 @@ export class VP8Decimate {
     return r;
   }
 
-  private _getCostLuma4(levels: Int16Array): number {
+  private getCostLuma4(levels: Int16Array): number {
     const x = this.it.i4 & 3;
     const y = this.it.i4 >> 2;
     this._res.init(0, typeI4AC);
@@ -719,7 +715,7 @@ export class VP8Decimate {
     );
   }
 
-  private _getCostUV(rd: VP8ModeScore): number {
+  private getCostUV(rd: VP8ModeScore): number {
     const proba = this.enc.proba;
     let r = 0;
     this.it.nzToBytes();
@@ -743,7 +739,7 @@ export class VP8Decimate {
   //----------------------------------------------------------------------------
   // Mode search.
 
-  private _pickBestIntra16(rd: VP8ModeScore): void {
+  private pickBestIntra16(rd: VP8ModeScore): void {
     const dqm = this.enc.quant.dqm[this.it.segment];
     const lambda = dqm.lambdaI16;
     const tlambda = dqm.tlambda;
@@ -752,23 +748,23 @@ export class VP8Decimate {
     let rdBest = rd;
     let isFlatBlock = isFlatSource16(this.it.yuvIn, src);
     if (tlambda !== 0) {
-      this._measureSourceSpectrum();
+      this.measureSourceSpectrum();
     }
 
     rd.modeI16 = -1;
-    for (let mode = 0; mode < _numPredModes; mode++) {
+    for (let mode = 0; mode < numPredModes; mode++) {
       const tmpDst = this.it.yuvOut2;
       // Each step reads what the ones before it stored.
       rdCur.modeI16 = mode;
-      rdCur.nz = this._reconstructIntra16(rdCur, tmpDst, mode);
+      rdCur.nz = this.reconstructIntra16(rdCur, tmpDst, mode);
       rdCur.d = getSSE(this.it.yuvIn, src, tmpDst, src, 16, 16);
-      rdCur.sd = tlambda !== 0 ? _mult8b(tlambda, this._disto16(tmpDst)) : 0;
+      rdCur.sd = tlambda !== 0 ? mult8b(tlambda, this.disto16(tmpDst)) : 0;
       rdCur.h = kFixedCostsI16[mode];
-      rdCur.r = this._getCostLuma16(rdCur);
+      rdCur.r = this.getCostLuma16(rdCur);
       if (isFlatBlock) {
         // The first impression was made on the pixels; now that the levels are
         // known, confirm it.
-        isFlatBlock = isFlat(rdCur.yAcLevels, 0, 16, _flatnessLimitI16);
+        isFlatBlock = isFlat(rdCur.yAcLevels, 0, 16, flatnessLimitI16);
         if (isFlatBlock) {
           // Any error at all is conspicuous on a flat block.
           rdCur.d *= 2;
@@ -776,7 +772,7 @@ export class VP8Decimate {
         }
       }
 
-      _setRDScore(lambda, rdCur);
+      setRDScore(lambda, rdCur);
       if (mode === 0 || rdCur.score < rdBest.score) {
         const tmp = rdCur;
         rdCur = rdBest;
@@ -789,21 +785,21 @@ export class VP8Decimate {
     }
     // Re-score with the mode-decision lambda, which is what intra4 compares
     // itself against.
-    _setRDScore(dqm.lambdaMode, rd);
+    setRDScore(dqm.lambdaMode, rd);
     this.it.setIntra16Mode(rd.modeI16);
 
     // A macroblock where only the DC survived, yet which is still far from the
     // source, is a candidate for blocking artefacts; remember how large its
     // steps were so the filter strength can be raised later.
     if ((rd.nz & 0x100ffff) === 0x1000000 && rd.d > dqm.minDisto) {
-      VP8Decimate._storeMaxDelta(dqm, rd.yDcLevels);
+      VP8Decimate.storeMaxDelta(dqm, rd.yDcLevels);
     }
   }
 
   /**
    * The spectral distance of a whole macroblock from the source.
    */
-  private _disto16(candidate: Uint8Array): number {
+  private disto16(candidate: Uint8Array): number {
     let d = 0;
     for (let n = 0; n < 16; n++) {
       d += distoFrom(this._srcSpectrum[n], candidate, yOffEnc + kScan[n]);
@@ -811,7 +807,7 @@ export class VP8Decimate {
     return d;
   }
 
-  private static _storeMaxDelta(dqm: VP8SegmentInfo, dcs: Int16Array): void {
+  private static storeMaxDelta(dqm: VP8SegmentInfo, dcs: Int16Array): void {
     const d0 = dcs[1];
     const d1 = dcs[2];
     const d2 = dcs[4];
@@ -828,7 +824,7 @@ export class VP8Decimate {
   /**
    * The cost table for the current 4x4 block, given its neighbours' modes.
    */
-  private _getCostModeI4(modes: Uint8Array): number[] {
+  private getCostModeI4(modes: Uint8Array): number[] {
     const predsW = this.enc.predsW;
     const x = this.it.i4 & 3;
     const y = this.it.i4 >> 2;
@@ -845,9 +841,9 @@ export class VP8Decimate {
 
   /**
    * Tries coding the luma as sixteen 4x4 blocks. Returns true if that beats
-   * the 16x16 coding already in [rd].
+   * the 16x16 coding already in {@link rd}.
    */
-  private _pickBestIntra4(rd: VP8ModeScore): boolean {
+  private pickBestIntra4(rd: VP8ModeScore): boolean {
     const dqm = this.enc.quant.dqm[this.it.segment];
     const lambda = dqm.lambdaI4;
     const tlambda = dqm.tlambda;
@@ -862,11 +858,11 @@ export class VP8Decimate {
     rdBest.init();
     // The cost of the bit that says "not 16x16".
     rdBest.h = 211;
-    _setRDScore(dqm.lambdaMode, rdBest);
+    setRDScore(dqm.lambdaMode, rdBest);
     this.it.startI4();
     do {
       const src = src0 + kScan[this.it.i4];
-      const modeCosts = this._getCostModeI4(rd.modesI4);
+      const modeCosts = this.getCostModeI4(rd.modesI4);
       let bestMode = -1;
       // The winner of each block is kept in yuv_out2, the candidate in a
       // scratch corner of the prediction area.
@@ -876,11 +872,11 @@ export class VP8Decimate {
       let tmpDst = i4TMP;
 
       this._rdI4.init();
-      this._makeIntra4Preds();
+      this.makeIntra4Preds();
       const srcSpectrum = tlambda !== 0 ? spectrum4x4(this.it.yuvIn, src) : 0;
       for (let mode = 0; mode < numBModes; mode++) {
         this._rdCandidate.nz =
-          this._reconstructIntra4(
+          this.reconstructIntra4(
             this._tmpLevelsOut,
             0,
             src,
@@ -891,23 +887,23 @@ export class VP8Decimate {
         this._rdCandidate.d = getSSE4x4(this.it.yuvIn, src, tmpBuf, tmpDst);
         this._rdCandidate.sd =
           tlambda !== 0
-            ? _mult8b(tlambda, distoFrom(srcSpectrum, tmpBuf, tmpDst))
+            ? mult8b(tlambda, distoFrom(srcSpectrum, tmpBuf, tmpDst))
             : 0;
         this._rdCandidate.h = modeCosts[mode];
         // A complex mode that lands on a flat block is usually a
         // mis-prediction; make it pay for the privilege.
         this._rdCandidate.r =
-          mode > 0 && isFlat(this._tmpLevelsOut, 0, 1, _flatnessLimitI4)
-            ? _flatnessPenalty
+          mode > 0 && isFlat(this._tmpLevelsOut, 0, 1, flatnessLimitI4)
+            ? flatnessPenalty
             : 0;
 
-        _setRDScore(lambda, this._rdCandidate);
+        setRDScore(lambda, this._rdCandidate);
         if (bestMode >= 0 && this._rdCandidate.score >= this._rdI4.score) {
           continue;
         }
 
-        this._rdCandidate.r += this._getCostLuma4(this._tmpLevelsOut);
-        _setRDScore(lambda, this._rdCandidate);
+        this._rdCandidate.r += this.getCostLuma4(this._tmpLevelsOut);
+        setRDScore(lambda, this._rdCandidate);
 
         if (bestMode < 0 || this._rdCandidate.score < this._rdI4.score) {
           this._rdI4.copyScore(this._rdCandidate);
@@ -921,7 +917,7 @@ export class VP8Decimate {
           rdBest.yAcLevels.set(this._tmpLevelsOut, this.it.i4 * 16);
         }
       }
-      _setRDScore(dqm.lambdaMode, this._rdI4);
+      setRDScore(dqm.lambdaMode, this._rdI4);
       rdBest.addScore(this._rdI4);
       if (rdBest.score >= rd.score) {
         return false;
@@ -960,7 +956,7 @@ export class VP8Decimate {
    */
   private readonly _tmpLevelsOut = new Int16Array(16);
 
-  private _pickBestUV(rd: VP8ModeScore): void {
+  private pickBestUV(rd: VP8ModeScore): void {
     const dqm = this.enc.quant.dqm[this.it.segment];
     const lambda = dqm.lambdaUv;
     const src = uOffEnc;
@@ -970,19 +966,19 @@ export class VP8Decimate {
 
     rd.modeUv = -1;
     rdBest.init();
-    for (let mode = 0; mode < _numPredModes; mode++) {
-      this._rdUv.nz = this._reconstructUV(this._rdUv, tmpBuf, mode);
+    for (let mode = 0; mode < numPredModes; mode++) {
+      this._rdUv.nz = this.reconstructUV(this._rdUv, tmpBuf, mode);
 
       this._rdUv.d = getSSE(this.it.yuvIn, src, tmpBuf, src, 16, 8);
       // No spectral term here: on chroma it tends to flatten areas out.
       this._rdUv.sd = 0;
       this._rdUv.h = kFixedCostsUV[mode];
-      this._rdUv.r = this._getCostUV(this._rdUv);
-      if (mode > 0 && isFlat(this._rdUv.uvLevels, 0, 8, _flatnessLimitUV)) {
-        this._rdUv.r += _flatnessPenalty * 8;
+      this._rdUv.r = this.getCostUV(this._rdUv);
+      if (mode > 0 && isFlat(this._rdUv.uvLevels, 0, 8, flatnessLimitUV)) {
+        this._rdUv.r += flatnessPenalty * 8;
       }
 
-      _setRDScore(lambda, this._rdUv);
+      setRDScore(lambda, this._rdUv);
       if (mode === 0 || this._rdUv.score < rdBest.score) {
         rdBest.copyScore(this._rdUv);
         rd.modeUv = mode;
@@ -1001,7 +997,7 @@ export class VP8Decimate {
       copy16x8(dstBuf, uOffEnc, this.it.yuvOut, uOffEnc);
     }
     if (this.enc.topDerr !== undefined) {
-      this._storeDiffusionErrors(rd);
+      this.storeDiffusionErrors(rd);
     }
   }
 
@@ -1009,12 +1005,12 @@ export class VP8Decimate {
    * Recodes the macroblock with the modes already chosen, this time with the
    * trellis switched on.
    */
-  private _simpleQuantize(rd: VP8ModeScore): void {
+  private simpleQuantize(rd: VP8ModeScore): void {
     const isI16 = this.it.mbType === 1;
     let nz = 0;
 
     if (isI16) {
-      nz = this._reconstructIntra16(
+      nz = this.reconstructIntra16(
         rd,
         this.it.yuvOut,
         this.enc.preds[this.it.predsPos]
@@ -1030,9 +1026,9 @@ export class VP8Decimate {
           ];
         const src = yOffEnc + kScan[this.it.i4];
         const dst = yOffEnc + kScan[this.it.i4];
-        this._makeIntra4Preds();
+        this.makeIntra4Preds();
         nz |=
-          this._reconstructIntra4(
+          this.reconstructIntra4(
             rd.yAcLevels,
             this.it.i4 * 16,
             src,
@@ -1043,7 +1039,7 @@ export class VP8Decimate {
       } while (this.it.rotateI4(this.it.yuvOut, yOffEnc));
     }
 
-    nz |= this._reconstructUV(rd, this.it.yuvOut, this.it.uvMode);
+    nz |= this.reconstructUV(rd, this.it.yuvOut, this.it.uvMode);
     rd.nz = nz;
   }
 
@@ -1051,7 +1047,7 @@ export class VP8Decimate {
    * The cheap path: pick modes by distortion alone, with a fixed penalty
    * standing in for the rate.
    */
-  private _refineUsingDistortion(
+  private refineUsingDistortion(
     rd: VP8ModeScore,
     tryBothModes: boolean,
     refineUvMode: boolean
@@ -1073,10 +1069,10 @@ export class VP8Decimate {
     if (isI16) {
       let bestMode = -1;
       const src = yOffEnc;
-      for (let mode = 0; mode < _numPredModes; mode++) {
+      for (let mode = 0; mode < numPredModes; mode++) {
         const ref = kI16ModeOffsets[mode];
         const score =
-          getSSE(this.it.yuvIn, src, this.it.yuvP, ref, 16, 16) * _rdDistoMult +
+          getSSE(this.it.yuvIn, src, this.it.yuvP, ref, 16, 16) * rdDistoMult +
           kFixedCostsI16[mode] * lambdaDI16;
         if (mode > 0 && kFixedCostsI16[mode] > bitLimit) {
           continue;
@@ -1104,13 +1100,13 @@ export class VP8Decimate {
         let bestI4Mode = -1;
         let bestI4Score = maxCost;
         const src = yOffEnc + kScan[this.it.i4];
-        const modeCosts = this._getCostModeI4(rd.modesI4);
+        const modeCosts = this.getCostModeI4(rd.modesI4);
 
-        this._makeIntra4Preds();
+        this.makeIntra4Preds();
         for (let mode = 0; mode < numBModes; mode++) {
           const ref = kI4ModeOffsets[mode];
           const score =
-            getSSE(this.it.yuvIn, src, this.it.yuvP, ref, 4, 4) * _rdDistoMult +
+            getSSE(this.it.yuvIn, src, this.it.yuvP, ref, 4, 4) * rdDistoMult +
             modeCosts[mode] * lambdaDI4;
           if (score < bestI4Score) {
             bestI4Mode = mode;
@@ -1127,7 +1123,7 @@ export class VP8Decimate {
         }
         const tmpDst = yOffEnc + kScan[this.it.i4];
         nz |=
-          this._reconstructIntra4(
+          this.reconstructIntra4(
             rd.yAcLevels,
             this.it.i4 * 16,
             src,
@@ -1143,7 +1139,7 @@ export class VP8Decimate {
       this.it.swapOut();
       bestScore = scoreI4;
     } else {
-      nz = this._reconstructIntra16(
+      nz = this.reconstructIntra16(
         rd,
         this.it.yuvOut,
         this.enc.preds[this.it.predsPos]
@@ -1154,10 +1150,10 @@ export class VP8Decimate {
       let bestMode = -1;
       let bestUvScore = maxCost;
       const src = uOffEnc;
-      for (let mode = 0; mode < _numPredModes; mode++) {
+      for (let mode = 0; mode < numPredModes; mode++) {
         const ref = kUVModeOffsets[mode];
         const score =
-          getSSE(this.it.yuvIn, src, this.it.yuvP, ref, 16, 8) * _rdDistoMult +
+          getSSE(this.it.yuvIn, src, this.it.yuvP, ref, 16, 8) * rdDistoMult +
           kFixedCostsUV[mode] * lambdaDUv;
         if (score < bestUvScore) {
           bestMode = mode;
@@ -1166,7 +1162,7 @@ export class VP8Decimate {
       }
       this.it.setIntraUVMode(bestMode);
     }
-    nz |= this._reconstructUV(rd, this.it.yuvOut, this.it.uvMode);
+    nz |= this.reconstructUV(rd, this.it.yuvOut, this.it.uvMode);
 
     rd.nz = nz;
     rd.score = bestScore;

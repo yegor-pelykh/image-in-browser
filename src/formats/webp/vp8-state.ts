@@ -20,7 +20,7 @@ export class VP8EncState {
   public readonly mbH: number;
 
   /**
-   * Stride of [preds], which carries one border column and row.
+   * Stride of {@link preds}, which carries one border column and row.
    */
   public readonly predsW: number;
 
@@ -99,7 +99,7 @@ export class VP8EncState {
   }
 
   /**
-   * Index of the picture's top-left 4x4 block within [preds].
+   * Index of the picture's top-left 4x4 block within {@link preds}.
    */
   public get predsOrigin(): number {
     return 1 + this.predsW;

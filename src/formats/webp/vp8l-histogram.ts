@@ -15,7 +15,7 @@ export { VP8LClustering };
  * here is deciding which regions should share.
  */
 
-const _logTableSize = 4096;
+const logTableSize = 4096;
 
 /**
  * Natural logs of the small integers, since every log taken here is of a
@@ -25,16 +25,16 @@ const _logTableSize = 4096;
  * these are taken by the million, and almost all counts are small. Values come
  * from `Math.log` itself, so tabulating them changes no result.
  */
-const _logOfInt: Float64Array = (() => {
-  const t = new Float64Array(_logTableSize);
-  for (let i = 1; i < _logTableSize; i++) {
+const logOfInt: Float64Array = (() => {
+  const t = new Float64Array(logTableSize);
+  for (let i = 1; i < logTableSize; i++) {
     t[i] = Math.log(i);
   }
   return t;
 })();
 
-function _logInt(n: number): number {
-  return n < _logTableSize ? _logOfInt[n] : Math.log(n);
+function logInt(n: number): number {
+  return n < logTableSize ? logOfInt[n] : Math.log(n);
 }
 
 /**
@@ -60,7 +60,7 @@ export class VP8LHistogram {
 
   /**
    * Which symbols of each alphabet this histogram has counted, in the order
-   * they were first reached, with how many in [_touchedCount].
+   * they were first reached, with how many in {@link _touchedCount}.
    *
    * The alternative is to find them by scanning, but the green alphabet alone
    * spans over a thousand symbols while a 16x16 block holds at most 256
@@ -91,19 +91,19 @@ export class VP8LHistogram {
   }
 
   public addLiteral(r: number, g: number, b: number, a: number): void {
-    if (this.green[g]++ === 0) this._touch(0, g);
-    if (this.red[r]++ === 0) this._touch(1, r);
-    if (this.blue[b]++ === 0) this._touch(2, b);
-    if (this.alpha[a]++ === 0) this._touch(3, a);
+    if (this.green[g]++ === 0) this.touch(0, g);
+    if (this.red[r]++ === 0) this.touch(1, r);
+    if (this.blue[b]++ === 0) this.touch(2, b);
+    if (this.alpha[a]++ === 0) this.touch(3, a);
   }
 
   public addCacheRef(key: number): void {
-    if (this.green[280 + key]++ === 0) this._touch(0, 280 + key);
+    if (this.green[280 + key]++ === 0) this.touch(0, 280 + key);
   }
 
   public addCopy(lengthSymbol: number, distSymbol: number): void {
-    if (this.green[lengthSymbol]++ === 0) this._touch(0, lengthSymbol);
-    if (this.dist[distSymbol]++ === 0) this._touch(4, distSymbol);
+    if (this.green[lengthSymbol]++ === 0) this.touch(0, lengthSymbol);
+    if (this.dist[distSymbol]++ === 0) this.touch(4, distSymbol);
   }
 
   public addTo(other: VP8LHistogram): void {
@@ -115,7 +115,7 @@ export class VP8LHistogram {
       for (let j = 0; j < n; j++) {
         const i = touched[j];
         if (theirs[i] === 0) {
-          other._touch(k, i);
+          other.touch(k, i);
         }
         theirs[i] += mine[i];
       }
@@ -137,18 +137,18 @@ export class VP8LHistogram {
    * clustering from splitting into ever more groups that each code little.
    */
   public get cost(): number {
-    this._ensureStats();
+    this.ensureStats();
     let c = 0.0;
     for (let k = 0; k < 5; k++) {
       c +=
-        VP8LHistogram._entropyOf(this._sum[k], this._total[k]) +
+        VP8LHistogram.entropyOf(this._sum[k], this._total[k]) +
         this._used[k] * VP8LHistogram._bitsPerDescribedSymbol;
     }
     return c;
   }
 
   /**
-   * Cost of the histogram this and [other] would sum to, without building it.
+   * Cost of the histogram this and {@link other} would sum to, without building it.
    *
    * The clustering asks this for every block against every open group. Both
    * terms of the entropy are kept as running sums, so only the symbols the
@@ -156,8 +156,8 @@ export class VP8LHistogram {
    * alphabet.
    */
   public mergedCostWith(other: VP8LHistogram): number {
-    this._ensureStats();
-    other._ensureStats();
+    this.ensureStats();
+    other.ensureStats();
     let c = 0.0;
     for (let k = 0; k < 5; k++) {
       const mine = this._arrays[k];
@@ -171,15 +171,15 @@ export class VP8LHistogram {
         const a = mine[i];
         const b = theirs[i];
         if (a > 0) {
-          sum += a * _logInt(a);
+          sum += a * logInt(a);
         } else {
           used++;
         }
         const merged = a + b;
-        sum -= merged * _logInt(merged);
+        sum -= merged * logInt(merged);
       }
       c +=
-        VP8LHistogram._entropyOf(sum, this._total[k] + other._total[k]) +
+        VP8LHistogram.entropyOf(sum, this._total[k] + other._total[k]) +
         used * VP8LHistogram._bitsPerDescribedSymbol;
     }
     return c;
@@ -188,11 +188,11 @@ export class VP8LHistogram {
   /**
    * Entropy in bits from the running sum of -f·ln(f) and the total count.
    */
-  private static _entropyOf(sum: number, total: number): number {
-    return total === 0 ? 0 : (sum + total * _logInt(total)) / Math.LN2;
+  private static entropyOf(sum: number, total: number): number {
+    return total === 0 ? 0 : (sum + total * logInt(total)) / Math.LN2;
   }
 
-  private _touch(k: number, symbol: number): void {
+  private touch(k: number, symbol: number): void {
     let list = this._touchedIdx[k];
     const n = this._touchedCount[k];
     if (n === list.length) {
@@ -204,7 +204,7 @@ export class VP8LHistogram {
     this._touchedCount[k] = n + 1;
   }
 
-  private _ensureStats(): void {
+  private ensureStats(): void {
     if (this._statsValid) {
       return;
     }
@@ -216,7 +216,7 @@ export class VP8LHistogram {
       let total = 0;
       for (let j = 0; j < n; j++) {
         const f = freq[touched[j]];
-        sum -= f * _logInt(f);
+        sum -= f * logInt(f);
         total += f;
       }
       this._sum[k] = sum;
@@ -240,13 +240,13 @@ export class VP8LHistogram {
  * close enough that sharing a set of codes costs less than describing another.
  *
  * Blocks are visited in raster order and each joins the group it damages
- * least, or starts a new one while [maxGroups] allows. That is one pass rather
+ * least, or starts a new one while {@link maxGroups} allows. That is one pass rather
  * than the full pairwise search libwebp runs, which keeps this linear in the
  * number of blocks at a small cost in compression. A second pass then revisits
  * every block against the groups that ended up existing, since the first
  * blocks chose from almost nothing.
  *
- * [maxGroups] of 16 is measured: 24 buys 0.03% and costs 3% of the encode.
+ * {@link maxGroups} of 16 is measured: 24 buys 0.03% and costs 3% of the encode.
  *
  * Returns the group index per block, or undefined when one group for the whole
  * image is no more expensive than splitting it.
@@ -288,7 +288,7 @@ export function clusterHistograms(
     // when merging would cost more than that.
     if (
       bestGroup < 0 ||
-      (bestIncrease > _newGroupCost && groups.length < maxGroups)
+      (bestIncrease > newGroupCost && groups.length < maxGroups)
     ) {
       assignment[i] = groups.length;
       groups.push(block.clone());
@@ -402,4 +402,4 @@ export function clusterHistograms(
  * What another meta Huffman group costs before it can pay for itself: five
  * more code tables to describe.
  */
-const _newGroupCost = 5 * 32.0;
+const newGroupCost = 5 * 32.0;

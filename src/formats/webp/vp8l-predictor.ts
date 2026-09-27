@@ -35,64 +35,64 @@ export const argbBlack = 0xff000000;
  * Masking off the low bit of each byte before shifting keeps a channel's
  * carry out of the one below it.
  */
-function _avg2(a0: number, a1: number): number {
+function avg2(a0: number, a1: number): number {
   return (((a0 ^ a1) & 0xfefefefe) >>> 1) + (a0 & a1);
 }
 
-function _avg3(a0: number, a1: number, a2: number): number {
-  return _avg2(_avg2(a0, a2), a1);
+function avg3(a0: number, a1: number, a2: number): number {
+  return avg2(avg2(a0, a2), a1);
 }
 
-function _avg4(a0: number, a1: number, a2: number, a3: number): number {
-  return _avg2(_avg2(a0, a1), _avg2(a2, a3));
+function avg4(a0: number, a1: number, a2: number, a3: number): number {
+  return avg2(avg2(a0, a1), avg2(a2, a3));
 }
 
-function _clip255(v: number): number {
+function clip255(v: number): number {
   return v < 0 ? 0 : v > 255 ? 255 : v;
 }
 
-function _addSubFull(c0: number, c1: number, c2: number): number {
-  const a = _clip255((c0 >>> 24) + (c1 >>> 24) - (c2 >>> 24));
-  const r = _clip255(
+function addSubFull(c0: number, c1: number, c2: number): number {
+  const a = clip255((c0 >>> 24) + (c1 >>> 24) - (c2 >>> 24));
+  const r = clip255(
     ((c0 >>> 16) & 0xff) + ((c1 >>> 16) & 0xff) - ((c2 >>> 16) & 0xff)
   );
-  const g = _clip255(
+  const g = clip255(
     ((c0 >>> 8) & 0xff) + ((c1 >>> 8) & 0xff) - ((c2 >>> 8) & 0xff)
   );
-  const b = _clip255((c0 & 0xff) + (c1 & 0xff) - (c2 & 0xff));
+  const b = clip255((c0 & 0xff) + (c1 & 0xff) - (c2 & 0xff));
   return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
-function _addSubHalfComponent(a: number, b: number): number {
-  return _clip255(a + Math.trunc((a - b) / 2));
+function addSubHalfComponent(a: number, b: number): number {
+  return clip255(a + Math.trunc((a - b) / 2));
 }
 
-function _addSubHalf(c0: number, c1: number, c2: number): number {
-  const avg = _avg2(c0, c1);
-  const a = _addSubHalfComponent(avg >>> 24, c2 >>> 24);
-  const r = _addSubHalfComponent((avg >>> 16) & 0xff, (c2 >>> 16) & 0xff);
-  const g = _addSubHalfComponent((avg >>> 8) & 0xff, (c2 >>> 8) & 0xff);
-  const b = _addSubHalfComponent(avg & 0xff, c2 & 0xff);
+function addSubHalf(c0: number, c1: number, c2: number): number {
+  const avg = avg2(c0, c1);
+  const a = addSubHalfComponent(avg >>> 24, c2 >>> 24);
+  const r = addSubHalfComponent((avg >>> 16) & 0xff, (c2 >>> 16) & 0xff);
+  const g = addSubHalfComponent((avg >>> 8) & 0xff, (c2 >>> 8) & 0xff);
+  const b = addSubHalfComponent(avg & 0xff, c2 & 0xff);
   return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
-function _sub3(a: number, b: number, c: number): number {
+function sub3(a: number, b: number, c: number): number {
   return Math.abs(b - c) - Math.abs(a - c);
 }
 
-function _select(a: number, b: number, c: number): number {
+function select(a: number, b: number, c: number): number {
   const paMinusPb =
-    _sub3(a >>> 24, b >>> 24, c >>> 24) +
-    _sub3((a >>> 16) & 0xff, (b >>> 16) & 0xff, (c >>> 16) & 0xff) +
-    _sub3((a >>> 8) & 0xff, (b >>> 8) & 0xff, (c >>> 8) & 0xff) +
-    _sub3(a & 0xff, b & 0xff, c & 0xff);
+    sub3(a >>> 24, b >>> 24, c >>> 24) +
+    sub3((a >>> 16) & 0xff, (b >>> 16) & 0xff, (c >>> 16) & 0xff) +
+    sub3((a >>> 8) & 0xff, (b >>> 8) & 0xff, (c >>> 8) & 0xff) +
+    sub3(a & 0xff, b & 0xff, c & 0xff);
   return paMinusPb <= 0 ? a : b;
 }
 
 /**
- * The A,R,G,B predicted by [mode] from the four neighbours, packed.
+ * The A,R,G,B predicted by {@link mode} from the four neighbours, packed.
  *
- * This is the readable statement of the transform. [predictAll] computes the
+ * This is the readable statement of the transform. {@link predictAll} computes the
  * same values in a form the mode search can afford; a test holds the two to
  * each other.
  */
@@ -115,30 +115,30 @@ export function predict(
     case 4:
       return topLeft;
     case 5:
-      return _avg3(left, top, topRight);
+      return avg3(left, top, topRight);
     case 6:
-      return _avg2(left, topLeft);
+      return avg2(left, topLeft);
     case 7:
-      return _avg2(left, top);
+      return avg2(left, top);
     case 8:
-      return _avg2(topLeft, top);
+      return avg2(topLeft, top);
     case 9:
-      return _avg2(top, topRight);
+      return avg2(top, topRight);
     case 10:
-      return _avg4(left, topLeft, top, topRight);
+      return avg4(left, topLeft, top, topRight);
     case 11:
-      return _select(top, left, topLeft);
+      return select(top, left, topLeft);
     case 12:
-      return _addSubFull(left, top, topLeft);
+      return addSubFull(left, top, topLeft);
     default:
-      return _addSubHalf(left, top, topLeft);
+      return addSubHalf(left, top, topLeft);
   }
 }
 
 /**
- * Every predictor's output for one pixel, written into [out].
+ * Every predictor's output for one pixel, written into {@link out}.
  *
- * The mode search needs all fourteen at each pixel. Asking [predict] for them
+ * The mode search needs all fourteen at each pixel. Asking {@link predict} for them
  * one at a time re-derives the shared averages fourteen times over; here each
  * is computed once.
  */
@@ -149,32 +149,32 @@ export function predictAll(
   topRight: number,
   out: Uint32Array
 ): void {
-  const avgLeftTopLeft = _avg2(left, topLeft);
-  const avgTopTopRight = _avg2(top, topRight);
+  const avgLeftTopLeft = avg2(left, topLeft);
+  const avgTopTopRight = avg2(top, topRight);
   out[0] = argbBlack;
   out[1] = left;
   out[2] = top;
   out[3] = topRight;
   out[4] = topLeft;
-  out[5] = _avg2(_avg2(left, topRight), top);
+  out[5] = avg2(avg2(left, topRight), top);
   out[6] = avgLeftTopLeft;
-  out[7] = _avg2(left, top);
-  out[8] = _avg2(topLeft, top);
+  out[7] = avg2(left, top);
+  out[8] = avg2(topLeft, top);
   out[9] = avgTopTopRight;
-  out[10] = _avg2(avgLeftTopLeft, avgTopTopRight);
-  out[11] = _select(top, left, topLeft);
-  out[12] = _addSubFull(left, top, topLeft);
-  out[13] = _addSubHalf(left, top, topLeft);
+  out[10] = avg2(avgLeftTopLeft, avgTopTopRight);
+  out[11] = select(top, left, topLeft);
+  out[12] = addSubFull(left, top, topLeft);
+  out[13] = addSubHalf(left, top, topLeft);
 }
 
 /**
- * Summed signed magnitude of the residual [v] - [p], over all four
+ * Summed signed magnitude of the residual {@link v} - {@link p}, over all four
  * channels.
  *
  * A residual wraps, so a channel differing by 200 is really off by 56 and
  * costs what 56 costs.
  */
-function _residualMagnitude(v: number, p: number): number {
+function residualMagnitude(v: number, p: number): number {
   let d = ((v >>> 24) - (p >>> 24)) & 0xff;
   let cost = d < 128 ? d : 256 - d;
   d = ((v >>> 16) - (p >>> 16)) & 0xff;
@@ -228,7 +228,7 @@ export function selectPredictorModes(
             preds
           );
           for (let m = 0; m < numPredictors; m++) {
-            cost[m] += _residualMagnitude(v, preds[m]);
+            cost[m] += residualMagnitude(v, preds[m]);
           }
         }
       }
@@ -250,7 +250,7 @@ export function selectPredictorModes(
  * Replaces each pixel with its residual against the prediction the block's
  * mode makes, writing the result into the planes.
  *
- * [argb] holds the original pixels, which is what the decoder has
+ * {@link argb} holds the original pixels, which is what the decoder has
  * reconstructed by the time it reaches each one. Edge rules match the
  * decoder: (0,0) predicts black, the top row predicts left, the left column
  * predicts top.
@@ -298,7 +298,7 @@ export function applyPredictorTransform(
 
 /**
  * Write a VP8L predictor sub-image inline (no RIFF, no signature, no
- * transform loop) using per-block predictor [modes].
+ * transform loop) using per-block predictor {@link modes}.
  */
 export function writePredictorSubImage(
   bw: VP8LBitWriter,

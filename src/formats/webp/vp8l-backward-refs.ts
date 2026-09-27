@@ -65,13 +65,13 @@ export class VP8LBackwardRefs {
  * libwebp's `GetMaxItersForQuality` tops out at 86 even at quality 100, and it
  * is the value tuned over a far wider corpus than anything measured here.
  */
-const _maxChain = 86;
+const maxChain = 86;
 
 /**
  * The spec caps the distance at 1048576, and the first 120 values are taken by
  * the near-neighbour plane codes, leaving this as the real maximum.
  */
-const _maxDistance = 1048456;
+const maxDistance = 1048456;
 
 /**
  * Finds the best match at every position.
@@ -169,10 +169,10 @@ export function computeMatches(
       const enough = maxLen < 256 ? maxLen : 256;
       let c = prev[i];
       let steps = 0;
-      while (c >= 0 && steps < _maxChain) {
+      while (c >= 0 && steps < maxChain) {
         steps++;
         const dist = i - c;
-        if (dist > _maxDistance) {
+        if (dist > maxDistance) {
           break;
         }
         // Only a longer match can win, so the pixel one past the current best

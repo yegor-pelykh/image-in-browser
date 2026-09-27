@@ -23,8 +23,8 @@ import {
 /**
  * Encode an image to the WebP format (losslessly by default).
  *
- * **[lossless] is on by default**, and it makes [quality], [method] and
- * [alphaQuality] do nothing, so an encoder built with a quality alone will
+ * **{@link lossless} is on by default**, and it makes {@link quality}, {@link method} and
+ * {@link alphaQuality} do nothing, so an encoder built with a quality alone will
  * quietly ignore it.
  *
  * Lossless uses the VP8L bitstream, lossy the VP8 one, wrapped either way in a
@@ -214,7 +214,7 @@ export class WebPEncoder implements Encoder {
   }
 
   /**
-   * One channel of [color], scaled rather than truncated.
+   * One channel of {@link color}, scaled rather than truncated.
    */
   private static channel8(
     color: Color | undefined,

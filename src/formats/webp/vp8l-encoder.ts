@@ -39,8 +39,8 @@ export const maxDimension = 16383;
 /**
  * The meta Huffman block size is stored as a three bit value offset by two.
  */
-const _minHuffmanBits = 2;
-const _numHuffmanBits = 3;
+const minHuffmanBits = 2;
+const numHuffmanBits = 3;
 
 /**
  * Encodes an image into the VP8L bitstream, without the RIFF container.
@@ -182,10 +182,10 @@ export class VP8LEncoder {
 
     // An image with few distinct colors codes far more compactly as palette
     // indices than as full pixels, so prefer the color indexing transform.
-    const palette = this._buildPalette(r, g, b, a, numPixels);
+    const palette = this.buildPalette(r, g, b, a, numPixels);
     if (palette !== undefined) {
       const bw = new VP8LBitWriter();
-      this._writePaletteImage(bw, palette, r, g, b, a, width, height);
+      this.writePaletteImage(bw, palette, r, g, b, a, width, height);
       bw.flush();
       return bw.getBytes();
     }
@@ -198,7 +198,7 @@ export class VP8LEncoder {
     const analysis = analyzeEntropy(argb, width, height, predSizeBits);
 
     if (analysis.useSubtractGreen) {
-      this._applySubtractGreenTransform(r, g, b, numPixels);
+      this.applySubtractGreenTransform(r, g, b, numPixels);
       for (let i = 0; i < numPixels; i++) {
         argb[i] = (a[i] << 24) | (r[i] << 16) | (g[i] << 8) | b[i];
       }
@@ -262,12 +262,12 @@ export class VP8LEncoder {
       bw.writeBits(1, 1);
       bw.writeBits(1, 2);
       bw.writeBits(crossBits - 2, 3);
-      this._writeCrossColorSubImage(bw, crossBlockW, crossBlockH, multipliers);
+      this.writeCrossColorSubImage(bw, crossBlockW, crossBlockH, multipliers);
     }
     // has_transform = 0.
     bw.writeBits(0, 1);
 
-    this._writeImageStream(bw, r, g, b, a, width, numPixels, true);
+    this.writeImageStream(bw, r, g, b, a, width, numPixels, true);
     bw.flush();
     return bw.getBytes();
   }
@@ -276,14 +276,14 @@ export class VP8LEncoder {
    * Writes a VP8L image stream: the color cache flag, the meta Huffman flag,
    * the five Huffman code definitions and the LZ77 token data.
    *
-   * [width] is the stride used to compute distance plane codes. For a color
+   * {@link width} is the stride used to compute distance plane codes. For a color
    * indexed image that is the packed width, not the image width.
    *
-   * [isLevel0] must be true only for the main image. The meta Huffman flag is
+   * {@link isLevel0} must be true only for the main image. The meta Huffman flag is
    * present just there; VP8L._readHuffmanCodes skips it for the sub-images of
    * a transform, so writing it would desynchronize the stream.
    */
-  private _writeImageStream(
+  private writeImageStream(
     bw: VP8LBitWriter,
     r: Uint8Array,
     g: Uint8Array,
@@ -301,7 +301,7 @@ export class VP8LEncoder {
     // The greedy cover is dead once priced, and the optimal one is written at
     // exactly the positions read back, so one parse serves both.
     const parse = new VP8LCover(numPixels);
-    VP8LEncoder._greedyCover(matches, parse);
+    VP8LEncoder.greedyCover(matches, parse);
     const costs = VP8LCostModel.fromCover(parse, r, g, b, a, width);
     optimalCover(matches, costs, r, g, b, a, width, parse);
     const refs = refsFromCover(parse);
@@ -357,7 +357,7 @@ export class VP8LEncoder {
     // it into regions that each get their own. Sub-images are small and never
     // carry the flag, so only the main image is considered.
     const meta = isLevel0
-      ? this._selectMetaHuffman(
+      ? this.selectMetaHuffman(
           r,
           g,
           b,
@@ -380,8 +380,8 @@ export class VP8LEncoder {
         bw.writeBits(0, 1);
       } else {
         bw.writeBits(1, 1);
-        bw.writeBits(meta.bits - _minHuffmanBits, _numHuffmanBits);
-        this._writeEntropyImage(bw, meta);
+        bw.writeBits(meta.bits - minHuffmanBits, numHuffmanBits);
+        this.writeEntropyImage(bw, meta);
       }
     }
 
@@ -495,7 +495,7 @@ export class VP8LEncoder {
    * trying any. Measured here: the formula is 4.6% faster but costs 0.13
    * points on Kodak and 0.44 on the PNG suite, because on smaller images the
    * entropy image is cheap enough that a finer split pays. Large images are
-   * unaffected, since [_maxEntropyImageSize] already rules the finer sizes out
+   * unaffected, since {@link _maxEntropyImageSize} already rules the finer sizes out
    * for them.
    */
   private static readonly _metaHuffmanCandidates = [4, 5, 6];
@@ -516,7 +516,7 @@ export class VP8LEncoder {
    * Chooses a block size and a grouping of blocks, or undefined when a single set
    * of codes for the whole image is no more expensive.
    */
-  private _selectMetaHuffman(
+  private selectMetaHuffman(
     r: Uint8Array,
     g: Uint8Array,
     b: Uint8Array,
@@ -535,8 +535,8 @@ export class VP8LEncoder {
     let best: VP8LMetaHuffman | undefined = undefined;
 
     for (const bits of VP8LEncoder._metaHuffmanCandidates) {
-      const xsize = VP8LEncoder._subSampleSize(width, bits);
-      const ysize = VP8LEncoder._subSampleSize(height, bits);
+      const xsize = VP8LEncoder.subSampleSize(width, bits);
+      const ysize = VP8LEncoder.subSampleSize(height, bits);
       if (
         xsize * ysize < 2 ||
         xsize * ysize > VP8LEncoder._maxEntropyImageSize
@@ -594,7 +594,7 @@ export class VP8LEncoder {
    * Writes the entropy image, which tells the decoder which group each block
    * belongs to. The index is carried in the red and green bytes.
    */
-  private _writeEntropyImage(bw: VP8LBitWriter, meta: VP8LMetaHuffman): void {
+  private writeEntropyImage(bw: VP8LBitWriter, meta: VP8LMetaHuffman): void {
     const n = meta.xsize * meta.ysize;
     const er = new Uint8Array(n);
     const eg = new Uint8Array(n);
@@ -609,7 +609,7 @@ export class VP8LEncoder {
       er[i] = (group >> 8) & 0xff;
       eg[i] = group & 0xff;
     }
-    this._writeImageStream(bw, er, eg, eb, ea, meta.xsize, n, false);
+    this.writeImageStream(bw, er, eg, eb, ea, meta.xsize, n, false);
   }
 
   // ---------------------------------------------------------------------------
@@ -623,9 +623,9 @@ export class VP8LEncoder {
 
   /**
    * The distinct colors of the image in ascending ARGB order, or undefined if the
-   * image holds more than [_maxPaletteSize] of them.
+   * image holds more than {@link _maxPaletteSize} of them.
    */
-  private _buildPalette(
+  private buildPalette(
     r: Uint8Array,
     g: Uint8Array,
     b: Uint8Array,
@@ -655,13 +655,13 @@ export class VP8LEncoder {
 
   /**
    * How many index bits are packed into a single byte for a palette of
-   * [numColors] entries. Mirrors the reader in VP8L._readTransform.
+   * {@link numColors} entries. Mirrors the reader in VP8L._readTransform.
    */
-  private static _paletteBits(numColors: number): number {
+  private static paletteBits(numColors: number): number {
     return numColors > 16 ? 0 : numColors > 4 ? 1 : numColors > 2 ? 2 : 3;
   }
 
-  private static _subSampleSize(size: number, samplingBits: number): number {
+  private static subSampleSize(size: number, samplingBits: number): number {
     return (size + (1 << samplingBits) - 1) >> samplingBits;
   }
 
@@ -673,7 +673,7 @@ export class VP8LEncoder {
    * green channel. Neither the subtract-green nor the predictor transform is
    * useful on index data, so neither is emitted here.
    */
-  private _writePaletteImage(
+  private writePaletteImage(
     bw: VP8LBitWriter,
     palette: Uint32Array,
     r: Uint8Array,
@@ -715,7 +715,7 @@ export class VP8LEncoder {
       prevB = cb;
       prevA = ca;
     }
-    this._writeImageStream(bw, pr, pg, pb, pa, numColors, numColors, false);
+    this.writeImageStream(bw, pr, pg, pb, pa, numColors, numColors, false);
 
     // has_transform = 0.
     bw.writeBits(0, 1);
@@ -725,8 +725,8 @@ export class VP8LEncoder {
       indexOf.set(palette[i], i);
     }
 
-    const bits = VP8LEncoder._paletteBits(numColors);
-    const packedWidth = VP8LEncoder._subSampleSize(width, bits);
+    const bits = VP8LEncoder.paletteBits(numColors);
+    const packedWidth = VP8LEncoder.subSampleSize(width, bits);
     const numPacked = packedWidth * height;
     const indices = new Uint8Array(numPacked);
     // The decoder reads the index out of the green channel and ignores the
@@ -754,7 +754,7 @@ export class VP8LEncoder {
       }
     }
 
-    this._writeImageStream(
+    this.writeImageStream(
       bw,
       zero,
       indices,
@@ -766,7 +766,7 @@ export class VP8LEncoder {
     );
   }
 
-  private _applySubtractGreenTransform(
+  private applySubtractGreenTransform(
     r: Uint8Array,
     g: Uint8Array,
     b: Uint8Array,
@@ -782,7 +782,7 @@ export class VP8LEncoder {
    * Takes every match on offer, which is what the symbols have to be priced
    * from before any better cover can be judged.
    */
-  private static _greedyCover(matches: VP8LMatches, parse: VP8LCover): void {
+  private static greedyCover(matches: VP8LMatches, parse: VP8LCover): void {
     const numPixels = parse.numPixels;
     const cover = parse.cover;
     const distance = parse.distance;
@@ -800,7 +800,7 @@ export class VP8LEncoder {
    * Writes the cross-color sub-image, one pixel per block holding that
    * block's three multipliers.
    */
-  private _writeCrossColorSubImage(
+  private writeCrossColorSubImage(
     bw: VP8LBitWriter,
     blockW: number,
     blockH: number,
@@ -816,6 +816,6 @@ export class VP8LEncoder {
       cg[i] = multipliers[i].green;
       cb[i] = multipliers[i].blue;
     }
-    this._writeImageStream(bw, cr, cg, cb, ca, blockW, n, false);
+    this.writeImageStream(bw, cr, cg, cb, ca, blockW, n, false);
   }
 }

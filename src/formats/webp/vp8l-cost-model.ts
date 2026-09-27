@@ -78,11 +78,11 @@ export class VP8LCostModel {
     }
 
     return new VP8LCostModel(
-      VP8LCostModel._toBits(green),
-      VP8LCostModel._toBits(red),
-      VP8LCostModel._toBits(blue),
-      VP8LCostModel._toBits(alpha),
-      VP8LCostModel._toBits(dist)
+      VP8LCostModel.toBits(green),
+      VP8LCostModel.toBits(red),
+      VP8LCostModel.toBits(blue),
+      VP8LCostModel.toBits(alpha),
+      VP8LCostModel.toBits(dist)
     );
   }
 
@@ -105,7 +105,7 @@ export class VP8LCostModel {
   }
 
   /**
-   * Bits to code the distance part of a match at [distance].
+   * Bits to code the distance part of a match at {@link distance}.
    */
   public distanceBits(distance: number, width: number): number {
     const planeCode = huffman.distToPlaneCode(width, distance);
@@ -117,7 +117,7 @@ export class VP8LCostModel {
    * Turns counts into bit costs. A symbol the first pass never used still has
    * to be codeable, so it is charged as if it had appeared once.
    */
-  private static _toBits(freq: Float64Array): Float64Array {
+  private static toBits(freq: Float64Array): Float64Array {
     let total = 0.0;
     for (const f of freq) {
       total += f;
@@ -134,7 +134,7 @@ export class VP8LCostModel {
   }
 
   /**
-   * Bits to code the pixel at [i] as a literal.
+   * Bits to code the pixel at {@link i} as a literal.
    */
   public literalCost(
     r: Uint8Array,

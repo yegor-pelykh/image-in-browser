@@ -50,7 +50,7 @@ function mul2(a: number): number {
 }
 
 /**
- * The forward 4x4 DCT of `src - ref`, written to [out] at [outOff].
+ * The forward 4x4 DCT of `src - ref`, written to {@link out} at {@link outOff}.
  */
 export function fTransform(
   src: Uint8Array,
@@ -147,7 +147,7 @@ function fTransformColumn(
 }
 
 /**
- * The forward DCT of the two 4x4 blocks starting at [srcOff].
+ * The forward DCT of the two 4x4 blocks starting at {@link srcOff}.
  */
 export function fTransform2(
   src: Uint8Array,
@@ -249,7 +249,7 @@ export function isFlatSource16(src: Uint8Array, off: number): boolean {
 }
 
 /**
- * Whether [numBlocks] blocks of levels carry at most [thresh] non-zero AC
+ * Whether {@link numBlocks} blocks of levels carry at most {@link thresh} non-zero AC
  * coefficients between them.
  */
 export function isFlat(
@@ -275,8 +275,8 @@ export function isFlat(
 }
 
 /**
- * Reconstructs one 4x4 block: adds the inverse transform of [inp] to the
- * prediction at [refOff] and stores it at [dstOff].
+ * Reconstructs one 4x4 block: adds the inverse transform of {@link inp} to the
+ * prediction at {@link refOff} and stores it at {@link dstOff}.
  */
 export function iTransform(
   ref: Uint8Array,
@@ -369,7 +369,7 @@ function iTransformRow(
 }
 
 /**
- * Reconstructs the two 4x4 blocks starting at [dstOff].
+ * Reconstructs the two 4x4 blocks starting at {@link dstOff}.
  */
 export function iTransform2(
   ref: Uint8Array,
@@ -526,7 +526,7 @@ function dcMode(
 }
 
 /**
- * Builds the four 16x16 luma predictions into the prediction cache [dst].
+ * Builds the four 16x16 luma predictions into the prediction cache {@link dst}.
  */
 export function predLuma16(
   dst: Uint8Array,
@@ -542,7 +542,7 @@ export function predLuma16(
 }
 
 /**
- * Builds the four 8x8 chroma predictions, U and V side by side, into [dst].
+ * Builds the four 8x8 chroma predictions, U and V side by side, into {@link dst}.
  */
 export function predChroma8(
   dst: Uint8Array,
@@ -605,7 +605,7 @@ function fillRow4(
 }
 
 /**
- * Builds all ten 4x4 luma predictions into [dst].
+ * Builds all ten 4x4 luma predictions into {@link dst}.
  */
 export function predLuma4(
   dst: Uint8Array,
@@ -830,7 +830,7 @@ export function getSSE4x4(
 }
 
 /**
- * The sum of squared differences over a [w] by [h] block.
+ * The sum of squared differences over a {@link w} by {@link h} block.
  */
 export function getSSE(
   a: Uint8Array,
@@ -942,7 +942,7 @@ export function spectrum4x4(src: Uint8Array, off: number): number {
 }
 
 /**
- * How far a block is from a spectrum already measured by [spectrum4x4].
+ * How far a block is from a spectrum already measured by {@link spectrum4x4}.
  */
 export function distoFrom(
   reference: number,
@@ -954,8 +954,8 @@ export function distoFrom(
 }
 
 /**
- * The sum of each of the four 4x4 blocks of a 16x4 strip, written to [dc]
- * starting at [dcOff].
+ * The sum of each of the four 4x4 blocks of a 16x4 strip, written to {@link dc}
+ * starting at {@link dcOff}.
  */
 export function mean16x4(
   ref: Uint8Array,

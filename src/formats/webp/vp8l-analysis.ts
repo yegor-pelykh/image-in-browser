@@ -41,33 +41,33 @@ export class VP8LAnalysis {
 /**
  * The thirteen distributions one pass collects, in the order they are indexed.
  */
-const _alpha = 0;
-const _red = 1;
-const _green = 2;
-const _blue = 3;
-const _alphaPred = 4;
-const _redPred = 5;
-const _greenPred = 6;
-const _bluePred = 7;
-const _redSubGreen = 8;
-const _blueSubGreen = 9;
-const _redPredSubGreen = 10;
-const _bluePredSubGreen = 11;
-const _numHistograms = 12;
+const idxAlpha = 0;
+const idxRed = 1;
+const idxGreen = 2;
+const idxBlue = 3;
+const idxAlphaPred = 4;
+const idxRedPred = 5;
+const idxGreenPred = 6;
+const idxBluePred = 7;
+const idxRedSubGreen = 8;
+const idxBlueSubGreen = 9;
+const idxRedPredSubGreen = 10;
+const idxBluePredSubGreen = 11;
+const numHistograms = 12;
 
 /**
  * Per-channel `a - b`, each channel wrapping on its own.
  */
-function _subPixels(a: number, b: number): number {
+function subPixels(a: number, b: number): number {
   const alphaAndGreen = 0x00ff00ff + (a & 0xff00ff00) - (b & 0xff00ff00);
   const redAndBlue = 0xff00ff00 + (a & 0x00ff00ff) - (b & 0x00ff00ff);
   return (alphaAndGreen & 0xff00ff00) | (redAndBlue & 0x00ff00ff);
 }
 
 /**
- * Decides which transforms to apply, from one pass over [argb].
+ * Decides which transforms to apply, from one pass over {@link argb}.
  *
- * [transformBits] is the block size the predictor and cross-color sub-images
+ * {@link transformBits} is the block size the predictor and cross-color sub-images
  * would use, which is what their overhead is charged against.
  */
 export function analyzeEntropy(
@@ -77,21 +77,21 @@ export function analyzeEntropy(
   transformBits: number
 ): VP8LAnalysis {
   const histo = Array.from(
-    { length: _numHistograms },
+    { length: numHistograms },
     (_) => new Uint32Array(256)
   );
-  const alpha = histo[_alpha];
-  const red = histo[_red];
-  const green = histo[_green];
-  const blue = histo[_blue];
-  const alphaPred = histo[_alphaPred];
-  const redPred = histo[_redPred];
-  const greenPred = histo[_greenPred];
-  const bluePred = histo[_bluePred];
-  const redSubGreen = histo[_redSubGreen];
-  const blueSubGreen = histo[_blueSubGreen];
-  const redPredSubGreen = histo[_redPredSubGreen];
-  const bluePredSubGreen = histo[_bluePredSubGreen];
+  const alpha = histo[idxAlpha];
+  const red = histo[idxRed];
+  const green = histo[idxGreen];
+  const blue = histo[idxBlue];
+  const alphaPred = histo[idxAlphaPred];
+  const redPred = histo[idxRedPred];
+  const greenPred = histo[idxGreenPred];
+  const bluePred = histo[idxBluePred];
+  const redSubGreen = histo[idxRedSubGreen];
+  const blueSubGreen = histo[idxBlueSubGreen];
+  const redPredSubGreen = histo[idxRedPredSubGreen];
+  const bluePredSubGreen = histo[idxBluePredSubGreen];
 
   // Skips the first pixel, which has no predecessor.
   let pixPrev = argb[0];
@@ -99,7 +99,7 @@ export function analyzeEntropy(
     const row = y * width;
     for (let x = 0; x < width; x++) {
       const pix = argb[row + x];
-      const pixDiff = _subPixels(pix, pixPrev);
+      const pixDiff = subPixels(pix, pixPrev);
       pixPrev = pix;
       // A pixel equal to its left or top neighbour codes as part of a run
       // whichever transform is chosen, so counting it would let flat areas
@@ -137,28 +137,33 @@ export function analyzeEntropy(
   bluePred[0]++;
   alphaPred[0]++;
 
-  const bits = new Float64Array(_numHistograms);
-  for (let i = 0; i < _numHistograms; i++) {
-    bits[i] = _bitsEntropy(histo[i]);
+  const bits = new Float64Array(numHistograms);
+  for (let i = 0; i < numHistograms; i++) {
+    bits[i] = bitsEntropy(histo[i]);
   }
 
-  const direct = bits[_alpha] + bits[_red] + bits[_green] + bits[_blue];
+  const direct = bits[idxAlpha] + bits[idxRed] + bits[idxGreen] + bits[idxBlue];
   let spatial =
-    bits[_alphaPred] + bits[_redPred] + bits[_greenPred] + bits[_bluePred];
+    bits[idxAlphaPred] +
+    bits[idxRedPred] +
+    bits[idxGreenPred] +
+    bits[idxBluePred];
   const subGreen =
-    bits[_alpha] + bits[_redSubGreen] + bits[_green] + bits[_blueSubGreen];
+    bits[idxAlpha] +
+    bits[idxRedSubGreen] +
+    bits[idxGreen] +
+    bits[idxBlueSubGreen];
   let spatialSubGreen =
-    bits[_alphaPred] +
-    bits[_redPredSubGreen] +
-    bits[_greenPred] +
-    bits[_bluePredSubGreen];
+    bits[idxAlphaPred] +
+    bits[idxRedPredSubGreen] +
+    bits[idxGreenPred] +
+    bits[idxBluePredSubGreen];
 
   // Carrying a transform costs its sub-image, which is small but decides the
   // question outright on small images. Fourteen predictors to name per block,
   // and three multipliers of a byte each for cross-color.
   const subImagePixels =
-    _subSampleSize(width, transformBits) *
-    _subSampleSize(height, transformBits);
+    subSampleSize(width, transformBits) * subSampleSize(height, transformBits);
   spatial += subImagePixels * (Math.log(14) / Math.LN2);
   spatialSubGreen += subImagePixels * (Math.log(24) / Math.LN2);
 
@@ -209,7 +214,7 @@ export function analyzeEntropy(
   });
 }
 
-function _subSampleSize(size: number, samplingBits: number): number {
+function subSampleSize(size: number, samplingBits: number): number {
   return (size + (1 << samplingBits) - 1) >> samplingBits;
 }
 
@@ -222,7 +227,7 @@ function _subSampleSize(size: number, samplingBits: number): number {
  * The correction mirrors libwebp's `BitsEntropyRefine`, whose constants are
  * empirical.
  */
-function _bitsEntropy(counts: Uint32Array): number {
+function bitsEntropy(counts: Uint32Array): number {
   let sum = 0;
   let nonzeros = 0;
   let maxVal = 0;

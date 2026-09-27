@@ -14,7 +14,7 @@ export class VP8LBitWriter {
   private _currentByte: number = 0;
   private _usedBits: number = 0;
 
-  private _grow(): void {
+  private grow(): void {
     const newBytes = new Uint8Array(this._bytes.length * 2);
     ArrayUtils.copyRange(this._bytes, 0, newBytes, 0, this._length);
     this._bytes = newBytes;
@@ -33,7 +33,7 @@ export class VP8LBitWriter {
       this._usedBits += bitsToWrite;
       if (this._usedBits === 8) {
         if (this._length === this._bytes.length) {
-          this._grow();
+          this.grow();
         }
         this._bytes[this._length++] = this._currentByte;
         this._currentByte = 0;
@@ -45,7 +45,7 @@ export class VP8LBitWriter {
   public flush(): void {
     if (this._usedBits > 0) {
       if (this._length === this._bytes.length) {
-        this._grow();
+        this.grow();
       }
       this._bytes[this._length++] = this._currentByte;
       this._currentByte = 0;

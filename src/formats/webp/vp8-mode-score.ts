@@ -9,7 +9,6 @@
  * that expression is zero there, and a zero ceiling makes every mode lose its
  * comparison and the search return no mode at all.
  */
-// 2^50.
 export const maxCost = 1125899906842624;
 
 /**
@@ -53,7 +52,7 @@ export class VP8ModeScore {
 
   /**
    * One bit per block that has a non-zero coefficient, in the layout
-   * [VP8EncIterator.nzToBytes] describes.
+   * {@link VP8EncIterator.nzToBytes} describes.
    */
   public nz: number = 0;
 

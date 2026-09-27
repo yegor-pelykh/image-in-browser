@@ -1,7 +1,7 @@
 /** @format */
 
 /**
- * Replaces every fully transparent pixel of [argb] with zero.
+ * Replaces every fully transparent pixel of {@link argb} with zero.
  *
  * Such a pixel shows nothing, but sources usually leave the original
  * background colour under it, which then costs full price to code. Flattening

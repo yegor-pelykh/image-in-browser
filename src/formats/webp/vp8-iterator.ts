@@ -36,7 +36,7 @@ export class VP8EncIterator {
   public readonly yuvIn: Uint8Array = new Uint8Array(yuvSizeEnc);
 
   /**
-   * Reconstructed samples. Swapped with [yuvOut2] as better modes are found.
+   * Reconstructed samples. Swapped with {@link yuvOut2} as better modes are found.
    */
   public yuvOut: Uint8Array = new Uint8Array(yuvSizeEnc);
   public yuvOut2: Uint8Array = new Uint8Array(yuvSizeEnc);
@@ -90,12 +90,12 @@ export class VP8EncIterator {
   public readonly boundaryScratch: Uint8Array = new Uint8Array(32);
 
   /**
-   * The 4x4 boundary samples, in the snaking order [topLeftI4] indexes.
+   * The 4x4 boundary samples, in the snaking order {@link topLeftI4} indexes.
    */
   public readonly i4Boundary: Uint8Array = new Uint8Array(40);
 
   /**
-   * Index in [i4Boundary] of the current 4x4 block's top samples.
+   * Index in {@link i4Boundary} of the current 4x4 block's top samples.
    */
   public i4Top: number = 0;
 
@@ -418,7 +418,7 @@ export class VP8EncIterator {
   // Non-zero context.
 
   /**
-   * Unpacks the neighbouring patterns into [topNz] and [leftNz].
+   * Unpacks the neighbouring patterns into {@link topNz} and {@link leftNz}.
    */
   public nzToBytes(): void {
     const tnz = this.enc.nz[this.nzPos];
@@ -445,7 +445,7 @@ export class VP8EncIterator {
   }
 
   /**
-   * Packs [topNz] and [leftNz] back into this macroblock's pattern.
+   * Packs {@link topNz} and {@link leftNz} back into this macroblock's pattern.
    */
   public bytesToNz(): void {
     let nz = 0;

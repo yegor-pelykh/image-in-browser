@@ -23,7 +23,7 @@ export class VP8LMatches {
   public readonly distance: Int32Array;
 
   /**
-   * How far each of [cheapDistances] repeats from every position.
+   * How far each of {@link cheapDistances} repeats from every position.
    *
    * These are the offsets that land on the near-neighbour plane codes, which
    * are the cheapest distances the format has. They are worth keeping even
@@ -31,13 +31,13 @@ export class VP8LMatches {
    * near-neighbour distance can still cost less. The chain on its own would
    * have to walk back a whole row of candidates to reach the one directly
    * above, which is past the search limit.
-   * Lengths never exceed [maxMatchLen], so sixteen bits are enough, and
+   * Lengths never exceed {@link maxMatchLen}, so sixteen bits are enough, and
    * there is one of these per offset per pixel.
    */
   public readonly cheapLength: Uint16Array[];
 
   /**
-   * The distance each entry of [cheapLength] corresponds to.
+   * The distance each entry of {@link cheapLength} corresponds to.
    */
   public readonly cheapDistances: number[];
 

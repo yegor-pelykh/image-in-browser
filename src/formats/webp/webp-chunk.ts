@@ -84,7 +84,7 @@ export function vp8xChunkData(
 /**
  * The ANIM chunk payload: the canvas background color and the loop count.
  *
- * [loopCount] is clamped, since wrapping its sixteen bit field turns 70000
+ * {@link loopCount} is clamped, since wrapping its sixteen bit field turns 70000
  * loops into 4464.
  */
 export function animChunkData(
@@ -105,7 +105,7 @@ export function animChunkData(
 /**
  * One ANMF chunk: the frame's placement and timing, then its bitstream.
  *
- * [duration] is clamped, since wrapping its twenty four bit field turns a
+ * {@link duration} is clamped, since wrapping its twenty four bit field turns a
  * negative duration into a pause of over four hours.
  */
 export function anmfChunkData(
@@ -137,7 +137,7 @@ export function anmfChunkData(
 }
 
 /**
- * Wraps [chunks] in the RIFF/WEBP header.
+ * Wraps {@link chunks} in the RIFF/WEBP header.
  */
 export function buildRiff(chunks: WebPChunk[]): Uint8Array {
   let payload = 4;

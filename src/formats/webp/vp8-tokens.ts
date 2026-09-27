@@ -40,7 +40,7 @@ export class VP8TokenBuffer {
   }
 
   /**
-   * Records [bit] coded through the probability at [probaIdx], and counts it.
+   * Records {@link bit} coded through the probability at {@link probaIdx}, and counts it.
    */
   public add(proba: VP8EncProba, bit: number, probaIdx: number): number {
     this.push((bit << 15) | probaIdx);
@@ -48,7 +48,7 @@ export class VP8TokenBuffer {
   }
 
   /**
-   * As [add], but counting the event against a different slot than the one it
+   * As {@link add}, but counting the event against a different slot than the one it
    * is coded with.
    */
   public addStat(
@@ -62,14 +62,14 @@ export class VP8TokenBuffer {
   }
 
   /**
-   * Records [bit] coded with a fixed probability.
+   * Records {@link bit} coded with a fixed probability.
    */
   public addConstant(bit: number, proba: number): void {
     this.push((bit << 15) | fixedProba | proba);
   }
 
   /**
-   * Writes everything recorded, using [probas] for the adaptive tokens.
+   * Writes everything recorded, using {@link probas} for the adaptive tokens.
    */
   public emit(bw: VP8BoolEncoder, probas: Uint8Array): void {
     for (let i = 0; i < this._length; i++) {
@@ -84,7 +84,7 @@ export class VP8TokenBuffer {
   }
 
   /**
-   * What [emit] would produce, in 1/256ths of a bit.
+   * What {@link emit} would produce, in 1/256ths of a bit.
    */
   public estimateSize(probas: Uint8Array): number {
     let size = 0;

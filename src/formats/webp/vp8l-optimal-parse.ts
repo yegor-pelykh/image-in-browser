@@ -19,7 +19,7 @@ import { VP8LCostModel, VP8LCover, VP8LMatches } from './vp8l-backward-refs.js';
 /**
  * Shortest match worth coding; below this a literal is cheaper.
  */
-const _minMatchLen = 3;
+const minMatchLen = 3;
 
 /**
  * How many lengths of a match are weighed individually before only its full
@@ -31,13 +31,13 @@ const _minMatchLen = 3;
  * interval-based cost manager does, would make the parse cost the length of
  * the longest match at every pixel: measured at 48 it buys 0.01% over 16.
  */
-const _lengthsWeighed = 16;
+const lengthsWeighed = 16;
 
 /**
- * Writes into [parse] the cheapest cover of the image, as the number of pixels
+ * Writes into {@link parse} the cheapest cover of the image, as the number of pixels
  * the token starting at each position spans.
  *
- * Positions inside a token are left as they were and never read, so [parse]
+ * Positions inside a token are left as they were and never read, so {@link parse}
  * may arrive holding an earlier cover.
  */
 export function optimalCover(
@@ -104,22 +104,22 @@ export function optimalCover(
       // read before the distance is priced.
       if (which === 0) {
         maxLen = matchLen[i];
-        if (maxLen < _minMatchLen) {
+        if (maxLen < minMatchLen) {
           continue;
         }
         dist = matchDist[i];
         distBits = here + costs.distanceBits(dist, width);
       } else {
         maxLen = cheapLen[which - 1][i];
-        if (maxLen < _minMatchLen) {
+        if (maxLen < minMatchLen) {
           continue;
         }
         dist = cheapDists[which - 1];
         distBits = here + cheapDistBits[which - 1];
       }
 
-      const weighed = maxLen < _lengthsWeighed ? maxLen : _lengthsWeighed;
-      for (let len = _minMatchLen; len <= weighed; len++) {
+      const weighed = maxLen < lengthsWeighed ? maxLen : lengthsWeighed;
+      for (let len = minMatchLen; len <= weighed; len++) {
         const c = distBits + lengthBits[len];
         if (c < cost[i + len]) {
           cost[i + len] = c;

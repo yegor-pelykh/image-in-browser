@@ -15,26 +15,26 @@ import { WebPClSymbol } from './webp-cl-symbol.js';
 // ---------------------------------------------------------------------------
 
 /**
- * VP8L green-channel symbol for a back-reference of [length].
+ * VP8L green-channel symbol for a back-reference of {@link length}.
  */
 export function lengthSymbol(length: number): number {
   // Symbols 256..259.
   if (length <= 4) return 255 + length;
-  const msb = _log2Floor(length - 1);
+  const msb = log2Floor(length - 1);
   const half = ((length - 1) >> (msb - 1)) & 1;
   // Symbols 260..279.
   return 256 + 2 * msb + half;
 }
 
 /**
- * Extra bits for VP8L length prefix code for back-reference [length].
+ * Extra bits for VP8L length prefix code for back-reference {@link length}.
  */
 export function lengthExtra(length: number): {
   extraBits: number;
   extraValue: number;
 } {
   if (length <= 4) return { extraBits: 0, extraValue: 0 };
-  const msb = _log2Floor(length - 1);
+  const msb = log2Floor(length - 1);
   const half = ((length - 1) >> (msb - 1)) & 1;
   const eb = msb - 1;
   const base = (2 + half) << eb;
@@ -48,26 +48,26 @@ export function distToPlaneCode(width: number, dist: number): number {
   const yoff = Math.trunc(dist / width);
   const xoff = dist - yoff * width;
   if (xoff <= 8 && yoff < 8) {
-    return _planeLut[yoff * 16 + 8 - xoff] + 1;
+    return planeLut[yoff * 16 + 8 - xoff] + 1;
   } else if (xoff > width - 8 && yoff < 7) {
-    return _planeLut[(yoff + 1) * 16 + 8 + width - xoff] + 1;
+    return planeLut[(yoff + 1) * 16 + 8 + width - xoff] + 1;
   }
   return dist + 120;
 }
 
 /**
- * VP8L prefix code (dist alphabet symbol) for a plane code [v].
+ * VP8L prefix code (dist alphabet symbol) for a plane code {@link v}.
  */
 export function prefixCode(v: number): number {
   const val = v - 1;
   if (val < 4) return val;
-  const msb = _log2Floor(val);
+  const msb = log2Floor(val);
   const half = (val >> (msb - 1)) & 1;
   return 2 * msb + half;
 }
 
 /**
- * Extra bits for the VP8L distance prefix code for plane code [v].
+ * Extra bits for the VP8L distance prefix code for plane code {@link v}.
  */
 export function prefixExtra(v: number): {
   extraBits: number;
@@ -75,14 +75,14 @@ export function prefixExtra(v: number): {
 } {
   const val = v - 1;
   if (val < 4) return { extraBits: 0, extraValue: 0 };
-  const msb = _log2Floor(val);
+  const msb = log2Floor(val);
   const half = (val >> (msb - 1)) & 1;
   const eb = msb - 1;
   const base = (2 + half) << eb;
   return { extraBits: eb, extraValue: val - base };
 }
 
-function _log2Floor(v: number): number {
+function log2Floor(v: number): number {
   let value = v;
   let log = 0;
   while (value > 1) {
@@ -97,9 +97,10 @@ function _log2Floor(v: number): number {
 // ---------------------------------------------------------------------------
 
 /**
- * Build optimal Huffman code lengths for [alphabetSize] symbols given
- * their [freq]uencies. Returns an array where entry i is the code length
- * for symbol i (0 = unused). All lengths are ≤ [maxBits] (15 for VP8L).
+ * Build optimal Huffman code lengths for a symbol alphabet of size
+ * {@link alphabetSize}, given their frequencies in {@link freq}. Returns an
+ * array where entry i is the code length for symbol i (0 = unused). All
+ * lengths are ≤ {@link maxBits} (15 for VP8L).
  *
  * libwebp first nudges the histogram so that the resulting lengths fall into
  * runs, which its run-length-coded length table then stores more cheaply
@@ -185,7 +186,7 @@ export function buildHuffmanCodeLengths(
 /**
  * Write a Huffman code definition in VP8L format.
  *
- * A code with one used symbol has its length in [codeLengths] set to zero, in
+ * A code with one used symbol has its length in {@link codeLengths} set to zero, in
  * either format: a decoder spends no bits on such a tree.
  */
 export function writeHuffmanCode(
@@ -387,7 +388,7 @@ function reverseBits(value: number, numBits: number): number {
 
 // VP8L plane-to-code lookup table (128 entries, 8 rows × 16 cols).
 // Maps 2D pixel offsets to plane codes for DistanceToPlaneCode.
-const _planeLut = [
+const planeLut = [
   //  yoffset=0 (xoffset 8..1, then 0..-7 which are unused=255)
   96, 73, 55, 39, 23, 13, 5, 1, 255, 255, 255, 255, 255, 255, 255, 255,
   //  yoffset=1

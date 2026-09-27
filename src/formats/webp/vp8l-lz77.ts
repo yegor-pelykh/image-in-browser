@@ -48,7 +48,7 @@ export class Lz77 {
    * 64-bit constant is not even expressible. Two 32-bit multiplies say the
    * same thing on every platform.
    */
-  private _hash(first: number, second: number): number {
+  private hash(first: number, second: number): number {
     return (
       ((mul32(second, 0xc6a4a793) + mul32(first, 0x5bd1e996)) & 0xffffffff) >>>
       this._shift
@@ -80,7 +80,7 @@ export class Lz77 {
     const prev = this._prev;
     const head = this._head;
     for (let pos = 0; pos < n - 1; pos++) {
-      const h = this._hash(px[pos], px[pos + 1]);
+      const h = this.hash(px[pos], px[pos + 1]);
       prev[pos] = head[h];
       head[h] = pos;
     }

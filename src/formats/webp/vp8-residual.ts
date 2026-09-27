@@ -25,12 +25,12 @@ export const typeI4AC = 3;
 /**
  * The escape codes for levels too large to code directly, from RFC 6386 13.2.
  */
-const _cat3 = [173, 148, 140];
-const _cat4 = [176, 155, 140, 135];
-const _cat5 = [180, 157, 141, 134, 130];
-const _cat6 = [254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129];
+const cat3 = [173, 148, 140];
+const cat4 = [176, 155, 140, 135];
+const cat5 = [180, 157, 141, 134, 130];
+const cat6 = [254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129];
 
-function _probaIdx(type: number, band: number, ctx: number): number {
+function probaIdx(type: number, band: number, ctx: number): number {
   return ((type * numBands + band) * numCtx + ctx) * numProbas;
 }
 
@@ -76,7 +76,7 @@ export class VP8Residual {
 }
 
 /**
- * What coding [res] after a block whose context was [ctx0] would cost, in
+ * What coding {@link res} after a block whose context was {@link ctx0} would cost, in
  * 1/256ths of a bit.
  */
 export function getResidualCost(
@@ -90,7 +90,7 @@ export function getResidualCost(
   const bands = kBands;
   let n = res.first;
   // For n of 0 or 1 the band equals n, so this is the right probability.
-  const p0 = proba.coeffs[_probaIdx(type, n, ctx0)];
+  const p0 = proba.coeffs[probaIdx(type, n, ctx0)];
   if (res.last < 0) {
     return bitCost(0, p0);
   }
@@ -111,13 +111,13 @@ export function getResidualCost(
   if (n < 15) {
     // One more bit says that the block ends here.
     const ctx = v === 1 ? 1 : 2;
-    cost += bitCost(0, proba.coeffs[_probaIdx(type, bands[n + 1], ctx)]);
+    cost += bitCost(0, proba.coeffs[probaIdx(type, bands[n + 1], ctx)]);
   }
   return cost;
 }
 
 /**
- * Writes [res] to the bitstream. Returns 1 if the block had any coefficient.
+ * Writes {@link res} to the bitstream. Returns 1 if the block had any coefficient.
  */
 export function putCoeffs(
   bw: VP8BoolEncoder,
@@ -131,7 +131,7 @@ export function putCoeffs(
   const off = res.coeffsOff;
   const probas = proba.coeffs;
   let n = res.first;
-  let p = _probaIdx(type, n, ctx);
+  let p = probaIdx(type, n, ctx);
   if (bw.putBit(res.last >= 0 ? 1 : 0, probas[p]) === 0) {
     return 0;
   }
@@ -141,11 +141,11 @@ export function putCoeffs(
     const sign = c < 0;
     let v = sign ? -c : c;
     if (bw.putBit(v !== 0 ? 1 : 0, probas[p + 1]) === 0) {
-      p = _probaIdx(type, bands[n], 0);
+      p = probaIdx(type, bands[n], 0);
       continue;
     }
     if (bw.putBit(v > 1 ? 1 : 0, probas[p + 2]) === 0) {
-      p = _probaIdx(type, bands[n], 1);
+      p = probaIdx(type, bands[n], 1);
     } else {
       if (bw.putBit(v > 4 ? 1 : 0, probas[p + 3]) === 0) {
         if (bw.putBit(v !== 2 ? 1 : 0, probas[p + 4]) !== 0) {
@@ -160,31 +160,31 @@ export function putCoeffs(
         }
       } else {
         let mask: number = 0;
-        let tab: number[] = _cat3;
+        let tab: number[] = cat3;
         if (v < 3 + (8 << 1)) {
           bw.putBit(0, probas[p + 8]);
           bw.putBit(0, probas[p + 9]);
           v -= 3 + (8 << 0);
           mask = 1 << 2;
-          tab = _cat3;
+          tab = cat3;
         } else if (v < 3 + (8 << 2)) {
           bw.putBit(0, probas[p + 8]);
           bw.putBit(1, probas[p + 9]);
           v -= 3 + (8 << 1);
           mask = 1 << 3;
-          tab = _cat4;
+          tab = cat4;
         } else if (v < 3 + (8 << 3)) {
           bw.putBit(1, probas[p + 8]);
           bw.putBit(0, probas[p + 10]);
           v -= 3 + (8 << 2);
           mask = 1 << 4;
-          tab = _cat5;
+          tab = cat5;
         } else {
           bw.putBit(1, probas[p + 8]);
           bw.putBit(1, probas[p + 10]);
           v -= 3 + (8 << 3);
           mask = 1 << 10;
-          tab = _cat6;
+          tab = cat6;
         }
         let i = 0;
         while (mask !== 0) {
@@ -192,7 +192,7 @@ export function putCoeffs(
           mask >>= 1;
         }
       }
-      p = _probaIdx(type, bands[n], 2);
+      p = probaIdx(type, bands[n], 2);
     }
     bw.putBitUniform(sign ? 1 : 0);
     if (n === 16 || bw.putBit(n <= res.last ? 1 : 0, probas[p]) === 0) {
@@ -204,7 +204,7 @@ export function putCoeffs(
 }
 
 /**
- * Counts the events [res] would code, without writing anything.
+ * Counts the events {@link res} would code, without writing anything.
  */
 export function recordCoeffs(
   proba: VP8EncProba,
@@ -216,7 +216,7 @@ export function recordCoeffs(
   const coeffs = res.coeffs;
   const off = res.coeffsOff;
   let n = res.first;
-  let s = _probaIdx(type, n, ctx);
+  let s = probaIdx(type, n, ctx);
   if (res.last < 0) {
     proba.recordStats(0, s);
     return 0;
@@ -226,13 +226,13 @@ export function recordCoeffs(
     let v = coeffs[off + n++];
     while (v === 0) {
       proba.recordStats(0, s + 1);
-      s = _probaIdx(type, bands[n], 0);
+      s = probaIdx(type, bands[n], 0);
       v = coeffs[off + n++];
     }
     proba.recordStats(1, s + 1);
     if (proba.recordStats(v > 1 || v < -1 ? 1 : 0, s + 2) === 0) {
       // The level is -1 or 1, which the tree codes with no further bits.
-      s = _probaIdx(type, bands[n], 1);
+      s = probaIdx(type, bands[n], 1);
     } else {
       let level = v < 0 ? -v : v;
       if (level > maxVariableLevel) {
@@ -246,7 +246,7 @@ export function recordCoeffs(
           proba.recordStats((bits & mask) !== 0 ? 1 : 0, s + 3 + i);
         }
       }
-      s = _probaIdx(type, bands[n], 2);
+      s = probaIdx(type, bands[n], 2);
     }
   }
   if (n < 16) {
@@ -256,7 +256,7 @@ export function recordCoeffs(
 }
 
 /**
- * Records [res] into [tokens], to be written once the probabilities settle.
+ * Records {@link res} into {@link tokens}, to be written once the probabilities settle.
  */
 export function recordCoeffTokens(
   proba: VP8EncProba,
@@ -270,7 +270,7 @@ export function recordCoeffTokens(
   const off = res.coeffsOff;
   const last = res.last;
   let n = res.first;
-  let id = _probaIdx(type, n, ctx);
+  let id = probaIdx(type, n, ctx);
   if (tokens.add(proba, last >= 0 ? 1 : 0, id) === 0) {
     return 0;
   }
@@ -280,11 +280,11 @@ export function recordCoeffTokens(
     const sign = c < 0;
     const v = sign ? -c : c;
     if (tokens.add(proba, v !== 0 ? 1 : 0, id + 1) === 0) {
-      id = _probaIdx(type, bands[n], 0);
+      id = probaIdx(type, bands[n], 0);
       continue;
     }
     if (tokens.add(proba, v > 1 ? 1 : 0, id + 2) === 0) {
-      id = _probaIdx(type, bands[n], 1);
+      id = probaIdx(type, bands[n], 1);
     } else {
       if (tokens.add(proba, v > 4 ? 1 : 0, id + 3) === 0) {
         if (tokens.add(proba, v !== 2 ? 1 : 0, id + 4) !== 0) {
@@ -299,32 +299,32 @@ export function recordCoeffTokens(
         }
       } else {
         let mask: number = 0;
-        let tab: number[] = _cat3;
+        let tab: number[] = cat3;
         let residue = v - 3;
         if (residue < 8 << 1) {
           tokens.add(proba, 0, id + 8);
           tokens.add(proba, 0, id + 9);
           residue -= 8 << 0;
           mask = 1 << 2;
-          tab = _cat3;
+          tab = cat3;
         } else if (residue < 8 << 2) {
           tokens.add(proba, 0, id + 8);
           tokens.add(proba, 1, id + 9);
           residue -= 8 << 1;
           mask = 1 << 3;
-          tab = _cat4;
+          tab = cat4;
         } else if (residue < 8 << 3) {
           tokens.add(proba, 1, id + 8);
           tokens.addStat(proba, 0, id + 10, id + 9);
           residue -= 8 << 2;
           mask = 1 << 4;
-          tab = _cat5;
+          tab = cat5;
         } else {
           tokens.add(proba, 1, id + 8);
           tokens.addStat(proba, 1, id + 10, id + 9);
           residue -= 8 << 3;
           mask = 1 << 10;
-          tab = _cat6;
+          tab = cat6;
         }
         let i = 0;
         while (mask !== 0) {
@@ -332,7 +332,7 @@ export function recordCoeffTokens(
           mask >>= 1;
         }
       }
-      id = _probaIdx(type, bands[n], 2);
+      id = probaIdx(type, bands[n], 2);
     }
     tokens.addConstant(sign ? 1 : 0, 128);
     if (n === 16 || tokens.add(proba, n <= last ? 1 : 0, id) === 0) {
