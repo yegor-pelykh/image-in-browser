@@ -684,6 +684,7 @@ export abstract class Transform {
         width: newWidth!,
         height: newHeight!,
         format: opt.image.format,
+        numChannels: srcConverted.numChannels,
       });
 
     // If a background color is provided, set all pixels to that color

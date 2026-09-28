@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ArrayUtils,
   ColorRgb8,
+  ColorRgba8,
   decodePng,
   encodePng,
   ExifData,
@@ -232,6 +233,19 @@ describe('Transform', () => {
       'copyExpandCanvas_alpha.png',
       output
     );
+  });
+
+  /**
+   * Preserves source RGBA and transparent padding when expanding the canvas.
+   */
+  test('copyExpandCanvas preserves source RGBA and transparent padding', () => {
+    const src = new MemoryImage({ width: 4, height: 4, numChannels: 4 });
+    src.clear(new ColorRgba8(255, 0, 0, 128));
+    const result = Transform.copyExpandCanvas({ image: src, padding: 2 });
+    expect(result.numChannels).toBe(4);
+    expect(result.getPixel(0, 0).a).toBe(0);
+    const p = result.getPixel(2, 2);
+    expect([p.r, p.g, p.b, p.a]).toEqual([255, 0, 0, 128]);
   });
 
   /**
