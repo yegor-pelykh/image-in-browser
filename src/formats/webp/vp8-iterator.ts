@@ -46,6 +46,12 @@ export class VP8EncIterator {
    */
   public readonly yuvP: Uint8Array = new Uint8Array(predSizeEnc);
 
+  public readonly yuvP32: Uint32Array = new Uint32Array(
+    this.yuvP.buffer,
+    0,
+    predSizeEnc >> 2
+  );
+
   /**
    * Index of the current macroblock in the per-macroblock arrays.
    */

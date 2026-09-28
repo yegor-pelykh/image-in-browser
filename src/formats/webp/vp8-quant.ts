@@ -2,7 +2,7 @@
 
 import { VP8Config } from './vp8-config.js';
 import { qFix, VP8Matrix } from './vp8-matrix.js';
-import { sar } from './vp8-sar.js';
+import { sar, signOf } from './vp8-sar.js';
 import { VP8SegmentInfo } from './vp8-segment-info.js';
 import { kAcTable, kDcTable } from './vp8-tables.js';
 
@@ -115,16 +115,14 @@ function step(
   zthresh: number
 ): boolean {
   const v = inp[at];
-  const sign = v < 0;
-  const coeff = (sign ? -v : v) + sharpen;
+  const sign = signOf(v);
+  const coeff = v * sign + sharpen;
   if (coeff > zthresh) {
     let level = (coeff * iq + bias) >> qFix;
     if (level > maxLevel) {
       level = maxLevel;
     }
-    if (sign) {
-      level = -level;
-    }
+    level *= sign;
     inp[at] = level * q;
     out[to] = level;
     return level !== 0;

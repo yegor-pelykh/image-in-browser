@@ -13,6 +13,7 @@
 
 import { fTransform, mean16x4, predChroma8, predLuma16 } from './vp8-dsp.js';
 import { VP8EncIterator } from './vp8-iterator.js';
+import { absBranchless } from './vp8-sar.js';
 import { VP8EncState } from './vp8-state.js';
 import {
   kBps,
@@ -147,7 +148,9 @@ class MBAnalyzer {
    * the susceptibility it implies.
    */
   private alphaOf(predOffset: number, start: number, end: number): number {
-    this._distribution.fill(0, 0, this._distribution.length);
+    for (let k = 0; k <= maxCoeffThresh; k++) {
+      this._distribution[k] = 0;
+    }
     for (let j = start; j < end; j++) {
       const off = dspScan[j];
       const srcBase = j < 16 ? yOffEnc : uOffEnc;
@@ -160,10 +163,7 @@ class MBAnalyzer {
         0
       );
       for (let k = 0; k < 16; k++) {
-        // Written out rather than calling abs(), which stays a call and shows
-        // up as its own entry in the profile.
-        const c = this._coeffs[k];
-        const v = (c < 0 ? -c : c) >> 3;
+        const v = absBranchless(this._coeffs[k]) >> 3;
         this._distribution[v > maxCoeffThresh ? maxCoeffThresh : v]++;
       }
     }
@@ -186,6 +186,7 @@ class MBAnalyzer {
   private bestIntra16Mode(): number {
     predLuma16(
       this.it.yuvP,
+      this.it.yuvP32,
       this.it.x !== 0 ? this.it.yLeft : undefined,
       VP8EncIterator.yLeftOff,
       this.it.y !== 0 ? this.it.yTop : undefined,
@@ -207,6 +208,7 @@ class MBAnalyzer {
   private bestUVMode(): number {
     predChroma8(
       this.it.yuvP,
+      this.it.yuvP32,
       this.it.x !== 0 ? this.it.uvLeft : undefined,
       VP8EncIterator.uLeftOff,
       this.it.y !== 0 ? this.it.uvTop : undefined,

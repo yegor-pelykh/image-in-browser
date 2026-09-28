@@ -82,7 +82,13 @@ export class VP8EncProba {
   /**
    * Where in {@link levelCost} the table for `(type, position, ctx)` starts.
    */
-  public readonly costBase: Int32Array = new Int32Array(numTypes * 16 * numCtx);
+  public readonly costBase: Uint16Array = new Uint16Array(
+    numTypes * 16 * numCtx
+  );
+
+  public readonly levelFixedCosts: Uint16Array = new Uint16Array(
+    kLevelFixedCosts
+  );
 
   /**
    * Probabilities of the segment tree.
@@ -115,7 +121,7 @@ export class VP8EncProba {
    */
   public levelCostAt(base: number, level: number): number {
     return (
-      kLevelFixedCosts[level] +
+      this.levelFixedCosts[level] +
       this.levelCost[
         base + (level > maxVariableLevel ? maxVariableLevel : level)
       ]

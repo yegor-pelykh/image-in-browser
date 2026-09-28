@@ -10,6 +10,7 @@
  */
 
 import { ArrayUtils } from '../../common/array-utils.js';
+import { absBranchless } from './vp8-sar.js';
 import { WebPFilters } from './webp-filters.js';
 import { VP8LEncoder } from './vp8l-encoder.js';
 
@@ -308,12 +309,14 @@ function estimateBestFilter(
       const gradient = clip8(
         data[p + i - 1] + data[p + i - width] - data[p + i - width - 1]
       );
-      bins[WebPFilters.filterNone][Math.abs(v - mean) >> 4] = 1;
-      bins[WebPFilters.filterHorizontal][Math.abs(v - data[p + i - 1]) >> 4] =
-        1;
-      bins[WebPFilters.filterVertical][Math.abs(v - data[p + i - width]) >> 4] =
-        1;
-      bins[WebPFilters.filterGradient][Math.abs(v - gradient) >> 4] = 1;
+      bins[WebPFilters.filterNone][absBranchless(v - mean) >> 4] = 1;
+      bins[WebPFilters.filterHorizontal][
+        absBranchless(v - data[p + i - 1]) >> 4
+      ] = 1;
+      bins[WebPFilters.filterVertical][
+        absBranchless(v - data[p + i - width]) >> 4
+      ] = 1;
+      bins[WebPFilters.filterGradient][absBranchless(v - gradient) >> 4] = 1;
       mean = (3 * mean + v + 2) >> 2;
     }
   }

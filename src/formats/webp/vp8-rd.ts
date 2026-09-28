@@ -220,6 +220,7 @@ export class VP8Decimate {
   private makeLuma16Preds(): void {
     predLuma16(
       this.it.yuvP,
+      this.it.yuvP32,
       this.it.x !== 0 ? this.it.yLeft : undefined,
       VP8EncIterator.yLeftOff,
       this.it.y !== 0 ? this.it.yTop : undefined,
@@ -230,6 +231,7 @@ export class VP8Decimate {
   private makeChroma8Preds(): void {
     predChroma8(
       this.it.yuvP,
+      this.it.yuvP32,
       this.it.x !== 0 ? this.it.uvLeft : undefined,
       VP8EncIterator.uLeftOff,
       this.it.y !== 0 ? this.it.uvTop : undefined,

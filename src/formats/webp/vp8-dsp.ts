@@ -1,7 +1,7 @@
 /** @format */
 
 import { ArrayUtils } from '../../common/array-utils.js';
-import { sar } from './vp8-sar.js';
+import { absBranchless, nonZero, sar } from './vp8-sar.js';
 import {
   kBps,
   i16DC16,
@@ -29,7 +29,7 @@ import {
  * Clips a value to a byte.
  */
 function clip8(v: number): number {
-  return v < 0 ? 0 : v > 255 ? 255 : v;
+  return (v & ~0xff) === 0 ? v : v < 0 ? 0 : 255;
 }
 
 function avg3(a: number, b: number, c: number): number {
@@ -262,11 +262,9 @@ export function isFlat(
   let o = off;
   for (let b = 0; b < numBlocks; b++) {
     for (let i = 1; i < 16; i++) {
-      if (levels[o + i] !== 0) {
-        score++;
-        if (score > thresh) {
-          return false;
-        }
+      score += nonZero(levels[o + i]);
+      if (score > thresh) {
+        return false;
       }
     }
     o += 16;
@@ -397,67 +395,115 @@ const clipTable = ((): Uint8Array => {
   return table;
 })();
 
-function fill(
-  dst: Uint8Array,
+/**
+ * Whether the host stores the least significant byte of a 32-bit word first.
+ */
+const hostLittleEndian = ((): boolean => {
+  const word = new Uint32Array([0x01020304]);
+  return new Uint8Array(word.buffer)[0] === 0x04;
+})();
+
+/**
+ * Fills a 4x4 block with {@link value}. The 8x8 and 16x16 fills go through
+ * {@link fill32} a word at a time; this one runs ten times per block and a
+ * range fill costs more in call overhead than the sixteen stores it saves.
+ */
+function fill4(dst: Uint8Array, dstOff: number, value: number): void {
+  for (let j = 0; j < 4; j++) {
+    const o = dstOff + j * kBps;
+    dst[o] = value;
+    dst[o + 1] = value;
+    dst[o + 2] = value;
+    dst[o + 3] = value;
+  }
+}
+
+function fill32(
+  dst: Uint32Array,
   dstOff: number,
   value: number,
   size: number
 ): void {
-  if (size === 4) {
-    for (let j = 0; j < 4; j++) {
-      const o = dstOff + j * kBps;
-      dst[o] = value;
-      dst[o + 1] = value;
-      dst[o + 2] = value;
-      dst[o + 3] = value;
-    }
-    return;
-  }
+  const v = value * 0x01010101;
+  let o = dstOff >> 2;
   for (let j = 0; j < size; j++) {
-    const rowOff = dstOff + j * kBps;
-    for (let i = 0; i < size; i++) {
-      dst[rowOff + i] = value;
+    dst[o] = v;
+    dst[o + 1] = v;
+    if (size === 16) {
+      dst[o + 2] = v;
+      dst[o + 3] = v;
     }
+    o += kBps >> 2;
   }
 }
 
+/**
+ * Four bytes of {@link b} from {@link o} as the word that, stored through a
+ * host-endian `Uint32Array` view, lands them back in the same order.
+ * {@link verticalPred} copies the row above through such a view, so the order
+ * has to follow the host rather than assume little-endian. Multiplication
+ * rather than `<<` keeps the result exact.
+ */
+function word(b: Uint8Array, o: number): number {
+  return hostLittleEndian
+    ? b[o] + b[o + 1] * 0x100 + b[o + 2] * 0x10000 + b[o + 3] * 0x1000000
+    : b[o] * 0x1000000 + b[o + 1] * 0x10000 + b[o + 2] * 0x100 + b[o + 3];
+}
+
 function verticalPred(
-  dst: Uint8Array,
+  dst: Uint32Array,
   dstOff: number,
   top: Uint8Array | undefined,
   topOff: number,
   size: number
 ): void {
   if (top === undefined) {
-    fill(dst, dstOff, 127, size);
+    fill32(dst, dstOff, 127, size);
     return;
   }
+  const t0 = word(top, topOff);
+  const t1 = word(top, topOff + 4);
+  const t2 = size === 16 ? word(top, topOff + 8) : 0;
+  const t3 = size === 16 ? word(top, topOff + 12) : 0;
+  let o = dstOff >> 2;
   for (let j = 0; j < size; j++) {
-    ArrayUtils.copyRange(top, topOff, dst, dstOff + j * kBps, size);
+    dst[o] = t0;
+    dst[o + 1] = t1;
+    if (size === 16) {
+      dst[o + 2] = t2;
+      dst[o + 3] = t3;
+    }
+    o += kBps >> 2;
   }
 }
 
 function horizontalPred(
-  dst: Uint8Array,
+  dst: Uint32Array,
   dstOff: number,
   left: Uint8Array | undefined,
   leftOff: number,
   size: number
 ): void {
   if (left === undefined) {
-    fill(dst, dstOff, 129, size);
+    fill32(dst, dstOff, 129, size);
     return;
   }
+  let o = dstOff >> 2;
   for (let j = 0; j < size; j++) {
-    const v = left[leftOff + j];
-    for (let i = 0; i < size; i++) {
-      dst[dstOff + j * kBps + i] = v;
+    const v = left[leftOff + j] * 0x01010101;
+    dst[o] = v;
+    dst[o + 1] = v;
+    if (size === 16) {
+      dst[o + 2] = v;
+      dst[o + 3] = v;
     }
+    o += kBps >> 2;
   }
 }
 
 function trueMotion(
   dst: Uint8Array,
+  dst32: Uint32Array,
   dstOff: number,
   left: Uint8Array | undefined,
   leftOff: number,
@@ -467,14 +513,14 @@ function trueMotion(
 ): void {
   if (left === undefined) {
     if (top !== undefined) {
-      verticalPred(dst, dstOff, top, topOff, size);
+      verticalPred(dst32, dstOff, top, topOff, size);
     } else {
-      fill(dst, dstOff, 129, size);
+      fill32(dst32, dstOff, 129, size);
     }
     return;
   }
   if (top === undefined) {
-    horizontalPred(dst, dstOff, left, leftOff, size);
+    horizontalPred(dst32, dstOff, left, leftOff, size);
     return;
   }
   const clip = clipTable;
@@ -482,15 +528,18 @@ function trueMotion(
   let doff = dstOff;
   for (let y = 0; y < size; y++) {
     const row = base + left[leftOff + y];
-    for (let x = 0; x < size; x++) {
+    for (let x = 0; x < size; x += 4) {
       dst[doff + x] = clip[row + top[topOff + x]];
+      dst[doff + x + 1] = clip[row + top[topOff + x + 1]];
+      dst[doff + x + 2] = clip[row + top[topOff + x + 2]];
+      dst[doff + x + 3] = clip[row + top[topOff + x + 3]];
     }
     doff += kBps;
   }
 }
 
 function dcMode(
-  dst: Uint8Array,
+  dst: Uint32Array,
   dstOff: number,
   left: Uint8Array | undefined,
   leftOff: number,
@@ -522,7 +571,7 @@ function dcMode(
   } else {
     dc = 0x80;
   }
-  fill(dst, dstOff, dc, size);
+  fill32(dst, dstOff, dc, size);
 }
 
 /**
@@ -530,15 +579,16 @@ function dcMode(
  */
 export function predLuma16(
   dst: Uint8Array,
+  dst32: Uint32Array,
   left: Uint8Array | undefined,
   leftOff: number,
   top: Uint8Array | undefined,
   topOff: number
 ): void {
-  dcMode(dst, i16DC16, left, leftOff, top, topOff, 16, 16, 5);
-  verticalPred(dst, i16VE16, top, topOff, 16);
-  horizontalPred(dst, i16HE16, left, leftOff, 16);
-  trueMotion(dst, i16TM16, left, leftOff, top, topOff, 16);
+  dcMode(dst32, i16DC16, left, leftOff, top, topOff, 16, 16, 5);
+  verticalPred(dst32, i16VE16, top, topOff, 16);
+  horizontalPred(dst32, i16HE16, left, leftOff, 16);
+  trueMotion(dst, dst32, i16TM16, left, leftOff, top, topOff, 16);
 }
 
 /**
@@ -546,20 +596,21 @@ export function predLuma16(
  */
 export function predChroma8(
   dst: Uint8Array,
+  dst32: Uint32Array,
   left: Uint8Array | undefined,
   leftOff: number,
   top: Uint8Array | undefined,
   topOff: number
 ): void {
-  dcMode(dst, c8DC8, left, leftOff, top, topOff, 8, 8, 4);
-  verticalPred(dst, c8VE8, top, topOff, 8);
-  horizontalPred(dst, c8HE8, left, leftOff, 8);
-  trueMotion(dst, c8TM8, left, leftOff, top, topOff, 8);
+  dcMode(dst32, c8DC8, left, leftOff, top, topOff, 8, 8, 4);
+  verticalPred(dst32, c8VE8, top, topOff, 8);
+  horizontalPred(dst32, c8HE8, left, leftOff, 8);
+  trueMotion(dst, dst32, c8TM8, left, leftOff, top, topOff, 8);
   // V sits eight columns to the right of U.
-  dcMode(dst, c8DC8 + 8, left, leftOff + 16, top, topOff + 8, 8, 8, 4);
-  verticalPred(dst, c8VE8 + 8, top, topOff + 8, 8);
-  horizontalPred(dst, c8HE8 + 8, left, leftOff + 16, 8);
-  trueMotion(dst, c8TM8 + 8, left, leftOff + 16, top, topOff + 8, 8);
+  dcMode(dst32, c8DC8 + 8, left, leftOff + 16, top, topOff + 8, 8, 8, 4);
+  verticalPred(dst32, c8VE8 + 8, top, topOff + 8, 8);
+  horizontalPred(dst32, c8HE8 + 8, left, leftOff + 16, 8);
+  trueMotion(dst, dst32, c8TM8 + 8, left, leftOff + 16, top, topOff + 8, 8);
 }
 
 function set4(
@@ -627,7 +678,7 @@ export function predLuma4(
   const h = top[topOff + 7];
 
   // DC
-  fill(dst, i4DC4, (4 + a + b + c + d + l + k + j + i) >> 3, 4);
+  fill4(dst, i4DC4, (4 + a + b + c + d + l + k + j + i) >> 3);
 
   // TM
   const clip = clipTable;
@@ -927,10 +978,10 @@ function tTransformColumn(
   const b2 = a3 - a2;
   const b3 = a0 - a1;
   return (
-    w0 * (b0 < 0 ? -b0 : b0) +
-    w1 * (b1 < 0 ? -b1 : b1) +
-    w2 * (b2 < 0 ? -b2 : b2) +
-    w3 * (b3 < 0 ? -b3 : b3)
+    w0 * absBranchless(b0) +
+    w1 * absBranchless(b1) +
+    w2 * absBranchless(b2) +
+    w3 * absBranchless(b3)
   );
 }
 
@@ -950,7 +1001,7 @@ export function distoFrom(
   bOff: number
 ): number {
   const d = tTransform(b, bOff) - reference;
-  return (d < 0 ? -d : d) >> 5;
+  return absBranchless(d) >> 5;
 }
 
 /**

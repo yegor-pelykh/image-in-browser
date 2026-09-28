@@ -44,9 +44,7 @@ export const numBands = 8;
 export const numCtx = 3;
 export const numProbas = 11;
 
-export const kBands = new Uint8Array([
-  0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0,
-]);
+export const kBands = [0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0];
 
 export const kCat3 = [173, 148, 140];
 
@@ -58,9 +56,7 @@ export const kCat6 = [254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129];
 
 export const kCat3456 = [kCat3, kCat4, kCat5, kCat6];
 
-export const kZigzag = new Uint8Array([
-  0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15,
-]);
+export const kZigzag = [0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15];
 
 export const kYModesIntra4 = [
   -bDcPred,
@@ -613,18 +609,13 @@ export const i4HU4 = i4HD4 + 4;
 export const i4TMP = i4HD4 + 8;
 
 /** Where each 16x16 luma prediction sits, indexed by mode. */
-export const kI16ModeOffsets = new Uint16Array([
-  i16DC16,
-  i16TM16,
-  i16VE16,
-  i16HE16,
-]);
+export const kI16ModeOffsets = [i16DC16, i16TM16, i16VE16, i16HE16];
 
 /** Where each 8x8 chroma prediction sits, indexed by mode. */
-export const kUVModeOffsets = new Uint16Array([c8DC8, c8TM8, c8VE8, c8HE8]);
+export const kUVModeOffsets = [c8DC8, c8TM8, c8VE8, c8HE8];
 
 /** Where each 4x4 luma prediction sits, indexed by mode. */
-export const kI4ModeOffsets = new Uint16Array([
+export const kI4ModeOffsets = [
   i4DC4,
   i4TM4,
   i4VE4,
@@ -635,10 +626,10 @@ export const kI4ModeOffsets = new Uint16Array([
   i4VL4,
   i4HD4,
   i4HU4,
-]);
+];
 
 /** Offsets of the sixteen luma 4x4 blocks within a macroblock, in cache units. */
-export const kScan = new Uint16Array([
+export const kScan = [
   0 + 0 * kBps,
   4 + 0 * kBps,
   8 + 0 * kBps,
@@ -655,10 +646,10 @@ export const kScan = new Uint16Array([
   4 + 12 * kBps,
   8 + 12 * kBps,
   12 + 12 * kBps,
-]);
+];
 
 /** Offsets of the four U then four V 4x4 blocks, in cache units. */
-export const kScanUV = new Uint16Array([
+export const kScanUV = [
   0 + 0 * kBps,
   4 + 0 * kBps,
   0 + 4 * kBps,
@@ -669,4 +660,4 @@ export const kScanUV = new Uint16Array([
   8 + 4 * kBps,
   12 + 4 * kBps,
   // V
-]);
+];

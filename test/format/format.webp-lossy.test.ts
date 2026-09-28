@@ -1,10 +1,24 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { MemoryImage, decodeWebP, encodeWebP } from '../../src';
+import {
+  ChannelOrder,
+  Format,
+  MemoryImage,
+  MemoryImageDataUint8,
+  PaletteUint8,
+  decodeWebP,
+  encodeWebP,
+} from '../../src';
 import { VP8Config } from '../../src/formats/webp/vp8-config';
 import { maxCost } from '../../src/formats/webp/vp8-rd';
-import { sar } from '../../src/formats/webp/vp8-sar';
+import {
+  absBranchless,
+  min2,
+  nonZero,
+  sar,
+  signOf,
+} from '../../src/formats/webp/vp8-sar';
 import { VP8EncState } from '../../src/formats/webp/vp8-state';
 import { importYuv } from '../../src/formats/webp/vp8-yuv';
 import { maxDimension } from '../../src/formats/webp/vp8l-encoder';
@@ -267,6 +281,70 @@ describe('Format: WEBP lossy', () => {
       for (const n of [1, 2, 3, 9, 16]) {
         expect(sar(v, n)).toBe(Math.floor(v / (1 << n)));
       }
+    }
+    // The sign-mask helpers agree with the plain comparisons at every value.
+    for (const v of [
+      0, 1, -1, 2, -2, 3, 2047, -2048, 2147483647, -2147483648, 2147483648,
+      -2147483649, 4294967296, -4294967297,
+    ]) {
+      expect(absBranchless(v)).toBe(Math.abs(v));
+      expect(signOf(v)).toBe(v < 0 ? -1 : 1);
+      expect(nonZero(v)).toBe(v !== 0 ? 1 : 0);
+      expect(min2(v)).toBe(v >= 2 ? 2 : v);
+    }
+  });
+
+  test('a paletted image encodes to the same bytes as its RGBA', () => {
+    // The lossy path expands a palette through a lookup table instead of going
+    // pixel by pixel through convert. Both must agree, including on an index
+    // the palette has no colour for: convert gives that pixel black,
+    // transparent when the palette carries alpha and opaque otherwise.
+    for (const channels of [3, 4]) {
+      const width = 37;
+      const height = 21;
+      const numColors = 20;
+      const palette = new PaletteUint8(256, channels);
+      for (let c = 0; c < numColors; c++) {
+        palette.setRgba(
+          c,
+          (c * 37) & 0xff,
+          (c * 91 + 7) & 0xff,
+          (c * 13) & 0xff,
+          (c * 29) & 0xff
+        );
+      }
+      const image = new MemoryImage({
+        width,
+        height,
+        numChannels: 1,
+        withPalette: true,
+        palette,
+      });
+      expect(image.palette).toBe(palette);
+      const data = image.data;
+      expect(data).toBeInstanceOf(MemoryImageDataUint8);
+      if (!(data instanceof MemoryImageDataUint8)) {
+        continue;
+      }
+      const indices = data.data;
+      for (let i = 0; i < indices.length; i++) {
+        indices[i] = i % numColors;
+      }
+      // One index past the end of the palette.
+      indices[indices.length - 1] = 200;
+
+      const rgba = image
+        .convert({ format: Format.uint8, numChannels: 4, alpha: 255 })
+        .getBytes({ order: ChannelOrder.rgba });
+      const direct = MemoryImage.fromBytes({
+        width,
+        height,
+        bytes: rgba.buffer,
+        numChannels: 4,
+      });
+      expect(encodeWebP({ image, lossless: false })).toEqual(
+        encodeWebP({ image: direct, lossless: false })
+      );
     }
   });
 

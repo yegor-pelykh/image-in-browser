@@ -12,6 +12,7 @@ import { VP8BoolEncoder } from './vp8-bool-encoder.js';
 import { VP8EncProba, bitCost, maxVariableLevel } from './vp8-enc-proba.js';
 import { kLevelCodes } from './vp8-cost-tables.js';
 import { numBands, numCtx, numProbas, kBands } from './vp8-tables.js';
+import { absBranchless, min2 } from './vp8-sar.js';
 import { VP8TokenBuffer } from './vp8-tokens.js';
 
 /**
@@ -101,12 +102,12 @@ export function getResidualCost(
   const base = type * 16 * numCtx;
   for (; n < res.last; n++) {
     const c = coeffs[off + n];
-    const v = c < 0 ? -c : c;
+    const v = absBranchless(c);
     cost += proba.levelCostAt(t, v);
-    t = proba.costBase[base + (n + 1) * numCtx + (v >= 2 ? 2 : v)];
+    t = proba.costBase[base + (n + 1) * numCtx + min2(v)];
   }
   const c = coeffs[off + n];
-  const v = c < 0 ? -c : c;
+  const v = absBranchless(c);
   cost += proba.levelCostAt(t, v);
   if (n < 15) {
     // One more bit says that the block ends here.

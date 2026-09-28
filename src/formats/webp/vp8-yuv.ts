@@ -1,7 +1,9 @@
 /** @format */
 
 import { Format } from '../../color/format.js';
+import { MemoryImageDataUint8 } from '../../image/image-data-uint8.js';
 import { MemoryImage } from '../../image/image.js';
+import { PaletteUint8 } from '../../image/palette-uint8.js';
 
 /**
  * A picture in the planar form VP8 codes: full-resolution luma, chroma at
@@ -312,8 +314,10 @@ function flatten(
  */
 function rgbaBytes(image: MemoryImage): Uint8Array {
   const numChannels = image.numChannels;
-  if (image.format === Format.uint8 && image.palette === undefined) {
-    const src = image.data?.getBytes();
+  const palette = image.palette;
+  const data = image.data;
+  if (image.format === Format.uint8 && palette === undefined) {
+    const src = data?.getBytes();
     if (src !== undefined) {
       const pixels = image.width * image.height;
       if (numChannels === 4) {
@@ -344,6 +348,15 @@ function rgbaBytes(image: MemoryImage): Uint8Array {
       }
     }
   }
+  if (
+    image.format === Format.uint8 &&
+    palette instanceof PaletteUint8 &&
+    data instanceof MemoryImageDataUint8 &&
+    data.numChannels === 1 &&
+    (palette.numChannels === 3 || palette.numChannels === 4)
+  ) {
+    return paletteRgba(data.data, palette);
+  }
   const out = new Uint8Array(image.width * image.height * 4);
   let o = 0;
   for (const p of image) {
@@ -351,6 +364,43 @@ function rgbaBytes(image: MemoryImage): Uint8Array {
     out[o++] = p.g;
     out[o++] = p.b;
     out[o++] = p.a;
+  }
+  return out;
+}
+
+/**
+ * {@link indices} expanded through {@link palette} into interleaved RGBA, byte
+ * for byte what {@link MemoryImage.convert} produces for the same picture.
+ *
+ * An index past the end of the palette has no colour of its own. The palette
+ * getters answer 0 for every channel there, alpha included, so convert gives
+ * such a pixel transparent black from a four-channel palette and opaque black
+ * from a three-channel one. The table is pre-filled the same way, which keeps
+ * the per-pixel loop free of a range check.
+ */
+function paletteRgba(indices: Uint8Array, palette: PaletteUint8): Uint8Array {
+  const colors = palette.data;
+  const channels = palette.numChannels;
+  const numColors = Math.min(Math.trunc(colors.length / channels), 256);
+  const table = new Uint8Array(256 * 4);
+  if (channels < 4) {
+    for (let c = numColors; c < 256; c++) {
+      table[4 * c + 3] = 0xff;
+    }
+  }
+  for (let c = 0; c < numColors; c++) {
+    table[4 * c] = colors[c * channels];
+    table[4 * c + 1] = colors[c * channels + 1];
+    table[4 * c + 2] = colors[c * channels + 2];
+    table[4 * c + 3] = channels === 4 ? colors[c * channels + 3] : 0xff;
+  }
+  const out = new Uint8Array(indices.length * 4);
+  for (let i = 0, o = 0; i < indices.length; i++, o += 4) {
+    const t = 4 * indices[i];
+    out[o] = table[t];
+    out[o + 1] = table[t + 1];
+    out[o + 2] = table[t + 2];
+    out[o + 3] = table[t + 3];
   }
   return out;
 }
