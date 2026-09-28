@@ -987,9 +987,9 @@ describe('Format: WEBP', () => {
       cover.cover.fill(1, 0, n);
       const costs = VP8LCostModel.fromCover(cover, r, r, r, r, w);
       // The guard, not an out of range index.
-      expect(() =>
-        { optimalCover(matches, costs, r, r, r, r, w, new VP8LCover(n)); }
-      ).toThrow(LibError);
+      expect(() => {
+        optimalCover(matches, costs, r, r, r, r, w, new VP8LCover(n));
+      }).toThrow(LibError);
     });
 
     test('lossless output of a real image is stable and decodes exactly', () => {
