@@ -9,6 +9,7 @@ import { MemoryImage } from '../image/image.js';
 import { ImageUtils } from '../image/image-utils.js';
 import type { Pixel } from '../image/pixel.js';
 import { FlipDirection } from './flip-direction.js';
+import { CubicRows } from './cubic-rows.js';
 import { TrimSide } from './trim-side.js';
 import { Rectangle } from '../common/rectangle.js';
 import { Draw } from '../draw/draw.js';
@@ -16,6 +17,7 @@ import { BlendMode } from '../draw/blend-mode.js';
 import { TrimMode } from './trim-mode.js';
 import { ExpandCanvasPosition } from './expand-canvas-position.js';
 import type { Color } from '../color/color.js';
+import { Format } from '../color/format.js';
 
 /**
  * Interface for transform options.
@@ -1585,7 +1587,11 @@ export abstract class Transform {
   }
 
   /**
-   * Resizes the image to the specified width and height.
+   * Resizes the image to the specified width and height, reusing its storage
+   * where supported. Always use the returned image: other formats or options
+   * may require a separate image. In-place resizing mutates the image and
+   * retains the original buffer capacity, so raw getBytes() may include bytes
+   * beyond the resized logical pixel range.
    *
    * @param {ResizeOptions} opt - The options for resizing the image.
    * @param {MemoryImage} opt.image - The image to be resized.
@@ -1674,7 +1680,96 @@ export abstract class Transform {
       return src;
     }
 
-    if (width * height > src.width * src.height) {
+    const uniqueData =
+      src.numFrames === 1 ||
+      new Set(src.frames.map((f) => f.data)).size === src.numFrames;
+    const uint8Frames =
+      uniqueData &&
+      src.frames.every(
+        (f) =>
+          f.format === Format.uint8 &&
+          !f.hasPalette &&
+          f.width === src.width &&
+          f.height === src.height
+      );
+    const uint8Downscale =
+      width > 0 &&
+      height > 0 &&
+      width <= src.width &&
+      height <= src.height &&
+      uint8Frames;
+    const bufferedCubic =
+      interpolation === Interpolation.cubic &&
+      uint8Downscale &&
+      (!maintainAspect ||
+        (opt.backgroundColor === undefined && w === width && h === height));
+    const nearestBytes =
+      interpolation === Interpolation.nearest &&
+      uint8Frames &&
+      src.frames.every(
+        (f) => f.numChannels === 1 || f.numChannels === 3 || f.numChannels === 4
+      );
+
+    if (
+      nearestBytes &&
+      !maintainAspect &&
+      width > 0 &&
+      height > 0 &&
+      (width > src.width || height > src.height) &&
+      width * height <= src.width * src.height
+    ) {
+      for (const frame of src.frames) {
+        Transform.resizeNearestBuffer(
+          frame,
+          width < frame.width ? width : frame.width,
+          height < frame.height ? height : frame.height
+        );
+        Transform.resizeNearestBuffer(frame, width, height, true);
+      }
+      return src;
+    }
+
+    if (
+      nearestBytes &&
+      maintainAspect &&
+      opt.backgroundColor === undefined &&
+      uint8Downscale &&
+      w > 0 &&
+      h > 0 &&
+      (x1 !== 0 || y1 !== 0)
+    ) {
+      for (const frame of src.frames) {
+        Transform.resizeNearestBuffer(frame, w, h);
+        const bytes = frame.data!.toUint8Array();
+        const channels = frame.numChannels;
+        for (let y = h - 1; y >= 0; y--) {
+          const to = ((y1 + y) * width + x1) * channels;
+          bytes.set(
+            bytes.subarray(y * w * channels, (y + 1) * w * channels),
+            to
+          );
+        }
+        for (let y = 0; y < height; y++) {
+          const row = y * width * channels;
+          if (y < y1 || y >= y2) {
+            bytes.fill(0, row, row + width * channels);
+          } else {
+            bytes.fill(0, row, row + x1 * channels);
+            bytes.fill(0, row + x2 * channels, row + width * channels);
+          }
+        }
+        frame.data!.width = width;
+        frame.data!.height = height;
+      }
+      return src;
+    }
+
+    if (
+      width > src.width ||
+      height > src.height ||
+      (interpolation === Interpolation.cubic && !bufferedCubic) ||
+      (maintainAspect && (x1 !== 0 || y1 !== 0 || w !== width || h !== height))
+    ) {
       return Transform.copyResize({
         image: src,
         width: width,
@@ -1771,12 +1866,14 @@ export abstract class Transform {
           }
         }
       } else {
-        // Copy the pixels from this image to the new image.
+        const rows = bufferedCubic ? new CubicRows(frame) : undefined;
+        const sampler = rows ?? frame;
         for (let y = 0; y < h; ++y) {
           const sy2 = y * dy;
+          rows?.prepare(Math.trunc(sy2));
           for (let x = 0; x < w; ++x) {
             const sx2 = x * dx;
-            const p = frame.getPixelInterpolate(
+            const p = sampler.getPixelInterpolate(
               x1 + sx2,
               y1 + sy2,
               interpolation
@@ -1795,5 +1892,42 @@ export abstract class Transform {
     }
 
     return src;
+  }
+
+  /**
+   * Resamples a frame in place using nearest-neighbor, shrinking both axes
+   * forwards or expanding both backwards, with enough existing buffer capacity
+   * for the destination.
+   *
+   * @param {MemoryImage} frame - The frame to resample in place.
+   * @param {number} width - The destination width.
+   * @param {number} height - The destination height.
+   * @param {boolean} [reverse=false] - Whether to sample backwards.
+   */
+  private static resizeNearestBuffer(
+    frame: MemoryImage,
+    width: number,
+    height: number,
+    reverse = false
+  ): void {
+    const bytes = frame.data!.toUint8Array();
+    const channels = frame.numChannels;
+    const step = reverse ? -1 : 1;
+    for (let y = reverse ? height - 1 : 0; y >= 0 && y < height; y += step) {
+      const sy = Math.trunc((y * frame.height) / height);
+      for (let x = reverse ? width - 1 : 0; x >= 0 && x < width; x += step) {
+        const sx = Math.trunc((x * frame.width) / width);
+        const to = (y * width + x) * channels;
+        bytes.set(
+          bytes.subarray(
+            (sy * frame.width + sx) * channels,
+            (sy * frame.width + sx + 1) * channels
+          ),
+          to
+        );
+      }
+    }
+    frame.data!.width = width;
+    frame.data!.height = height;
   }
 }

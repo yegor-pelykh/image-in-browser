@@ -149,7 +149,7 @@ export interface MemoryImageGetBytesOptions {
  * representing an image in memory.
  */
 export class MemoryImage implements Iterable<Pixel, Pixel> {
-  private _data?: MemoryImageData;
+  protected _data?: MemoryImageData;
 
   /**
    * Gets the image data.
@@ -157,6 +157,14 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
    */
   public get data(): MemoryImageData | undefined {
     return this._data;
+  }
+
+  /**
+   * Sets the image data.
+   * @param {MemoryImageData | undefined} d - The image data to set.
+   */
+  public set data(d: MemoryImageData | undefined) {
+    this._data = d;
   }
 
   /**
