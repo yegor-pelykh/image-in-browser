@@ -436,6 +436,31 @@ export class PngEncoder implements Encoder {
   }
 
   /**
+   * A PNG keyword is 1 to 79 Latin-1 printable bytes with no leading,
+   * trailing or doubled space; a profile named otherwise gets a default.
+   * @param {string} name - The profile name.
+   * @returns {string} A name a PNG keyword can hold.
+   */
+  private static iccpKeyword(name: string): string {
+    const units: number[] = [];
+    for (let i = 0; i < name.length; i++) {
+      units.push(name.charCodeAt(i));
+    }
+    let valid =
+      units.length > 0 &&
+      units.length <= 79 &&
+      units[0] !== 0x20 &&
+      units[units.length - 1] !== 0x20;
+    for (let i = 0; valid && i < units.length; i++) {
+      const c = units[i];
+      valid =
+        ((c >= 0x20 && c <= 0x7e) || (c >= 0xa1 && c <= 0xff)) &&
+        !(c === 0x20 && units[i - 1] === 0x20);
+    }
+    return valid ? name : 'ICC_PROFILE';
+  }
+
+  /**
    * Write the ICC profile chunk.
    * @param {IccProfile} iccp - The ICC profile.
    */
@@ -445,7 +470,9 @@ export class PngEncoder implements Encoder {
     });
 
     // name
-    const nameCodeUnits = StringUtils.getCodePoints(iccp.name);
+    const nameCodeUnits = StringUtils.getCodePoints(
+      PngEncoder.iccpKeyword(iccp.name)
+    );
     chunk.writeBytes(nameCodeUnits);
     chunk.writeByte(0);
 

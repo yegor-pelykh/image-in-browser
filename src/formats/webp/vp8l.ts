@@ -4,6 +4,8 @@ import { ColorUtils } from '../../color/color-utils.js';
 import { ArrayUtils } from '../../common/array-utils.js';
 import { InputBuffer } from '../../common/input-buffer.js';
 import { LibError } from '../../error/lib-error.js';
+import { IccProfile } from '../../image/icc-profile.js';
+import { IccProfileCompression } from '../../image/icc-profile-compression.js';
 import { MemoryImage } from '../../image/image.js';
 import { VP8LBitReader } from './vp8l-bit-reader.js';
 import { VP8LColorCache } from './vp8l-color-cache.js';
@@ -220,6 +222,14 @@ export class VP8L {
         buffer: StringUtils.getCodePoints(this._webp.exifData),
       });
       this._image.exifData = ExifData.fromInputBuffer(input);
+    }
+    const iccp = this._webp.iccpData;
+    if (iccp !== undefined) {
+      this._image.iccProfile = new IccProfile(
+        'ICC_PROFILE',
+        IccProfileCompression.none,
+        iccp
+      );
     }
     return this._image;
   }

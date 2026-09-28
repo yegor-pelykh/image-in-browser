@@ -4,19 +4,34 @@ import { existsSync } from 'fs';
 import { describe, expect, test } from 'vitest';
 import {
   ColorRgb8,
+  ColorRgba8,
   Format,
+  IccProfile,
+  IccProfileCompression,
   IfdShortValue,
+  LibError,
   MemoryImage,
   Pixel,
   decodePng,
   decodeWebP,
+  encodePng,
   encodeWebP,
 } from '../../src';
 import { WebPDecoder } from '../../src/formats/webp-decoder';
 import { VP8Config } from '../../src/formats/webp/vp8-config';
 import { encodeVP8 } from '../../src/formats/webp/vp8-encoder';
 import { WebPFormat } from '../../src/formats/webp/webp-format';
-import { VP8LEncoder } from '../../src/formats/webp/vp8l-encoder';
+import { VP8LEncoder, maxDimension } from '../../src/formats/webp/vp8l-encoder';
+import { computeMatches } from '../../src/formats/webp/vp8l-backward-refs';
+import { VP8LCostModel } from '../../src/formats/webp/vp8l-cost-model';
+import { VP8LCover } from '../../src/formats/webp/vp8l-cover';
+import {
+  VP8LMatches,
+  maxMatchDistance,
+  maxMatchLength,
+  matchLengthBits,
+} from '../../src/formats/webp/vp8l-matches';
+import { optimalCover } from '../../src/formats/webp/vp8l-optimal-parse';
 import {
   WebPChunk,
   buildRiff,
@@ -210,6 +225,48 @@ describe('Format: WEBP', () => {
 
     pixelAlpha = webp.getPixel(0, webp.height - 1).a;
     expect(pixelAlpha).not.toBe(0);
+  });
+
+  /**
+   * A skipped macroblock's inner edges are not deblocked, so a soft step on a
+   * 4x4 edge next to coded macroblocks has to survive.
+   */
+  test('skipped macroblocks keep their inner edges unfiltered', () => {
+    // `cwebp -q 30 -segments 1 -f 100` of a 48x48 synthetic image, and
+    // dwebp 1.6.0's decode of it. One segment and a strong filter put skipped
+    // 16x16 macroblocks with a soft step on a 4x4 edge next to coded ones,
+    // and the step has to survive. The one level of slack is libwebp's own
+    // YUV to RGB rounding.
+    const decoded = decodeWebP({
+      data: TestUtils.readFromFile(
+        TestFolder.input,
+        TestSection.webp,
+        'inner_filter_skip.webp'
+      ),
+    });
+    const libwebp = decodePng({
+      data: TestUtils.readFromFile(
+        TestFolder.input,
+        TestSection.webp,
+        'inner_filter_skip_libwebp.png'
+      ),
+    });
+    expect(decoded).toBeDefined();
+    expect(libwebp).toBeDefined();
+    if (decoded === undefined || libwebp === undefined) {
+      return;
+    }
+    expect(decoded.width).toBe(libwebp.width);
+    expect(decoded.height).toBe(libwebp.height);
+    for (const p of decoded) {
+      const q = libwebp.getPixel(p.x, p.y);
+      const worst = Math.max(
+        Math.abs(p.r - q.r),
+        Math.abs(p.g - q.g),
+        Math.abs(p.b - q.b)
+      );
+      expect(worst).toBeLessThanOrEqual(1);
+    }
   });
 
   /**
@@ -686,7 +743,399 @@ describe('Format: WEBP', () => {
     expect(decoded.getPixel(0, 1).b).toBe(255);
     expect(decoded.getPixel(1, 1).a).toBe(0);
   });
+
+  /**
+   * An animated file reads its ICCP chunk on a path of its own, and the name
+   * the decoder supplies has to be one a PNG keyword can hold.
+   */
+  test('an animation carries a profile name a PNG keyword can hold', () => {
+    const anim = new MemoryImage({ width: 4, height: 4, numChannels: 4 });
+    anim.clear(new ColorRgba8(10, 20, 30, 255));
+    anim.iccProfile = new IccProfile(
+      'p',
+      IccProfileCompression.none,
+      Uint8Array.from({ length: 64 }, (_, i) => i)
+    );
+    const frame = new MemoryImage({ width: 4, height: 4, numChannels: 4 });
+    frame.clear(new ColorRgba8(200, 20, 30, 255));
+    anim.addFrame(frame);
+    const decoded = decodeWebP({ data: encodeWebP({ image: anim }) });
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+    expect(decoded.numFrames).toBe(2);
+    const profile = decoded.iccProfile;
+    expect(profile).toBeDefined();
+    if (profile === undefined) {
+      return;
+    }
+    expect(profile.name.length).toBeGreaterThanOrEqual(1);
+    expect(profile.name.length).toBeLessThanOrEqual(79);
+    expect(pngKeyword(encodePng({ image: decoded }), 'iCCP')).toBe(
+      profile.name
+    );
+  });
+
+  /**
+   * An ICCP chunk carries no name of its own, so the decoder supplies one.
+   * PNG writes it as the iCCP keyword, which has to be 1 to 79 printable
+   * bytes: an empty one makes the PNG it lands in invalid.
+   */
+  for (const name of ['red', 'test']) {
+    test(`a decoded profile carries a name a PNG keyword can hold, ${name}`, () => {
+      const image = decodeWebP({
+        data: TestUtils.readFromFile(
+          TestFolder.input,
+          TestSection.webp,
+          `${name}.webp`
+        ),
+      });
+      expect(image).toBeDefined();
+      if (image === undefined) {
+        return;
+      }
+      const profile = image.iccProfile;
+      expect(profile).toBeDefined();
+      if (profile === undefined) {
+        return;
+      }
+      expect(profile.name.length).toBeGreaterThanOrEqual(1);
+      expect(profile.name.length).toBeLessThanOrEqual(79);
+      for (let i = 0; i < profile.name.length; i++) {
+        const c = profile.name.charCodeAt(i);
+        expect(c).toBeGreaterThanOrEqual(0x21);
+        expect(c).toBeLessThanOrEqual(0x7e);
+      }
+
+      expect(pngKeyword(encodePng({ image }), 'iCCP')).toBe(profile.name);
+    });
+  }
+
+  /**
+   * The lossless match search and optimal parse, which run with bounds checks
+   * off and so cannot be observed through a round trip alone.
+   */
+  describe('match search', () => {
+    /**
+     * A deterministic linear congruential generator for the content tests.
+     */
+    const rnd = (seed: number): (() => number) => {
+      let s = seed >>> 0;
+      return () => {
+        s = (Math.imul(s, 1103515245) + 12345) >>> 0;
+        return s;
+      };
+    };
+
+    test('a match packs into one word whatever it holds', () => {
+      // The word carries the distance above the length. Both fields have to
+      // fit, and together they have to fit an unsigned thirty two bit element,
+      // or one silently eats into the other.
+      expect(maxMatchLength).toBe((1 << matchLengthBits) - 1);
+      expect(maxMatchDistance).toBeLessThan(1 << (32 - matchLengthBits));
+      const widest = (maxMatchDistance << matchLengthBits) | maxMatchLength;
+      expect(widest >>> 0).toBeLessThanOrEqual(0xffffffff);
+
+      const packed = new Uint32Array(1);
+      packed[0] = widest;
+      expect(packed[0] & maxMatchLength).toBe(maxMatchLength);
+      expect(packed[0] >>> matchLengthBits).toBe(maxMatchDistance);
+      expect(maxMatchLength).toBeLessThan(1 << 16);
+    });
+
+    test('every near-neighbour offset stays inside the planes', () => {
+      // They index the planes backwards with bounds checks off, and the width
+      // they come from is capped well below the largest distance.
+      for (const width of [1, 2, 3, 4, 17, 1024, maxDimension]) {
+        const numPixels = width * 4;
+        const planes = Array.from(
+          { length: 4 },
+          () => new Uint8Array(numPixels)
+        );
+        const matches = computeMatches(
+          planes[0],
+          planes[1],
+          planes[2],
+          planes[3],
+          numPixels,
+          width
+        );
+        for (const d of matches.cheapDistances) {
+          expect(d).toBeGreaterThanOrEqual(1);
+          expect(d).toBeLessThan(numPixels);
+          expect(d).toBeLessThanOrEqual(maxMatchDistance);
+        }
+        expect(matches.cheapDistances.length).toBeLessThanOrEqual(5);
+      }
+    });
+
+    /**
+     * Every match computeMatches reports has to be real: inside the image,
+     * behind the position, and repeating pixel for pixel.
+     */
+    const expectMatchesHold = (
+      matches: VP8LMatches,
+      r: Uint8Array,
+      g: Uint8Array,
+      b: Uint8Array,
+      a: Uint8Array,
+      n: number
+    ): void => {
+      expect(matches.match.length).toBe(n);
+      for (let i = 0; i < n; i++) {
+        const len = matches.lengthAt(i);
+        if (len === 0) {
+          continue;
+        }
+        const d = matches.distanceAt(i);
+        expect(d).toBeGreaterThanOrEqual(1);
+        expect(d).toBeLessThanOrEqual(i);
+        expect(i + len).toBeLessThanOrEqual(n);
+        for (let t = i; t < i + len; t++) {
+          if (
+            r[t] !== r[t - d] ||
+            g[t] !== g[t - d] ||
+            b[t] !== b[t - d] ||
+            a[t] !== a[t - d]
+          ) {
+            throw new Error(
+              `match at ${i}, length ${len}, distance ${d} breaks at ${t}`
+            );
+          }
+        }
+      }
+    };
+
+    test('a run at distance 1 is clipped to the length field', () => {
+      // One colour over 9000 pixels: every position repeats the one before for
+      // the rest of the image, more than one match can say.
+      const width = 100;
+      const n = width * 90;
+      const zero = new Uint8Array(n);
+      const g = new Uint8Array(n);
+      g.fill(7);
+      const matches = computeMatches(zero, g, zero, zero, n, width);
+      expect(matches.lengthAt(0)).toBe(0);
+      for (let i = 1; i < n; i++) {
+        const want = n - i < maxMatchLength ? n - i : maxMatchLength;
+        expect(matches.lengthAt(i)).toBe(want);
+        expect(matches.distanceAt(i)).toBe(1);
+      }
+      expectMatchesHold(matches, zero, g, zero, zero, n);
+    });
+
+    test('a run at distance 2 is clipped to the length field', () => {
+      // Two colours alternating, so only even offsets repeat and the counter
+      // for distance 2 is the one that has to stop at the cap.
+      const width = 101;
+      const n = width * 90;
+      const zero = new Uint8Array(n);
+      const g = new Uint8Array(n);
+      for (let i = 0; i < n; i++) {
+        g[i] = (i & 1) === 0 ? 10 : 200;
+      }
+      const matches = computeMatches(zero, g, zero, zero, n, width);
+      expect(matches.lengthAt(0)).toBe(0);
+      expect(matches.lengthAt(1)).toBe(0);
+      for (let i = 2; i < n; i++) {
+        const want = n - i < maxMatchLength ? n - i : maxMatchLength;
+        expect(matches.lengthAt(i)).toBe(want);
+        expect(matches.distanceAt(i)).toBe(2);
+      }
+      expectMatchesHold(matches, zero, g, zero, zero, n);
+    });
+
+    test('every reported match repeats, on mixed content', () => {
+      for (const size of [
+        [1, 1],
+        [2, 3],
+        [5, 1],
+        [37, 23],
+        [64, 80],
+        [150, 60],
+      ]) {
+        const w = size[0];
+        const n = w * size[1];
+        const r = new Uint8Array(n);
+        const g = new Uint8Array(n);
+        const b = new Uint8Array(n);
+        const a = new Uint8Array(n);
+        const next = rnd(n);
+        for (let i = 0; i < n; i++) {
+          // Rows that repeat, stretches of one colour, and noise.
+          const y = Math.trunc(i / w);
+          const kind = y % 3;
+          r[i] = kind === 0 ? (i % w) & 0xff : next() % 4;
+          g[i] = kind === 1 ? 9 : next() % 4;
+          b[i] = kind === 2 ? next() % 256 : 5;
+          a[i] = 255;
+        }
+        expectMatchesHold(computeMatches(r, g, b, a, n, w), r, g, b, a, n);
+      }
+    });
+
+    test('the parse refuses matches computed for another image', () => {
+      // optimalCover indexes its own tables by position plus match length, so a
+      // table from a longer image would write past their end.
+      const w = 16;
+      const n = w * 8;
+      const plane = new Uint8Array(n * 2);
+      const matches = computeMatches(plane, plane, plane, plane, n * 2, w);
+      const r = new Uint8Array(n);
+      const cover = new VP8LCover(n);
+      cover.cover.fill(1, 0, n);
+      const costs = VP8LCostModel.fromCover(cover, r, r, r, r, w);
+      // The guard, not an out of range index.
+      expect(() =>
+        { optimalCover(matches, costs, r, r, r, r, w, new VP8LCover(n)); }
+      ).toThrow(LibError);
+    });
+
+    test('lossless output of a real image is stable and decodes exactly', () => {
+      // A candidate the parse stops weighing, or the wrong distance traced back
+      // for one, still decodes exactly and only shows as other bytes. The
+      // output has to at least be deterministic, and the round trip exact.
+      for (const name of ['alpha', 'alpha_edge', 'png_LA']) {
+        const image = decodePng({
+          data: TestUtils.readFromFile(
+            TestFolder.input,
+            TestSection.png,
+            `${name}.png`
+          ),
+        });
+        expect(image).toBeDefined();
+        if (image === undefined) {
+          continue;
+        }
+        const a = encodeWebP({ image });
+        const b = encodeWebP({ image });
+        expect(a).toEqual(b);
+        const back = decodeWebP({ data: a });
+        expect(back).toBeDefined();
+        if (back === undefined) {
+          continue;
+        }
+        expect(back.width).toBe(image.width);
+        expect(back.height).toBe(image.height);
+        for (const p of image) {
+          const q = back.getPixel(p.x, p.y);
+          expect([q.r, q.g, q.b, q.a]).toEqual([p.r, p.g, p.b, p.a]);
+        }
+      }
+    });
+
+    // Where the run walks can step off the end: runs touching the last pixel,
+    // runs at exactly the near-neighbour offsets, and widths too narrow for
+    // five distinct offsets.
+    for (const shape of [
+      [1, 1],
+      [1, 64],
+      [64, 1],
+      [2, 2],
+      [3, 5],
+      [4, 4],
+      [17, 17],
+      [64, 80],
+      [80, 64],
+    ]) {
+      const w = shape[0];
+      const h = shape[1];
+      test(`lossless round-trip is exact at ${w}x${h}`, () => {
+        const next = rnd(w * 1000 + h);
+        for (const kind of ['flat', 'rows', 'noise', 'runs']) {
+          const src = new MemoryImage({ width: w, height: h, numChannels: 4 });
+          for (const p of src) {
+            switch (kind) {
+              case 'flat':
+                p.r = 9;
+                p.g = 9;
+                p.b = 9;
+                p.a = 255;
+                break;
+              case 'rows':
+                // Repeats at exactly width, and at width plus and minus one on
+                // the diagonal.
+                p.r = p.x & 1;
+                p.g = p.y & 1;
+                p.b = (p.x + p.y) & 1;
+                p.a = 255;
+                break;
+              case 'noise':
+                p.r = next() % 256;
+                p.g = next() % 256;
+                p.b = next() % 256;
+                p.a = next() % 256;
+                break;
+              case 'runs': {
+                // Long stretches of one colour broken by single pixels, so a
+                // run can end on the last pixel of the image.
+                const v = Math.trunc((p.y * w + p.x) / 97) & 1;
+                p.r = v * 255;
+                p.g = v * 255;
+                p.b = v * 255;
+                p.a = 255;
+                break;
+              }
+            }
+          }
+          const back = decodeWebP({ data: encodeWebP({ image: src }) });
+          expect(back).toBeDefined();
+          if (back === undefined) {
+            return;
+          }
+          expect(back.width).toBe(w);
+          expect(back.height).toBe(h);
+          for (const p of src) {
+            const q = back.getPixel(p.x, p.y);
+            expect([q.r, q.g, q.b, q.a]).toEqual([p.r, p.g, p.b, p.a]);
+          }
+        }
+      });
+    }
+
+    test('a run longer than the length field round-trips', () => {
+      // One colour across more pixels than a single match can cover, so the
+      // search has to clip and start again rather than wrap the field.
+      const w = Math.trunc(maxMatchLength / 4);
+      const src = new MemoryImage({ width: w, height: 9, numChannels: 4 });
+      src.clear(new ColorRgba8(3, 200, 77, 255));
+      const back = decodeWebP({ data: encodeWebP({ image: src }) });
+      expect(back).toBeDefined();
+      if (back === undefined) {
+        return;
+      }
+      for (const p of src) {
+        const q = back.getPixel(p.x, p.y);
+        expect([q.r, q.g, q.b, q.a]).toEqual([3, 200, 77, 255]);
+      }
+    });
+  });
 });
+
+/**
+ * The null terminated keyword a PNG chunk opens with.
+ */
+function pngKeyword(bytes: Uint8Array, id: string): string | undefined {
+  let p = 8;
+  while (p + 8 <= bytes.length) {
+    const size =
+      (bytes[p] << 24) |
+      (bytes[p + 1] << 16) |
+      (bytes[p + 2] << 8) |
+      bytes[p + 3];
+    if (String.fromCharCode(...bytes.subarray(p + 4, p + 8)) === id) {
+      const start = p + 8;
+      let end = start;
+      while (end < start + size && bytes[end] !== 0) {
+        end++;
+      }
+      return String.fromCharCode(...bytes.subarray(start, end));
+    }
+    p += 12 + size;
+  }
+  return undefined;
+}
 
 const webpTests = new Map<string, WebPFileInfo>([
   [

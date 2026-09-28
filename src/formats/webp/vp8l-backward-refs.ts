@@ -4,7 +4,12 @@ import { LibError } from '../../error/lib-error.js';
 import { VP8LCostModel } from './vp8l-cost-model.js';
 import { VP8LCover } from './vp8l-cover.js';
 import { Lz77 } from './vp8l-lz77.js';
-import { maxMatchLen, VP8LMatches } from './vp8l-matches.js';
+import {
+  maxMatchDistance,
+  maxMatchLength,
+  matchLengthBits,
+  VP8LMatches,
+} from './vp8l-matches.js';
 
 export { VP8LCostModel };
 export { VP8LCover };
@@ -68,12 +73,6 @@ export class VP8LBackwardRefs {
 const maxChain = 86;
 
 /**
- * The spec caps the distance at 1048576, and the first 120 values are taken by
- * the near-neighbour plane codes, leaving this as the real maximum.
- */
-const maxDistance = 1048456;
-
-/**
  * Finds the best match at every position.
  *
  * Positions are visited from the end backwards, because a match found at one
@@ -104,8 +103,7 @@ export function computeMatches(
   lz.fillChain();
   const px = lz._px;
   const prev = lz._prev;
-  const length = new Int32Array(numPixels);
-  const distance = new Int32Array(numPixels);
+  const match = new Uint32Array(numPixels);
 
   // The offsets reaching the nearest plane codes: the pixel before, the one
   // before that, and the three directly above and to either side.
@@ -114,53 +112,82 @@ export function computeMatches(
   // neighbour, some ninety of them. Carrying the next ring out as well was
   // measured at 0.04 points of the corpus for 19% more encode time, which is
   // the wrong way round while size is inside budget and speed is not.
-  const cheapDistances = Array.from(
-    new Set(
-      [1, 2, width - 1, width, width + 1].filter((d) => d >= 1 && d < numPixels)
-    )
-  ).sort((x, y) => x - y);
-  const cheapLength: Uint16Array[] = cheapDistances.map(
-    () => new Uint16Array(numPixels)
+  const cheapDistances = Int32Array.from(
+    Array.from(
+      new Set(
+        [1, 2, width - 1, width, width + 1].filter(
+          (d) => d >= 1 && d < numPixels
+        )
+      )
+    ).sort((x, y) => x - y)
   );
-
-  // Taken from the right: if an offset repeats for n pixels starting one to
-  // the right, it repeats for n + 1 here, so each is one comparison.
-  for (let c = 0; c < cheapDistances.length; c++) {
-    const dist = cheapDistances[c];
-    const lengths = cheapLength[c];
-    for (let i = numPixels - 1; i >= dist; i--) {
-      if (px[i] === px[i - dist]) {
-        let n = i + 1 < numPixels ? lengths[i + 1] + 1 : 1;
-        const maxLen = numPixels - i;
-        if (n > maxLen) {
-          n = maxLen;
-        }
-        if (n > maxMatchLen) {
-          n = maxMatchLen;
-        }
-        lengths[i] = n;
-      }
-    }
+  const numCheap = cheapDistances.length;
+  if (numCheap > 5) {
+    throw new LibError(
+      `the near-neighbour walk has five slots, not ${numCheap}`
+    );
   }
+
+  const slots = new Int32Array(5);
+  slots.fill(numPixels);
+  for (let c = 0; c < numCheap; c++) {
+    slots[c] = cheapDistances[c];
+  }
+  const d0 = slots[0];
+  const d1 = slots[1];
+  const d2 = slots[2];
+  const d3 = slots[3];
+  const d4 = slots[4];
+  let n0 = 0;
+  let n1 = 0;
+  let n2 = 0;
+  let n3 = 0;
+  let n4 = 0;
+  let cheapAt = numPixels;
 
   let i = numPixels - 1;
   while (i > 0) {
+    while (cheapAt > i) {
+      const p = cheapAt - 1;
+      const at = px[p];
+      n0 =
+        p >= d0 && at === px[p - d0] ? (n0 < maxMatchLength ? n0 + 1 : n0) : 0;
+      n1 =
+        p >= d1 && at === px[p - d1] ? (n1 < maxMatchLength ? n1 + 1 : n1) : 0;
+      n2 =
+        p >= d2 && at === px[p - d2] ? (n2 < maxMatchLength ? n2 + 1 : n2) : 0;
+      n3 =
+        p >= d3 && at === px[p - d3] ? (n3 < maxMatchLength ? n3 + 1 : n3) : 0;
+      n4 =
+        p >= d4 && at === px[p - d4] ? (n4 < maxMatchLength ? n4 + 1 : n4) : 0;
+      cheapAt = p;
+    }
     let maxLen = numPixels - i;
-    if (maxLen > maxMatchLen) {
-      maxLen = maxMatchLen;
+    if (maxLen > maxMatchLength) {
+      maxLen = maxMatchLength;
     }
     let best = 0;
     let bestDist = 0;
 
-    // Two candidates cost nothing to try and are the cheapest distances the
-    // format has, so they go first: either can leave the chain with nothing to
-    // beat and be skipped entirely.
-    for (let c = 0; c < cheapDistances.length; c++) {
-      const n = cheapLength[c][i];
-      if (n > best) {
-        best = n;
-        bestDist = cheapDistances[c];
-      }
+    if (n0 > best) {
+      best = n0;
+      bestDist = d0;
+    }
+    if (n1 > best) {
+      best = n1;
+      bestDist = d1;
+    }
+    if (n2 > best) {
+      best = n2;
+      bestDist = d2;
+    }
+    if (n3 > best) {
+      best = n3;
+      bestDist = d3;
+    }
+    if (n4 > best) {
+      best = n4;
+      bestDist = d4;
     }
 
     if (best < maxLen) {
@@ -172,7 +199,7 @@ export function computeMatches(
       while (c >= 0 && steps < maxChain) {
         steps++;
         const dist = i - c;
-        if (dist > maxDistance) {
+        if (dist > maxMatchDistance) {
           break;
         }
         // Only a longer match can win, so the pixel one past the current best
@@ -194,24 +221,22 @@ export function computeMatches(
       }
     }
 
-    length[i] = best;
-    distance[i] = bestDist;
+    match[i] = (bestDist << matchLengthBits) | best;
 
     // Carry the match left for as long as it keeps matching.
     let j = i;
-    while (bestDist > 0 && best < maxMatchLen) {
+    while (bestDist > 0 && best < maxMatchLength) {
       const k = j - 1;
       if (k <= 0 || k < bestDist || px[k - bestDist] !== px[k]) {
         break;
       }
       best++;
-      length[k] = best;
-      distance[k] = bestDist;
+      match[k] = (bestDist << matchLengthBits) | best;
       j = k;
     }
     i = j - 1;
   }
-  return new VP8LMatches(length, distance, cheapLength, cheapDistances);
+  return new VP8LMatches(match, cheapDistances);
 }
 
 /**

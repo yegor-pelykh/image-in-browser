@@ -101,12 +101,22 @@ export class VP8Encoder {
   public readonly config: VP8Config;
   public readonly enc: VP8EncState;
 
+  /**
+   * Bytes partition #0 must stay under; lowered only by tests.
+   */
+  public readonly partition0Limit: number;
+
   private readonly _tokens = new VP8TokenBuffer();
   private readonly _res = new VP8Residual();
 
-  constructor(config: VP8Config, pic: VP8Yuv) {
+  constructor(
+    config: VP8Config,
+    pic: VP8Yuv,
+    partition0Limit: number = maxPartition0Size
+  ) {
     this.config = config;
     this.enc = new VP8EncState(config, pic);
+    this.partition0Limit = partition0Limit;
   }
 
   /**
@@ -127,33 +137,42 @@ export class VP8Encoder {
    * picture turned out to contain.
    */
   private codeMacroblocks(): Uint8Array {
-    this.setLoopParams(this.config.quality);
-
-    const it = new VP8EncIterator(this.enc);
-    const decimate = new VP8Decimate(this.enc, it);
-    const rd = new VP8ModeScore();
     const rdOpt = this.config.rdOptLevel;
-
     let maxCount = (this.enc.mbW * this.enc.mbH) >> 3;
     if (maxCount < minRefreshCount) {
       maxCount = minRefreshCount;
     }
-    let count = maxCount;
+    const headerLimit = (this.partition0Limit - 2048) << 11;
 
-    this.enc.proba.resetTokenStats();
-    this._tokens.clear();
+    while (true) {
+      this.setLoopParams(this.config.quality);
+      const it = new VP8EncIterator(this.enc);
+      const decimate = new VP8Decimate(this.enc, it);
+      const rd = new VP8ModeScore();
+      let count = maxCount;
+      let headerBits = this.enc.segmentSize;
+      this.enc.proba.resetTokenStats();
+      this._tokens.clear();
 
-    do {
-      it.import();
-      if (--count < 0) {
-        this.enc.proba.finalizeTokenProbas();
-        this.enc.proba.calculateLevelCosts();
-        count = maxCount;
+      do {
+        it.import();
+        if (--count < 0) {
+          this.enc.proba.finalizeTokenProbas();
+          this.enc.proba.calculateLevelCosts();
+          count = maxCount;
+        }
+        decimate.run(rd, rdOpt);
+        headerBits += rd.h;
+        this.recordTokens(it, rd);
+        it.saveBoundary();
+      } while (it.next());
+
+      if (this.enc.maxI4HeaderBits > 0 && headerBits > headerLimit) {
+        this.enc.maxI4HeaderBits >>= 1;
+        continue;
       }
-      decimate.run(rd, rdOpt);
-      this.recordTokens(it, rd);
-      it.saveBoundary();
-    } while (it.next());
+      break;
+    }
 
     this.enc.proba.finalizeTokenProbas();
 
@@ -266,8 +285,10 @@ export class VP8Encoder {
 
   private assemble(tokenPartition: Uint8Array): Uint8Array {
     const part0 = this.generatePartition0();
-    if (part0.length >= maxPartition0Size) {
-      throw new LibError('VP8 partition #0 overflow');
+    if (part0.length >= this.partition0Limit) {
+      throw new LibError(
+        `WebP lossy partition #0 needs ${part0.length} bytes, more than the format can address; encode losslessly`
+      );
     }
 
     const out = new Uint8Array(10 + part0.length + tokenPartition.length);

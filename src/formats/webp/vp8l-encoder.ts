@@ -788,10 +788,10 @@ export class VP8LEncoder {
     const distance = parse.distance;
     let i = 0;
     while (i < numPixels) {
-      const len = matches.length[i];
+      const len = matches.lengthAt(i);
       const take = len >= 3 ? len : 1;
       cover[i] = take;
-      distance[i] = matches.distance[i];
+      distance[i] = matches.distanceAt(i);
       i += take;
     }
   }

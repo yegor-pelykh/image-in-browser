@@ -178,7 +178,7 @@ export class VP8 {
   /** Macroblock data */
   private _mbData!: VP8MBData[];
   /** Filter info per macroblock */
-  private _fInfo!: Array<VP8FInfo | undefined>;
+  private _fInfo!: VP8FInfo[];
   /** Precomputed filter strengths */
   private _fStrengths!: Array<Array<VP8FInfo>>;
   /** Filter type: 0=off, 1=simple, 2=complex */
@@ -260,7 +260,7 @@ export class VP8 {
     const iccp = this._webp.iccpData;
     if (iccp !== undefined) {
       this._output.iccProfile = new IccProfile(
-        '',
+        'ICC_PROFILE',
         IccProfileCompression.none,
         iccp
       );
@@ -531,9 +531,9 @@ export class VP8 {
       this._mbWidth,
       () => new VP8MBData()
     );
-    this._fInfo = ArrayUtils.fill<VP8FInfo | undefined>(
+    this._fInfo = ArrayUtils.generate<VP8FInfo>(
       this._mbWidth,
-      undefined
+      () => new VP8FInfo()
     );
     this.precomputeFilterStrengths();
     this._dsp = new VP8Filter();
@@ -744,7 +744,7 @@ export class VP8 {
    */
   private doFilter(mbX: number, mbY: number): void {
     const yBps = this._cacheYStride;
-    const fInfo = this._fInfo[mbX]!;
+    const fInfo = this._fInfo[mbX];
     const yDst = InputBuffer.from(this._cacheY, mbX * 16);
     const iLevel = fInfo.fInnerLevel;
     const limit = fInfo.fLimit;
@@ -1044,10 +1044,12 @@ export class VP8 {
       block.nonZeroUV = 0;
     }
     if (this._filterType > 0) {
-      this._fInfo[this._mbX] =
-        this._fStrengths[this._segment][block.isIntra4x4 ? 1 : 0];
-      const finfo = this._fInfo[this._mbX]!;
-      finfo.fInner = finfo.fInner || !skip;
+      const src = this._fStrengths[this._segment][block.isIntra4x4 ? 1 : 0];
+      const info = this._fInfo[this._mbX];
+      info.fLimit = src.fLimit;
+      info.fInnerLevel = src.fInnerLevel;
+      info.hevThresh = src.hevThresh;
+      info.fInner = src.fInner || !skip;
     }
     return true;
   }

@@ -9,6 +9,8 @@ import {
   encodePng,
   FlipDirection,
   Format,
+  IccProfile,
+  IccProfileCompression,
   LibError,
   MemoryImage,
   PaletteUint8,
@@ -1012,6 +1014,53 @@ describe('Format: PNG', () => {
     expect(img2.iccProfile).toBeDefined();
     expect(img2.iccProfile!.data).toBeDefined();
     expect(img2.iccProfile!.data.length).toBe(img.iccProfile!.data.length);
+  });
+
+  /**
+   * A profile named with a string a PNG keyword cannot hold still encodes a
+   * valid iCCP chunk.
+   */
+  test('iCCP keyword is always one PNG allows', () => {
+    // A keyword is 1 to 79 Latin-1 printable bytes with no leading,
+    // trailing or doubled space; a profile named otherwise gets a default.
+    const keywordOf = (name: string): string => {
+      const image = new MemoryImage({ width: 1, height: 1 });
+      image.iccProfile = new IccProfile(
+        name,
+        IccProfileCompression.none,
+        Uint8Array.from({ length: 32 }, (_, i) => i)
+      );
+      const png = new PngEncoder().encode({ image });
+      let p = 8;
+      while (p + 8 <= png.length) {
+        const size =
+          (png[p] << 24) | (png[p + 1] << 16) | (png[p + 2] << 8) | png[p + 3];
+        if (String.fromCharCode(...png.subarray(p + 4, p + 8)) === 'iCCP') {
+          let end = p + 8;
+          while (end < png.length && png[end] !== 0) {
+            end++;
+          }
+          return String.fromCharCode(...png.subarray(p + 8, end));
+        }
+        p += 12 + size;
+      }
+      throw new LibError('no iCCP chunk');
+    };
+
+    expect(keywordOf('sRGB IEC61966-2.1')).toBe('sRGB IEC61966-2.1');
+    expect(keywordOf('Café')).toBe('Café');
+    for (const bad of [
+      '',
+      ' lead',
+      'trail ',
+      'dou  ble',
+      'x'.repeat(80),
+      'tab\there',
+      'Ж',
+    ]) {
+      expect(keywordOf(bad), `"${bad}"`).toBe('ICC_PROFILE');
+    }
+    expect(keywordOf('x'.repeat(79))).toBe('x'.repeat(79));
   });
 
   /**

@@ -2,7 +2,7 @@
 
 import * as huffman from './vp8l-huffman-encoder.js';
 import { VP8LCover } from './vp8l-cover.js';
-import { maxMatchLen } from './vp8l-matches.js';
+import { maxMatchLength } from './vp8l-matches.js';
 
 /**
  * What each symbol costs to code, in bits, estimated from a first pass over
@@ -94,8 +94,8 @@ export class VP8LCostModel {
    */
   public get lengthBits(): Float64Array {
     if (this._lengthBits === undefined) {
-      const t = new Float64Array(maxMatchLen + 1);
-      for (let len = 1; len <= maxMatchLen; len++) {
+      const t = new Float64Array(maxMatchLength + 1);
+      for (let len = 1; len <= maxMatchLength; len++) {
         const extra = huffman.lengthExtra(len).extraBits;
         t[len] = this._green[huffman.lengthSymbol(len)] + extra;
       }

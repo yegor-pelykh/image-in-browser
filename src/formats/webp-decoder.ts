@@ -476,7 +476,7 @@ export class WebPDecoder implements Decoder {
     const iccp = info.iccpData;
     return iccp === undefined
       ? undefined
-      : new IccProfile('', IccProfileCompression.none, iccp);
+      : new IccProfile('ICC_PROFILE', IccProfileCompression.none, iccp);
   }
 
   /**
