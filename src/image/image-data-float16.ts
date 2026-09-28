@@ -259,11 +259,9 @@ export class MemoryImageDataFloat16
   ): void {
     const index = y * this._width * this._numChannels + x * this._numChannels;
     this._data[index] = Float16.doubleToFloat16(r);
-    if (this._numChannels > 1) {
+    if (this._numChannels > 2) {
       this._data[index + 1] = Float16.doubleToFloat16(g);
-      if (this._numChannels > 2) {
-        this._data[index + 2] = Float16.doubleToFloat16(b);
-      }
+      this._data[index + 2] = Float16.doubleToFloat16(b);
     }
   }
 
@@ -286,13 +284,13 @@ export class MemoryImageDataFloat16
   ): void {
     const index = y * this._width * this._numChannels + x * this._numChannels;
     this._data[index] = Float16.doubleToFloat16(r);
-    if (this._numChannels > 1) {
+    if (this._numChannels === 2) {
+      this._data[index + 1] = Float16.doubleToFloat16(a);
+    } else if (this._numChannels > 2) {
       this._data[index + 1] = Float16.doubleToFloat16(g);
-      if (this._numChannels > 2) {
-        this._data[index + 2] = Float16.doubleToFloat16(b);
-        if (this._numChannels > 3) {
-          this._data[index + 3] = Float16.doubleToFloat16(a);
-        }
+      this._data[index + 2] = Float16.doubleToFloat16(b);
+      if (this._numChannels > 3) {
+        this._data[index + 3] = Float16.doubleToFloat16(a);
       }
     }
   }

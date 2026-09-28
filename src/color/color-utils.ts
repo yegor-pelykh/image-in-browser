@@ -18,6 +18,16 @@ import { ColorUint8 } from './color-uint8.js';
 import { convertFormatValue, Format } from './format.js';
 
 /**
+ * Formats whose channel values are floating point, so converting a sample to
+ * an integer format needs an explicit floor.
+ */
+const floatFormats: ReadonlySet<Format> = new Set([
+  Format.float16,
+  Format.float32,
+  Format.float64,
+]);
+
+/**
  * Options for converting colors.
  */
 export interface ConvertColorOptions {
@@ -64,6 +74,13 @@ export abstract class ColorUtils {
     if (numChannels === 1) {
       const g = Math.trunc(c.length > 2 ? c.luminance : c.getChannel(0));
       c2.setChannel(0, convertFormatValue(Math.floor(g), fromFormat, format));
+    } else if (numChannels === 2) {
+      let g = cl > 2 ? c.luminance : c.r;
+      if (!floatFormats.has(fromFormat)) {
+        g = Math.floor(g);
+      }
+      c2.setChannel(0, convertFormatValue(g, fromFormat, format));
+      c2.setChannel(1, convertFormatValue(c.a, fromFormat, format));
     } else if (numChannels <= cl) {
       for (let ci = 0; ci < numChannels; ++ci) {
         c2.setChannel(
@@ -73,13 +90,13 @@ export abstract class ColorUtils {
       }
     } else {
       if (cl === 2) {
-        const l = convertFormatValue(c.getChannel(0), fromFormat, format);
+        const l = convertFormatValue(c.r, fromFormat, format);
         if (numChannels === 3) {
           c2.setChannel(0, l);
           c2.setChannel(1, l);
           c2.setChannel(2, l);
         } else {
-          const a = convertFormatValue(c.getChannel(1), fromFormat, format);
+          const a = convertFormatValue(c.a, fromFormat, format);
           c2.setChannel(0, l);
           c2.setChannel(1, l);
           c2.setChannel(2, l);

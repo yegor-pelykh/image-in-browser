@@ -51,10 +51,10 @@ describe('MemoryImage', () => {
     expect(i2.numChannels).toBe(2);
     expect(i2.format).toBe(Format.uint16);
 
-    i2.setPixelRgb(0, 0, 32, 64, 0);
-    i2.setPixelRgb(1, 0, 64, 32, 0);
-    i2.setPixelRgb(0, 1, 58, 52, 0);
-    i2.setPixelRgb(1, 1, 110, 84, 0);
+    i2.setPixelRgba(0, 0, 32, 0, 0, 64);
+    i2.setPixelRgba(1, 0, 64, 0, 0, 32);
+    i2.setPixelRgba(0, 1, 58, 0, 0, 52);
+    i2.setPixelRgba(1, 1, 110, 0, 0, 84);
 
     expect(i2.getPixel(0, 0).equals([32, 64])).toBeTruthy();
     expect(i2.getPixel(1, 0).equals([64, 32])).toBeTruthy();

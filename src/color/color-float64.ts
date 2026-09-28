@@ -2,7 +2,7 @@
 
 import { ArrayUtils } from '../common/array-utils.js';
 import { Palette } from '../image/palette.js';
-import { Channel, channelLuminance } from './channel.js';
+import { Channel, channelAlpha, channelLuminance } from './channel.js';
 import { Color, ColorConvertOptions } from './color.js';
 import { ColorUtils } from './color-utils.js';
 import { Format } from './format.js';
@@ -99,7 +99,7 @@ export class ColorFloat64 implements Color {
     return this.getChannel(1);
   }
   public set g(g: number) {
-    this.setChannel(1, g);
+    this.setChannel(this.data.length === 2 ? 0 : 1, g);
   }
 
   /**
@@ -109,7 +109,7 @@ export class ColorFloat64 implements Color {
     return this.getChannel(2);
   }
   public set b(b: number) {
-    this.setChannel(2, b);
+    this.setChannel(this.data.length === 2 ? 0 : 2, b);
   }
 
   /**
@@ -119,7 +119,7 @@ export class ColorFloat64 implements Color {
     return this.getChannel(3);
   }
   public set a(a: number) {
-    this.setChannel(3, a);
+    this.setChannel(this.data.length === 2 ? 1 : 3, a);
   }
 
   /**
@@ -166,14 +166,16 @@ export class ColorFloat64 implements Color {
    * Gets the luminance of the color.
    */
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this.data.length === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   /**
    * Gets the normalized luminance of the color.
    */
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this.data.length === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   /**
@@ -243,6 +245,8 @@ export class ColorFloat64 implements Color {
   public getChannel(channel: number): number {
     if (channel === channelLuminance) {
       return this.luminance;
+    } else if (this.data.length === 2) {
+      return channel === channelAlpha ? this.data[1] : this.data[0];
     } else {
       return channel < this.data.length ? this.data[channel] : 0;
     }
@@ -285,11 +289,9 @@ export class ColorFloat64 implements Color {
   public setRgb(r: number, g: number, b: number): void {
     this.data[0] = r;
     const nc = this.data.length;
-    if (nc > 1) {
+    if (nc > 2) {
       this.data[1] = g;
-      if (nc > 2) {
-        this.data[2] = b;
-      }
+      this.data[2] = b;
     }
   }
 
@@ -303,13 +305,13 @@ export class ColorFloat64 implements Color {
   public setRgba(r: number, g: number, b: number, a: number): void {
     this.data[0] = r;
     const nc = this.data.length;
-    if (nc > 1) {
+    if (nc === 2) {
+      this.data[1] = a;
+    } else if (nc > 2) {
       this.data[1] = g;
-      if (nc > 2) {
-        this.data[2] = b;
-        if (nc > 3) {
-          this.data[3] = a;
-        }
+      this.data[2] = b;
+      if (nc > 3) {
+        this.data[3] = a;
       }
     }
   }
@@ -319,7 +321,9 @@ export class ColorFloat64 implements Color {
    * @returns {number[]} The color as an array of numbers.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(this.length, (i) =>
+      this.length === 2 && i === 1 ? this.a : this.getChannel(i)
+    );
   }
 
   /**

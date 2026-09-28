@@ -261,11 +261,9 @@ export class MemoryImageDataUint32 implements MemoryImageData, Iterable<Pixel> {
   ): void {
     const index = y * this._width * this._numChannels + x * this._numChannels;
     this._data[index] = Math.trunc(r);
-    if (this._numChannels > 1) {
+    if (this._numChannels > 2) {
       this._data[index + 1] = Math.trunc(g);
-      if (this._numChannels > 2) {
-        this._data[index + 2] = Math.trunc(b);
-      }
+      this._data[index + 2] = Math.trunc(b);
     }
   }
 
@@ -288,13 +286,13 @@ export class MemoryImageDataUint32 implements MemoryImageData, Iterable<Pixel> {
   ): void {
     const index = y * this._width * this._numChannels + x * this._numChannels;
     this._data[index] = Math.trunc(r);
-    if (this._numChannels > 1) {
+    if (this._numChannels === 2) {
+      this._data[index + 1] = Math.trunc(a);
+    } else if (this._numChannels > 2) {
       this._data[index + 1] = Math.trunc(g);
-      if (this._numChannels > 2) {
-        this._data[index + 2] = Math.trunc(b);
-        if (this._numChannels > 3) {
-          this._data[index + 3] = Math.trunc(a);
-        }
+      this._data[index + 2] = Math.trunc(b);
+      if (this._numChannels > 3) {
+        this._data[index + 3] = Math.trunc(a);
       }
     }
   }

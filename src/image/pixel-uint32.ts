@@ -1,6 +1,6 @@
 /** @format */
 
-import { Channel, channelLuminance } from '../color/channel.js';
+import { Channel, channelAlpha, channelLuminance } from '../color/channel.js';
 import { Color, ColorConvertOptions } from '../color/color.js';
 import { ColorUtils } from '../color/color-utils.js';
 import { Format } from '../color/format.js';
@@ -199,14 +199,20 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the green channel value of the pixel.
    */
   public get g(): number {
-    return this.numChannels > 1 ? this.data[this._index + 1] : 0;
+    return this.numChannels === 2
+      ? this.data[this._index]
+      : this.numChannels > 1
+        ? this.data[this._index + 1]
+        : 0;
   }
 
   /**
    * Sets the green channel value of the pixel.
    */
   public set g(g: number) {
-    if (this.numChannels > 1) {
+    if (this.numChannels === 2) {
+      this.data[this._index] = Math.trunc(g);
+    } else if (this.numChannels > 1) {
       this.data[this._index + 1] = Math.trunc(g);
     }
   }
@@ -215,14 +221,20 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the blue channel value of the pixel.
    */
   public get b(): number {
-    return this.numChannels > 2 ? this.data[this._index + 2] : 0;
+    return this.numChannels === 2
+      ? this.data[this._index]
+      : this.numChannels > 2
+        ? this.data[this._index + 2]
+        : 0;
   }
 
   /**
    * Sets the blue channel value of the pixel.
    */
   public set b(b: number) {
-    if (this.numChannels > 2) {
+    if (this.numChannels === 2) {
+      this.data[this._index] = Math.trunc(b);
+    } else if (this.numChannels > 2) {
       this.data[this._index + 2] = Math.trunc(b);
     }
   }
@@ -231,16 +243,20 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the alpha channel value of the pixel.
    */
   public get a(): number {
-    return this.numChannels > 3
-      ? this.data[this._index + 3]
-      : this.maxChannelValue;
+    return this.numChannels === 2
+      ? this.data[this._index + 1]
+      : this.numChannels > 3
+        ? this.data[this._index + 3]
+        : this.maxChannelValue;
   }
 
   /**
    * Sets the alpha channel value of the pixel.
    */
   public set a(a: number) {
-    if (this.numChannels > 3) {
+    if (this.numChannels === 2) {
+      this.data[this._index + 1] = Math.trunc(a);
+    } else if (this.numChannels > 3) {
       this.data[this._index + 3] = Math.trunc(a);
     }
   }
@@ -305,14 +321,16 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the luminance of the pixel.
    */
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this.numChannels === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   /**
    * Gets the normalized luminance of the pixel.
    */
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this.numChannels === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   /**
@@ -424,6 +442,10 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public getChannel(channel: number): number {
     if (channel === channelLuminance) {
       return this.luminance;
+    } else if (this.numChannels === 2) {
+      return channel === channelAlpha
+        ? this.data[this._index + 1]
+        : this.data[this._index];
     } else {
       return channel < this.numChannels ? this.data[this._index + channel] : 0;
     }
@@ -469,11 +491,9 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public setRgb(r: number, g: number, b: number): void {
     if (this.numChannels > 0) {
       this.data[this._index] = Math.trunc(r);
-      if (this.numChannels > 1) {
+      if (this.numChannels > 2) {
         this.data[this._index + 1] = Math.trunc(g);
-        if (this.numChannels > 2) {
-          this.data[this._index + 2] = Math.trunc(b);
-        }
+        this.data[this._index + 2] = Math.trunc(b);
       }
     }
   }
@@ -488,13 +508,13 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public setRgba(r: number, g: number, b: number, a: number): void {
     if (this.numChannels > 0) {
       this.data[this._index] = Math.trunc(r);
-      if (this.numChannels > 1) {
+      if (this.numChannels === 2) {
+        this.data[this._index + 1] = Math.trunc(a);
+      } else if (this.numChannels > 2) {
         this.data[this._index + 1] = Math.trunc(g);
-        if (this.numChannels > 2) {
-          this.data[this._index + 2] = Math.trunc(b);
-          if (this.numChannels > 3) {
-            this.data[this._index + 3] = Math.trunc(a);
-          }
+        this.data[this._index + 2] = Math.trunc(b);
+        if (this.numChannels > 3) {
+          this.data[this._index + 3] = Math.trunc(a);
         }
       }
     }
@@ -520,7 +540,10 @@ export class PixelUint32 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number[]} The array of numbers representing the pixel.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(
+      this.length,
+      (i) => this.data[this._index + i]
+    );
   }
 
   /**

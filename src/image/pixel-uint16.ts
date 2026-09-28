@@ -1,6 +1,6 @@
 /** @format */
 
-import { Channel, channelLuminance } from '../color/channel.js';
+import { Channel, channelAlpha, channelLuminance } from '../color/channel.js';
 import { Color, ColorConvertOptions } from '../color/color.js';
 import { ColorUtils } from '../color/color-utils.js';
 import { Format } from '../color/format.js';
@@ -404,6 +404,10 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public getChannel(channel: number): number {
     if (channel === channelLuminance) {
       return this.luminance;
+    } else if (this.numChannels === 2) {
+      return channel === channelAlpha
+        ? this.data[this._index + 1]
+        : this.data[this._index];
     } else {
       if (this.palette !== undefined) {
         return this.palette.get(this.data[this._index], channel);
@@ -455,11 +459,9 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public setRgb(r: number, g: number, b: number): void {
     if (this.numChannels > 0) {
       this.data[this._index] = Math.trunc(r);
-      if (this.numChannels > 1) {
+      if (this.numChannels > 2) {
         this.data[this._index + 1] = Math.trunc(g);
-        if (this.numChannels > 2) {
-          this.data[this._index + 2] = Math.trunc(b);
-        }
+        this.data[this._index + 2] = Math.trunc(b);
       }
     }
   }
@@ -474,13 +476,13 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public setRgba(r: number, g: number, b: number, a: number): void {
     if (this.numChannels > 0) {
       this.data[this._index] = Math.trunc(r);
-      if (this.numChannels > 1) {
+      if (this.numChannels === 2) {
+        this.data[this._index + 1] = Math.trunc(a);
+      } else if (this.numChannels > 2) {
         this.data[this._index + 1] = Math.trunc(g);
-        if (this.numChannels > 2) {
-          this.data[this._index + 2] = Math.trunc(b);
-          if (this.numChannels > 3) {
-            this.data[this._index + 3] = Math.trunc(a);
-          }
+        this.data[this._index + 2] = Math.trunc(b);
+        if (this.numChannels > 3) {
+          this.data[this._index + 3] = Math.trunc(a);
         }
       }
     }
@@ -506,7 +508,11 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number[]} - An array of channel values.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(this.length, (i) =>
+      this.palette === undefined
+        ? this.data[this._index + i]
+        : this.palette.get(this.data[this._index], i)
+    );
   }
 
   /**

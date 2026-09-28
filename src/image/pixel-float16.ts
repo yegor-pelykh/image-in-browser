@@ -1,6 +1,6 @@
 /** @format */
 
-import { Channel, channelLuminance } from '../color/channel.js';
+import { Channel, channelAlpha, channelLuminance } from '../color/channel.js';
 import { Color, ColorConvertOptions } from '../color/color.js';
 import { ColorUtils } from '../color/color-utils.js';
 import { Format } from '../color/format.js';
@@ -202,16 +202,20 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the green channel value.
    */
   public get g(): number {
-    return this.numChannels > 1
-      ? Float16.float16ToDouble(this.data[this._index + 1])
-      : 0;
+    return this.numChannels === 2
+      ? Float16.float16ToDouble(this.data[this._index])
+      : this.numChannels > 1
+        ? Float16.float16ToDouble(this.data[this._index + 1])
+        : 0;
   }
 
   /**
    * Sets the green channel value.
    */
   public set g(g: number) {
-    if (this.numChannels > 1) {
+    if (this.numChannels === 2) {
+      this.data[this._index] = Float16.doubleToFloat16(g);
+    } else if (this.numChannels > 1) {
       this.data[this._index + 1] = Float16.doubleToFloat16(g);
     }
   }
@@ -220,16 +224,20 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the blue channel value.
    */
   public get b(): number {
-    return this.numChannels > 2
-      ? Float16.float16ToDouble(this.data[this._index + 2])
-      : 0;
+    return this.numChannels === 2
+      ? Float16.float16ToDouble(this.data[this._index])
+      : this.numChannels > 2
+        ? Float16.float16ToDouble(this.data[this._index + 2])
+        : 0;
   }
 
   /**
    * Sets the blue channel value.
    */
   public set b(b: number) {
-    if (this.numChannels > 2) {
+    if (this.numChannels === 2) {
+      this.data[this._index] = Float16.doubleToFloat16(b);
+    } else if (this.numChannels > 2) {
       this.data[this._index + 2] = Float16.doubleToFloat16(b);
     }
   }
@@ -238,16 +246,20 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the alpha channel value.
    */
   public get a(): number {
-    return this.numChannels > 3
-      ? Float16.float16ToDouble(this.data[this._index + 3])
-      : this.maxChannelValue;
+    return this.numChannels === 2
+      ? Float16.float16ToDouble(this.data[this._index + 1])
+      : this.numChannels > 3
+        ? Float16.float16ToDouble(this.data[this._index + 3])
+        : this.maxChannelValue;
   }
 
   /**
    * Sets the alpha channel value.
    */
   public set a(a: number) {
-    if (this.numChannels > 3) {
+    if (this.numChannels === 2) {
+      this.data[this._index + 1] = Float16.doubleToFloat16(a);
+    } else if (this.numChannels > 3) {
       this.data[this._index + 3] = Float16.doubleToFloat16(a);
     }
   }
@@ -312,14 +324,16 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the luminance of the pixel.
    */
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this.numChannels === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   /**
    * Gets the normalized luminance of the pixel.
    */
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this.numChannels === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   /**
@@ -431,6 +445,10 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public getChannel(channel: number): number {
     if (channel === channelLuminance) {
       return this.luminance;
+    } else if (this.numChannels === 2) {
+      return channel === channelAlpha
+        ? Float16.float16ToDouble(this.data[this._index + 1])
+        : Float16.float16ToDouble(this.data[this._index]);
     } else {
       return channel < this.numChannels
         ? Float16.float16ToDouble(this.data[this._index + channel])
@@ -480,11 +498,9 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public setRgb(r: number, g: number, b: number): void {
     if (this.numChannels > 0) {
       this.data[this._index] = Float16.doubleToFloat16(r);
-      if (this.numChannels > 1) {
+      if (this.numChannels > 2) {
         this.data[this._index + 1] = Float16.doubleToFloat16(g);
-        if (this.numChannels > 2) {
-          this.data[this._index + 2] = Float16.doubleToFloat16(b);
-        }
+        this.data[this._index + 2] = Float16.doubleToFloat16(b);
       }
     }
   }
@@ -499,13 +515,13 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
   public setRgba(r: number, g: number, b: number, a: number): void {
     if (this.numChannels > 0) {
       this.data[this._index] = Float16.doubleToFloat16(r);
-      if (this.numChannels > 1) {
+      if (this.numChannels === 2) {
+        this.data[this._index + 1] = Float16.doubleToFloat16(a);
+      } else if (this.numChannels > 2) {
         this.data[this._index + 1] = Float16.doubleToFloat16(g);
-        if (this.numChannels > 2) {
-          this.data[this._index + 2] = Float16.doubleToFloat16(b);
-          if (this.numChannels > 3) {
-            this.data[this._index + 3] = Float16.doubleToFloat16(a);
-          }
+        this.data[this._index + 2] = Float16.doubleToFloat16(b);
+        if (this.numChannels > 3) {
+          this.data[this._index + 3] = Float16.doubleToFloat16(a);
         }
       }
     }
@@ -516,7 +532,9 @@ export class PixelFloat16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number[]} An array of pixel data.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(this.length, (i) =>
+      Float16.float16ToDouble(this.data[this._index + i])
+    );
   }
 
   /**

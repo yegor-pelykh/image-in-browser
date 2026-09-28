@@ -26,4 +26,6 @@ export enum Channel {
   luminance,
 }
 
+export const channelAlpha: number = Channel.alpha;
+
 export const channelLuminance: number = Channel.luminance;

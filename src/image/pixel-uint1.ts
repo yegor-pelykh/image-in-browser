@@ -1,6 +1,6 @@
 /** @format */
 
-import { Channel, channelLuminance } from '../color/channel.js';
+import { Channel, channelAlpha, channelLuminance } from '../color/channel.js';
 import { Color, ColorConvertOptions } from '../color/color.js';
 import { ColorUtils } from '../color/color-utils.js';
 import { Format } from '../color/format.js';
@@ -196,7 +196,7 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Sets the green channel value.
    */
   public set g(g: number) {
-    this.setChannel(1, g);
+    this.setChannel(this.numChannels === 2 ? 0 : 1, g);
   }
 
   /**
@@ -210,23 +210,25 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Sets the blue channel value.
    */
   public set b(b: number) {
-    this.setChannel(2, b);
+    this.setChannel(this.numChannels === 2 ? 0 : 2, b);
   }
 
   /**
    * Gets the alpha channel value.
    */
   public get a(): number {
-    return this.palette === undefined && this.numChannels < 4
-      ? this.maxChannelValue
-      : this.getChannel(3);
+    return this.palette === undefined && this.numChannels === 2
+      ? this.getChannelInternal(1)
+      : this.palette === undefined && this.numChannels < 4
+        ? this.maxChannelValue
+        : this.getChannel(3);
   }
 
   /**
    * Sets the alpha channel value.
    */
   public set a(a: number) {
-    this.setChannel(3, a);
+    this.setChannel(this.numChannels === 2 ? 1 : 3, a);
   }
 
   /**
@@ -289,14 +291,16 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets the luminance of the pixel.
    */
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this.numChannels === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   /**
    * Gets the normalized luminance of the pixel.
    */
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this.numChannels === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   /**
@@ -465,6 +469,10 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     } else {
       if (channel === channelLuminance) {
         return this.luminance;
+      } else if (this.numChannels === 2) {
+        return channel === channelAlpha
+          ? this.getChannelInternal(1)
+          : this.getChannelInternal(0);
       } else {
         return channel < this.numChannels
           ? this.getChannelInternal(channel)
@@ -529,11 +537,9 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     const nc = this.image.numChannels;
     if (nc > 0) {
       this.setChannel(0, r);
-      if (nc > 1) {
+      if (nc > 2) {
         this.setChannel(1, g);
-        if (nc > 2) {
-          this.setChannel(2, b);
-        }
+        this.setChannel(2, b);
       }
     }
   }
@@ -549,13 +555,13 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     const nc = this.numChannels;
     if (nc > 0) {
       this.setChannel(0, r);
-      if (nc > 1) {
+      if (nc === 2) {
+        this.setChannel(1, a);
+      } else if (nc > 2) {
         this.setChannel(1, g);
-        if (nc > 2) {
-          this.setChannel(2, b);
-          if (nc > 3) {
-            this.setChannel(3, a);
-          }
+        this.setChannel(2, b);
+        if (nc > 3) {
+          this.setChannel(3, a);
         }
       }
     }
@@ -566,7 +572,11 @@ export class PixelUint1 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * @returns {number[]} The pixel data as an array.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(this.length, (i) =>
+      this.palette === undefined
+        ? this.getChannelInternal(i)
+        : this.palette.get(this.getChannelInternal(0), i)
+    );
   }
 
   /**

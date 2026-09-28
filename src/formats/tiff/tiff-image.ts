@@ -993,7 +993,7 @@ export class TiffImage {
                   ? byteData.readInt32()
                   : byteData.readUint32();
             }
-            image.setPixelRgb(px, py, gray, alpha, 0);
+            image.setPixelRgba(px, py, gray, 0, 0, alpha);
           } else if (this._samplesPerPixel === 3) {
             if (this._sampleFormat === TiffFormat.float) {
               let r = 0.0;

@@ -58,10 +58,10 @@ describe('MemoryImage', () => {
     expect(i2.numChannels).toBe(2);
     expect(i2.format).toBe(Format.uint4);
 
-    i2.setPixelRgb(0, 0, 9, 3, 0);
-    i2.setPixelRgb(1, 0, 3, 5, 0);
-    i2.setPixelRgb(0, 1, 7, 14, 0);
-    i2.setPixelRgb(1, 1, 15, 2, 0);
+    i2.setPixelRgba(0, 0, 9, 0, 0, 3);
+    i2.setPixelRgba(1, 0, 3, 0, 0, 5);
+    i2.setPixelRgba(0, 1, 7, 0, 0, 14);
+    i2.setPixelRgba(1, 1, 15, 0, 0, 2);
 
     expect(i2.getPixel(0, 0).equals([9, 3])).toBeTruthy();
     expect(i2.getPixel(1, 0).equals([3, 5])).toBeTruthy();
@@ -73,7 +73,7 @@ describe('MemoryImage', () => {
       expect(p2.equals(p)).toBeTruthy();
       const v = p.x & 0xf;
       p.r = v;
-      p.g = v;
+      p.a = v;
       expect(p.equals([v, v])).toBeTruthy();
     }
   });

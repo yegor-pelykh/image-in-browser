@@ -294,11 +294,9 @@ export class MemoryImageDataUint8 implements MemoryImageData, Iterable<Pixel> {
   ): void {
     const index = y * this.rowStride + x * this._numChannels;
     this._data[index] = Math.trunc(r);
-    if (this._numChannels > 1) {
+    if (this._numChannels > 2) {
       this._data[index + 1] = Math.trunc(g);
-      if (this._numChannels > 2) {
-        this._data[index + 2] = Math.trunc(b);
-      }
+      this._data[index + 2] = Math.trunc(b);
     }
   }
 
@@ -321,13 +319,13 @@ export class MemoryImageDataUint8 implements MemoryImageData, Iterable<Pixel> {
   ): void {
     const index = y * this.rowStride + x * this._numChannels;
     this._data[index] = Math.trunc(r);
-    if (this._numChannels > 1) {
+    if (this._numChannels === 2) {
+      this._data[index + 1] = Math.trunc(a);
+    } else if (this._numChannels > 2) {
       this._data[index + 1] = Math.trunc(g);
-      if (this._numChannels > 2) {
-        this._data[index + 2] = Math.trunc(b);
-        if (this._numChannels > 3) {
-          this._data[index + 3] = Math.trunc(a);
-        }
+      this._data[index + 2] = Math.trunc(b);
+      if (this._numChannels > 3) {
+        this._data[index + 3] = Math.trunc(a);
       }
     }
   }
@@ -389,10 +387,10 @@ export class MemoryImageDataUint8 implements MemoryImageData, Iterable<Pixel> {
       this._data.fill(ri);
     } else if (this._numChannels === 2) {
       const ri = c8 === undefined ? 0 : MathUtils.clampInt255(c8.r);
-      const gi = c8 === undefined ? 0 : MathUtils.clampInt255(c8.g);
-      const rg = (gi << 8) | ri;
+      const ai = c8 === undefined ? 0 : MathUtils.clampInt255(c8.a);
+      const ra = (ai << 8) | ri;
       const u16 = new Uint16Array(this._data.buffer);
-      u16.fill(rg);
+      u16.fill(ra);
     } else if (this._numChannels === 4) {
       const ri = c8 === undefined ? 0 : MathUtils.clampInt255(c8.r);
       const gi = c8 === undefined ? 0 : MathUtils.clampInt255(c8.g);

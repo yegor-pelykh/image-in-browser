@@ -128,10 +128,10 @@ export class BmpEncoder implements Encoder {
         withPalette: true,
       });
     } else if (format === Format.uint8 && nc === 2) {
-      // => uint8,3
+      // => uint8,4
       image = image.convert({
         format: Format.uint8,
-        numChannels: 3,
+        numChannels: 4,
       });
     } else if (image.isHdrFormat) {
       // => uint8,[3,4]

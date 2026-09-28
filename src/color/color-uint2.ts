@@ -2,7 +2,7 @@
 
 import { ArrayUtils } from '../common/array-utils.js';
 import { Palette } from '../image/palette.js';
-import { Channel } from './channel.js';
+import { Channel, channelAlpha } from './channel.js';
 import { Color, ColorConvertOptions } from './color.js';
 import { ColorUtils } from './color-utils.js';
 import { Format } from './format.js';
@@ -126,7 +126,7 @@ export class ColorUint2 implements Color {
    * @param {number} g - The green channel value to set.
    */
   public set g(g: number) {
-    this.setChannel(1, g);
+    this.setChannel(this.length === 2 ? 0 : 1, g);
   }
 
   /**
@@ -142,7 +142,7 @@ export class ColorUint2 implements Color {
    * @param {number} b - The blue channel value to set.
    */
   public set b(b: number) {
-    this.setChannel(2, b);
+    this.setChannel(this.length === 2 ? 0 : 2, b);
   }
 
   /**
@@ -158,7 +158,7 @@ export class ColorUint2 implements Color {
    * @param {number} a - The alpha channel value to set.
    */
   public set a(a: number) {
-    this.setChannel(3, a);
+    this.setChannel(this.length === 2 ? 1 : 3, a);
   }
 
   /**
@@ -230,7 +230,7 @@ export class ColorUint2 implements Color {
    * @returns {number} The luminance of the color.
    */
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this.length === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   /**
@@ -238,7 +238,9 @@ export class ColorUint2 implements Color {
    * @returns {number} The normalized luminance of the color.
    */
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this.length === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   /**
@@ -310,9 +312,8 @@ export class ColorUint2 implements Color {
    * @returns {number} The value of the specified channel.
    */
   public getChannel(channel: number | Channel): number {
-    return channel < this.length
-      ? (this._data >>> (6 - (channel << 1))) & 0x3
-      : 0;
+    const ch = this.length === 2 ? (channel === channelAlpha ? 1 : 0) : channel;
+    return ch < this.length ? (this._data >>> (6 - (ch << 1))) & 0x3 : 0;
   }
 
   /**
@@ -363,8 +364,10 @@ export class ColorUint2 implements Color {
    */
   public setRgb(r: number, g: number, b: number): void {
     this.r = r;
-    this.g = g;
-    this.b = b;
+    if (this.length > 2) {
+      this.g = g;
+      this.b = b;
+    }
   }
 
   /**
@@ -376,9 +379,13 @@ export class ColorUint2 implements Color {
    */
   public setRgba(r: number, g: number, b: number, a: number): void {
     this.r = r;
-    this.g = g;
-    this.b = b;
-    this.a = a;
+    if (this.length === 2) {
+      this.a = a;
+    } else if (this.length > 2) {
+      this.g = g;
+      this.b = b;
+      this.a = a;
+    }
   }
 
   /**
@@ -386,7 +393,9 @@ export class ColorUint2 implements Color {
    * @returns {number[]} An array of numbers representing the color.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(this.length, (i) =>
+      this.length === 2 && i === 1 ? this.a : this.getChannel(i)
+    );
   }
 
   /**

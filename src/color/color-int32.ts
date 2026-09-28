@@ -2,7 +2,7 @@
 
 import { ArrayUtils } from '../common/array-utils.js';
 import { Palette } from '../image/palette.js';
-import { Channel, channelLuminance } from './channel.js';
+import { Channel, channelAlpha, channelLuminance } from './channel.js';
 import { Color, ColorConvertOptions } from './color.js';
 import { ColorUtils } from './color-utils.js';
 import { Format } from './format.js';
@@ -98,10 +98,16 @@ export class ColorInt32 implements Color {
    * Gets or sets the green channel value.
    */
   public get g(): number {
-    return this._data.length > 1 ? this._data[1] : 0;
+    return this._data.length === 2
+      ? this._data[0]
+      : this._data.length > 1
+        ? this._data[1]
+        : 0;
   }
   public set g(g: number) {
-    if (this._data.length > 1) {
+    if (this._data.length === 2) {
+      this._data[0] = Math.trunc(g);
+    } else if (this._data.length > 1) {
       this._data[1] = Math.trunc(g);
     }
   }
@@ -110,10 +116,16 @@ export class ColorInt32 implements Color {
    * Gets or sets the blue channel value.
    */
   public get b(): number {
-    return this._data.length > 2 ? this._data[2] : 0;
+    return this._data.length === 2
+      ? this._data[0]
+      : this._data.length > 2
+        ? this._data[2]
+        : 0;
   }
   public set b(b: number) {
-    if (this._data.length > 2) {
+    if (this._data.length === 2) {
+      this._data[0] = Math.trunc(b);
+    } else if (this._data.length > 2) {
       this._data[2] = Math.trunc(b);
     }
   }
@@ -122,10 +134,16 @@ export class ColorInt32 implements Color {
    * Gets or sets the alpha channel value.
    */
   public get a(): number {
-    return this._data.length > 3 ? this._data[3] : 0;
+    return this._data.length === 2
+      ? this._data[1]
+      : this._data.length > 3
+        ? this._data[3]
+        : 0;
   }
   public set a(a: number) {
-    if (this._data.length > 3) {
+    if (this._data.length === 2) {
+      this._data[1] = Math.trunc(a);
+    } else if (this._data.length > 3) {
       this._data[3] = Math.trunc(a);
     }
   }
@@ -174,14 +192,16 @@ export class ColorInt32 implements Color {
    * Gets the luminance of the color.
    */
   public get luminance(): number {
-    return ColorUtils.getLuminance(this);
+    return this._data.length === 2 ? this.r : ColorUtils.getLuminance(this);
   }
 
   /**
    * Gets the normalized luminance of the color.
    */
   public get luminanceNormalized(): number {
-    return ColorUtils.getLuminanceNormalized(this);
+    return this._data.length === 2
+      ? this.rNormalized
+      : ColorUtils.getLuminanceNormalized(this);
   }
 
   /**
@@ -250,6 +270,8 @@ export class ColorInt32 implements Color {
   public getChannel(channel: number): number {
     if (channel === channelLuminance) {
       return this.luminance;
+    } else if (this._data.length === 2) {
+      return channel === channelAlpha ? this._data[1] : this._data[0];
     } else {
       return channel < this._data.length ? this._data[channel] : 0;
     }
@@ -292,11 +314,9 @@ export class ColorInt32 implements Color {
   public setRgb(r: number, g: number, b: number): void {
     this._data[0] = Math.trunc(r);
     const nc = this._data.length;
-    if (nc > 1) {
+    if (nc > 2) {
       this._data[1] = Math.trunc(g);
-      if (nc > 2) {
-        this._data[2] = Math.trunc(b);
-      }
+      this._data[2] = Math.trunc(b);
     }
   }
 
@@ -310,13 +330,13 @@ export class ColorInt32 implements Color {
   public setRgba(r: number, g: number, b: number, a: number): void {
     this._data[0] = Math.trunc(r);
     const nc = this._data.length;
-    if (nc > 1) {
+    if (nc === 2) {
+      this._data[1] = Math.trunc(a);
+    } else if (nc > 2) {
       this._data[1] = Math.trunc(g);
-      if (nc > 2) {
-        this._data[2] = Math.trunc(b);
-        if (nc > 3) {
-          this._data[3] = Math.trunc(a);
-        }
+      this._data[2] = Math.trunc(b);
+      if (nc > 3) {
+        this._data[3] = Math.trunc(a);
       }
     }
   }
@@ -326,7 +346,9 @@ export class ColorInt32 implements Color {
    * @returns {number[]} An array of numbers representing the color channels.
    */
   public toArray(): number[] {
-    return ArrayUtils.generate<number>(this.length, (i) => this.getChannel(i));
+    return ArrayUtils.generate<number>(this.length, (i) =>
+      this.length === 2 && i === 1 ? this.a : this.getChannel(i)
+    );
   }
 
   /**

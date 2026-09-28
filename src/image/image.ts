@@ -1488,12 +1488,7 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     const c2 = cubic(dy, ip2, ic2, in2, ia2);
     const c3 = cubic(dy, ip3, ic3, in3, ia3);
 
-    return this.getColor(
-      Math.trunc(c0),
-      Math.trunc(c1),
-      Math.trunc(c2),
-      Math.trunc(c3)
-    );
+    return this.getColor(c0, c1, c2, c3);
   }
 
   /**
