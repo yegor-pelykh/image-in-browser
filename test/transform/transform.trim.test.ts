@@ -151,4 +151,34 @@ describe('Transform', () => {
     expect(trimmed.width).toBe(10);
     expect(trimmed.height).toBe(10);
   });
+
+  /**
+   * Trim crops each frame from its own pixels.
+   */
+  test('trim crops each frame from its own pixels', () => {
+    const image = solidImage(10, 10, new ColorRgb8(255, 255, 255));
+    for (let y = 3; y <= 6; y++) {
+      for (let x = 3; x <= 6; x++) {
+        image.setPixelRgb(x, y, 0, 0, 0);
+      }
+    }
+    const frame1 = image.addFrame(MemoryImage.from(image, true));
+    for (const p of frame1) {
+      p.setRgb(255, 255, 255);
+    }
+    for (let y = 3; y <= 6; y++) {
+      for (let x = 3; x <= 6; x++) {
+        frame1.setPixelRgb(x, y, 255, 0, 0);
+      }
+    }
+
+    const trimmed = Transform.trim({ image: image });
+    expect(trimmed.width).toBe(4);
+    expect(trimmed.height).toBe(4);
+    expect(trimmed.numFrames).toBe(2);
+    const p0 = trimmed.frames[0].getPixel(0, 0);
+    const p1 = trimmed.frames[1].getPixel(0, 0);
+    expect([p0.r, p0.g, p0.b]).toEqual([0, 0, 0]);
+    expect([p1.r, p1.g, p1.b]).toEqual([255, 0, 0]);
+  });
 });

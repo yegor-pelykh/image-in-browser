@@ -23,6 +23,8 @@ export interface GifEncoderInitOptions {
   delay?: number;
   /** The number of times the GIF should loop. 0 means infinite looping. */
   repeat?: number;
+  /** The number of colors in the generated palette. */
+  numColors?: number;
   /**  The sampling factor for color quantization. */
   samplingFactor?: number;
   /** The dithering kernel to use. */
@@ -267,6 +269,7 @@ export class GifEncoder implements Encoder {
    * @param {GifEncoderInitOptions} [opt] - Initialization options.
    * @param {number} [opt.delay] - The delay between frames in milliseconds. Default is 80.
    * @param {number} [opt.repeat] - The number of times the animation should repeat. Default is 0 (infinite).
+   * @param {number} [opt.numColors] - The number of colors in the generated palette. Default is 256.
    * @param {number} [opt.samplingFactor] - The factor by which to downsample the image. Default is 10.
    * @param {string} [opt.dither] - The dithering algorithm to use. Default is Floyd-Steinberg.
    * @param {boolean} [opt.ditherSerpentine] - Whether to use serpentine dithering. Default is false.
@@ -276,7 +279,7 @@ export class GifEncoder implements Encoder {
     this._delay = opt?.delay ?? 80;
     this._repeat = opt?.repeat ?? 0;
     this._dispose = opt?.dispose ?? 2;
-    this._numColors = 256;
+    this._numColors = opt?.numColors ?? 256;
     this._quantizerType = QuantizerType.neural;
     this._samplingFactor = opt?.samplingFactor ?? 10;
     this._dither = opt?.dither ?? DitherKernel.floydSteinberg;
@@ -723,6 +726,7 @@ export class GifEncoder implements Encoder {
         quantizer: this._lastColorMap,
         kernel: this._dither,
         scanOrder: this.scanOrder,
+        strength: this._ditherStrength,
       });
     } else {
       this._lastImage = image;

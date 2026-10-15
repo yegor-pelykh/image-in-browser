@@ -1575,7 +1575,7 @@ export abstract class Transform {
 
       Draw.compositeImage({
         dst: dst,
-        src: opt.image,
+        src: frame,
         srcX: crop.left,
         srcY: crop.top,
         srcW: crop.width,

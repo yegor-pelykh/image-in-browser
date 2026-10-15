@@ -65,4 +65,17 @@ describe('Filter', () => {
     Filter.gaussianBlur({ image: src, radius: 2 });
     expect(imageVariance(src)).toBeLessThan(before);
   });
+
+  /**
+   * Gaussian blur is applied to every frame of an animation.
+   */
+  test('gaussianBlur blurs every frame', () => {
+    const src = checkerImage(32, 32, 4);
+    src.addFrame(checkerImage(32, 32, 4));
+    const blurred = Filter.gaussianBlur({ image: src.clone(), radius: 3 });
+    expect(blurred.numFrames).toBe(2);
+    for (const frame of blurred.frames) {
+      expect(imageVariance(frame)).toBeLessThan(imageVariance(src));
+    }
+  });
 });

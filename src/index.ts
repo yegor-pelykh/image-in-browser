@@ -655,6 +655,10 @@ export interface EncodeGifOptions extends EncodeAnimatedOptions {
    */
   repeat?: number;
   /**
+   * The number of colors in the generated palette.
+   */
+  numColors?: number;
+  /**
    * The sampling factor for the GIF image.
    */
   samplingFactor?: number;
@@ -1444,6 +1448,7 @@ export function decodeGif(
  * @param {MemoryImage} opt.image - The MemoryImage to encode.
  * @param {boolean} [opt.singleFrame=false] - Whether to encode a single frame (default is false).
  * @param {number} [opt.repeat=0] - The number of times the animation should repeat (default is 0).
+ * @param {number} [opt.numColors=256] - The number of colors in the generated palette (default is 256).
  * @param {number} [opt.samplingFactor=10] - The sampling factor for quantization (default is 10).
  * @param {DitherKernel} [opt.dither=DitherKernel.floydSteinberg] - The dither kernel to use (default is floydSteinberg).
  * @param {boolean} [opt.ditherSerpentine=false] - Whether to use serpentine dithering (default is false).
@@ -1452,11 +1457,13 @@ export function decodeGif(
 export function encodeGif(opt: EncodeGifOptions): Uint8Array {
   const singleFrame = opt.singleFrame ?? false;
   const repeat = opt.repeat ?? 0;
+  const numColors = opt.numColors ?? 256;
   const samplingFactor = opt.samplingFactor ?? 10;
   const dither = opt.dither ?? DitherKernel.floydSteinberg;
   const ditherSerpentine = opt.ditherSerpentine ?? false;
   return new GifEncoder({
     repeat: repeat,
+    numColors: numColors,
     samplingFactor: samplingFactor,
     dither: dither,
     ditherSerpentine: ditherSerpentine,

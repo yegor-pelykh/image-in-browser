@@ -490,16 +490,28 @@ export class JpegEncoder implements Encoder {
           format: Format.uint8,
         });
       }
+      let r = Math.trunc(p.r);
+      let g = Math.trunc(p.g);
+      let b = Math.trunc(p.b);
       if (p.length > 3) {
         const a = p.aNormalized;
         const invA = 1 - a;
-        p.r = Math.round(p.r * a + backgroundColor.r * invA);
-        p.g = Math.round(p.g * a + backgroundColor.g * invA);
-        p.b = Math.round(p.b * a + backgroundColor.b * invA);
+        r = MathUtils.clamp(
+          Math.round(r * a + backgroundColor.r * invA),
+          0,
+          255
+        );
+        g = MathUtils.clamp(
+          Math.round(g * a + backgroundColor.g * invA),
+          0,
+          255
+        );
+        b = MathUtils.clamp(
+          Math.round(b * a + backgroundColor.b * invA),
+          0,
+          255
+        );
       }
-      const r = Math.trunc(p.r);
-      const g = Math.trunc(p.g);
-      const b = Math.trunc(p.b);
 
       // calculate YUV values
       ydu[pos] =

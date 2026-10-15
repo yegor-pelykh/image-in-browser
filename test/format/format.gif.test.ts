@@ -5,10 +5,12 @@ import {
   ColorRgb8,
   decodeGif,
   decodePng,
+  DitherKernel,
   Draw,
   encodeGif,
   encodePng,
   Format,
+  GifEncoder,
   MemoryImage,
   Point,
   RandomUtils,
@@ -566,4 +568,30 @@ describe('Format: GIF', () => {
       }
     });
   }
+
+  /**
+   * The dither strength applies to every frame, not just the first.
+   */
+  test('ditherStrength applies to every frame', () => {
+    const frame = new MemoryImage({ width: 64, height: 16 });
+    for (const p of frame) {
+      p.r = p.x * 4;
+      p.g = p.x * 4;
+      p.b = p.x * 4;
+    }
+    const anim = frame.clone();
+    anim.addFrame(frame.clone());
+    const bytes = new GifEncoder({
+      numColors: 8,
+      dither: DitherKernel.bayer4x4,
+      ditherStrength: 0,
+    }).encode({ image: anim });
+    const decoded = decodeGif({ data: bytes });
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+    expect(decoded.numFrames).toBe(2);
+    ImageTestUtils.testImageEquals(decoded.frames[1], decoded.frames[0]);
+  });
 });

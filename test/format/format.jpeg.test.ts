@@ -2,6 +2,7 @@
 
 import { describe, expect, test } from 'vitest';
 import {
+  ColorRgba8,
   ColorUint8,
   ExifData,
   JpegChroma,
@@ -19,6 +20,7 @@ import {
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { ImageTestUtils } from '../_utils/image-test-utils';
 
 /**
  * JPEG format handling.
@@ -463,5 +465,16 @@ describe('Format: JPEG', () => {
       expect(p.g).toBeCloseTo(100, -1);
       expect(p.b).toBeCloseTo(50, -1);
     }
+  });
+
+  /**
+   * encodeJpg must not modify the pixels of an RGBA source image.
+   */
+  test('encodeJpg does not modify an RGBA source image', () => {
+    const image = new MemoryImage({ width: 16, height: 16, numChannels: 4 });
+    image.clear(new ColorRgba8(200, 100, 50, 128));
+    const original = image.clone();
+    encodeJpg({ image: image });
+    ImageTestUtils.testImageEquals(image, original);
   });
 });

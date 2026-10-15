@@ -3318,24 +3318,26 @@ export abstract class Filter {
       : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
-    const tmp = MemoryImage.from(image);
+    for (const frame of image.frames) {
+      const tmp = MemoryImage.from(frame, true);
 
-    // Apply the filter horizontally
-    opt.kernel.apply({
-      src: image,
-      dst: tmp,
-      maskChannel: maskChannel,
-      mask: opt.mask,
-    });
+      // Apply the filter horizontally
+      opt.kernel.apply({
+        src: frame,
+        dst: tmp,
+        maskChannel: maskChannel,
+        mask: opt.mask,
+      });
 
-    // Apply the filter vertically, applying back to the original image.
-    opt.kernel.apply({
-      src: tmp,
-      dst: image,
-      horizontal: false,
-      maskChannel: maskChannel,
-      mask: opt.mask,
-    });
+      // Apply the filter vertically, applying back to the original image.
+      opt.kernel.apply({
+        src: tmp,
+        dst: frame,
+        horizontal: false,
+        maskChannel: maskChannel,
+        mask: opt.mask,
+      });
+    }
 
     return image;
   }
