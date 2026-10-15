@@ -1441,7 +1441,7 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     const icc = this.getPixelSafe(x, y);
 
     const ipp = px < 0 || py < 0 ? icc : this.getPixelSafe(px, py);
-    const icp = px < 0 ? icc : this.getPixelSafe(x, py);
+    const icp = py < 0 ? icc : this.getPixelSafe(x, py);
     const inp = py < 0 || nx >= this.width ? icc : this.getPixelSafe(nx, py);
     const iap = ax >= this.width || py < 0 ? icc : this.getPixelSafe(ax, py);
 

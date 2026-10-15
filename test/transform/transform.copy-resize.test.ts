@@ -467,4 +467,23 @@ describe('Transform', () => {
       output
     );
   });
+
+  /**
+   * Cubic upscale of a solid image stays solid.
+   */
+  test('cubic upscale of a solid image stays solid', () => {
+    // The tap above the center pixel used to read outside the image along
+    // the top edge, darkening the first rows.
+    const src = new MemoryImage({ width: 4, height: 4 });
+    src.clear(new ColorRgb8(200, 100, 50));
+    const dst = Transform.copyResize({
+      image: src,
+      width: 16,
+      height: 16,
+      interpolation: Interpolation.cubic,
+    });
+    for (const p of dst) {
+      expect([p.r, p.g, p.b], `${p.x},${p.y}`).toEqual([200, 100, 50]);
+    }
+  });
 });

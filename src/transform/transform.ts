@@ -19,6 +19,7 @@ import { ExpandCanvasPosition } from './expand-canvas-position.js';
 import type { Color } from '../color/color.js';
 import { Format } from '../color/format.js';
 import { bytesPerPixel, copyPixels, reversePixels } from './pixel-bytes.js';
+import { resizeBytes } from './resize-bytes.js';
 
 /**
  * Interface for transform options.
@@ -1039,6 +1040,24 @@ export abstract class Transform {
 
       if (maintainAspect && opt.backgroundColor !== undefined) {
         dst.clear(opt.backgroundColor);
+      }
+
+      if (
+        resizeBytes(
+          frame,
+          dst,
+          interpolation,
+          x1,
+          y1,
+          w,
+          h,
+          dx,
+          dy,
+          scaleX,
+          scaleY
+        )
+      ) {
+        continue;
       }
 
       if (interpolation === Interpolation.average) {
