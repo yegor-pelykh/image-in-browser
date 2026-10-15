@@ -16,16 +16,6 @@ import { CircleQuadrant } from './circle-quadrant.js';
 import { bytesPerPixel } from '../transform/pixel-bytes.js';
 
 /**
- * Type definition for a function that tests a pixel during a flood fill operation.
- */
-type FillFloodTestPixel = (y: number, x: number) => boolean;
-
-/**
- * Type definition for a function that marks a pixel during a flood fill operation.
- */
-type FillFloodMarkPixel = (y: number, x: number) => void;
-
-/**
  * Options for drawing a line using Xiaolin Wu's algorithm.
  */
 interface DrawLineWuOptions {
@@ -691,15 +681,45 @@ export abstract class Draw {
   }
 
   /**
-   * Sets the alpha value of a given color.
-   *
-   * @param {Color} c - The color object whose alpha value is to be set.
-   * @param {number} a - The alpha value to set (typically between 0 and 1).
-   * @returns {Color} The color object with the updated alpha value.
+   * Returns a test of whether a pixel of **src** matches the color at
+   * (x, y) before anything is filled.
+   * @param {MemoryImage} src - The source image.
+   * @param {number} x - The seed x-coordinate.
+   * @param {number} y - The seed y-coordinate.
+   * @param {number} threshold - The color distance threshold.
+   * @param {boolean} compareAlpha - Whether to compare the alpha channel.
+   * @returns {(x: number, y: number) => boolean} The match test.
    */
-  private static setAlpha(c: Color, a: number): Color {
-    c.a = a;
-    return c;
+  private static matcher(
+    src: MemoryImage,
+    x: number,
+    y: number,
+    threshold: number,
+    compareAlpha: boolean
+  ): (x: number, y: number) => boolean {
+    const seed = src.getPixel(x, y);
+    const r = seed.r;
+    const g = seed.g;
+    const b = seed.b;
+    const a = seed.a;
+    if (threshold > 0) {
+      const lab = ColorUtils.rgbToLab(r, g, b);
+      if (compareAlpha) {
+        lab.push(a);
+      }
+      return (x, y) => !Draw.testPixelLabColorDistance(src, x, y, lab, threshold);
+    }
+    let p: Pixel | undefined = undefined;
+    if (compareAlpha) {
+      return (x, y) => {
+        p = src.getPixel(x, y, p);
+        return p.r === r && p.g === g && p.b === b && p.a === a;
+      };
+    }
+    return (x, y) => {
+      p = src.getPixel(x, y, p);
+      return p.r === r && p.g === g && p.b === b;
+    };
   }
 
   /**
@@ -758,168 +778,58 @@ export abstract class Draw {
   }
 
   /**
-   * Fills a rectangular block in the image starting from the specified coordinates.
-   * This function uses a flood fill algorithm to fill contiguous areas of the image.
-   *
-   * @param {MemoryImage} src - The source image to be filled.
-   * @param {number} x - The starting x-coordinate for the fill operation.
-   * @param {number} y - The starting y-coordinate for the fill operation.
-   * @param {FillFloodTestPixel} array - A function that tests if a pixel should be filled.
-   * @param {FillFloodMarkPixel} mark - A function that marks a pixel as filled.
-   * @param {Uint8Array} visited - A Uint8Array that keeps track of visited pixels.
-   */
-  private static fill4Core(
-    src: MemoryImage,
-    x: number,
-    y: number,
-    array: FillFloodTestPixel,
-    mark: FillFloodMarkPixel,
-    visited: Uint8Array
-  ): void {
-    let _x = x;
-    let _y = y;
-
-    if (visited[_y * src.width + _x] === 1) {
-      return;
-    }
-    // at this point, we know that array(y,x) is clear, and array(y-1,x) and
-    // array(y,x-1) are set. We'll begin scanning down and to the right,
-    // attempting to fill an entire rectangular block
-
-    // the number of cells that were clear in the last row we scanned
-    let lastRowLength = 0;
-
-    do {
-      let rowLength = 0;
-      let sx = _x;
-      // keep track of how long this row is. sx is the starting x for the main
-      // scan below now we want to handle a case like |***|, where we fill 3
-      // cells in the first row and then after we move to the second row we find
-      // the first  | **| cell is filled, ending our rectangular scan. rather
-      // than handling this via the recursion below, we'll increase the starting
-      // value of 'x' and reduce the last row length to match. then we'll continue
-      // trying to set the narrower rectangular block
-      if (lastRowLength !== 0 && array(_y, _x)) {
-        // if this is not the first row and the leftmost cell is filled...
-        do {
-          if (--lastRowLength === 0) {
-            // shorten the row. if it's full, we're done
-            return;
-          }
-          // otherwise, update the starting point of the main scan to match
-        } while (array(_y, ++_x));
-        sx = _x;
-      } else {
-        // we also want to handle the opposite case, | **|, where we begin
-        // scanning a 2-wide rectangular block and then find on the next row that
-        // it has |***| gotten wider on the left. again, we could handle this
-        // with recursion but we'd prefer to adjust x and lastRowLength instead
-        for (; _x !== 0 && !array(_y, _x - 1); rowLength++, lastRowLength++) {
-          mark(_y, --_x);
-          // to avoid scanning the cells twice, we'll fill them and update
-          // rowLength here if there's something above the new starting point,
-          // handle that recursively. this deals with cases like |* **| when we
-          // begin filling from (2,0), move down to (2,1), and then move left to
-          // (0,1). The  |****| main scan assumes the portion of the previous row
-          // from x to x+lastRowLength has already been filled. adjusting x and
-          // lastRowLength breaks that assumption in this case, so we must fix it
-          if (_y !== 0 && !array(_y - 1, _x)) {
-            // use _Fill since there may be more up and left
-            Draw.fill4(src, _x, _y - 1, array, mark, visited);
-          }
-        }
-      }
-
-      // now at this point we can begin to scan the current row in the rectangular
-      // block. the span of the previous row from x (inclusive) to x+lastRowLength
-      // (exclusive) has already been filled, so we don't need to
-      // check it. so scan across to the right in the current row
-      for (; sx < src.width && !array(_y, sx); rowLength++, sx++) {
-        mark(_y, sx);
-      }
-      // now we've scanned this row. if the block is rectangular, then the
-      // previous row has already been scanned, so we don't need to look upwards
-      // and we're going to scan the next row in the next iteration so we don't
-      // need to look downwards. however, if the block is not rectangular, we may
-      // need to look upwards or rightwards for some portion of the row. if this
-      // row was shorter than the last row, we may need to look rightwards near
-      // the end, as in the case of |*****|, where the first row is 5 cells long
-      // and the second row is 3 cells long. We must look to the right  |*** *|
-      // of the single cell at the end of the second row, i.e. at (4,1)
-      if (rowLength < lastRowLength) {
-        // 'end' is the end of the previous row, so scan the current row to
-        for (const end = _x + lastRowLength; ++sx < end;) {
-          // there. any clear cells would have been connected to the previous
-          if (!array(_y, sx)) {
-            // row. the cells up and left must be set so use FillCore
-            Draw.fill4Core(src, sx, _y, array, mark, visited);
-          }
-        }
-      }
-      // alternately, if this row is longer than the previous row, as in the case
-      // |*** *| then we must look above the end of the row, i.e at (4,0)
-      // |*****|
-      else if (rowLength > lastRowLength && _y !== 0) {
-        // if this row is longer and we're not already at the top...
-        for (let ux = _x + lastRowLength; ++ux < sx;) {
-          // sx is the end of the current row
-          if (!array(_y - 1, ux)) {
-            // since there may be clear cells up and left, use _Fill
-            Draw.fill4(src, ux, _y - 1, array, mark, visited);
-          }
-        }
-      }
-      // record the new row length
-      lastRowLength = rowLength;
-      // if we get to a full row or to the bottom, we're done
-    } while (lastRowLength !== 0 && ++_y < src.height);
-  }
-
-  /**
-   * Fills a region in the given MemoryImage starting from the specified coordinates (x, y).
-   * The function attempts to move as far as possible to the upper-left corner before filling.
-   *
-   * @param src The source MemoryImage to be filled.
-   * @param x The x-coordinate to start filling from.
-   * @param y The y-coordinate to start filling from.
-   * @param array A function that tests if a pixel should be filled.
-   * @param mark A function that marks a pixel as filled.
-   * @param visited A Uint8Array that keeps track of visited pixels.
+   * A scanline fill: each span of a row is filled, and the spans it touches in
+   * the rows above and below are added to a stack, so large shapes can't
+   * overflow the call stack.
+   * @param {number} width - The image width.
+   * @param {number} height - The image height.
+   * @param {number} x - The start x-coordinate.
+   * @param {number} y - The start y-coordinate.
+   * @param {(x: number, y: number) => boolean} blocked - Returns true for a pixel that can't be filled.
+   * @param {(x: number, y: number) => void} mark - Fills a pixel, which must make it blocked.
    */
   private static fill4(
-    src: MemoryImage,
+    width: number,
+    height: number,
     x: number,
     y: number,
-    array: FillFloodTestPixel,
-    mark: FillFloodMarkPixel,
-    visited: Uint8Array
+    blocked: (x: number, y: number) => boolean,
+    mark: (x: number, y: number) => void
   ): void {
-    let _x = x;
-    let _y = y;
-
-    if (visited[_y * src.width + _x] === 1) {
-      return;
+    const stack = [x, y];
+    while (stack.length > 0) {
+      const sy = stack.pop()!;
+      const sx = stack.pop()!;
+      if (blocked(sx, sy)) {
+        continue;
+      }
+      let x1 = sx;
+      while (x1 > 0 && !blocked(x1 - 1, sy)) {
+        x1--;
+      }
+      let x2 = sx;
+      while (x2 < width - 1 && !blocked(x2 + 1, sy)) {
+        x2++;
+      }
+      for (let i = x1; i <= x2; ++i) {
+        mark(i, sy);
+      }
+      for (const ny of [sy - 1, sy + 1]) {
+        if (ny < 0 || ny >= height) {
+          continue;
+        }
+        let inSpan = false;
+        for (let i = x1; i <= x2; ++i) {
+          if (blocked(i, ny)) {
+            inSpan = false;
+          } else if (!inSpan) {
+            stack.push(i);
+            stack.push(ny);
+            inSpan = true;
+          }
+        }
+      }
     }
-
-    // At this point, we know array(y,x) is clear, and we want to move as far as
-    // possible to the upper-left. Moving up is much more important than moving
-    // left, so we could try to make this smarter by sometimes moving to the
-    // right if doing so would allow us to move further up, but it doesn't seem
-    // worth the complexity
-    while (true) {
-      const ox = _x;
-      const oy = _y;
-      while (_y !== 0 && !array(_y - 1, _x)) {
-        _y--;
-      }
-      while (_x !== 0 && !array(_y, _x - 1)) {
-        _x--;
-      }
-      if (_x === ox && _y === oy) {
-        break;
-      }
-    }
-    Draw.fill4Core(src, _x, _y, array, mark, visited);
   }
 
   /**
@@ -2254,50 +2164,19 @@ export abstract class Draw {
     const threshold = opt.threshold ?? 0;
     const compareAlpha = opt.compareAlpha ?? false;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
+    const x = opt.start.x;
+    const y = opt.start.y;
 
-    if (opt.color.a === 0) {
+    if (opt.color.a === 0 || !opt.image.isBoundsSafe(x, y)) {
       return opt.image;
     }
 
     const visited = new Uint8Array(opt.image.width * opt.image.height);
-
-    const srcColor = opt.image.getPixel(opt.start.x, opt.start.y);
-    if (!compareAlpha) {
-      opt.color.a = 0;
-    }
-
-    let array: FillFloodTestPixel | undefined = undefined;
-    if (threshold > 0) {
-      const lab = ColorUtils.rgbToLab(srcColor.r, srcColor.g, srcColor.b);
-      if (compareAlpha) {
-        lab.push(srcColor.a);
-      }
-
-      array = (y: number, x: number) => {
-        return (
-          visited[y * opt.image.width + x] === 0 &&
-          Draw.testPixelLabColorDistance(opt.image, x, y, lab, threshold)
-        );
-      };
-    } else if (!compareAlpha) {
-      array = (y: number, x: number) => {
-        return (
-          visited[y * opt.image.width + x] === 0 &&
-          Draw.setAlpha(opt.image.getPixel(x, y), 0) !== srcColor
-        );
-      };
-    } else {
-      array = (y: number, x: number) => {
-        return (
-          visited[y * opt.image.width + x] === 0 &&
-          opt.image.getPixel(x, y) !== srcColor
-        );
-      };
-    }
+    const matches = Draw.matcher(opt.image, x, y, threshold, compareAlpha);
 
     let p: Pixel | undefined = undefined;
 
-    const mark = (y: number, x: number): void => {
+    const mark = (x: number, y: number): void => {
       if (opt.mask !== undefined) {
         const m = opt.mask.getPixel(x, y).getChannelNormalized(maskChannel);
         if (m > 0) {
@@ -2313,7 +2192,14 @@ export abstract class Draw {
       visited[y * opt.image.width + x] = 1;
     };
 
-    Draw.fill4(opt.image, opt.start.x, opt.start.y, array, mark, visited);
+    Draw.fill4(
+      opt.image.width,
+      opt.image.height,
+      x,
+      y,
+      (x, y) => visited[y * opt.image.width + x] !== 0 || !matches(x, y),
+      mark
+    );
 
     return opt.image;
   }
@@ -2598,53 +2484,30 @@ export abstract class Draw {
     const threshold = opt.threshold ?? 0;
     const compareAlpha = opt.compareAlpha ?? false;
     const fillValue = opt.fillValue ?? 255;
-
-    const visited = new Uint8Array(opt.image.width * opt.image.height);
-
-    let srcColor: Color = opt.image.getPixel(opt.start.x, opt.start.y);
-    if (!compareAlpha) {
-      srcColor = Draw.setAlpha(srcColor, 0);
-    }
+    const x = opt.start.x;
+    const y = opt.start.y;
 
     const ret = new Uint8Array(opt.image.width * opt.image.height);
-
-    let array: FillFloodTestPixel | undefined = undefined;
-    if (threshold > 0) {
-      const lab = ColorUtils.rgbToLab(srcColor.r, srcColor.g, srcColor.b);
-      if (compareAlpha) {
-        lab.push(srcColor.a);
-      }
-      array = (y: number, x: number) => {
-        return (
-          visited[y * opt.image.width + x] === 0 &&
-          (ret[y * opt.image.width + x] !== 0 ||
-            Draw.testPixelLabColorDistance(opt.image, x, y, lab, threshold))
-        );
-      };
-    } else if (!compareAlpha) {
-      array = (y: number, x: number) => {
-        return (
-          visited[y * opt.image.width + x] === 0 &&
-          (ret[y * opt.image.width + x] !== 0 ||
-            Draw.setAlpha(opt.image.getPixel(x, y), 0) !== srcColor)
-        );
-      };
-    } else {
-      array = (y: number, x: number) => {
-        return (
-          visited[y * opt.image.width + x] === 0 &&
-          (ret[y * opt.image.width + x] !== 0 ||
-            opt.image.getPixel(x, y) !== srcColor)
-        );
-      };
+    if (!opt.image.isBoundsSafe(x, y)) {
+      return ret;
     }
 
-    const mark = (y: number, x: number): void => {
+    const visited = new Uint8Array(opt.image.width * opt.image.height);
+    const matches = Draw.matcher(opt.image, x, y, threshold, compareAlpha);
+
+    const mark = (x: number, y: number): void => {
       ret[y * opt.image.width + x] = fillValue;
       visited[y * opt.image.width + x] = 1;
     };
 
-    Draw.fill4(opt.image, opt.start.x, opt.start.y, array, mark, visited);
+    Draw.fill4(
+      opt.image.width,
+      opt.image.height,
+      x,
+      y,
+      (x, y) => visited[y * opt.image.width + x] !== 0 || !matches(x, y),
+      mark
+    );
     return ret;
   }
 
