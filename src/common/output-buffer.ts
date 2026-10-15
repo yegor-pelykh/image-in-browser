@@ -90,18 +90,20 @@ export class OutputBuffer {
   }
 
   /**
-   * Grow the buffer to accommodate additional data.
-   * @param {number} required - The required additional size.
+   * Grow the buffer to hold at least **requiredLength** bytes. The capacity
+   * grows geometrically so a sequence of writes costs amortized linear time;
+   * 3x copies fewer bytes than 2x, and unused capacity is mostly untouched
+   * pages. A single large write gets a block of headroom instead, so a few
+   * trailing bytes (such as a chunk CRC) don't grow a large buffer again.
+   * @param {number} requiredLength - The required total capacity.
    */
-  private expandBuffer(required?: number): void {
-    let blockSize: number = OutputBuffer._blockSize;
-    if (required !== undefined) {
-      blockSize = required;
-    } else if (this._buffer.length > 0) {
-      blockSize = this._buffer.length * 2;
-    }
-    const newBuffer = new Uint8Array(this._buffer.length + blockSize);
-    ArrayUtils.copyRange(this._buffer, 0, newBuffer, 0, this._buffer.length);
+  private expandBuffer(requiredLength: number): void {
+    const newLength = Math.max(
+      this._buffer.length * 3,
+      requiredLength + OutputBuffer._blockSize
+    );
+    const newBuffer = new Uint8Array(newLength);
+    ArrayUtils.copyRange(this._buffer, 0, newBuffer, 0, this._length);
     this._buffer = newBuffer;
   }
 
@@ -134,7 +136,7 @@ export class OutputBuffer {
    */
   public writeByte(value: number): void {
     if (this._length === this._buffer.length) {
-      this.expandBuffer();
+      this.expandBuffer(this._length + 1);
     }
     this._buffer[this._length++] = value & 0xff;
   }
@@ -146,8 +148,8 @@ export class OutputBuffer {
    */
   public writeBytes(bytes: Uint8Array, length?: number): void {
     const bytesLength = length ?? bytes.length;
-    while (this._length + bytesLength > this._buffer.length) {
-      this.expandBuffer(this._length + bytesLength - this._buffer.length);
+    if (this._length + bytesLength > this._buffer.length) {
+      this.expandBuffer(this._length + bytesLength);
     }
     ArrayUtils.copyRange(bytes, 0, this._buffer, this._length, bytesLength);
     this._length += bytesLength;
@@ -160,8 +162,8 @@ export class OutputBuffer {
   public writeBuffer(bytes: InputBuffer<Uint8Array>): void {
     const bytesLength = bytes.length;
     const requiredLength = this._length + bytesLength;
-    while (requiredLength > this._buffer.length) {
-      this.expandBuffer(requiredLength - this._buffer.length);
+    if (requiredLength > this._buffer.length) {
+      this.expandBuffer(requiredLength);
     }
     ArrayUtils.copyRange(
       bytes.buffer,

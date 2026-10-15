@@ -31,7 +31,9 @@ export class TgaEncoder implements Encoder {
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     const image = opt.image;
 
+    const nc = image.palette?.numChannels ?? image.numChannels;
     const out = new OutputBuffer({
+      size: 18 + image.width * image.height * (nc === 4 ? 4 : 3),
       bigEndian: true,
     });
 
@@ -43,7 +45,6 @@ export class TgaEncoder implements Encoder {
     header[13] = (image.width >>> 8) & 0xff;
     header[14] = image.height & 0xff;
     header[15] = (image.height >>> 8) & 0xff;
-    const nc = image.palette?.numChannels ?? image.numChannels;
     header[16] = nc === 3 ? 24 : 32;
 
     out.writeBytes(header);

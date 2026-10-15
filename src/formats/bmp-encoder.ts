@@ -36,8 +36,6 @@ export class BmpEncoder implements Encoder {
   public encode(opt: EncoderEncodeOptions): Uint8Array {
     let image = opt.image;
 
-    const out = new OutputBuffer();
-
     const nc = image.numChannels;
     let palette = image.palette;
     const format = image.format;
@@ -170,6 +168,8 @@ export class BmpEncoder implements Encoder {
     const fileSize = imageFileSize + headerSize + paletteSize + gapSize;
 
     const sRgb = 0x73524742;
+
+    const out = new OutputBuffer({ size: fileSize });
 
     out.writeUint16(BmpFileHeader.signature);
     out.writeUint32(fileSize);

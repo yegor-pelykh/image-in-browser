@@ -57,8 +57,6 @@ export class TiffEncoder implements Encoder {
     const skipExif = opt.skipExif ?? false;
     let image = opt.image;
 
-    const out = new OutputBuffer();
-
     // TIFF is really just an EXIF structure (or, really, EXIF is just a TIFF
     // structure).
 
@@ -112,6 +110,8 @@ export class TiffEncoder implements Encoder {
 
       ifd0.set('ColorMap', colorMap);
     }
+
+    const out = new OutputBuffer({ size: image.byteLength + 0x2000 });
 
     exif.write(out);
 
