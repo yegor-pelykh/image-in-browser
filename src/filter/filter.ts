@@ -141,8 +141,13 @@ function filterRow(
   k: Float64Array,
   acc: Float64Array
 ): void {
-  acc.fill(0, 0, n);
-  for (let j = 0; j < k.length; ++j) {
+  // The first tap assigns rather than adds to zero, which gives the same
+  // values.
+  const c0 = k[0];
+  for (let i = 0; i < n; ++i) {
+    acc[i] = c0 * padded[i];
+  }
+  for (let j = 1; j < k.length; ++j) {
     const c = k[j];
     const o = j * nc;
     for (let i = 0; i < n; ++i) {
@@ -174,8 +179,12 @@ function filterColumn(
   k: Float64Array,
   acc: Float64Array
 ): void {
-  acc.fill(0, 0, n);
-  for (let j = 0; j < k.length; ++j) {
+  const c0 = k[0];
+  const o0 = rowOffsets[0];
+  for (let i = 0; i < n; ++i) {
+    acc[i] = c0 * ring[o0 + i];
+  }
+  for (let j = 1; j < k.length; ++j) {
     const c = k[j];
     const o = rowOffsets[j];
     for (let i = 0; i < n; ++i) {
@@ -287,6 +296,289 @@ function edgeGlowUint8(
         const m = src[i] * invMx + v * mx;
         out[i] = m < 0 ? 0 : m > 255 ? 255 : Math.trunc(m);
       }
+    }
+  }
+}
+
+/**
+ * Maps the RGB channels of the RGB(A) uint8 **image** through the lookup
+ * tables.
+ * @param {MemoryImage} image - The image to map.
+ * @param {Uint8Array} r - The red lookup table.
+ * @param {Uint8Array} g - The green lookup table.
+ * @param {Uint8Array} b - The blue lookup table.
+ */
+function applyRgbLut(
+  image: MemoryImage,
+  r: Uint8Array,
+  g: Uint8Array,
+  b: Uint8Array
+): void {
+  const data = image.toUint8Array();
+  const nc = image.numChannels;
+  for (let i = 0; i < data.length; i += nc) {
+    data[i] = r[data[i]];
+    data[i + 1] = g[data[i + 1]];
+    data[i + 2] = b[data[i + 2]];
+  }
+}
+
+/**
+ * Returns a copy of the pixels of **frame**, for filters that read the
+ * original while writing the frame. **scratch**, the copy made for a previous
+ * frame, is reused when it has the same layout.
+ * @param {MemoryImage} frame - The frame to copy.
+ * @param {MemoryImage} [scratch] - The copy made for a previous frame.
+ * @returns {MemoryImage} The frame copy.
+ */
+function copyFrameReusing(
+  frame: MemoryImage,
+  scratch?: MemoryImage
+): MemoryImage {
+  if (
+    scratch !== undefined &&
+    scratch.width === frame.width &&
+    scratch.height === frame.height &&
+    scratch.format === frame.format &&
+    scratch.numChannels === frame.numChannels &&
+    !frame.hasPalette &&
+    !scratch.hasPalette
+  ) {
+    const bytes = frame.toUint8Array();
+    scratch.toUint8Array().set(bytes, 0);
+    return scratch;
+  }
+  return MemoryImage.from(frame, true);
+}
+
+/**
+ * A fast path for RGB(A) uint8 images, computing the same values as the
+ * general path. Rows are filtered in place, keeping copies of the original
+ * rows above; the row below hasn't been written yet.
+ * @param {MemoryImage} frame - The frame to convolve.
+ * @param {number[]} filter - The 3x3 convolution filter.
+ * @param {number} div - The divisor.
+ * @param {number} offset - The offset.
+ * @param {number} amount - The amount of the effect.
+ */
+function convolutionUint8(
+  frame: MemoryImage,
+  filter: number[],
+  div: number,
+  offset: number,
+  amount: number
+): void {
+  const w = frame.width;
+  const h = frame.height;
+  const nc = frame.numChannels;
+  const stride = frame.data!.rowStride;
+  const data = frame.toUint8Array();
+  const k = new Float64Array(9);
+  for (let i = 0; i < 9; ++i) {
+    k[i] = filter[i];
+  }
+  const d = div;
+  const o = offset;
+  const mx = amount;
+  const invMx = 1 - mx;
+
+  // The byte offsets of each pixel's left, center and right neighbors.
+  const cols = new Int32Array(w * 3);
+  for (let x = 0; x < w; ++x) {
+    cols[x * 3] = Math.max(x - 1, 0) * nc;
+    cols[x * 3 + 1] = x * nc;
+    cols[x * 3 + 2] = Math.min(x + 1, w - 1) * nc;
+  }
+
+  let above = new Uint8Array(data.subarray(0, stride));
+  let center = new Uint8Array(above);
+  for (let y = 0; y < h; ++y) {
+    // The last row's row below is itself, whose original is center.
+    const last = y + 1 === h;
+    const belowOffset = last ? 0 : (y + 1) * stride;
+    convolutionRow(
+      above,
+      center,
+      last ? center : data,
+      belowOffset,
+      data,
+      y * stride,
+      w,
+      k,
+      d,
+      o,
+      mx,
+      invMx,
+      cols
+    );
+    // The next row's above is this row's original, and its center is the row
+    // below, which is still unmodified.
+    const t = above;
+    above = center;
+    center = t;
+    if (y + 1 < h) {
+      center.set(data.subarray(belowOffset, belowOffset + stride), 0);
+    }
+  }
+}
+
+/**
+ * Filters one row of a uint8 convolution.
+ * @param {Uint8Array} above - The original row above.
+ * @param {Uint8Array} center - The original center row.
+ * @param {Uint8Array} below - The data of the row below.
+ * @param {number} belowOffset - The byte offset of the row below.
+ * @param {Uint8Array} out - The destination data.
+ * @param {number} outOffset - The destination byte offset.
+ * @param {number} w - The width.
+ * @param {Float64Array} k - The kernel coefficients.
+ * @param {number} div - The divisor.
+ * @param {number} offset - The offset.
+ * @param {number} mx - The amount of the effect.
+ * @param {number} invMx - One minus the amount.
+ * @param {Int32Array} cols - The neighbor byte offsets of each pixel.
+ */
+function convolutionRow(
+  above: Uint8Array,
+  center: Uint8Array,
+  below: Uint8Array,
+  belowOffset: number,
+  out: Uint8Array,
+  outOffset: number,
+  w: number,
+  k: Float64Array,
+  div: number,
+  offset: number,
+  mx: number,
+  invMx: number,
+  cols: Int32Array
+): void {
+  for (let x = 0; x < w; ++x) {
+    const l = cols[x * 3];
+    const c = cols[x * 3 + 1];
+    const r = cols[x * 3 + 2];
+    for (let ch = 0; ch < 3; ++ch) {
+      let sum = 0.0;
+      sum += above[l + ch] * k[0];
+      sum += above[c + ch] * k[1];
+      sum += above[r + ch] * k[2];
+      sum += center[l + ch] * k[3];
+      sum += center[c + ch] * k[4];
+      sum += center[r + ch] * k[5];
+      sum += below[belowOffset + l + ch] * k[6];
+      sum += below[belowOffset + c + ch] * k[7];
+      sum += below[belowOffset + r + ch] * k[8];
+      let v = sum / div + offset;
+      v = v < 0 ? 0.0 : v > 255 ? 255.0 : v;
+      const i = outOffset + c + ch;
+      const m = center[c + ch] * invMx + v * mx;
+      out[i] = m < 0 ? 0 : m > 255 ? 255 : Math.trunc(m);
+    }
+  }
+}
+
+/**
+ * A fast path for RGB(A) uint8 images, computing the same values as the
+ * general path. Rows are filtered in place from the luminance of the
+ * original rows above, at and below, computed before they're overwritten.
+ * @param {MemoryImage} frame - The frame to filter.
+ * @param {number} amount - The amount of the effect.
+ */
+function sobelUint8(frame: MemoryImage, amount: number): void {
+  const w = frame.width;
+  const h = frame.height;
+  const nc = frame.numChannels;
+  const stride = frame.data!.rowStride;
+  const data = frame.toUint8Array();
+  const mx = amount;
+  const invMx = 1 - mx;
+
+  let above = new Float64Array(w);
+  let center = new Float64Array(w);
+  let below = new Float64Array(w);
+  luminanceRow(data, 0, nc, center);
+  above.set(center, 0);
+  for (let y = 0; y < h; ++y) {
+    if (y + 1 < h) {
+      luminanceRow(data, (y + 1) * stride, nc, below);
+    } else {
+      below.set(center, 0);
+    }
+    sobelRow(above, center, below, data, y * stride, w, nc, mx, invMx);
+    const t = above;
+    above = center;
+    center = below;
+    below = t;
+  }
+}
+
+/**
+ * The normalized luminance of each pixel of the row at offset **o**, as
+ * PixelUint8.luminanceNormalized computes it.
+ * @param {Uint8Array} data - The image pixel data.
+ * @param {number} o - The byte offset of the row.
+ * @param {number} nc - The number of channels.
+ * @param {Float64Array} out - The output luminance row.
+ */
+function luminanceRow(
+  data: Uint8Array,
+  o: number,
+  nc: number,
+  out: Float64Array
+): void {
+  for (let x = 0, i = o; x < out.length; ++x, i += nc) {
+    out[x] =
+      0.299 * (data[i] / 255) +
+      0.587 * (data[i + 1] / 255) +
+      0.114 * (data[i + 2] / 255);
+  }
+}
+
+/**
+ * Filters one row of a uint8 sobel.
+ * @param {Float64Array} above - The luminance of the row above.
+ * @param {Float64Array} center - The luminance of the center row.
+ * @param {Float64Array} below - The luminance of the row below.
+ * @param {Uint8Array} out - The image pixel data.
+ * @param {number} o - The byte offset of the row.
+ * @param {number} w - The width.
+ * @param {number} nc - The number of channels.
+ * @param {number} mx - The amount of the effect.
+ * @param {number} invMx - One minus the amount.
+ */
+function sobelRow(
+  above: Float64Array,
+  center: Float64Array,
+  below: Float64Array,
+  out: Uint8Array,
+  o: number,
+  w: number,
+  nc: number,
+  mx: number,
+  invMx: number
+): void {
+  for (let x = 0; x < w; ++x) {
+    const nx = x > 0 ? x - 1 : 0;
+    const px = x + 1 < w ? x + 1 : w - 1;
+    const bottomLeft = below[nx];
+    const topLeft = above[nx];
+    const bottomRight = below[px];
+    const topRight = above[px];
+    const left = center[nx];
+    const right = center[px];
+    const bottom = below[x];
+    const top = above[x];
+
+    const h =
+      -topLeft - 2 * top - topRight + bottomLeft + 2 * bottom + bottomRight;
+    const v =
+      -bottomLeft - 2 * left - topLeft + bottomRight + 2 * right + topRight;
+    const mag = Math.sqrt(h * h + v * v) * 255;
+
+    const i = o + x * nc;
+    for (let c = 0; c < 3; ++c) {
+      const m = mag * mx + out[i + c] * invMx;
+      out[i + c] = m < 0 ? 0 : m > 255 ? 255 : Math.trunc(m);
     }
   }
 }
@@ -1189,7 +1481,64 @@ export abstract class Filter {
 
     const hsv: number[] = [0, 0, 0];
 
+    // Without saturation and hue, each channel only depends on itself, so for
+    // RGB(A) uint8 images lookup tables give the same result, computed with the
+    // same steps as the per-pixel code below.
+    const channelLut = (bl: number, wh: number, md: number): Uint8Array => {
+      const lut = new Uint8Array(256);
+      for (let v = 0; v < 256; ++v) {
+        const o = v / 255;
+        let c = o;
+        if (useBlacksWhitesMids) {
+          c = ((c + bl) * wh) ** md;
+        }
+        if (brightness !== undefined && brightness !== 1.0) {
+          c *= MathUtils.clamp(brightness, 0, 1000);
+        }
+        if (contrast !== undefined) {
+          c = avgLumR * invContrast + c * contrast;
+        }
+        if (gamma !== undefined) {
+          c **= gamma;
+        }
+        if (exposure !== undefined) {
+          c *= exposure;
+        }
+        c = MathUtils.mix(o, c, amount);
+        lut[v] = Math.trunc(
+          MathUtils.clamp(MathUtils.clamp(c, 0.0, 1.0) * 255, 0, 255)
+        );
+      }
+      return lut;
+    };
+
+    const useLut =
+      opt.mask === undefined &&
+      opt.saturation === undefined &&
+      opt.hue === undefined;
+
     for (const frame of image.frames) {
+      if (useLut && frame.format === Format.uint8 && frame.numChannels >= 3) {
+        applyRgbLut(
+          frame,
+          channelLut(
+            useBlacksWhitesMids ? br : 0,
+            useBlacksWhitesMids ? wr : 0,
+            useBlacksWhitesMids ? mr : 0
+          ),
+          channelLut(
+            useBlacksWhitesMids ? bg : 0,
+            useBlacksWhitesMids ? wg : 0,
+            useBlacksWhitesMids ? mg : 0
+          ),
+          channelLut(
+            useBlacksWhitesMids ? bb : 0,
+            useBlacksWhitesMids ? wb : 0,
+            useBlacksWhitesMids ? mb : 0
+          )
+        );
+        continue;
+      }
       for (const p of frame) {
         const or = p.rNormalized;
         const og = p.gNormalized;
@@ -1281,15 +1630,16 @@ export abstract class Filter {
     // Math.pow(0.45, 2);
     const rs = 0.2025;
 
+    let scratch: MemoryImage | undefined = undefined;
+
     for (const frame of image.frames) {
       const w = frame.width;
       const h = frame.height;
       const aspect = w / h;
       const stepX = 0.0015625;
       const stepY = 0.0015625 * aspect;
-      const orig = frame.clone({
-        skipAnimation: true,
-      });
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
       for (const p of frame) {
         const uvX = p.x / (w - 1);
         const uvY = p.y / (h - 1);
@@ -1427,10 +1777,10 @@ export abstract class Filter {
     const interpolation = opt.interpolation ?? Interpolation.nearest;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
+    let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
-      const orig = frame.clone({
-        skipAnimation: true,
-      });
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
       const w = frame.width;
       const h = frame.height;
       const cx = opt.centerX ?? Math.trunc(w / 2);
@@ -1553,10 +1903,10 @@ export abstract class Filter {
     const shift = opt.shift ?? 5;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
+    let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
-      const orig = frame.clone({
-        skipAnimation: true,
-      });
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
       const w = frame.width - 1;
       for (const p of frame) {
         const shiftLeft = MathUtils.clamp(p.x - shift, 0, w);
@@ -1835,6 +2185,18 @@ export abstract class Filter {
     const offset = opt.offset ?? 0;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (
+      opt.mask === undefined &&
+      image.format === Format.uint8 &&
+      image.numChannels >= 3 &&
+      opt.filter.length >= 9
+    ) {
+      for (const frame of image.frames) {
+        convolutionUint8(frame, opt.filter, div, offset, amount);
+      }
+      return image;
+    }
 
     const tmp = MemoryImage.from(image);
     for (const frame of image.frames) {
@@ -2412,8 +2774,10 @@ export abstract class Filter {
       return opt.image;
     }
 
+    let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
-      const orig = MemoryImage.from(frame, true);
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
       const width = frame.width;
       const height = frame.height;
       if (
@@ -2556,6 +2920,22 @@ export abstract class Filter {
       : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     for (const frame of image.frames) {
+      if (
+        opt.mask === undefined &&
+        frame.format === Format.uint8 &&
+        frame.numChannels >= 3
+      ) {
+        // Each channel only depends on itself, so a lookup table computed the
+        // same way as the Pixel setters gives the same result.
+        const lut = new Uint8Array(256);
+        for (let v = 0; v < 256; ++v) {
+          lut[v] = Math.trunc(
+            MathUtils.clamp((v / 255) ** opt.gamma * 255, 0, 255)
+          );
+        }
+        applyRgbLut(frame, lut, lut, lut);
+        continue;
+      }
       for (const p of frame) {
         const msk = opt.mask
           ?.getPixel(p.x, p.y)
@@ -2833,14 +3213,14 @@ export abstract class Filter {
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
+    let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
       const w = frame.width - 1;
       const h = frame.height - 1;
       const cntX = (opt.centerX ?? Math.trunc(frame.width / 2)) / w;
       const cntY = (opt.centerY ?? Math.trunc(frame.height / 2)) / h;
-      const orig = frame.clone({
-        skipAnimation: true,
-      });
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
 
       for (const p of frame) {
         let texX = (p.x - cntX) / size;
@@ -3760,10 +4140,12 @@ export abstract class Filter {
       return opt.image;
     }
 
+    let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
       const width = frame.width;
       const height = frame.height;
-      const orig = MemoryImage.from(frame, true);
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
       for (const p of frame) {
         const ny = MathUtils.clamp(p.y - 1, 0, height - 1);
         const py = MathUtils.clamp(p.y + 1, 0, height - 1);
@@ -3853,6 +4235,14 @@ export abstract class Filter {
     }
 
     for (const frame of image.frames) {
+      if (
+        opt.mask === undefined &&
+        frame.format === Format.uint8 &&
+        frame.numChannels >= 3
+      ) {
+        sobelUint8(frame, amount);
+        continue;
+      }
       const orig = MemoryImage.from(frame, true);
       const width = frame.width;
       const height = frame.height;
@@ -4018,10 +4408,10 @@ export abstract class Filter {
     const interpolation = opt.interpolation ?? Interpolation.nearest;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
+    let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
-      const orig = frame.clone({
-        skipAnimation: true,
-      });
+      scratch = copyFrameReusing(frame, scratch);
+      const orig = scratch;
       const w = frame.width - 1;
       const h = frame.height - 1;
       const cx = opt.centerX ?? Math.trunc(frame.width / 2);
