@@ -71,6 +71,22 @@ export class NeuralQuantizer implements Quantizer {
   /** Network index array */
   private readonly _netIndex = new Int32Array(256);
 
+  /** A flat copy of the color map for {@link inxSearch} */
+  private _map = new Int32Array(0);
+
+  /** The mask for the color index search cache */
+  private static readonly _cacheMask = 0xffff;
+
+  /** The cached search keys */
+  private readonly _cacheKeys = new Int32Array(
+    NeuralQuantizer._cacheMask + 1
+  );
+
+  /** The cached search results */
+  private readonly _cacheValues = new Uint16Array(
+    NeuralQuantizer._cacheMask + 1
+  );
+
   /** Sampling factor */
   private _samplingFactor: number;
 
@@ -99,7 +115,7 @@ export class NeuralQuantizer implements Quantizer {
   private _radiusPower!: Int32Array;
 
   /** The network itself */
-  private _network!: number[];
+  private _network!: Float64Array;
 
   /** Internal palette */
   private _paletteInternal!: PaletteUint32;
@@ -113,10 +129,10 @@ export class NeuralQuantizer implements Quantizer {
   }
 
   /** Bias array for learning */
-  private _bias!: number[];
+  private _bias!: Float64Array;
 
   /** Frequency array for learning */
-  private _freq!: number[];
+  private _freq!: Float64Array;
 
   /** How many colors are in the palette? */
   public get numColors(): number {
@@ -152,9 +168,9 @@ export class NeuralQuantizer implements Quantizer {
     this._bgColor = this._specials - 1;
     this._radiusPower = new Int32Array(this._netSize >>> 3);
 
-    this._network = new Array<number>(this._netSize * 3).fill(0);
-    this._bias = new Array<number>(this._netSize).fill(0);
-    this._freq = new Array<number>(this._netSize).fill(0);
+    this._network = new Float64Array(this._netSize * 3);
+    this._bias = new Float64Array(this._netSize);
+    this._freq = new Float64Array(this._netSize);
 
     this._network[0] = 0.0;
     this._network[1] = 0.0;
@@ -396,8 +412,9 @@ export class NeuralQuantizer implements Quantizer {
     let x = 0;
     let y = 0;
     let i = 0;
+    let p: Pixel | undefined = undefined;
     while (i < samplePixels) {
-      const p = image.getPixel(x, y);
+      p = image.getPixel(x, y, p);
 
       const red = p.r;
       const green = p.g;
@@ -534,6 +551,7 @@ export class NeuralQuantizer implements Quantizer {
    * @returns {number} The index of the closest color in the palette
    */
   private inxSearch(b: number, g: number, r: number): number {
+    const m = this._map;
     // Biggest possible dist is 256*3
     let bestD = 1000;
     let best = -1;
@@ -545,7 +563,7 @@ export class NeuralQuantizer implements Quantizer {
     while (i < this._netSize || j >= 0) {
       if (i < this._netSize) {
         // Inx key
-        let dist = this._paletteInternal.get(i, 1) - g;
+        let dist = m[i * 4 + 1] - g;
         if (dist >= bestD) {
           // Stop iter
           i = this._netSize;
@@ -553,19 +571,19 @@ export class NeuralQuantizer implements Quantizer {
           if (dist < 0) {
             dist = -dist;
           }
-          let a = this._paletteInternal.get(i, 0) - b;
+          let a = m[i * 4 + 0] - b;
           if (a < 0) {
             a = -a;
           }
           dist += a;
           if (dist < bestD) {
-            a = this._paletteInternal.get(i, 2) - r;
+            a = m[i * 4 + 2] - r;
             if (a < 0) {
               a = -a;
             }
             dist += a;
             if (dist < bestD) {
-              bestD = Math.trunc(dist);
+              bestD = dist;
               best = i;
             }
           }
@@ -574,9 +592,8 @@ export class NeuralQuantizer implements Quantizer {
       }
 
       if (j >= 0) {
-        const p = j * 4;
         // Inx key - reverse dif
-        let dist = g - this._paletteInternal.get(j, 1);
+        let dist = g - m[j * 4 + 1];
         if (dist >= bestD) {
           // Stop iter
           j = -1;
@@ -584,19 +601,19 @@ export class NeuralQuantizer implements Quantizer {
           if (dist < 0) {
             dist = -dist;
           }
-          let a = this._paletteInternal.get(j, 0) - b;
+          let a = m[j * 4 + 0] - b;
           if (a < 0) {
             a = -a;
           }
           dist += a;
           if (dist < bestD) {
-            a = this._paletteInternal.get(j, 2) - r;
+            a = m[j * 4 + 2] - r;
             if (a < 0) {
               a = -a;
             }
             dist += a;
             if (dist < bestD) {
-              bestD = Math.trunc(dist);
+              bestD = dist;
               best = j;
             }
           }
@@ -627,7 +644,15 @@ export class NeuralQuantizer implements Quantizer {
    * @returns {number} The index of the closest color in the palette
    */
   public getColorIndexRgb(r: number, g: number, b: number): number {
-    return this.inxSearch(b, g, r);
+    const key = (r << 16) | (g << 8) | b;
+    const slot = (key ^ (key >>> 11)) & NeuralQuantizer._cacheMask;
+    if (this._cacheKeys[slot] === key + 1) {
+      return this._cacheValues[slot];
+    }
+    const i = this.inxSearch(b, g, r);
+    this._cacheKeys[slot] = key + 1;
+    this._cacheValues[slot] = i;
+    return i;
   }
 
   /**
@@ -690,5 +715,12 @@ export class NeuralQuantizer implements Quantizer {
     this.fix();
     this.inxBuild();
     this.copyPalette();
+    this._cacheKeys.fill(0, 0, this._cacheKeys.length);
+    this._map = new Int32Array(this._netSize * 4);
+    for (let i = 0; i < this._netSize; ++i) {
+      for (let c = 0; c < 3; ++c) {
+        this._map[i * 4 + c] = Math.trunc(this._palette.get(i, c));
+      }
+    }
   }
 }

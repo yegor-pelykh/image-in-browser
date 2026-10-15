@@ -30,6 +30,7 @@ import { Format, FormatType } from '../color/format.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { DitherScanOrder } from './dither-scan-order.js';
 import { reflectIndex } from './reflect-index.js';
+import { PaletteUint8 } from '../image/palette-uint8.js';
 
 /**
  * A fast path for uint8 images, giving the same result as
@@ -217,6 +218,18 @@ function grayscaleUint8(data: Uint8Array, nc: number, amount: number): void {
     data[i + 1] = Math.trunc(MathUtils.clamp(g * ia + l * a, 0, 255));
     data[i + 2] = Math.trunc(MathUtils.clamp(b * ia + l * a, 0, 255));
   }
+}
+
+/**
+ * Adds an error to a channel value, clamping and truncating as the Pixel
+ * setters do.
+ * @param {number} v - The channel value.
+ * @param {number} e - The error to add.
+ * @returns {number} The new channel value.
+ */
+function addError(v: number, e: number): number {
+  const n = v + e;
+  return n < 0 ? 0 : n > 255 ? 255 : Math.trunc(n);
 }
 
 /**
@@ -1999,9 +2012,68 @@ export abstract class Filter {
       palette: palette,
     });
 
-    const imageCopy = opt.image.clone();
+    const fast =
+      opt.image.format === Format.uint8 &&
+      !opt.image.hasPalette &&
+      opt.image.numChannels >= 3 &&
+      palette instanceof PaletteUint8;
+    const nc = opt.image.numChannels;
+    const pixels = fast ? Uint8Array.from(opt.image.toUint8Array()) : undefined;
+    const indices = indexedImage.toUint8Array();
+    const paletteRgb = new Int32Array(fast ? palette.numColors * 3 : 0);
+    if (fast) {
+      for (let i = 0, j = 0; i < palette.numColors; ++i) {
+        paletteRgb[j++] = Math.trunc(palette.get(i, 0));
+        paletteRgb[j++] = Math.trunc(palette.get(i, 1));
+        paletteRgb[j++] = Math.trunc(palette.get(i, 2));
+      }
+    }
+    const numTaps = ds.length;
+    const tapW = Float64Array.from(ds.map((t) => t[0]));
+    const tapX = Int32Array.from(ds.map((t) => Math.trunc(t[1])));
+    const tapY = Int32Array.from(ds.map((t) => Math.trunc(t[2])));
 
-    const diffusePixel = (x: number, y: number, direction: number) => {
+    // A fast path for RGB(A) uint8 images with a uint8 palette, working on the
+    // bytes. The error is accumulated in a copy of the pixels exactly as the
+    // Pixel setters of the general path do: clamped to [0, 255] and truncated.
+    const diffusePixelFast = (x: number, y: number, direction: number) => {
+      const c = pixels!;
+      const i = (y * width + x) * nc;
+      const r1 = c[i];
+      const g1 = c[i + 1];
+      const b1 = c[i + 2];
+
+      const idx = q.getColorIndexRgb(r1, g1, b1);
+      indices[y * width + x] = idx;
+
+      const er = r1 - paletteRgb[idx * 3];
+      const eg = g1 - paletteRgb[idx * 3 + 1];
+      const eb = b1 - paletteRgb[idx * 3 + 2];
+      if (er === 0 && eg === 0 && eb === 0) {
+        return;
+      }
+
+      const i0 = direction === 1 ? 0 : numTaps - 1;
+      const i1 = direction === 1 ? numTaps : -1;
+      for (let t = i0; t !== i1; t += direction) {
+        const nx = x + tapX[t];
+        const ny = y + tapY[t];
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          const d = tapW[t];
+          const j = (ny * width + nx) * nc;
+          c[j] = addError(c[j], er * d);
+          c[j + 1] = addError(c[j + 1], eg * d);
+          c[j + 2] = addError(c[j + 2], eb * d);
+        }
+      }
+    };
+
+    const imageCopy = fast ? opt.image : opt.image.clone();
+
+    // Quantizes the pixel at (x, y) and diffuses its error to the neighbors.
+    // direction is the horizontal scan direction (1 or -1) and controls the
+    // order in which the kernel taps are applied.
+    const diffusePixelGeneral = (x: number, y: number, direction: number) => {
       // Get original color
       const pc = imageCopy.getPixel(x, y);
       const r1 = Math.trunc(pc.getChannel(0));
@@ -2040,6 +2112,8 @@ export abstract class Filter {
         }
       }
     };
+
+    const diffusePixel = fast ? diffusePixelFast : diffusePixelGeneral;
 
     if (order === DitherScanOrder.zigzag) {
       // Walk the anti-diagonals x + y == d, alternating their direction.
