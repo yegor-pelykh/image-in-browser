@@ -1,6 +1,7 @@
 /** @format */
 
 import { InputBuffer } from '../../common/input-buffer.js';
+import { LibError } from '../../error/lib-error.js';
 import { ExifImageTags } from '../../exif/exif-tag.js';
 import { IfdValueType, IfdValueTypeSize } from '../../exif/ifd-value-type.js';
 import { IfdAsciiValue } from '../../exif/ifd-value/ifd-ascii-value.js';
@@ -139,6 +140,10 @@ export class TiffEntry {
     }
 
     this._p.offset = this._valueOffset;
+    // The values are allocated by count, so check the data holds them.
+    if (this._count * this.typeSize > this._p.length) {
+      throw new LibError(`Invalid TIFF tag ${this._tag} count: ${this._count}`);
+    }
     const data = this.p.readRange(this._count * this.typeSize);
     switch (this._type) {
       case IfdValueType.byte:
