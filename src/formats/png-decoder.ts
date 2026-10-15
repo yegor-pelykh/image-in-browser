@@ -258,6 +258,9 @@ export class PngDecoder implements Decoder {
     ) {
       const filterType = input.read();
       const row = input.readRange(rowBytes).toUint8Array();
+      if (row.length !== rowBytes) {
+        throw new TruncatedPngData();
+      }
 
       // Before the image is compressed, it was filtered to improve compression.
       // Reverse the filter now.
@@ -313,6 +316,9 @@ export class PngDecoder implements Decoder {
     for (let y = 0; y < h; ++y) {
       const filterType = input.read();
       const row = input.readRange(rowBytes).toUint8Array();
+      if (row.length !== rowBytes) {
+        throw new TruncatedPngData();
+      }
 
       // Before the image is compressed, it was filtered to improve compression.
       // Reverse the filter now.
@@ -1109,20 +1115,27 @@ export class PngDecoder implements Decoder {
     const w = width;
     const h = height;
     this._progressY = 0;
-    if (this._info.interlaceMethod !== 0) {
-      this.processPass(input, image, 0, 0, 8, 8, (w + 7) >>> 3, (h + 7) >>> 3);
-      this.processPass(input, image, 4, 0, 8, 8, (w + 3) >>> 3, (h + 7) >>> 3);
-      this.processPass(input, image, 0, 4, 4, 8, (w + 3) >>> 2, (h + 3) >>> 3);
-      this.processPass(input, image, 2, 0, 4, 4, (w + 1) >>> 2, (h + 3) >>> 2);
-      this.processPass(input, image, 0, 2, 2, 4, (w + 1) >>> 1, (h + 1) >>> 2);
-      this.processPass(input, image, 1, 0, 2, 2, w >>> 1, (h + 1) >>> 1);
-      this.processPass(input, image, 0, 1, 1, 2, w, h >>> 1);
-    } else {
-      this.process(input, image);
+    try {
+      if (this._info.interlaceMethod !== 0) {
+        this.processPass(input, image, 0, 0, 8, 8, (w + 7) >>> 3, (h + 7) >>> 3);
+        this.processPass(input, image, 4, 0, 8, 8, (w + 3) >>> 3, (h + 7) >>> 3);
+        this.processPass(input, image, 0, 4, 4, 8, (w + 3) >>> 2, (h + 3) >>> 3);
+        this.processPass(input, image, 2, 0, 4, 4, (w + 1) >>> 2, (h + 3) >>> 2);
+        this.processPass(input, image, 0, 2, 2, 4, (w + 1) >>> 1, (h + 1) >>> 2);
+        this.processPass(input, image, 1, 0, 2, 2, w >>> 1, (h + 1) >>> 1);
+        this.processPass(input, image, 0, 1, 1, 2, w, h >>> 1);
+      } else {
+        this.process(input, image);
+      }
+    } catch (e) {
+      if (e instanceof TruncatedPngData) {
+        return undefined;
+      }
+      throw e;
+    } finally {
+      this._info.width = origW;
+      this._info.height = origH;
     }
-
-    this._info.width = origW;
-    this._info.height = origH;
 
     return image;
   }
@@ -1231,3 +1244,8 @@ export class PngDecoder implements Decoder {
     return firstImage;
   }
 }
+
+/**
+ * Thrown when the decompressed image data ends before the last row.
+ */
+class TruncatedPngData extends Error {}
