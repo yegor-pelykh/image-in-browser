@@ -150,6 +150,44 @@ export class JpegComponent {
   }
 
   /**
+   * Lookahead table for {@link huffmanTableDC}.
+   */
+  private _huffmanLookupDC: Uint16Array = new Uint16Array(0);
+
+  /**
+   * Sets the lookahead table for the DC coefficients.
+   */
+  public set huffmanLookupDC(v: Uint16Array) {
+    this._huffmanLookupDC = v;
+  }
+
+  /**
+   * Gets the lookahead table for the DC coefficients.
+   */
+  public get huffmanLookupDC(): Uint16Array {
+    return this._huffmanLookupDC;
+  }
+
+  /**
+   * Lookahead table for {@link huffmanTableAC}.
+   */
+  private _huffmanLookupAC: Uint16Array = new Uint16Array(0);
+
+  /**
+   * Sets the lookahead table for the AC coefficients.
+   */
+  public set huffmanLookupAC(v: Uint16Array) {
+    this._huffmanLookupAC = v;
+  }
+
+  /**
+   * Gets the lookahead table for the AC coefficients.
+   */
+  public get huffmanLookupAC(): Uint16Array {
+    return this._huffmanLookupAC;
+  }
+
+  /**
    * Prediction value.
    */
   private _pred = 0;

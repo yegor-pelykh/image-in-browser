@@ -5,6 +5,7 @@ import { LibError } from '../../error/lib-error.js';
 import { HuffmanNode } from './huffman-node.js';
 import { HuffmanParent } from './huffman-parent.js';
 import { HuffmanValue } from './huffman-value.js';
+import { huffmanLookupBits } from './huffman-lookup.js';
 import { JpegComponent } from './jpeg-component.js';
 import { JpegData } from './jpeg-data.js';
 import { JpegFrame } from './jpeg-frame.js';
@@ -197,6 +198,13 @@ export class JpegScan {
     return this._bitsCount;
   }
 
+  /**
+   * Set when a marker or the end of the input is reached while filling bits.
+   * Markers are not consumed. The next bits of the entropy-coded data are the
+   * low {@link bitsCount} bits of {@link bitsData}, most significant first.
+   */
+  private _atMarker = false;
+
   private _eobrun = 0;
 
   /**
@@ -266,50 +274,85 @@ export class JpegScan {
   }
 
   /**
+   * Reads bytes into {@link bitsData} until it holds more than 24 bits, or a
+   * marker or the end of the input is reached. At most 32 bits are held, so
+   * this is safe with 32-bit bitwise operations.
+   */
+  private fillBits(): void {
+    while (this._bitsCount <= 24 && !this._atMarker) {
+      if (this._input.isEOS) {
+        this._atMarker = true;
+        break;
+      }
+      const b = this._input.get(0);
+      if (b === 0xff) {
+        if (this._input.length < 2 || this._input.get(1) !== 0) {
+          this._atMarker = true;
+          break;
+        }
+        this._input.offset += 2;
+      } else {
+        this._input.offset++;
+      }
+      this._bitsData = ((this._bitsData << 8) | b) & 0xffffffff;
+      this._bitsCount += 8;
+    }
+  }
+
+  /**
    * Reads a single bit from the input buffer.
    * @returns {number | undefined} The bit read or undefined if end of stream.
    */
   private readBit(): number | undefined {
-    if (this.bitsCount > 0) {
-      this._bitsCount--;
-      return (this._bitsData >>> this._bitsCount) & 1;
-    }
-
-    if (this._input.isEOS) {
-      return undefined;
-    }
-
-    this._bitsData = this._input.read();
-    if (this._bitsData === 0xff) {
-      const nextByte = this.input.read();
-      if (nextByte !== 0) {
+    if (this._bitsCount === 0) {
+      this.fillBits();
+      if (this._bitsCount === 0) {
         return undefined;
       }
     }
-
-    this._bitsCount = 7;
-    return (this._bitsData >>> 7) & 1;
+    this._bitsCount--;
+    return (this._bitsData >>> this._bitsCount) & 1;
   }
 
   /**
    * Decodes a Huffman encoded value.
    * @param {Array<HuffmanNode | undefined>} tree - The Huffman tree.
+   * @param {Uint16Array} lookup - The lookahead table for the tree.
    * @returns {number | undefined} The decoded value or undefined if end of stream.
    */
   private decodeHuffman(
-    tree: Array<HuffmanNode | undefined>
+    tree: Array<HuffmanNode | undefined>,
+    lookup: Uint16Array
   ): number | undefined {
-    let node: HuffmanNode | undefined = new HuffmanParent(tree);
-    let bit: number | undefined = undefined;
-    while ((bit = this.readBit()) !== undefined) {
-      if (node instanceof HuffmanParent) {
-        node = node.children[bit];
+    if (this._bitsCount < huffmanLookupBits) {
+      this.fillBits();
+    }
+    if (this._bitsCount >= huffmanLookupBits) {
+      const entry =
+        lookup[
+          (this._bitsData >>> (this._bitsCount - huffmanLookupBits)) &
+            ((1 << huffmanLookupBits) - 1)
+        ];
+      if (entry !== 0) {
+        this._bitsCount -= entry >> 8;
+        return entry & 0xff;
       }
+    }
+    let children = tree;
+    while (true) {
+      const bit = this.readBit();
+      if (bit === undefined) {
+        return undefined;
+      }
+      const node = children[bit];
       if (node instanceof HuffmanValue) {
         return node.value;
       }
+      if (!(node instanceof HuffmanParent)) {
+        return undefined;
+      }
+      children = node.children;
     }
-    return undefined;
   }
 
   /**
@@ -318,17 +361,15 @@ export class JpegScan {
    * @returns {number | undefined} The received bits or undefined if end of stream.
    */
   private receive(length: number): number | undefined {
-    let n = 0;
-    let len = length;
-    while (len > 0) {
-      const bit = this.readBit();
-      if (bit === undefined) {
+    if (this._bitsCount < length) {
+      this.fillBits();
+      if (this._bitsCount < length) {
+        this._bitsCount = 0;
         return undefined;
       }
-      n = (n << 1) | bit;
-      len--;
     }
-    return n;
+    this._bitsCount -= length;
+    return (this._bitsData >>> this._bitsCount) & ((1 << length) - 1);
   }
 
   /**
@@ -364,14 +405,20 @@ export class JpegScan {
     zz: Int16Array,
     o: number
   ): void {
-    const t = this.decodeHuffman(component.huffmanTableDC);
+    const t = this.decodeHuffman(
+      component.huffmanTableDC,
+      component.huffmanLookupDC
+    );
     const diff = t === 0 ? 0 : this.receiveAndExtend(t);
     component.pred += diff;
     zz[o] = component.pred;
 
     let k = 1;
     while (k < 64) {
-      const rs = this.decodeHuffman(component.huffmanTableAC);
+      const rs = this.decodeHuffman(
+        component.huffmanTableAC,
+        component.huffmanLookupAC
+      );
       if (rs === undefined) {
         break;
       }
@@ -406,7 +453,10 @@ export class JpegScan {
     zz: Int16Array,
     o: number
   ): void {
-    const t = this.decodeHuffman(component.huffmanTableDC);
+    const t = this.decodeHuffman(
+      component.huffmanTableDC,
+      component.huffmanLookupDC
+    );
     const diff = t === 0 ? 0 : this.receiveAndExtend(t) << this._successive;
     component.pred += diff;
     zz[o] = component.pred;
@@ -440,7 +490,10 @@ export class JpegScan {
     let k = this._spectralStart;
     const e = this._spectralEnd;
     while (k <= e) {
-      const rs = this.decodeHuffman(component.huffmanTableAC)!;
+      const rs = this.decodeHuffman(
+        component.huffmanTableAC,
+        component.huffmanLookupAC
+      )!;
       const s = rs & 15;
       const r = rs >>> 4;
       if (s === 0) {
@@ -479,7 +532,10 @@ export class JpegScan {
       switch (this._successiveACState) {
         case 0: {
           // Initial state
-          const rs = this.decodeHuffman(component.huffmanTableAC);
+          const rs = this.decodeHuffman(
+            component.huffmanTableAC,
+            component.huffmanLookupAC
+          );
           if (rs === undefined) {
             throw new LibError('Invalid progressive encoding');
           }
@@ -668,7 +724,9 @@ export class JpegScan {
       if (mcu >= mcuExpected) break;
 
       // Find marker
+      this._bitsData = 0;
       this._bitsCount = 0;
+      this._atMarker = false;
       const m1 = this._input.get(0);
       const m2 = this._input.get(1);
       if (m1 === 0xff) {

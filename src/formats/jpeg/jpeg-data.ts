@@ -18,6 +18,7 @@ import { MemoryImage } from '../../image/image.js';
 import { HuffmanNode } from './huffman-node.js';
 import { HuffmanValue } from './huffman-value.js';
 import { HuffmanParent } from './huffman-parent.js';
+import { huffmanLookup } from './huffman-lookup.js';
 import { IccProfile } from '../../image/icc-profile.js';
 import { IccProfileCompression } from '../../image/icc-profile-compression.js';
 
@@ -936,10 +937,14 @@ export class JpegData {
         const dcTableNumber = (c >>> 4) & 15;
         const acTableNumber = c & 15;
         if (dcTableNumber < this._huffmanTablesDC.length) {
-          component.huffmanTableDC = this._huffmanTablesDC[dcTableNumber]!;
+          const table = this._huffmanTablesDC[dcTableNumber]!;
+          component.huffmanTableDC = table;
+          component.huffmanLookupDC = huffmanLookup(table);
         }
         if (acTableNumber < this._huffmanTablesAC.length) {
-          component.huffmanTableAC = this._huffmanTablesAC[acTableNumber]!;
+          const table = this._huffmanTablesAC[acTableNumber]!;
+          component.huffmanTableAC = table;
+          component.huffmanLookupAC = huffmanLookup(table);
         }
         components.push(component);
       }
