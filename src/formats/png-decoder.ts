@@ -15,6 +15,7 @@ import { PngBlendMode } from './png/png-blend-mode.js';
 import { ColorRgba8 } from '../color/color-rgba8.js';
 import { ColorRgb8 } from '../color/color-rgb8.js';
 import { MemoryImage, MemoryImageCreateOptions } from '../image/image.js';
+import { MemoryImageDataUint16 } from '../image/image-data-uint16.js';
 import { PaletteUint8 } from '../image/palette-uint8.js';
 import { Format } from '../color/format.js';
 import { IccProfile } from '../image/icc-profile.js';
@@ -119,50 +120,66 @@ export class PngDecoder implements Decoder {
     prevRow?: Uint8Array
   ): void {
     const rowBytes = row.length;
+    const n = bpp < rowBytes ? bpp : rowBytes;
 
     switch (filterType) {
       case PngFilterType.none:
         break;
       case PngFilterType.sub:
         for (let x = bpp; x < rowBytes; ++x) {
-          row[x] = (row[x] + row[x - bpp]) & 0xff;
+          row[x] = row[x] + row[x - bpp];
         }
         break;
       case PngFilterType.up:
-        for (let x = 0; x < rowBytes; ++x) {
-          const b = prevRow !== undefined ? prevRow[x] : 0;
-          row[x] = (row[x] + b) & 0xff;
+        if (prevRow !== undefined) {
+          for (let x = 0; x < rowBytes; ++x) {
+            row[x] = row[x] + prevRow[x];
+          }
         }
         break;
       case PngFilterType.average:
-        for (let x = 0; x < rowBytes; ++x) {
-          const a = x < bpp ? 0 : row[x - bpp];
-          const b = prevRow !== undefined ? prevRow[x] : 0;
-          row[x] = (row[x] + ((a + b) >>> 1)) & 0xff;
+        if (prevRow === undefined) {
+          for (let x = bpp; x < rowBytes; ++x) {
+            row[x] = row[x] + (row[x - bpp] >> 1);
+          }
+        } else {
+          for (let x = 0; x < n; ++x) {
+            row[x] = row[x] + (prevRow[x] >> 1);
+          }
+          for (let x = bpp; x < rowBytes; ++x) {
+            row[x] = row[x] + ((row[x - bpp] + prevRow[x]) >> 1);
+          }
         }
         break;
       case PngFilterType.paeth:
-        for (let x = 0; x < rowBytes; ++x) {
-          const a = x < bpp ? 0 : row[x - bpp];
-          const b = prevRow !== undefined ? prevRow[x] : 0;
-          const c = x < bpp || prevRow === undefined ? 0 : prevRow[x - bpp];
-
-          const p = a + b - c;
-
-          const pa = Math.abs(p - a);
-          const pb = Math.abs(p - b);
-          const pc = Math.abs(p - c);
-
-          let paeth = 0;
-          if (pa <= pb && pa <= pc) {
-            paeth = a;
-          } else if (pb <= pc) {
-            paeth = b;
-          } else {
-            paeth = c;
+        if (prevRow === undefined) {
+          // With no previous row, the predictor is always the left byte.
+          for (let x = bpp; x < rowBytes; ++x) {
+            row[x] = row[x] + row[x - bpp];
           }
-
-          row[x] = (row[x] + paeth) & 0xff;
+        } else {
+          // With no left byte, the predictor is always the byte above.
+          for (let x = 0; x < n; ++x) {
+            row[x] = row[x] + prevRow[x];
+          }
+          for (let x = bpp; x < rowBytes; ++x) {
+            const a = row[x - bpp];
+            const b = prevRow[x];
+            const c = prevRow[x - bpp];
+            let pa = b - c;
+            let pb = a - c;
+            let pc = pa + pb;
+            if (pa < 0) {
+              pa = -pa;
+            }
+            if (pb < 0) {
+              pb = -pb;
+            }
+            if (pc < 0) {
+              pc = -pc;
+            }
+            row[x] = row[x] + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
+          }
         }
         break;
       default:
@@ -185,6 +202,19 @@ export class PngDecoder implements Decoder {
       buffer: bytes,
       baseCrc: crc,
     });
+  }
+
+  /**
+   * The number of channels in the PNG data.
+   */
+  private get pngChannels(): number {
+    return this._info.colorType === PngColorType.grayscaleAlpha
+      ? 2
+      : this._info.colorType === PngColorType.rgb
+        ? 3
+        : this._info.colorType === PngColorType.rgba
+          ? 4
+          : 1;
   }
 
   /**
@@ -212,38 +242,32 @@ export class PngDecoder implements Decoder {
       return;
     }
 
-    let channels = 1;
-    if (this._info.colorType === PngColorType.grayscaleAlpha) {
-      channels = 2;
-    } else if (this._info.colorType === PngColorType.rgb) {
-      channels = 3;
-    } else if (this._info.colorType === PngColorType.rgba) {
-      channels = 4;
-    }
-
-    const pixelDepth = channels * this._info.bits;
+    const pixelDepth = this.pngChannels * this._info.bits;
     const bpp = (pixelDepth + 7) >>> 3;
     const rowBytes = (pixelDepth * passWidth + 7) >>> 3;
-
-    const inData: Array<Uint8Array | undefined> = [undefined, undefined];
+    const writeRows = this._info.bits === 8 || this._info.bits === 16;
 
     const pixel = [0, 0, 0, 0];
+    let p: Pixel | undefined = undefined;
+    let prevRow: Uint8Array | undefined = undefined;
 
-    // Let pi: number = 0;
     for (
-      let srcY = 0, dstY = yOffset, ri = 0;
+      let srcY = 0, dstY = yOffset;
       srcY < passHeight;
-      ++srcY, dstY += yStep, ri = 1 - ri, this._progressY++
+      ++srcY, dstY += yStep, this._progressY++
     ) {
       const filterType = input.read();
-      inData[ri] = input.readRange(rowBytes).toUint8Array();
-
-      const row = inData[ri]!;
-      const prevRow = inData[1 - ri];
+      const row = input.readRange(rowBytes).toUint8Array();
 
       // Before the image is compressed, it was filtered to improve compression.
       // Reverse the filter now.
       PngDecoder.unfilter(filterType, bpp, row, prevRow);
+      prevRow = row;
+
+      if (writeRows) {
+        this.writeRow(row, image, dstY, xOffset, xStep, passWidth);
+        continue;
+      }
 
       // Scanlines are always on byte boundaries, so for bit depths < 8,
       // reset the bit stream counter.
@@ -254,26 +278,14 @@ export class PngDecoder implements Decoder {
         bigEndian: true,
       });
 
-      const blockHeight = xStep;
-      const blockWidth = xStep - xOffset;
-
-      // Let yMax: number = Math.min(dstY + blockHeight, _info.height);
-
       for (
         let srcX = 0, dstX = xOffset;
         srcX < passWidth;
         ++srcX, dstX += xStep
       ) {
         this.readPixel(rowInput, pixel);
-        this.setPixel(image.getPixel(dstX, dstY), pixel);
-
-        if (blockWidth > 1 || blockHeight > 1) {
-          for (let i = 0; i < blockHeight; ++i) {
-            for (let j = 0; j < blockWidth; ++j) {
-              this.setPixel(image.getPixelSafe(dstX + j, dstY + i), pixel);
-            }
-          }
-        }
+        p = image.getPixel(dstX, dstY, p);
+        this.setPixel(p, pixel);
       }
     }
   }
@@ -284,47 +296,40 @@ export class PngDecoder implements Decoder {
    * @param {MemoryImage} image - The memory image.
    */
   private process(input: InputBuffer<Uint8Array>, image: MemoryImage): void {
-    let channels = 1;
-    if (this._info.colorType === PngColorType.grayscaleAlpha) {
-      channels = 2;
-    } else if (this._info.colorType === PngColorType.rgb) {
-      channels = 3;
-    } else if (this._info.colorType === PngColorType.rgba) {
-      channels = 4;
-    }
-
-    const pixelDepth = channels * this._info.bits;
+    const pixelDepth = this.pngChannels * this._info.bits;
 
     const w = this._info.width;
     const h = this._info.height;
 
     const rowBytes = (w * pixelDepth + 7) >>> 3;
     const bpp = (pixelDepth + 7) >>> 3;
-
-    const line = new Uint8Array(rowBytes) as Uint8Array;
-    const inData = [line, line];
+    const writeRows = this._info.bits === 8 || this._info.bits === 16;
 
     const pixel = [0, 0, 0, 0];
+    let prevRow: Uint8Array | undefined = undefined;
 
     const pIter = image[Symbol.iterator]();
     let pIterRes = pIter.next();
-    for (let y = 0, ri = 0; y < h; ++y, ri = 1 - ri) {
+    for (let y = 0; y < h; ++y) {
       const filterType = input.read();
-      inData[ri] = input.readRange(rowBytes).toUint8Array();
-
-      const row = inData[ri];
-      const prevRow = inData[1 - ri];
+      const row = input.readRange(rowBytes).toUint8Array();
 
       // Before the image is compressed, it was filtered to improve compression.
       // Reverse the filter now.
       PngDecoder.unfilter(filterType, bpp, row, prevRow);
+      prevRow = row;
+
+      if (writeRows) {
+        this.writeRow(row, image, y, 0, 1, w);
+        continue;
+      }
 
       // Scanlines are always on byte boundaries, so for bit depths < 8,
       // reset the bit stream counter.
       this.resetBits();
 
       const rowInput = new InputBuffer<Uint8Array>({
-        buffer: inData[ri],
+        buffer: row,
         bigEndian: true,
       });
 
@@ -332,6 +337,98 @@ export class PngDecoder implements Decoder {
         this.readPixel(rowInput, pixel);
         this.setPixel(pIterRes.value as Pixel, pixel);
         pIterRes = pIter.next();
+      }
+    }
+  }
+
+  /**
+   * Write the **n** pixels of an unfiltered 8 or 16-bit **row** to **image**,
+   * at (x0 + i * xStep, y).
+   * @param {Uint8Array} row - The unfiltered row.
+   * @param {MemoryImage} image - The image to write to.
+   * @param {number} y - The row to write.
+   * @param {number} x0 - The X offset.
+   * @param {number} xStep - The X step.
+   * @param {number} n - The number of pixels to write.
+   */
+  private writeRow(
+    row: Uint8Array,
+    image: MemoryImage,
+    y: number,
+    x0: number,
+    xStep: number,
+    n: number
+  ): void {
+    const pc = this.pngChannels;
+    // The channels stored in the image data; for a palette image, the index.
+    const ic = image.data!.numChannels;
+    const t = this._info.transparency!;
+
+    if (this._info.bits === 8) {
+      const data = image.data!.toUint8Array();
+      let di = y * image.data!.rowStride + x0 * ic;
+      const dStep = xStep * ic;
+      if (ic === pc) {
+        if (xStep === 1) {
+          data.set(row.subarray(0, n * pc), di);
+          return;
+        }
+        for (let i = 0, si = 0; i < n; ++i, di += dStep) {
+          for (let c = 0; c < pc; ++c) {
+            data[di + c] = row[si++];
+          }
+        }
+        return;
+      }
+      // RGB with a tRNS color, expanded to RGBA.
+      const tr = ((t[0] & 0xff) << 8) | (t[1] & 0xff);
+      const tg = ((t[2] & 0xff) << 8) | (t[3] & 0xff);
+      const tb = ((t[4] & 0xff) << 8) | (t[5] & 0xff);
+      for (let i = 0, si = 0; i < n; ++i, si += 3, di += dStep) {
+        const r = row[si];
+        const g = row[si + 1];
+        const b = row[si + 2];
+        data[di] = r;
+        data[di + 1] = g;
+        data[di + 2] = b;
+        data[di + 3] = r === tr && g === tg && b === tb ? 0 : 255;
+      }
+      return;
+    }
+
+    // 16-bit samples are big-endian.
+    const data = (image.data as MemoryImageDataUint16).data;
+    let di = (y * image.width + x0) * ic;
+    const dStep = xStep * ic;
+    if (ic === pc) {
+      for (let i = 0, si = 0; i < n; ++i, di += dStep) {
+        for (let c = 0; c < pc; ++c, si += 2) {
+          data[di + c] = (row[si] << 8) | row[si + 1];
+        }
+      }
+    } else if (pc === 3) {
+      // RGB with a tRNS color, expanded to RGBA.
+      const tr = ((t[0] & 0xff) << 8) | (t[1] & 0xff);
+      const tg = ((t[2] & 0xff) << 8) | (t[3] & 0xff);
+      const tb = ((t[4] & 0xff) << 8) | (t[5] & 0xff);
+      for (let i = 0, si = 0; i < n; ++i, si += 6, di += dStep) {
+        const r = (row[si] << 8) | row[si + 1];
+        const g = (row[si + 2] << 8) | row[si + 3];
+        const b = (row[si + 4] << 8) | row[si + 5];
+        data[di] = r;
+        data[di + 1] = g;
+        data[di + 2] = b;
+        data[di + 3] = r === tr && g === tg && b === tb ? 0 : 0xffff;
+      }
+    } else {
+      // Grayscale with a tRNS value, expanded to RGBA.
+      const tg = ((t[0] & 0xff) << 8) | (t[1] & 0xff);
+      for (let i = 0, si = 0; i < n; ++i, si += 2, di += dStep) {
+        const g = (row[si] << 8) | row[si + 1];
+        data[di] = g;
+        data[di + 1] = g;
+        data[di + 2] = g;
+        data[di + 3] = g === tg ? 0 : 0xffff;
       }
     }
   }
@@ -450,7 +547,7 @@ export class PngDecoder implements Decoder {
       case PngColorType.grayscale:
         if (this._info.transparency !== undefined && this._info.bits > 8) {
           const t = this._info.transparency;
-          const a = ((t[0] & 0xff) << 24) | (t[1] & 0xff);
+          const a = ((t[0] & 0xff) << 8) | (t[1] & 0xff);
           const g = raw[0];
           p.setRgba(g, g, g, g !== a ? p.maxChannelValue : 0);
           return;

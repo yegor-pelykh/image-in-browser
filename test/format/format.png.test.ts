@@ -1147,4 +1147,37 @@ describe('Format: PNG', () => {
       }
     });
   }
+
+  /**
+   * tbwn0g16 and tbbn2c16 are the same picture as 16-bit gray and RGB.
+   */
+  test('16-bit grayscale tRNS color is transparent', () => {
+    const gray = decodePng({
+      data: TestUtils.readFromFile(
+        TestFolder.input,
+        TestSection.png,
+        'tbwn0g16.png'
+      ),
+    });
+    const rgb = decodePng({
+      data: TestUtils.readFromFile(
+        TestFolder.input,
+        TestSection.png,
+        'tbbn2c16.png'
+      ),
+    });
+    expect(gray).toBeDefined();
+    expect(rgb).toBeDefined();
+    if (gray === undefined || rgb === undefined) {
+      return;
+    }
+    let transparent = 0;
+    for (const p of gray) {
+      expect(p.a === 0).toBe(rgb.getPixel(p.x, p.y).a === 0);
+      if (p.a === 0) {
+        transparent++;
+      }
+    }
+    expect(transparent).toBeGreaterThan(0);
+  });
 });
