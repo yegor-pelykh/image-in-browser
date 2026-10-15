@@ -133,6 +133,11 @@ export class PngEncoder implements Encoder {
   }
 
   /**
+   * The most image data stored in each IDAT or fdAT chunk.
+   */
+  private static readonly maxDataChunkSize = 0x10000;
+
+  /**
    * Return the CRC of the bytes.
    * @param {string} type - The type of the chunk.
    * @param {Uint8Array} bytes - The bytes of the chunk.
@@ -169,205 +174,108 @@ export class PngEncoder implements Encoder {
   }
 
   /**
-   * Write bytes to the output buffer.
-   * @param {number} bpc - Bytes per channel.
+   * Apply the sub filter to **row**, writing it to **out** after its filter
+   * type byte.
    * @param {Uint8Array} row - The row of bytes.
-   * @param {number} ri - Row index.
-   * @param {Uint8Array} out - The output buffer.
-   * @param {number} oi - Output index.
-   * @returns {number} The new output index.
-   */
-  private static write(
-    bpc: number,
-    row: Uint8Array,
-    ri: number,
-    out: Uint8Array,
-    oi: number
-  ): number {
-    let _bpc = bpc;
-    let _oi = oi;
-    _bpc--;
-    while (_bpc >= 0) {
-      out[_oi++] = row[ri + _bpc];
-      _bpc--;
-    }
-    return _oi;
-  }
-
-  /**
-   * Apply the sub filter to the row.
-   * @param {Uint8Array} row - The row of bytes.
-   * @param {number} bpc - Bytes per channel.
    * @param {number} bpp - Bytes per pixel.
    * @param {Uint8Array} out - The output buffer.
-   * @param {number} oi - Output index.
-   * @returns {number} The new output index.
    */
   private static filterSub(
     row: Uint8Array,
-    bpc: number,
     bpp: number,
-    out: Uint8Array,
-    oi: number
-  ): number {
-    let _oi = oi;
-    out[_oi++] = PngFilterType.sub;
-    for (let x = 0; x < bpp; x += bpc) {
-      _oi = PngEncoder.write(bpc, row, x, out, _oi);
+    out: Uint8Array
+  ): void {
+    const n = row.length;
+    let oi = 1;
+    for (let x = 0; x < bpp && x < n; ++x) {
+      out[oi++] = row[x];
     }
-    const l = row.length;
-    for (let x = bpp; x < l; x += bpc) {
-      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
-        out[_oi++] = (row[x + c2] - row[x + c2 - bpp]) & 0xff;
-      }
+    for (let x = bpp; x < n; ++x) {
+      out[oi++] = row[x] - row[x - bpp];
     }
-    return _oi;
   }
 
   /**
-   * Apply the up filter to the row.
+   * Apply the up filter to **row**, writing it to **out** after its filter
+   * type byte.
    * @param {Uint8Array} row - The row of bytes.
-   * @param {number} bpc - Bytes per channel.
+   * @param {Uint8Array} prevRow - The previous row of bytes.
    * @param {Uint8Array} out - The output buffer.
-   * @param {number} oi - Output index.
-   * @param {Uint8Array} [prevRow] - The previous row of bytes.
-   * @returns {number} The new output index.
    */
   private static filterUp(
     row: Uint8Array,
-    bpc: number,
-    out: Uint8Array,
-    oi: number,
-    prevRow?: Uint8Array
-  ): number {
-    let _oi = oi;
-    out[_oi++] = PngFilterType.up;
-    const l = row.length;
-    for (let x = 0; x < l; x += bpc) {
-      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
-        const b = prevRow !== undefined ? prevRow[x + c2] : 0;
-        out[_oi++] = (row[x + c2] - b) & 0xff;
-      }
+    prevRow: Uint8Array,
+    out: Uint8Array
+  ): void {
+    const n = row.length;
+    let oi = 1;
+    for (let x = 0; x < n; ++x) {
+      out[oi++] = row[x] - prevRow[x];
     }
-    return _oi;
   }
 
   /**
-   * Apply the average filter to the row.
+   * Apply the average filter to **row**, writing it to **out** after its
+   * filter type byte.
    * @param {Uint8Array} row - The row of bytes.
-   * @param {number} bpc - Bytes per channel.
+   * @param {Uint8Array} prevRow - The previous row of bytes.
    * @param {number} bpp - Bytes per pixel.
    * @param {Uint8Array} out - The output buffer.
-   * @param {number} oi - Output index.
-   * @param {Uint8Array} [prevRow] - The previous row of bytes.
-   * @returns {number} The new output index.
    */
   private static filterAverage(
     row: Uint8Array,
-    bpc: number,
+    prevRow: Uint8Array,
     bpp: number,
-    out: Uint8Array,
-    oi: number,
-    prevRow?: Uint8Array
-  ): number {
-    let _oi = oi;
-    out[_oi++] = PngFilterType.average;
-    const l = row.length;
-    for (let x = 0; x < l; x += bpc) {
-      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
-        const x2 = x + c2;
-        const p1 = x2 < bpp ? 0 : row[x2 - bpp];
-        const p2 = prevRow === undefined ? 0 : prevRow[x2];
-        const p3 = row[x2];
-        out[_oi++] = p3 - ((p1 + p2) >>> 1);
-      }
+    out: Uint8Array
+  ): void {
+    const n = row.length;
+    let oi = 1;
+    for (let x = 0; x < bpp && x < n; ++x) {
+      out[oi++] = row[x] - (prevRow[x] >> 1);
     }
-    return _oi;
+    for (let x = bpp; x < n; ++x) {
+      out[oi++] = row[x] - ((row[x - bpp] + prevRow[x]) >> 1);
+    }
   }
 
   /**
-   * Paeth predictor function.
-   * @param {number} a - Left pixel.
-   * @param {number} b - Above pixel.
-   * @param {number} c - Upper-left pixel.
-   * @returns {number} The predicted value.
-   */
-  private static paethPredictor(a: number, b: number, c: number): number {
-    const p = a + b - c;
-    const pa = p > a ? p - a : a - p;
-    const pb = p > b ? p - b : b - p;
-    const pc = p > c ? p - c : c - p;
-    if (pa <= pb && pa <= pc) {
-      return a;
-    } else if (pb <= pc) {
-      return b;
-    }
-    return c;
-  }
-
-  /**
-   * Apply the Paeth filter to the row.
+   * Apply the Paeth filter to **row**, writing it to **out** after its filter
+   * type byte.
    * @param {Uint8Array} row - The row of bytes.
-   * @param {number} bpc - Bytes per channel.
+   * @param {Uint8Array} prevRow - The previous row of bytes.
    * @param {number} bpp - Bytes per pixel.
    * @param {Uint8Array} out - The output buffer.
-   * @param {number} oi - Output index.
-   * @param {Uint8Array} [prevRow] - The previous row of bytes.
-   * @returns {number} The new output index.
    */
   private static filterPaeth(
     row: Uint8Array,
-    bpc: number,
+    prevRow: Uint8Array,
     bpp: number,
-    out: Uint8Array,
-    oi: number,
-    prevRow?: Uint8Array
-  ): number {
-    let _oi = oi;
-    out[_oi++] = PngFilterType.paeth;
-    const l = row.length;
-    for (let x = 0; x < l; x += bpc) {
-      for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
-        const x2 = x + c2;
-        const p0 = x2 < bpp ? 0 : row[x2 - bpp];
-        const p1 = prevRow === undefined ? 0 : prevRow[x2];
-        const p2 = x2 < bpp || prevRow === undefined ? 0 : prevRow[x2 - bpp];
-        const p = row[x2];
-        const pi = PngEncoder.paethPredictor(p0, p1, p2);
-        out[_oi++] = (p - pi) & 0xff;
-      }
+    out: Uint8Array
+  ): void {
+    const n = row.length;
+    let oi = 1;
+    // With no left byte, the predictor is always the byte above.
+    for (let x = 0; x < bpp && x < n; ++x) {
+      out[oi++] = row[x] - prevRow[x];
     }
-    return _oi;
-  }
-
-  /**
-   * Apply the none filter to the row.
-   * @param {Uint8Array} rowBytes - The row of bytes.
-   * @param {number} bpc - Bytes per channel.
-   * @param {Uint8Array} out - The output buffer.
-   * @param {number} oi - Output index.
-   * @returns {number} The new output index.
-   */
-  private static filterNone(
-    rowBytes: Uint8Array,
-    bpc: number,
-    out: Uint8Array,
-    oi: number
-  ): number {
-    let _oi = oi;
-    out[_oi++] = PngFilterType.none;
-    if (bpc === 1) {
-      const l = rowBytes.length;
-      for (let i = 0; i < l; ++i) {
-        out[_oi++] = rowBytes[i];
+    for (let x = bpp; x < n; ++x) {
+      const a = row[x - bpp];
+      const b = prevRow[x];
+      const c = prevRow[x - bpp];
+      let pa = b - c;
+      let pb = a - c;
+      let pc = pa + pb;
+      if (pa < 0) {
+        pa = -pa;
       }
-    } else {
-      const l = rowBytes.length;
-      for (let i = 0; i < l; i += bpc) {
-        _oi = PngEncoder.write(bpc, rowBytes, i, out, _oi);
+      if (pb < 0) {
+        pb = -pb;
       }
+      if (pc < 0) {
+        pc = -pc;
+      }
+      out[oi++] = row[x] - (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
     }
-    return _oi;
   }
 
   /**
@@ -582,12 +490,12 @@ export class PngEncoder implements Encoder {
   }
 
   /**
-   * Apply the filter to the image.
+   * Filters each row of **image**, writing it to **out** with its filter type
+   * byte.
    * @param {MemoryImage} image - The image.
-   * @param {Uint8Array} out - The output buffer.
+   * @param {Uint8Array} out - The filtered output buffer.
    */
   private filter(image: MemoryImage, out: Uint8Array): void {
-    let oi = 0;
     const filter = image.hasPalette ? PngFilterType.none : this._filter;
     const buffer = image.buffer;
     const rowStride = image.data!.rowStride;
@@ -595,33 +503,53 @@ export class PngEncoder implements Encoder {
     const bpp = (nc * image.bitsPerChannel + 7) >>> 3;
     const bpc = (image.bitsPerChannel + 7) >>> 3;
 
+    // Each row is copied into one of two buffers, swapping multi-byte samples
+    // to PNG's big-endian order. Keeping every row in the same kind of list
+    // (not a view) keeps the filter loops fast.
+    const rows = [new Uint8Array(rowStride), new Uint8Array(rowStride)];
+    let prevRow = rows[1];
+    const rowOut = new Uint8Array(rowStride + 1);
+
     let rowOffset = 0;
-    let prevRow: Uint8Array | undefined = undefined;
-    for (let y = 0; y < image.height; ++y) {
-      const rowBytes =
+    let oi = 0;
+    for (let y = 0; y < image.height; ++y, rowOffset += rowStride) {
+      const src =
         buffer !== undefined
           ? new Uint8Array(buffer, rowOffset, rowStride)
-          : new Uint8Array();
-      rowOffset += rowStride;
+          : new Uint8Array(rowStride);
+      const row = rows[y & 1];
+      if (bpc > 1) {
+        for (let x = 0; x < rowStride; x += bpc) {
+          for (let c = 0, c2 = bpc - 1; c < bpc; ++c, --c2) {
+            row[x + c] = src[x + c2];
+          }
+        }
+      } else {
+        row.set(src);
+      }
 
+      rowOut[0] = filter;
       switch (filter) {
+        case PngFilterType.none:
+          rowOut.set(row, 1);
+          break;
         case PngFilterType.sub:
-          oi = PngEncoder.filterSub(rowBytes, bpc, bpp, out, oi);
+          PngEncoder.filterSub(row, bpp, rowOut);
           break;
         case PngFilterType.up:
-          oi = PngEncoder.filterUp(rowBytes, bpc, out, oi, prevRow);
+          PngEncoder.filterUp(row, prevRow, rowOut);
           break;
         case PngFilterType.average:
-          oi = PngEncoder.filterAverage(rowBytes, bpc, bpp, out, oi, prevRow);
+          PngEncoder.filterAverage(row, prevRow, bpp, rowOut);
           break;
         case PngFilterType.paeth:
-          oi = PngEncoder.filterPaeth(rowBytes, bpc, bpp, out, oi, prevRow);
-          break;
-        default:
-          oi = PngEncoder.filterNone(rowBytes, bpc, out, oi);
+          PngEncoder.filterPaeth(row, prevRow, bpp, rowOut);
           break;
       }
-      prevRow = rowBytes;
+
+      out.set(rowOut, oi);
+      oi += rowOut.length;
+      prevRow = row;
     }
   }
 
@@ -674,21 +602,6 @@ export class PngEncoder implements Encoder {
       }
     }
 
-    const nc = PngEncoder.numChannels(_image);
-
-    const channelBytes = _image.format === Format.uint16 ? 2 : 1;
-
-    // Include room for the filter bytes (1 byte per row).
-    const filteredImage = new Uint8Array(
-      _image.width * _image.height * nc * channelBytes + image.height
-    );
-
-    this.filter(_image, filteredImage);
-
-    const compressed = deflate(filteredImage, {
-      level: this._level,
-    });
-
     if (_image.textData !== undefined) {
       for (const [key, value] of _image.textData) {
         this.writeTextChunk(key, value);
@@ -710,18 +623,51 @@ export class PngEncoder implements Encoder {
       this._sequenceNumber++;
     }
 
-    if (this._sequenceNumber <= 1) {
-      PngEncoder.writeChunk(this._output, 'IDAT', compressed);
-    } else {
-      // fdAT chunk
-      const fdat = new OutputBuffer({
-        bigEndian: true,
-      });
-      fdat.writeUint32(this._sequenceNumber);
-      fdat.writeBytes(compressed);
-      PngEncoder.writeChunk(this._output, 'fdAT', fdat.getBytes());
+    // The first frame is stored in IDAT chunks, later animation frames in fdAT
+    // chunks, which start with a sequence number.
+    const output = this._output;
+    const isIdat = this._sequenceNumber <= 1;
+    const dataStart = isIdat ? 0 : 4;
+    const chunk = new Uint8Array(dataStart + PngEncoder.maxDataChunkSize);
+    let chunkLength = dataStart;
+    let chunksWritten = 0;
 
-      this._sequenceNumber++;
+    const writeDataChunk = (): void => {
+      if (isIdat) {
+        PngEncoder.writeChunk(output, 'IDAT', chunk.subarray(0, chunkLength));
+      } else {
+        chunk[0] = (this._sequenceNumber >>> 24) & 0xff;
+        chunk[1] = (this._sequenceNumber >>> 16) & 0xff;
+        chunk[2] = (this._sequenceNumber >>> 8) & 0xff;
+        chunk[3] = this._sequenceNumber & 0xff;
+        this._sequenceNumber++;
+        PngEncoder.writeChunk(output, 'fdAT', chunk.subarray(0, chunkLength));
+      }
+      chunkLength = dataStart;
+      chunksWritten++;
+    };
+
+    const rowBytes = _image.data!.rowStride;
+    const filteredImage = new Uint8Array((rowBytes + 1) * _image.height);
+    this.filter(_image, filteredImage);
+
+    const compressed = deflate(filteredImage, {
+      level: this._level,
+    });
+
+    let i = 0;
+    while (i < compressed.length) {
+      const n = Math.min(compressed.length - i, chunk.length - chunkLength);
+      chunk.set(compressed.subarray(i, i + n), chunkLength);
+      chunkLength += n;
+      i += n;
+      if (chunkLength === chunk.length) {
+        writeDataChunk();
+      }
+    }
+
+    if (chunkLength > dataStart || chunksWritten === 0) {
+      writeDataChunk();
     }
   }
 

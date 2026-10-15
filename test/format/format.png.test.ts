@@ -1180,4 +1180,61 @@ describe('Format: PNG', () => {
     }
     expect(transparent).toBeGreaterThan(0);
   });
+
+  /**
+   * Large frames are split into chunks with consecutive sequence numbers.
+   */
+  test('large frames are split into chunks with consecutive sequence numbers', () => {
+    // Noise doesn't compress, so each frame needs several data chunks.
+    let seed = 1;
+    const noise = (): MemoryImage => {
+      const image = new MemoryImage({ width: 256, height: 256 });
+      for (const p of image) {
+        seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff;
+        p.setRgb(seed & 0xff, (seed >> 8) & 0xff, (seed >> 16) & 0xff);
+      }
+      return image;
+    };
+
+    const anim = noise();
+    anim.addFrame(noise());
+    anim.addFrame(noise());
+    const png = encodePng({ image: anim });
+
+    const bd = new DataView(png.buffer, png.byteOffset, png.byteLength);
+    const sequence: number[] = [];
+    let idatChunks = 0;
+    let fdatChunks = 0;
+    for (let offset = 8; offset < png.length; ) {
+      const length = bd.getUint32(offset);
+      const type = String.fromCharCode(
+        png[offset + 4],
+        png[offset + 5],
+        png[offset + 6],
+        png[offset + 7]
+      );
+      if (type === 'fcTL' || type === 'fdAT') {
+        sequence.push(bd.getUint32(offset + 8));
+      }
+      if (type === 'IDAT') {
+        idatChunks++;
+      } else if (type === 'fdAT') {
+        fdatChunks++;
+      }
+      offset += 12 + length;
+    }
+    expect(idatChunks).toBeGreaterThan(1);
+    expect(fdatChunks).toBeGreaterThan(2);
+    expect(sequence).toEqual(sequence.map((_v, i) => i));
+
+    const decoded = decodePng({ data: png });
+    expect(decoded).toBeDefined();
+    if (decoded === undefined) {
+      return;
+    }
+    expect(decoded.numFrames).toBe(3);
+    for (let i = 0; i < 3; ++i) {
+      ImageTestUtils.testImageEquals(decoded.frames[i], anim.frames[i]);
+    }
+  });
 });
