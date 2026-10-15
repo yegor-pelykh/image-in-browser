@@ -320,7 +320,10 @@ export class ExifData extends IfdContainer {
    * @returns New ExifData instance.
    */
   public static from(other: ExifData): ExifData {
-    const dirs = new Map<string, IfdDirectory>(other.directories);
+    const dirs = new Map<string, IfdDirectory>();
+    for (const [k, v] of other.directories) {
+      dirs.set(k, v.clone());
+    }
     const thumb = other.thumbnailData;
     const data = new ExifData(dirs);
     if (thumb !== undefined) {

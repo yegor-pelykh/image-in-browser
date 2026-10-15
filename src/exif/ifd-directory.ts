@@ -568,7 +568,9 @@ export class IfdDirectory {
    * @returns {IfdDirectory} A new IfdDirectory instance.
    */
   public static from(other: IfdDirectory): IfdDirectory {
-    return new IfdDirectory(new Map<number, IfdValue>(other._data));
+    const dir = new IfdDirectory();
+    dir.copyFrom(other);
+    return dir;
   }
 
   /**

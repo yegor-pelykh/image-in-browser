@@ -68,7 +68,10 @@ export class IfdContainer {
    * @returns {IfdContainer} A new IfdContainer instance.
    */
   public static from(other: IfdContainer): IfdContainer {
-    const dirs = new Map<string, IfdDirectory>(other.directories);
+    const dirs = new Map<string, IfdDirectory>();
+    for (const [k, v] of other.directories) {
+      dirs.set(k, v.clone());
+    }
     return new IfdContainer(dirs);
   }
 
