@@ -29,6 +29,7 @@ export class PsdImage implements DecodeInfo {
   public static readonly resourceBlockSignature: number = 0x3842494d;
 
   private _input: InputBuffer<Uint8Array> | undefined;
+  private readonly _fileLength: number;
   public get input(): InputBuffer<Uint8Array> | undefined {
     return this._input;
   }
@@ -119,6 +120,7 @@ export class PsdImage implements DecodeInfo {
    * @param {Uint8Array} bytes - The byte array representing the PSD file.
    */
   constructor(bytes: Uint8Array) {
+    this._fileLength = bytes.length;
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
@@ -736,6 +738,19 @@ export class PsdImage implements DecodeInfo {
         const layer = new PsdLayer(layerData);
         this._layers.push(layer);
       }
+    }
+
+    // Each channel is a plane of the image, and a PSD's RLE data can't be
+    // much smaller than its planes, so malformed data claiming many large
+    // planes is rejected rather than allocated.
+    const sampleBytes = this._depth === 16 ? 2 : 1;
+    let planeBytes = this._width * this._height * this._channels * sampleBytes;
+    for (const layer of this._layers) {
+      planeBytes +=
+        layer.width * layer.height * layer.channels.length * sampleBytes;
+    }
+    if (planeBytes > Math.max(128 * this._fileLength, 1 << 24)) {
+      throw new LibError('PSD data is too small for its size');
     }
 
     for (let i = 0; i < this._layers.length; ++i) {
