@@ -663,18 +663,16 @@ export class VP8L {
       return;
     }
     this.applyInverseTransforms(this._lastRow, numRows, rows);
-    for (
-      let y = 0, pi = this._argbCache, dy = this._lastRow;
-      y < numRows;
-      ++y, ++dy
-    ) {
+    const pixels = this._pixels!;
+    const out = this._image!.toUint8Array();
+    let di = this._lastRow * this._ioWidth * 4;
+    for (let y = 0, pi = this._argbCache; y < numRows; ++y) {
       for (let x = 0; x < this._ioWidth; ++x, ++pi) {
-        const c = this._pixels![pi];
-        const r = ColorUtils.uint32ToRed(c);
-        const g = ColorUtils.uint32ToGreen(c);
-        const b = ColorUtils.uint32ToBlue(c);
-        const a = ColorUtils.uint32ToAlpha(c);
-        this._image!.setPixelRgba(x, dy, b, g, r, a);
+        const c = pixels[pi];
+        out[di++] = (c >>> 16) & 0xff;
+        out[di++] = (c >>> 8) & 0xff;
+        out[di++] = c & 0xff;
+        out[di++] = (c >>> 24) & 0xff;
       }
     }
     this._lastRow = row;
