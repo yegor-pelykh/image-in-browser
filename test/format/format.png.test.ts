@@ -1064,6 +1064,35 @@ describe('Format: PNG', () => {
   });
 
   /**
+   * Issue #518: an interlaced image less than 5 pixels wide has empty passes,
+   * and no filter type bytes are present in an empty pass.
+   */
+  for (const size of ['01', '02', '03', '04']) {
+    test(`interlaced s${size}i3p01 matches s${size}n3p01`, () => {
+      const interlaced = decodePng({
+        data: TestUtils.readFromFile(
+          TestFolder.input,
+          TestSection.png,
+          `s${size}i3p01.png`
+        ),
+      });
+      const expected = decodePng({
+        data: TestUtils.readFromFile(
+          TestFolder.input,
+          TestSection.png,
+          `s${size}n3p01.png`
+        ),
+      });
+      expect(interlaced).toBeDefined();
+      expect(expected).toBeDefined();
+      if (interlaced === undefined || expected === undefined) {
+        return;
+      }
+      ImageTestUtils.testImageEquals(expected, interlaced);
+    });
+  }
+
+  /**
    * Test decoding and encoding various PNG files from the PngSuite.
    */
   const resFiles = TestUtils.listFiles(

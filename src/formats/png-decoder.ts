@@ -208,6 +208,10 @@ export class PngDecoder implements Decoder {
     passWidth: number,
     passHeight: number
   ): void {
+    if (passWidth === 0 || passHeight === 0) {
+      return;
+    }
+
     let channels = 1;
     if (this._info.colorType === PngColorType.grayscaleAlpha) {
       channels = 2;
