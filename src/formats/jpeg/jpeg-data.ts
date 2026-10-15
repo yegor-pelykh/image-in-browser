@@ -536,6 +536,8 @@ export class JpegData {
       blocksPerColumn * 8,
       undefined
     );
+    const coefficients = component.coefficients;
+    const blocksPerLineForMcu = component.blocksPerLineForMcu;
 
     let l = 0;
     for (let blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
@@ -547,7 +549,8 @@ export class JpegData {
       for (let blockCol = 0; blockCol < blocksPerLine; blockCol++) {
         JpegQuantize.quantizeAndInverse(
           component.quantizationTable!,
-          component.blocks[blockRow][blockCol],
+          coefficients,
+          (blockRow * blocksPerLineForMcu + blockCol) << 6,
           r,
           R
         );
@@ -557,10 +560,9 @@ export class JpegData {
           ArrayUtils.copyRange(r, j << 3, lines[scanLine + j]!, sample, 8);
         }
       }
-
-      component.blocks[blockRow] = [];
     }
-    component.blocks = [];
+
+    component.coefficients = new Int16Array(0);
 
     return lines;
   }

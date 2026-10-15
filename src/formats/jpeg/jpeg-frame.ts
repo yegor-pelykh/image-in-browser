@@ -1,6 +1,5 @@
 /** @format */
 
-import { ArrayUtils } from '../../common/array-utils.js';
 import { JpegComponent } from './jpeg-component.js';
 
 /**
@@ -190,16 +189,12 @@ export class JpegFrame {
       const blocksPerLineForMcu = this._mcusPerLine * component.hSamples;
       const blocksPerColumnForMcu = this._mcusPerColumn * component.vSamples;
 
-      const blocks = ArrayUtils.generate<Int32Array[]>(
-        blocksPerColumnForMcu,
-        (_) =>
-          ArrayUtils.generate<Int32Array>(
-            blocksPerLineForMcu,
-            (_) => new Int32Array(64)
-          )
+      component.setBlocks(
+        blocksPerLine,
+        blocksPerColumn,
+        blocksPerLineForMcu,
+        blocksPerColumnForMcu
       );
-
-      component.setBlocks(blocks, blocksPerLine, blocksPerColumn);
     }
   }
 }

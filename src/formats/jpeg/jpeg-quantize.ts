@@ -51,13 +51,15 @@ export abstract class JpegQuantize {
    * IEEE Intl. Conf. on Acoustics, Speech & Signal Processing, 1989, 988-991.
    *
    * @param {Int16Array} quantizationTable - The quantization table.
-   * @param {Int32Array} coefBlock - The coefficient block.
+   * @param {Int16Array} coefficients - The flat list of DCT coefficients.
+   * @param {number} offset - The offset of the block's coefficients.
    * @param {Uint8Array} dataOut - The output data array.
    * @param {Int32Array} dataIn - The input data array.
    */
   public static quantizeAndInverse(
     quantizationTable: Int16Array,
-    coefBlock: Int32Array,
+    coefficients: Int16Array,
+    offset: number,
     dataOut: Uint8Array,
     dataIn: Int32Array
   ): void {
@@ -83,7 +85,7 @@ export abstract class JpegQuantize {
 
     // de-quantize
     for (let i = 0; i < 64; i++) {
-      p[i] = coefBlock[i] * quantizationTable[i];
+      p[i] = coefficients[offset + i] * quantizationTable[i];
     }
 
     // inverse DCT on rows

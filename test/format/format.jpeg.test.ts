@@ -491,7 +491,7 @@ describe('Format: JPEG', () => {
     const jpeg = new JpegData();
     jpeg.read(bytes);
     for (const component of jpeg.frame!.components.values()) {
-      expect(component.blocks).toEqual([]);
+      expect(component.coefficients.length).toBe(0);
     }
     expect(jpeg.getImage().width).toBe(jpeg.width);
   });

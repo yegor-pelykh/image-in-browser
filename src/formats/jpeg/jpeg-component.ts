@@ -41,25 +41,6 @@ export class JpegComponent {
   }
 
   /**
-   * 2D array of blocks.
-   */
-  private _blocks: Array<Array<Int32Array>> = new Array<Array<Int32Array>>();
-
-  /**
-   * Gets the 2D array of blocks.
-   */
-  public get blocks(): Array<Array<Int32Array>> {
-    return this._blocks;
-  }
-
-  /**
-   * Sets the 2D array of blocks.
-   */
-  public set blocks(v: Array<Array<Int32Array>>) {
-    this._blocks = v;
-  }
-
-  /**
    * Number of blocks per line.
    */
   private _blocksPerLine = 0;
@@ -81,6 +62,53 @@ export class JpegComponent {
    */
   public get blocksPerColumn(): number {
     return this._blocksPerColumn;
+  }
+
+  /**
+   * The number of blocks per line of {@link coefficients}, including the
+   * blocks that pad the component out to whole MCUs.
+   */
+  private _blocksPerLineForMcu = 0;
+
+  /**
+   * Gets the number of blocks per line including MCU padding.
+   */
+  public get blocksPerLineForMcu(): number {
+    return this._blocksPerLineForMcu;
+  }
+
+  /**
+   * The number of blocks per column of {@link coefficients}, including the
+   * blocks that pad the component out to whole MCUs.
+   */
+  private _blocksPerColumnForMcu = 0;
+
+  /**
+   * Gets the number of blocks per column including MCU padding.
+   */
+  public get blocksPerColumnForMcu(): number {
+    return this._blocksPerColumnForMcu;
+  }
+
+  /**
+   * The DCT coefficients, 64 per block, with blocks stored in row-major
+   * order. The coefficient for block (row, col) starts at
+   * `(row * blocksPerLineForMcu + col) * 64`.
+   */
+  private _coefficients: Int16Array = new Int16Array(0);
+
+  /**
+   * Gets the DCT coefficients.
+   */
+  public get coefficients(): Int16Array {
+    return this._coefficients;
+  }
+
+  /**
+   * Sets the DCT coefficients.
+   */
+  public set coefficients(v: Int16Array) {
+    this._coefficients = v;
   }
 
   /**
@@ -167,18 +195,24 @@ export class JpegComponent {
   }
 
   /**
-   * Sets the blocks and their dimensions.
-   * @param {Array<Array<Int32Array>>} blocks - 2D array of blocks.
+   * Sets the block dimensions and allocates the coefficient buffer.
    * @param {number} blocksPerLine - Number of blocks per line.
    * @param {number} blocksPerColumn - Number of blocks per column.
+   * @param {number} blocksPerLineForMcu - Number of blocks per line including MCU padding.
+   * @param {number} blocksPerColumnForMcu - Number of blocks per column including MCU padding.
    */
   public setBlocks(
-    blocks: Array<Array<Int32Array>>,
     blocksPerLine: number,
-    blocksPerColumn: number
+    blocksPerColumn: number,
+    blocksPerLineForMcu: number,
+    blocksPerColumnForMcu: number
   ): void {
-    this._blocks = blocks;
     this._blocksPerLine = blocksPerLine;
     this._blocksPerColumn = blocksPerColumn;
+    this._blocksPerLineForMcu = blocksPerLineForMcu;
+    this._blocksPerColumnForMcu = blocksPerColumnForMcu;
+    this._coefficients = new Int16Array(
+      blocksPerLineForMcu * blocksPerColumnForMcu * 64
+    );
   }
 }

@@ -14,11 +14,13 @@ import { JpegMarker } from './jpeg-marker.js';
  * Type definition for the decode function.
  *
  * @param {JpegComponent} component - The JPEG component to decode.
- * @param {Int32Array} block - The block of data to decode.
+ * @param {Int16Array} coefficients - The flat list of DCT coefficients.
+ * @param {number} offset - The offset of the block's coefficients.
  */
 export type DecodeFunction = (
   component: JpegComponent,
-  block: Int32Array
+  coefficients: Int16Array,
+  offset: number
 ) => void;
 
 /**
@@ -354,13 +356,18 @@ export class JpegScan {
   /**
    * Decodes a baseline JPEG component.
    * @param {JpegComponent} component - The JPEG component.
-   * @param {Int32Array} zz - The block of data to decode.
+   * @param {Int16Array} zz - The DCT coefficients.
+   * @param {number} o - The offset of the block's coefficients.
    */
-  private decodeBaseline(component: JpegComponent, zz: Int32Array): void {
+  private decodeBaseline(
+    component: JpegComponent,
+    zz: Int16Array,
+    o: number
+  ): void {
     const t = this.decodeHuffman(component.huffmanTableDC);
     const diff = t === 0 ? 0 : this.receiveAndExtend(t);
     component.pred += diff;
-    zz[0] = component.pred;
+    zz[o] = component.pred;
 
     let k = 1;
     while (k < 64) {
@@ -383,7 +390,7 @@ export class JpegScan {
       s = this.receiveAndExtend(s);
 
       const z = JpegData.dctZigZag[k];
-      zz[z] = s;
+      zz[o + z] = s;
       k++;
     }
   }
@@ -391,30 +398,41 @@ export class JpegScan {
   /**
    * Decodes the first DC coefficient of a progressive JPEG component.
    * @param {JpegComponent} component - The JPEG component.
-   * @param {Int32Array} zz - The block of data to decode.
+   * @param {Int16Array} zz - The DCT coefficients.
+   * @param {number} o - The offset of the block's coefficients.
    */
-  private decodeDCFirst(component: JpegComponent, zz: Int32Array): void {
+  private decodeDCFirst(
+    component: JpegComponent,
+    zz: Int16Array,
+    o: number
+  ): void {
     const t = this.decodeHuffman(component.huffmanTableDC);
     const diff = t === 0 ? 0 : this.receiveAndExtend(t) << this._successive;
     component.pred += diff;
-    zz[0] = component.pred;
+    zz[o] = component.pred;
   }
 
   /**
    * Decodes the successive DC coefficients of a progressive JPEG component.
    * @param {JpegComponent} _ - The JPEG component (unused).
-   * @param {Int32Array} zz - The block of data to decode.
+   * @param {Int16Array} zz - The DCT coefficients.
+   * @param {number} o - The offset of the block's coefficients.
    */
-  private decodeDCSuccessive(_: JpegComponent, zz: Int32Array): void {
-    zz[0] |= this.readBit()! << this._successive;
+  private decodeDCSuccessive(_: JpegComponent, zz: Int16Array, o: number): void {
+    zz[o] |= this.readBit()! << this._successive;
   }
 
   /**
    * Decodes the first AC coefficients of a progressive JPEG component.
    * @param {JpegComponent} component - The JPEG component.
-   * @param {Int32Array} zz - The block of data to decode.
+   * @param {Int16Array} zz - The DCT coefficients.
+   * @param {number} o - The offset of the block's coefficients.
    */
-  private decodeACFirst(component: JpegComponent, zz: Int32Array): void {
+  private decodeACFirst(
+    component: JpegComponent,
+    zz: Int16Array,
+    o: number
+  ): void {
     if (this._eobrun > 0) {
       this._eobrun--;
       return;
@@ -435,7 +453,7 @@ export class JpegScan {
       }
       k += r;
       const z = JpegData.dctZigZag[k];
-      zz[z] = this.receiveAndExtend(s) * (1 << this._successive);
+      zz[o + z] = this.receiveAndExtend(s) * (1 << this._successive);
       k++;
     }
   }
@@ -443,16 +461,21 @@ export class JpegScan {
   /**
    * Decodes the successive AC coefficients of a progressive JPEG component.
    * @param {JpegComponent} component - The JPEG component.
-   * @param {Int32Array} zz - The block of data to decode.
+   * @param {Int16Array} zz - The DCT coefficients.
+   * @param {number} o - The offset of the block's coefficients.
    * @throws {LibError} If there is an invalid progressive encoding.
    */
-  private decodeACSuccessive(component: JpegComponent, zz: Int32Array): void {
+  private decodeACSuccessive(
+    component: JpegComponent,
+    zz: Int16Array,
+    o: number
+  ): void {
     let k = this._spectralStart;
     const e = this._spectralEnd;
     let s = 0;
     let r = 0;
     while (k <= e) {
-      const z = JpegData.dctZigZag[k];
+      const z = o + JpegData.dctZigZag[k];
       switch (this._successiveACState) {
         case 0: {
           // Initial state
@@ -539,14 +562,18 @@ export class JpegScan {
     const mcuCol = mcu % this._mcusPerLine;
     const blockRow = mcuRow * component.vSamples + row;
     const blockCol = mcuCol * component.hSamples + col;
-    if (blockRow >= component.blocks.length) {
+    if (
+      blockRow >= component.blocksPerColumnForMcu ||
+      blockCol >= component.blocksPerLineForMcu
+    ) {
       return;
     }
-    const numCols = component.blocks[blockRow].length;
-    if (blockCol >= numCols) {
-      return;
-    }
-    decodeFn.call(this, component, component.blocks[blockRow][blockCol]);
+    decodeFn.call(
+      this,
+      component,
+      component.coefficients,
+      (blockRow * component.blocksPerLineForMcu + blockCol) << 6
+    );
   }
 
   /**
@@ -562,7 +589,12 @@ export class JpegScan {
   ): void {
     const blockRow = Math.floor(mcu / component.blocksPerLine);
     const blockCol = mcu % component.blocksPerLine;
-    decodeFn.call(this, component, component.blocks[blockRow][blockCol]);
+    decodeFn.call(
+      this,
+      component,
+      component.coefficients,
+      (blockRow * component.blocksPerLineForMcu + blockCol) << 6
+    );
   }
 
   /**
