@@ -233,6 +233,65 @@ function addError(v: number, e: number): number {
 }
 
 /**
+ * The normalized value of each uint8 channel value, as rNormalized gives it.
+ */
+const normalized = Float64Array.from(
+  Array.from({ length: 256 }, (_v, v) => v / 255)
+);
+
+/**
+ * A fast path for RGB(A) uint8 images, computing the same values as the
+ * general path from the original pixels in **src**.
+ * @param {Uint8Array} src - The original image pixel data.
+ * @param {Uint8Array} out - The image pixel data to write to.
+ * @param {number} width - The image width.
+ * @param {number} height - The image height.
+ * @param {number} nc - The number of channels.
+ * @param {number} amount - The amount of the effect.
+ */
+function edgeGlowUint8(
+  src: Uint8Array,
+  out: Uint8Array,
+  width: number,
+  height: number,
+  nc: number,
+  amount: number
+): void {
+  const n = normalized;
+  const mx = amount;
+  const invMx = 1 - mx;
+  const stride = width * nc;
+  for (let y = 0; y < height; ++y) {
+    const ny = (y > 0 ? y - 1 : 0) * stride;
+    const cy = y * stride;
+    const py = (y + 1 < height ? y + 1 : height - 1) * stride;
+    for (let x = 0; x < width; ++x) {
+      const nx = (x > 0 ? x - 1 : 0) * nc;
+      const cx = x * nc;
+      const px = (x + 1 < width ? x + 1 : width - 1) * nc;
+      for (let c = 0; c < 3; ++c) {
+        const t1 = n[src[ny + nx + c]];
+        const t2 = n[src[ny + cx + c]];
+        const t3 = n[src[ny + px + c]];
+        const t4 = n[src[cy + nx + c]];
+        const t5 = n[src[cy + cx + c]];
+        const t6 = n[src[cy + px + c]];
+        const t7 = n[src[py + nx + c]];
+        const t8 = n[src[py + cx + c]];
+        const t9 = n[src[py + px + c]];
+        const xx = t1 + 2 * t2 + t3 - t7 - 2 * t8 - t9;
+        const yy = t1 - t3 + 2 * t4 - 2 * t6 + t7 - t9;
+        const rr = Math.sqrt(xx * xx + yy * yy);
+        const v = rr * 2 * t5 * 255;
+        const i = cy + cx + c;
+        const m = src[i] * invMx + v * mx;
+        out[i] = m < 0 ? 0 : m > 255 ? 255 : Math.trunc(m);
+      }
+    }
+  }
+}
+
+/**
  * Interface representing a cache for contrast adjustments.
  */
 interface ContrastCache {
@@ -2357,6 +2416,21 @@ export abstract class Filter {
       const orig = MemoryImage.from(frame, true);
       const width = frame.width;
       const height = frame.height;
+      if (
+        opt.mask === undefined &&
+        frame.format === Format.uint8 &&
+        frame.numChannels >= 3
+      ) {
+        edgeGlowUint8(
+          orig.toUint8Array(),
+          frame.toUint8Array(),
+          width,
+          height,
+          frame.numChannels,
+          amount
+        );
+        continue;
+      }
       for (const p of frame) {
         const ny = MathUtils.clamp(p.y - 1, 0, height - 1);
         const py = MathUtils.clamp(p.y + 1, 0, height - 1);
