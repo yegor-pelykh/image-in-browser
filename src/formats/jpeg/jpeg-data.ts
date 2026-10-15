@@ -66,6 +66,29 @@ export class JpegData {
    */
   public static readonly maxSamplingFactor = 4;
 
+  /**
+   * The maximum number of pixels (width * height) {@link read} will decode.
+   * Frames declaring more throw a {@link LibError} before any pixel data is
+   * allocated. A value <= 0 disables the limit.
+   */
+  private _maxPixels = 0;
+
+  /**
+   * Gets the maximum number of pixels (width * height) {@link read} will
+   * decode.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Sets the maximum number of pixels (width * height) {@link read} will
+   * decode.
+   */
+  public set maxPixels(v: number) {
+    this._maxPixels = v;
+  }
+
   private _input!: InputBuffer<Uint8Array>;
   public get input(): InputBuffer<Uint8Array> {
     return this._input;
@@ -375,7 +398,7 @@ export class JpegData {
         // falls through
         case JpegMarker.sof2:
           hasSOF = true;
-          this.readFrame(marker, this.readBlock());
+          this.readFrame(marker, this.readBlock(), false);
           break;
         // SOS (Start of Scan)
         case JpegMarker.sos:
@@ -741,9 +764,14 @@ export class JpegData {
    * Throws an error if a duplicate frame is found.
    * @param {JpegMarker} marker - The JPEG marker indicating the type of frame.
    * @param {InputBuffer<Uint8Array>} block - The input buffer containing the frame data.
+   * @param {boolean} [prepare=true] - Whether to validate the frame and allocate its coefficient blocks.
    * @throws {LibError} If duplicate JPEG frame data is found.
    */
-  private readFrame(marker: JpegMarker, block: InputBuffer<Uint8Array>): void {
+  private readFrame(
+    marker: JpegMarker,
+    block: InputBuffer<Uint8Array>,
+    prepare = true
+  ): void {
     if (this._frame !== undefined) {
       throw new LibError('Duplicate JPG frame data found.');
     }
@@ -768,7 +796,7 @@ export class JpegData {
       components.set(componentId, component);
     }
 
-    this._frame = new JpegFrame(
+    const f = new JpegFrame(
       components,
       componentsOrder,
       extended,
@@ -778,9 +806,53 @@ export class JpegData {
       samplesPerLine
     );
 
-    this._frame.prepare();
+    if (prepare) {
+      this.validateFrame(f);
+      f.prepare();
+    }
 
-    this.frames.push(this._frame);
+    this._frame = f;
+
+    this.frames.push(f);
+  }
+
+  /**
+   * Validates a JPEG frame's dimensions, component count and sampling factors
+   * before its coefficient blocks are allocated.
+   * @param {JpegFrame} f - The JPEG frame to validate.
+   * @throws {LibError} If the frame has invalid or oversized dimensions, an
+   * unsupported number of components, or invalid sampling factors.
+   */
+  private validateFrame(f: JpegFrame): void {
+    const width = f.samplesPerLine;
+    const height = f.scanLines;
+    if (width === 0 || height === 0) {
+      throw new LibError(`Invalid JPEG dimensions ${width}x${height}`);
+    }
+    if (this._maxPixels > 0 && width * height > this._maxPixels) {
+      throw new LibError(
+        `JPEG dimensions ${width}x${height} exceed the maximum of ` +
+          `${this._maxPixels} pixels`
+      );
+    }
+    if (
+      f.components.size === 0 ||
+      f.components.size > JpegData.maxCompsInScan
+    ) {
+      throw new LibError(
+        `Unsupported number of JPEG components: ${f.components.size}`
+      );
+    }
+    for (const c of f.components.values()) {
+      if (
+        c.hSamples < 1 ||
+        c.hSamples > JpegData.maxSamplingFactor ||
+        c.vSamples < 1 ||
+        c.vSamples > JpegData.maxSamplingFactor
+      ) {
+        throw new LibError('Invalid JPEG sampling factor');
+      }
+    }
   }
 
   /**

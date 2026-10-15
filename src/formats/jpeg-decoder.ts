@@ -13,6 +13,30 @@ import { JpegInfo } from './jpeg/jpeg-info.js';
  */
 export class JpegDecoder implements Decoder {
   /**
+   * The {@link maxPixels} used by decoders created without one, including the
+   * decoders used by decodeImage and decodeJpg. The default of 2^28
+   * (16384 x 16384) allows very large photos while preventing a small,
+   * malicious file from declaring dimensions that would exhaust memory.
+   * A value <= 0 disables the limit.
+   */
+  public static defaultMaxPixels = 1 << 28;
+
+  /**
+   * The maximum number of pixels (width * height) this decoder will decode.
+   * Images declaring more throw a {@link LibError} before any pixel data is
+   * allocated. A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) this decoder will
+   * decode.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
    * Input buffer for the JPEG data.
    */
   private _input?: InputBuffer<Uint8Array>;
@@ -36,6 +60,15 @@ export class JpegDecoder implements Decoder {
    */
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;
+  }
+
+  /**
+   * Create a JPEG decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? JpegDecoder.defaultMaxPixels;
   }
 
   /**
@@ -76,6 +109,7 @@ export class JpegDecoder implements Decoder {
     }
 
     const jpeg = new JpegData();
+    jpeg.maxPixels = this._maxPixels;
     jpeg.read(this._input.buffer);
     if (jpeg.frames.length !== 1) {
       throw new LibError('Only single frame JPEGs supported.');
@@ -95,6 +129,7 @@ export class JpegDecoder implements Decoder {
     const bytes = opt.bytes;
 
     const jpeg = new JpegData();
+    jpeg.maxPixels = this._maxPixels;
     jpeg.read(bytes);
 
     if (jpeg.frames.length !== 1) {

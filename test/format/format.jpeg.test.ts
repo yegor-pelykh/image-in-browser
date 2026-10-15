@@ -6,7 +6,9 @@ import {
   ExifData,
   JpegChroma,
   JpegDecoder,
+  LibError,
   MemoryImage,
+  decodeImage,
   decodeJpg,
   decodeJpgExif,
   decodePng,
@@ -22,6 +24,90 @@ import { TestUtils } from '../_utils/test-utils';
  * JPEG format handling.
  */
 describe('Format: JPEG', () => {
+  /**
+   * Re-declares the dimensions in the SOF header of a small valid JPEG,
+   * producing a tiny file that claims to be a huge image.
+   */
+  function jpgWithSize(
+    width: number,
+    height: number,
+    opts: { components?: number } = {}
+  ): Uint8Array {
+    const components = opts.components ?? 3;
+    const jpg = encodeJpg({
+      image: new MemoryImage({ width: 8, height: 8, numChannels: 3 }),
+    });
+    for (let i = 0; i < jpg.length - 9; ++i) {
+      if (jpg[i] === 0xff && jpg[i + 1] === 0xc0) {
+        jpg[i + 5] = height >> 8;
+        jpg[i + 6] = height & 0xff;
+        jpg[i + 7] = width >> 8;
+        jpg[i + 8] = width & 0xff;
+        if (components !== 3) {
+          jpg[i + 9] = components;
+        }
+        return jpg;
+      }
+    }
+    throw new Error('SOF0 not found');
+  }
+
+  /**
+   * Rejects frames that declare dimensions over the maxPixels limit.
+   */
+  test('rejects dimensions over maxPixels', () => {
+    const jpg = jpgWithSize(65535, 65535);
+    const start = Date.now();
+    expect(() => decodeJpg({ data: jpg })).toThrow(LibError);
+    expect(() => decodeImage({ data: jpg })).toThrow(LibError);
+    expect(Date.now() - start).toBeLessThan(1000);
+
+    expect(() =>
+      decodeJpg({ data: jpgWithSize(101, 100), maxPixels: 10000 })
+    ).toThrow(LibError);
+    const image = decodeJpg({ data: jpgWithSize(100, 100), maxPixels: 10000 });
+    expect(image?.width).toBe(100);
+    expect(image?.height).toBe(100);
+  });
+
+  /**
+   * The defaultMaxPixels limit applies to decoders created without one.
+   */
+  test('defaultMaxPixels', () => {
+    const saved = JpegDecoder.defaultMaxPixels;
+    JpegDecoder.defaultMaxPixels = 64 * 64;
+    try {
+      expect(() => decodeImage({ data: jpgWithSize(65, 64) })).toThrow(
+        LibError
+      );
+      expect(decodeImage({ data: jpgWithSize(64, 64) })?.width).toBe(64);
+    } finally {
+      JpegDecoder.defaultMaxPixels = saved;
+    }
+  });
+
+  /**
+   * startDecode should not allocate for huge dimensions, but decodeFrame
+   * should still reject them.
+   */
+  test('startDecode does not allocate for huge dimensions', () => {
+    const decoder = new JpegDecoder();
+    const info = decoder.startDecode(jpgWithSize(65535, 65535));
+    expect(info?.width).toBe(65535);
+    expect(info?.height).toBe(65535);
+    expect(() => decoder.decodeFrame(0)).toThrow(LibError);
+  });
+
+  /**
+   * Rejects frames with zero dimensions or no components.
+   */
+  test('rejects invalid frame headers', () => {
+    expect(() => decodeJpg({ data: jpgWithSize(0, 8) })).toThrow(LibError);
+    expect(() => decodeJpg({ data: jpgWithSize(8, 8, { components: 0 }) })).toThrow(
+      LibError
+    );
+  });
+
   /**
    * Test to inject new EXIF data into a JPEG image that does not have EXIF,
    * And verify that the injected EXIF data is present and correct.

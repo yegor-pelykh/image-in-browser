@@ -546,6 +546,18 @@ export interface DecodeNamedImageOptions extends DecodeImageLargestOptions {
 }
 
 /**
+ * Interface representing options for decoding a JPEG image.
+ */
+export interface DecodeJpgOptions extends DecodeOptions {
+  /**
+   * The maximum number of pixels (width * height) to decode; images with more
+   * throw a {@link LibError}. If not given, {@link JpegDecoder.defaultMaxPixels}
+   * is used.
+   */
+  maxPixels?: number;
+}
+
+/**
  * Interface representing options for encoding.
  */
 export interface EncodeOptions {
@@ -1126,13 +1138,18 @@ export function encodeNamedImage(
 /**
  * Decode a JPG formatted image.
  *
- * @param {DecodeOptions} opt - Options for decoding the image.
+ * Images with more than {@link DecodeJpgOptions.maxPixels} pixels
+ * (width * height) throw a {@link LibError}; if not given,
+ * {@link JpegDecoder.defaultMaxPixels} is used.
+ *
+ * @param {DecodeJpgOptions} opt - Options for decoding the image.
  * @param {Uint8Array} opt.data - The image file bytes.
+ * @param {number} [opt.maxPixels] - The maximum number of pixels to decode.
  * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
-export function decodeJpg(opt: DecodeOptions): MemoryImage | undefined {
+export function decodeJpg(opt: DecodeJpgOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new JpegDecoder().decode({
+  return new JpegDecoder(opt.maxPixels).decode({
     bytes: dataUint8,
   });
 }
