@@ -2,6 +2,7 @@
 
 import { Color } from '../color/color.js';
 import { ColorRgb8 } from '../color/color-rgb8.js';
+import { Format } from '../color/format.js';
 import { HeapNode } from './heap-node.js';
 import { MemoryImage } from './image.js';
 import { OctreeNode } from './octree-node.js';
@@ -44,11 +45,27 @@ export class OctreeQuantizer implements Quantizer {
   constructor(image: MemoryImage, numberOfColors = 256) {
     this._root = new OctreeNode(0, 0);
     const heap = new HeapNode();
-    for (const p of image) {
-      const r = Math.trunc(p.r);
-      const g = Math.trunc(p.g);
-      const b = Math.trunc(p.b);
-      this.heapAdd(heap, this.nodeInsert(this._root, r, g, b));
+    if (
+      image.format === Format.uint8 &&
+      !image.hasPalette &&
+      image.numChannels >= 3
+    ) {
+      // Read the bytes of RGB(A) uint8 images directly.
+      const data = image.toUint8Array();
+      const nc = image.numChannels;
+      for (let i = 0; i < data.length; i += nc) {
+        this.heapAdd(
+          heap,
+          this.nodeInsert(this._root, data[i], data[i + 1], data[i + 2])
+        );
+      }
+    } else {
+      for (const p of image) {
+        const r = Math.trunc(p.r);
+        const g = Math.trunc(p.g);
+        const b = Math.trunc(p.b);
+        this.heapAdd(heap, this.nodeInsert(this._root, r, g, b));
+      }
     }
 
     const nc = numberOfColors + 1;

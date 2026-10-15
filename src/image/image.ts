@@ -1676,7 +1676,6 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
         const usedColors = new Map<number, number>();
         let numColors = 0;
         const op = frame.getPixel(0, 0);
-        let c: Color | undefined = undefined;
         for (const np of newImage) {
           const nr = Math.floor(op.rNormalized * 255);
           const ng = Math.floor(op.gNormalized * 255);
@@ -1687,9 +1686,10 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
           } else {
             usedColors.set(h, numColors);
             np.index = numColors;
-            c = ColorUtils.convertColor({
+            // Not reused: a converted Color can still refer to the source
+            // image, which converting into it would then modify.
+            const c = ColorUtils.convertColor({
               from: op,
-              to: c,
               format: f,
               numChannels: numChannels,
               alpha: alpha,
