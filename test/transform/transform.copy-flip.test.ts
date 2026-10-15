@@ -141,6 +141,30 @@ describe('Transform', () => {
   });
 
   /**
+   * Both flip equals horizontal then vertical flip, odd size.
+   */
+  test('both flip equals horizontal then vertical flip, odd size', () => {
+    const src = new MemoryImage({ width: 7, height: 5 });
+    for (const p of src) {
+      p.setRgb(p.x * 30, p.y * 50, 0);
+    }
+    for (const image of [src, src.convert({ withPalette: true })]) {
+      const bothFlip = Transform.copyFlip({
+        image: image,
+        direction: FlipDirection.both,
+      });
+      const hvFlip = Transform.copyFlip({
+        image: Transform.copyFlip({
+          image: image,
+          direction: FlipDirection.horizontal,
+        }),
+        direction: FlipDirection.vertical,
+      });
+      expect(imagesAreEqual(bothFlip, hvFlip)).toBe(true);
+    }
+  });
+
+  /**
    * Horizontal flip swaps left and right quadrant pixels.
    */
   test('horizontal flip swaps left/right quadrants', () => {

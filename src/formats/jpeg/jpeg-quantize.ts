@@ -1,11 +1,9 @@
 /** @format */
 
 import { BitUtils } from '../../common/bit-utils.js';
-import { MathUtils } from '../../common/math-utils.js';
 import { LibError } from '../../error/lib-error.js';
 import { ExifData } from '../../exif/exif-data.js';
 import { MemoryImage } from '../../image/image.js';
-import { JpegComponentData } from './jpeg-component-data.js';
 import { JpegData } from './jpeg-data.js';
 
 /**
@@ -280,137 +278,116 @@ export abstract class JpegQuantize {
 
     image.exifData = ExifData.from(jpeg.exifData);
     image.exifData.imageIfd.orientation = undefined;
+    image.iccProfile = jpeg.iccProfile;
 
-    let component1: JpegComponentData | undefined = undefined;
-    let component2: JpegComponentData | undefined = undefined;
-    let component3: JpegComponentData | undefined = undefined;
-    let component4: JpegComponentData | undefined = undefined;
-    let component1Line: Uint8Array | undefined = undefined;
-    let component2Line: Uint8Array | undefined = undefined;
-    let component3Line: Uint8Array | undefined = undefined;
-    let component4Line: Uint8Array | undefined = undefined;
-    let colorTransform = false;
-
-    const h1 = h - 1;
+    const data = image.data!.toUint8Array();
+    const stride = image.data!.rowStride;
     const w1 = w - 1;
+    const h1 = h - 1;
 
-    let setPixel:
-      | ((x: number, y: number, r: number, g: number, b: number) => void)
-      | undefined = undefined;
+    let start = 0;
+    let xStep = 3;
+    let yStep = stride;
     switch (orientation) {
       case 2:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(w1 - x, y, r, g, b);
-        };
+        start = w1 * 3;
+        xStep = -3;
+        yStep = stride;
         break;
       case 3:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(w1 - x, h1 - y, r, g, b);
-        };
+        start = h1 * stride + w1 * 3;
+        xStep = -3;
+        yStep = -stride;
         break;
       case 4:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(x, h1 - y, r, g, b);
-        };
+        start = h1 * stride;
+        xStep = 3;
+        yStep = -stride;
         break;
       case 5:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(y, x, r, g, b);
-        };
+        start = 0;
+        xStep = stride;
+        yStep = 3;
         break;
       case 6:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(h1 - y, x, r, g, b);
-        };
+        start = h1 * 3;
+        xStep = stride;
+        yStep = -3;
         break;
       case 7:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(h1 - y, w1 - x, r, g, b);
-        };
+        start = w1 * stride + h1 * 3;
+        xStep = -stride;
+        yStep = -3;
         break;
       case 8:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(y, w1 - x, r, g, b);
-        };
+        start = w1 * stride;
+        xStep = -stride;
+        yStep = 3;
         break;
       default:
-        setPixel = (x, y, r, g, b) => {
-          image.setPixelRgb(x, y, r, g, b);
-        };
+        start = 0;
+        xStep = 3;
+        yStep = stride;
         break;
     }
 
-    switch (jpeg.components.length) {
+    const clip = JpegQuantize._dctClip;
+    const clipBias = 256 << 8;
+
+    const components = jpeg.components;
+    switch (components.length) {
       case 1:
         {
-          component1 = jpeg.components[0];
-          const lines = component1.lines;
-          const hShift1 = component1.hScaleShift;
-          const vShift1 = component1.vScaleShift;
-          for (let y = 0; y < h; y++) {
-            const y1 = y >>> vShift1;
-            component1Line = lines[y1];
-            for (let x = 0; x < w; x++) {
-              const x1 = x >>> hShift1;
-              const cy = component1Line![x1];
-              setPixel(x, y, cy, cy, cy);
+          const c1 = components[0];
+          const hShift1 = c1.hScaleShift;
+          const vShift1 = c1.vScaleShift;
+          let rowStart = start;
+          for (let y = 0; y < h; y++, rowStart += yStep) {
+            const line1 = c1.lines[y >> vShift1]!;
+            let di = rowStart;
+            for (let x = 0; x < w; x++, di += xStep) {
+              const cy = line1[x >> hShift1];
+              data[di] = cy;
+              data[di + 1] = cy;
+              data[di + 2] = cy;
             }
           }
         }
         break;
-      case 2:
-        break;
       case 3:
         {
-          // The default transform for three components is true
-          colorTransform = true;
-          if (jpeg.adobe !== undefined) {
-            colorTransform = jpeg.adobe.transformCode === 1;
-          }
-
-          component1 = jpeg.components[0];
-          component2 = jpeg.components[1];
-          component3 = jpeg.components[2];
-
-          const lines1 = component1.lines;
-          const lines2 = component2.lines;
-          const lines3 = component3.lines;
-
-          const hShift1 = component1.hScaleShift;
-          const vShift1 = component1.vScaleShift;
-          const hShift2 = component2.hScaleShift;
-          const vShift2 = component2.vScaleShift;
-          const hShift3 = component3.hScaleShift;
-          const vShift3 = component3.vScaleShift;
-
-          for (let y = 0; y < h; y++) {
-            const y1 = y >>> vShift1;
-            const y2 = y >>> vShift2;
-            const y3 = y >>> vShift3;
-
-            component1Line = lines1[y1]!;
-            component2Line = lines2[y2]!;
-            component3Line = lines3[y3]!;
-
-            for (let x = 0; x < w; x++) {
-              const x1 = x >>> hShift1;
-              const x2 = x >>> hShift2;
-              const x3 = x >>> hShift3;
-
-              let r = component1Line[x1];
-              let g = component2Line[x2];
-              let b = component3Line[x3];
-
-              if (colorTransform) {
-                const cy = r << 8;
-                const cb = g - 128;
-                const cr = b - 128;
-                r = MathUtils.clamp((cy + 359 * cr) >> 8, 0, 255);
-                g = MathUtils.clamp((cy - 88 * cb - 183 * cr) >> 8, 0, 255);
-                b = MathUtils.clamp((cy + 454 * cb) >> 8, 0, 255);
+          const colorTransform =
+            jpeg.adobe === undefined || jpeg.adobe.transformCode === 1;
+          const c1 = components[0];
+          const c2 = components[1];
+          const c3 = components[2];
+          const hShift1 = c1.hScaleShift;
+          const vShift1 = c1.vScaleShift;
+          const hShift2 = c2.hScaleShift;
+          const vShift2 = c2.vScaleShift;
+          const hShift3 = c3.hScaleShift;
+          const vShift3 = c3.vScaleShift;
+          let rowStart = start;
+          for (let y = 0; y < h; y++, rowStart += yStep) {
+            const line1 = c1.lines[y >> vShift1]!;
+            const line2 = c2.lines[y >> vShift2]!;
+            const line3 = c3.lines[y >> vShift3]!;
+            let di = rowStart;
+            if (colorTransform) {
+              for (let x = 0; x < w; x++, di += xStep) {
+                const cy = (line1[x >> hShift1] << 8) + clipBias;
+                const cb = line2[x >> hShift2] - 128;
+                const cr = line3[x >> hShift3] - 128;
+                data[di] = clip[(cy + 359 * cr) >> 8];
+                data[di + 1] = clip[(cy - 88 * cb - 183 * cr) >> 8];
+                data[di + 2] = clip[(cy + 454 * cb) >> 8];
               }
-
-              setPixel(x, y, r, g, b);
+            } else {
+              for (let x = 0; x < w; x++, di += xStep) {
+                data[di] = line1[x >> hShift1];
+                data[di + 1] = line2[x >> hShift2];
+                data[di + 2] = line3[x >> hShift3];
+              }
             }
           }
         }
@@ -420,91 +397,52 @@ export abstract class JpegQuantize {
           if (jpeg.adobe === undefined) {
             throw new LibError('Unsupported color mode (4 components)');
           }
-          // The default transform for four components is false
-          colorTransform = false;
-          // The adobe transform marker overrides any previous setting
-          if (jpeg.adobe.transformCode !== 0) {
-            colorTransform = true;
-          }
-
-          component1 = jpeg.components[0];
-          component2 = jpeg.components[1];
-          component3 = jpeg.components[2];
-          component4 = jpeg.components[3];
-
-          const lines1 = component1.lines;
-          const lines2 = component2.lines;
-          const lines3 = component3.lines;
-          const lines4 = component4.lines;
-
-          const hShift1 = component1.hScaleShift;
-          const vShift1 = component1.vScaleShift;
-          const hShift2 = component2.hScaleShift;
-          const vShift2 = component2.vScaleShift;
-          const hShift3 = component3.hScaleShift;
-          const vShift3 = component3.vScaleShift;
-          const hShift4 = component4.hScaleShift;
-          const vShift4 = component4.vScaleShift;
-
-          for (let y = 0; y < h; y++) {
-            const y1 = y >>> vShift1;
-            const y2 = y >>> vShift2;
-            const y3 = y >>> vShift3;
-            const y4 = y >>> vShift4;
-            component1Line = lines1[y1];
-            component2Line = lines2[y2];
-            component3Line = lines3[y3];
-            component4Line = lines4[y4];
-            for (let x = 0; x < w; x++) {
-              const x1 = x >>> hShift1;
-              const x2 = x >>> hShift2;
-              const x3 = x >>> hShift3;
-              const x4 = x >>> hShift4;
+          const colorTransform = jpeg.adobe.transformCode !== 0;
+          const c1 = components[0];
+          const c2 = components[1];
+          const c3 = components[2];
+          const c4 = components[3];
+          const hShift1 = c1.hScaleShift;
+          const vShift1 = c1.vScaleShift;
+          const hShift2 = c2.hScaleShift;
+          const vShift2 = c2.vScaleShift;
+          const hShift3 = c3.hScaleShift;
+          const vShift3 = c3.vScaleShift;
+          const hShift4 = c4.hScaleShift;
+          const vShift4 = c4.vScaleShift;
+          let rowStart = start;
+          for (let y = 0; y < h; y++, rowStart += yStep) {
+            const line1 = c1.lines[y >> vShift1]!;
+            const line2 = c2.lines[y >> vShift2]!;
+            const line3 = c3.lines[y >> vShift3]!;
+            const line4 = c4.lines[y >> vShift4]!;
+            let di = rowStart;
+            for (let x = 0; x < w; x++, di += xStep) {
               let cc = 0;
               let cm = 0;
               let cy = 0;
-              let ck = 0;
+              const ck = line4[x >> hShift4];
               if (!colorTransform) {
-                cc = component1Line![x1];
-                cm = component2Line![x2];
-                cy = component3Line![x3];
-                ck = component4Line![x4];
+                cc = line1[x >> hShift1];
+                cm = line2[x >> hShift2];
+                cy = line3[x >> hShift3];
               } else {
-                cy = component1Line![x1];
-                const cb = component2Line![x2];
-                const cr = component3Line![x3];
-                ck = component4Line![x4];
-
-                const crShifted = cr - 128;
-                const cbShifted = cb - 128;
-                const cyScaled = cy << 8;
-                cc =
-                  255 -
-                  MathUtils.clampInt255((cyScaled + 359 * crShifted) >> 8);
-                cm =
-                  255 -
-                  MathUtils.clampInt255(
-                    (cyScaled - 88 * cbShifted - 183 * crShifted) >> 8
-                  );
-                cy =
-                  255 -
-                  MathUtils.clampInt255((cyScaled + 454 * cbShifted) >> 8);
+                const cyScaled = (line1[x >> hShift1] << 8) + clipBias;
+                const cb = line2[x >> hShift2] - 128;
+                const cr = line3[x >> hShift3] - 128;
+                cc = 255 - clip[(cyScaled + 359 * cr) >> 8];
+                cm = 255 - clip[(cyScaled - 88 * cb - 183 * cr) >> 8];
+                cy = 255 - clip[(cyScaled + 454 * cb) >> 8];
               }
-              const r = BitUtils.sshR(cc * ck, 8);
-              const g = BitUtils.sshR(cm * ck, 8);
-              const b = BitUtils.sshR(cy * ck, 8);
-
-              setPixel(x, y, r, g, b);
+              data[di] = (cc * ck) >> 8;
+              data[di + 1] = (cm * ck) >> 8;
+              data[di + 2] = (cy * ck) >> 8;
             }
           }
         }
         break;
       default:
         throw new LibError('Unsupported color mode');
-    }
-
-    if (jpeg.iccProfile !== undefined) {
-      image.iccProfile = jpeg.iccProfile;
     }
 
     return image;

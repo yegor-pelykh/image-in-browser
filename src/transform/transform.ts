@@ -1282,7 +1282,7 @@ export abstract class Transform {
     const src = opt.image;
     let interpolation = opt.interpolation ?? Interpolation.nearest;
 
-    const nAngle = opt.angle % 360;
+    const nAngle = ((opt.angle % 360) + 360) % 360;
 
     // You can't interpolate index pixels
     if (src.hasPalette) {
@@ -1493,10 +1493,13 @@ export abstract class Transform {
       const frame = opt.image.frames[i];
       const w = frame.width;
       const h = frame.height;
-      const h2 = Math.trunc(h / 2);
+
       if (frame.hasPalette) {
-        for (let y = 0, y2 = h - 1; y < h2; ++y, --y2) {
-          for (let x = 0, x2 = w - 1; x < w; ++x, --x2) {
+        // When the height is odd, the middle row (y == y2) is reversed in
+        // place, so only its left half is swapped with its right half.
+        for (let y = 0, y2 = h - 1; y <= y2; ++y, --y2) {
+          const xEnd = y === y2 ? Math.trunc(w / 2) : w;
+          for (let x = 0, x2 = w - 1; x < xEnd; ++x, --x2) {
             const p1 = frame.getPixel(x, y);
             const p2 = frame.getPixel(x2, y2);
             const t = p1.index;
@@ -1505,8 +1508,11 @@ export abstract class Transform {
           }
         }
       } else {
-        for (let y = 0, y2 = h - 1; y < h2; ++y, --y2) {
-          for (let x = 0, x2 = w - 1; x < w; ++x, --x2) {
+        // When the height is odd, the middle row (y == y2) is reversed in
+        // place, so only its left half is swapped with its right half.
+        for (let y = 0, y2 = h - 1; y <= y2; ++y, --y2) {
+          const xEnd = y === y2 ? Math.trunc(w / 2) : w;
+          for (let x = 0, x2 = w - 1; x < xEnd; ++x, --x2) {
             const p1 = frame.getPixel(x, y);
             const p2 = frame.getPixel(x2, y2);
             let t = p1.r;
