@@ -1,10 +1,9 @@
 /** @format */
 
 import { BitUtils } from '../../common/bit-utils.js';
-import { LibError } from '../../error/lib-error.js';
-import { ExifData } from '../../exif/exif-data.js';
 import { MemoryImage } from '../../image/image.js';
 import { JpegData } from './jpeg-data.js';
+import { JpegImageWriter } from './jpeg-image-writer.js';
 
 /**
  * Abstract class for JPEG quantization and inverse DCT operations.
@@ -255,196 +254,15 @@ export abstract class JpegQuantize {
   }
 
   /**
-   * Converts a JPEG data object to a MemoryImage object.
+   * Converts the decoded component lines of {@link JpegData} to an RGB
+   * {@link MemoryImage}, baking in the EXIF orientation.
    *
    * @param {JpegData} jpeg - The JPEG data object.
    * @returns {MemoryImage} The resulting MemoryImage object.
    */
   public static getImageFromJpeg(jpeg: JpegData): MemoryImage {
-    const orientation = jpeg.exifData.imageIfd.hasOrientation
-      ? jpeg.exifData.imageIfd.orientation!
-      : 0;
-
-    const w = jpeg.width;
-    const h = jpeg.height;
-    const flipWidthHeight = orientation >= 5 && orientation <= 8;
-    const width = flipWidthHeight ? h : w;
-    const height = flipWidthHeight ? w : h;
-
-    const image = new MemoryImage({
-      width: width,
-      height: height,
-    });
-
-    image.exifData = ExifData.from(jpeg.exifData);
-    image.exifData.imageIfd.orientation = undefined;
-    image.iccProfile = jpeg.iccProfile;
-
-    const data = image.data!.toUint8Array();
-    const stride = image.data!.rowStride;
-    const w1 = w - 1;
-    const h1 = h - 1;
-
-    let start = 0;
-    let xStep = 3;
-    let yStep = stride;
-    switch (orientation) {
-      case 2:
-        start = w1 * 3;
-        xStep = -3;
-        yStep = stride;
-        break;
-      case 3:
-        start = h1 * stride + w1 * 3;
-        xStep = -3;
-        yStep = -stride;
-        break;
-      case 4:
-        start = h1 * stride;
-        xStep = 3;
-        yStep = -stride;
-        break;
-      case 5:
-        start = 0;
-        xStep = stride;
-        yStep = 3;
-        break;
-      case 6:
-        start = h1 * 3;
-        xStep = stride;
-        yStep = -3;
-        break;
-      case 7:
-        start = w1 * stride + h1 * 3;
-        xStep = -stride;
-        yStep = -3;
-        break;
-      case 8:
-        start = w1 * stride;
-        xStep = -stride;
-        yStep = 3;
-        break;
-      default:
-        start = 0;
-        xStep = 3;
-        yStep = stride;
-        break;
-    }
-
-    const clip = JpegQuantize._dctClip;
-    const clipBias = 256 << 8;
-
-    const components = jpeg.components;
-    switch (components.length) {
-      case 1:
-        {
-          const c1 = components[0];
-          const hShift1 = c1.hScaleShift;
-          const vShift1 = c1.vScaleShift;
-          let rowStart = start;
-          for (let y = 0; y < h; y++, rowStart += yStep) {
-            const line1 = c1.lines[y >> vShift1]!;
-            let di = rowStart;
-            for (let x = 0; x < w; x++, di += xStep) {
-              const cy = line1[x >> hShift1];
-              data[di] = cy;
-              data[di + 1] = cy;
-              data[di + 2] = cy;
-            }
-          }
-        }
-        break;
-      case 3:
-        {
-          const colorTransform =
-            jpeg.adobe === undefined || jpeg.adobe.transformCode === 1;
-          const c1 = components[0];
-          const c2 = components[1];
-          const c3 = components[2];
-          const hShift1 = c1.hScaleShift;
-          const vShift1 = c1.vScaleShift;
-          const hShift2 = c2.hScaleShift;
-          const vShift2 = c2.vScaleShift;
-          const hShift3 = c3.hScaleShift;
-          const vShift3 = c3.vScaleShift;
-          let rowStart = start;
-          for (let y = 0; y < h; y++, rowStart += yStep) {
-            const line1 = c1.lines[y >> vShift1]!;
-            const line2 = c2.lines[y >> vShift2]!;
-            const line3 = c3.lines[y >> vShift3]!;
-            let di = rowStart;
-            if (colorTransform) {
-              for (let x = 0; x < w; x++, di += xStep) {
-                const cy = (line1[x >> hShift1] << 8) + clipBias;
-                const cb = line2[x >> hShift2] - 128;
-                const cr = line3[x >> hShift3] - 128;
-                data[di] = clip[(cy + 359 * cr) >> 8];
-                data[di + 1] = clip[(cy - 88 * cb - 183 * cr) >> 8];
-                data[di + 2] = clip[(cy + 454 * cb) >> 8];
-              }
-            } else {
-              for (let x = 0; x < w; x++, di += xStep) {
-                data[di] = line1[x >> hShift1];
-                data[di + 1] = line2[x >> hShift2];
-                data[di + 2] = line3[x >> hShift3];
-              }
-            }
-          }
-        }
-        break;
-      case 4:
-        {
-          if (jpeg.adobe === undefined) {
-            throw new LibError('Unsupported color mode (4 components)');
-          }
-          const colorTransform = jpeg.adobe.transformCode !== 0;
-          const c1 = components[0];
-          const c2 = components[1];
-          const c3 = components[2];
-          const c4 = components[3];
-          const hShift1 = c1.hScaleShift;
-          const vShift1 = c1.vScaleShift;
-          const hShift2 = c2.hScaleShift;
-          const vShift2 = c2.vScaleShift;
-          const hShift3 = c3.hScaleShift;
-          const vShift3 = c3.vScaleShift;
-          const hShift4 = c4.hScaleShift;
-          const vShift4 = c4.vScaleShift;
-          let rowStart = start;
-          for (let y = 0; y < h; y++, rowStart += yStep) {
-            const line1 = c1.lines[y >> vShift1]!;
-            const line2 = c2.lines[y >> vShift2]!;
-            const line3 = c3.lines[y >> vShift3]!;
-            const line4 = c4.lines[y >> vShift4]!;
-            let di = rowStart;
-            for (let x = 0; x < w; x++, di += xStep) {
-              let cc = 0;
-              let cm = 0;
-              let cy = 0;
-              const ck = line4[x >> hShift4];
-              if (!colorTransform) {
-                cc = line1[x >> hShift1];
-                cm = line2[x >> hShift2];
-                cy = line3[x >> hShift3];
-              } else {
-                const cyScaled = (line1[x >> hShift1] << 8) + clipBias;
-                const cb = line2[x >> hShift2] - 128;
-                const cr = line3[x >> hShift3] - 128;
-                cc = 255 - clip[(cyScaled + 359 * cr) >> 8];
-                cm = 255 - clip[(cyScaled - 88 * cb - 183 * cr) >> 8];
-                cy = 255 - clip[(cyScaled + 454 * cb) >> 8];
-              }
-              data[di] = (cc * ck) >> 8;
-              data[di + 1] = (cm * ck) >> 8;
-              data[di + 2] = (cy * ck) >> 8;
-            }
-          }
-        }
-        break;
-      default:
-        throw new LibError('Unsupported color mode');
-    }
-
-    return image;
+    const writer = new JpegImageWriter(jpeg);
+    writer.writeRows(0, jpeg.scaledHeight);
+    return writer.image;
   }
 }

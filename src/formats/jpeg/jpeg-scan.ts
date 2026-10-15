@@ -205,6 +205,36 @@ export class JpegScan {
    */
   private _atMarker = false;
 
+  /**
+   * Called when each row of MCUs (or of blocks, for a scan of one component)
+   * has been decoded, for decoding a band at a time.
+   */
+  private _onRow?: (row: number) => void;
+
+  /**
+   * Gets the callback called when each row of MCUs has been decoded.
+   */
+  public get onRow(): ((row: number) => void) | undefined {
+    return this._onRow;
+  }
+
+  /**
+   * Sets the callback called when each row of MCUs has been decoded.
+   */
+  public set onRow(v: ((row: number) => void) | undefined) {
+    this._onRow = v;
+  }
+
+  /**
+   * The number of rows that have been reported to {@link onRow}.
+   */
+  private _rowsDone = 0;
+
+  /**
+   * A scratch block for decoding a component that only keeps DC coefficients.
+   */
+  private readonly _scratchBlock = new Int16Array(64);
+
   private _eobrun = 0;
 
   /**
@@ -624,11 +654,11 @@ export class JpegScan {
     ) {
       return;
     }
-    decodeFn.call(
-      this,
+    this.decodeInto(
       component,
-      component.coefficients,
-      (blockRow * component.blocksPerLineForMcu + blockCol) << 6
+      decodeFn,
+      JpegScan.bandRow(component, blockRow) * component.blocksPerLineForMcu +
+        blockCol
     );
   }
 
@@ -645,12 +675,50 @@ export class JpegScan {
   ): void {
     const blockRow = Math.floor(mcu / component.blocksPerLine);
     const blockCol = mcu % component.blocksPerLine;
-    decodeFn.call(
-      this,
+    this.decodeInto(
       component,
-      component.coefficients,
-      (blockRow * component.blocksPerLineForMcu + blockCol) << 6
+      decodeFn,
+      JpegScan.bandRow(component, blockRow) * component.blocksPerLineForMcu +
+        blockCol
     );
+  }
+
+  /**
+   * The row of {@link JpegComponent.coefficients} holding block row
+   * {@link blockRow}.
+   * @param {JpegComponent} component - The component.
+   * @param {number} blockRow - The block row.
+   * @returns {number} The coefficient row.
+   */
+  private static bandRow(component: JpegComponent, blockRow: number): number {
+    return component.bandBlockRows > 0
+      ? blockRow % component.bandBlockRows
+      : blockRow;
+  }
+
+  /**
+   * Decodes the coefficients of a block. When the component only keeps DC
+   * coefficients, the block is decoded in a scratch block, and only its DC
+   * coefficient is kept; the scratch block's AC coefficients are left over
+   * from other blocks, but are never used.
+   * @param {JpegComponent} component - The component.
+   * @param {DecodeFunction} decodeFn - The decode function.
+   * @param {number} block - The index of the block.
+   */
+  private decodeInto(
+    component: JpegComponent,
+    decodeFn: DecodeFunction,
+    block: number
+  ): void {
+    const coefficients = component.coefficients;
+    if (!component.dcOnly) {
+      decodeFn.call(this, component, coefficients, block << 6);
+      return;
+    }
+    const scratch = this._scratchBlock;
+    scratch[0] = coefficients[block];
+    decodeFn.call(this, component, scratch, 0);
+    coefficients[block] = scratch[0];
   }
 
   /**
@@ -704,6 +772,12 @@ export class JpegScan {
         for (let n = 0; n < this._resetInterval; n++) {
           this.decodeBlock(component, decodeFn, mcu);
           mcu++;
+          if (
+            this._onRow !== undefined &&
+            mcu % component.blocksPerLine === 0
+          ) {
+            this.rowDone(Math.trunc(mcu / component.blocksPerLine));
+          }
         }
       } else {
         for (let n = 0; n < this._resetInterval; n++) {
@@ -718,6 +792,9 @@ export class JpegScan {
             }
           }
           mcu++;
+          if (this._onRow !== undefined && mcu % this._mcusPerLine === 0) {
+            this.rowDone(Math.trunc(mcu / this._mcusPerLine));
+          }
         }
       }
 
@@ -738,6 +815,26 @@ export class JpegScan {
           break;
         }
       }
+    }
+
+    // Finish the rows, also when the data ended early: blocks that weren't
+    // decoded keep zero coefficients, as they do when decoding fully.
+    if (this._onRow !== undefined) {
+      this.rowDone(
+        componentsLength === 1
+          ? this._components[0].blocksPerColumn
+          : this._frame.mcusPerColumn
+      );
+    }
+  }
+
+  /**
+   * Reports the rows before {@link rows} that haven't been reported yet.
+   * @param {number} rows - The number of rows.
+   */
+  private rowDone(rows: number): void {
+    while (this._rowsDone < rows) {
+      this._onRow!(this._rowsDone++);
     }
   }
 }

@@ -167,9 +167,17 @@ export class JpegFrame {
   }
 
   /**
-   * Prepares the JPEG frame by calculating maximum samples and MCUs.
+   * Prepares the JPEG frame by calculating maximum samples and MCUs, and
+   * allocating the coefficients of the components. With {@link dcOnly}, only
+   * the DC coefficient of each block is kept. With {@link band}, only one row
+   * of MCUs is kept, for decoding a row at a time.
+   * @param {object} [opts] - The options.
+   * @param {boolean} [opts.dcOnly=false] - Whether only the DC coefficient of each block is kept.
+   * @param {boolean} [opts.band=false] - Whether only one row of MCUs is kept.
    */
-  public prepare(): void {
+  public prepare(opts: { dcOnly?: boolean; band?: boolean } = {}): void {
+    const dcOnly = opts.dcOnly ?? false;
+    const band = opts.band ?? false;
     for (const [_, component] of this._components) {
       this._maxHSamples = Math.max(this._maxHSamples, component.hSamples);
       this._maxVSamples = Math.max(this._maxVSamples, component.vSamples);
@@ -193,7 +201,9 @@ export class JpegFrame {
         blocksPerLine,
         blocksPerColumn,
         blocksPerLineForMcu,
-        blocksPerColumnForMcu
+        blocksPerColumnForMcu,
+        dcOnly,
+        band
       );
     }
   }

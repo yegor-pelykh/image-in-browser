@@ -37,6 +37,21 @@ export class JpegDecoder implements Decoder {
   }
 
   /**
+   * The factor the image is scaled down by while decoding: 1, 2, 4 or 8.
+   * Decoding at a reduced scale is much faster and uses less memory, so it's
+   * a good way to decode a thumbnail. The decoded image is the size of the
+   * JPEG divided by {@link scale}, rounded up.
+   */
+  private readonly _scale: number;
+
+  /**
+   * Gets the factor the image is scaled down by while decoding.
+   */
+  public get scale(): number {
+    return this._scale;
+  }
+
+  /**
    * Input buffer for the JPEG data.
    */
   private _input?: InputBuffer<Uint8Array>;
@@ -66,9 +81,18 @@ export class JpegDecoder implements Decoder {
    * Create a JPEG decoder.
    * @param {number} [maxPixels] - The maximum number of pixels (width * height)
    * to decode. If not given, {@link defaultMaxPixels} is used.
+   * @param {number} [scale=1] - The factor to scale the image down by while
+   * decoding: 1, 2, 4 or 8. Decoding at a reduced scale is much faster and
+   * uses less memory, so it's a good way to decode a thumbnail. The decoded
+   * image is the size of the JPEG divided by {@link scale}, rounded up.
+   * @throws {LibError} If {@link scale} is not 1, 2, 4 or 8.
    */
-  constructor(maxPixels?: number) {
+  constructor(maxPixels?: number, scale = 1) {
     this._maxPixels = maxPixels ?? JpegDecoder.defaultMaxPixels;
+    if (scale !== 1 && scale !== 2 && scale !== 4 && scale !== 8) {
+      throw new LibError('scale must be 1, 2, 4 or 8');
+    }
+    this._scale = scale;
   }
 
   /**
@@ -110,12 +134,8 @@ export class JpegDecoder implements Decoder {
 
     const jpeg = new JpegData();
     jpeg.maxPixels = this._maxPixels;
-    jpeg.read(this._input.buffer);
-    if (jpeg.frames.length !== 1) {
-      throw new LibError('Only single frame JPEGs supported.');
-    }
-
-    return jpeg.getImage();
+    jpeg.scale = this._scale;
+    return jpeg.decodeImage(this._input.buffer);
   }
 
   /**
@@ -126,16 +146,9 @@ export class JpegDecoder implements Decoder {
    * @throws {LibError} If the JPEG contains more than one frame.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
-    const bytes = opt.bytes;
-
     const jpeg = new JpegData();
     jpeg.maxPixels = this._maxPixels;
-    jpeg.read(bytes);
-
-    if (jpeg.frames.length !== 1) {
-      throw new LibError('Only single frame JPEGs supported.');
-    }
-
-    return jpeg.getImage();
+    jpeg.scale = this._scale;
+    return jpeg.decodeImage(opt.bytes);
   }
 }

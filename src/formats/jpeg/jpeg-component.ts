@@ -112,6 +112,49 @@ export class JpegComponent {
   }
 
   /**
+   * Whether {@link coefficients} only holds the DC coefficient of each block,
+   * at `row * blocksPerLineForMcu + col`, for decoding at 1/8 scale.
+   */
+  private _dcOnly = false;
+
+  /**
+   * Gets whether {@link coefficients} only holds the DC coefficient of each
+   * block.
+   */
+  public get dcOnly(): boolean {
+    return this._dcOnly;
+  }
+
+  /**
+   * Sets whether {@link coefficients} only holds the DC coefficient of each
+   * block.
+   */
+  public set dcOnly(v: boolean) {
+    this._dcOnly = v;
+  }
+
+  /**
+   * When > 0, {@link coefficients} only holds this many rows of blocks, the
+   * current band of the image being decoded.
+   */
+  private _bandBlockRows = 0;
+
+  /**
+   * Gets the number of rows of blocks {@link coefficients} holds, or 0 for
+   * the whole image.
+   */
+  public get bandBlockRows(): number {
+    return this._bandBlockRows;
+  }
+
+  /**
+   * Sets the number of rows of blocks {@link coefficients} holds.
+   */
+  public set bandBlockRows(v: number) {
+    this._bandBlockRows = v;
+  }
+
+  /**
    * Array of Huffman nodes for DC table.
    */
   private _huffmanTableDC: Array<HuffmanNode | undefined> = [];
@@ -238,19 +281,27 @@ export class JpegComponent {
    * @param {number} blocksPerColumn - Number of blocks per column.
    * @param {number} blocksPerLineForMcu - Number of blocks per line including MCU padding.
    * @param {number} blocksPerColumnForMcu - Number of blocks per column including MCU padding.
+   * @param {boolean} [dcOnly=false] - Whether only the DC coefficient of each block is kept.
+   * @param {boolean} [band=false] - Whether only one row of MCUs is kept, for decoding a row at a time.
    */
   public setBlocks(
     blocksPerLine: number,
     blocksPerColumn: number,
     blocksPerLineForMcu: number,
-    blocksPerColumnForMcu: number
+    blocksPerColumnForMcu: number,
+    dcOnly = false,
+    band = false
   ): void {
     this._blocksPerLine = blocksPerLine;
     this._blocksPerColumn = blocksPerColumn;
     this._blocksPerLineForMcu = blocksPerLineForMcu;
     this._blocksPerColumnForMcu = blocksPerColumnForMcu;
+    this._dcOnly = dcOnly;
+    this._bandBlockRows = band ? this._vSamples : 0;
     this._coefficients = new Int16Array(
-      blocksPerLineForMcu * blocksPerColumnForMcu * 64
+      blocksPerLineForMcu *
+        (band ? this._vSamples : blocksPerColumnForMcu) *
+        (dcOnly ? 1 : 64)
     );
   }
 }

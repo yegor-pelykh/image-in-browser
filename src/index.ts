@@ -555,6 +555,14 @@ export interface DecodeJpgOptions extends DecodeOptions {
    * is used.
    */
   maxPixels?: number;
+
+  /**
+   * The factor to scale the image down by while decoding: 1, 2, 4 or 8.
+   * Decoding at a reduced scale is much faster and uses less memory, so it's
+   * a good way to decode a thumbnail. The decoded image is the size of the
+   * JPEG divided by this value, rounded up.
+   */
+  scale?: number;
 }
 
 /**
@@ -1156,11 +1164,12 @@ export function encodeNamedImage(
  * @param {DecodeJpgOptions} opt - Options for decoding the image.
  * @param {Uint8Array} opt.data - The image file bytes.
  * @param {number} [opt.maxPixels] - The maximum number of pixels to decode.
+ * @param {number} [opt.scale=1] - The factor to scale the image down by (1, 2, 4 or 8).
  * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
  */
 export function decodeJpg(opt: DecodeJpgOptions): MemoryImage | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new JpegDecoder(opt.maxPixels).decode({
+  return new JpegDecoder(opt.maxPixels, opt.scale).decode({
     bytes: dataUint8,
   });
 }
