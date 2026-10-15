@@ -29,6 +29,162 @@ import { HistogramEqualizeMode } from './histogram-equalize-mode.js';
 import { Format, FormatType } from '../color/format.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { DitherScanOrder } from './dither-scan-order.js';
+import { reflectIndex } from './reflect-index.js';
+
+/**
+ * A fast path for uint8 images, giving the same result as
+ * {@link SeparableKernel.apply}: each channel is filtered horizontally and
+ * stored as uint8, then filtered vertically, summing the taps in the same
+ * order.
+ *
+ * The vertical pass writes each row in place, so instead of a whole image of
+ * horizontal results it keeps a ring of the 2 * size + 1 rows it needs. The
+ * rows it reads (including reflected ones) are always within that window, and
+ * the source rows still to be filtered horizontally are below the row being
+ * written.
+ *
+ * Returns false if the frame isn't uint8, or is a single row or column, which
+ * {@link SeparableKernel.apply} leaves unchanged.
+ * @param {MemoryImage} frame - The frame to convolve.
+ * @param {SeparableKernel} kernel - The kernel to apply.
+ * @returns {boolean} True if the fast path was used.
+ */
+function convolveUint8(frame: MemoryImage, kernel: SeparableKernel): boolean {
+  const size = kernel.size;
+  const w = frame.width;
+  const h = frame.height;
+  if (frame.format !== Format.uint8 || w < 2 || h < 2) {
+    return false;
+  }
+
+  const data = frame.data!.toUint8Array();
+  const nc = frame.data!.numChannels;
+  const stride = frame.data!.rowStride;
+  const taps = 2 * size + 1;
+  const k = new Float64Array(taps);
+  for (let i = 0; i < taps; ++i) {
+    k[i] = kernel.getCoefficient(i);
+  }
+
+  // The source pixel of each position of a row padded by size pixels on each
+  // side, reflecting past the edges.
+  const padSource = new Int32Array(w + 2 * size);
+  for (let x = -size; x < w + size; ++x) {
+    padSource[x + size] = reflectIndex(w, x) * nc;
+  }
+  const padded = new Uint8Array((w + 2 * size) * nc);
+
+  const ring = new Uint8Array(taps * stride);
+  const acc = new Float64Array(stride);
+  const rowOffsets = new Int32Array(taps);
+  let nextRow = 0;
+
+  for (let y = 0; y < h; ++y) {
+    // Filter the source rows the window needs horizontally.
+    const last = y + size < h ? y + size : h - 1;
+    for (; nextRow <= last; ++nextRow) {
+      padRow(data, nextRow * stride, padded, padSource, nc);
+      filterRow(padded, ring, (nextRow % taps) * stride, stride, nc, k, acc);
+    }
+
+    for (let j = 0; j < taps; ++j) {
+      rowOffsets[j] = (reflectIndex(h, y + j - size) % taps) * stride;
+    }
+    filterColumn(ring, rowOffsets, data, y * stride, stride, k, acc);
+  }
+
+  return true;
+}
+
+/**
+ * Copies the row at **srcOffset** in **src** to **padded**, with its reflected
+ * edges.
+ * @param {Uint8Array} src - The source data.
+ * @param {number} srcOffset - The offset of the row in the source.
+ * @param {Uint8Array} padded - The padded row buffer.
+ * @param {Int32Array} padSource - The source offset of each padded position.
+ * @param {number} nc - The number of channels.
+ */
+function padRow(
+  src: Uint8Array,
+  srcOffset: number,
+  padded: Uint8Array,
+  padSource: Int32Array,
+  nc: number
+): void {
+  for (let x = 0, i = 0; x < padSource.length; ++x) {
+    const s = srcOffset + padSource[x];
+    for (let ch = 0; ch < nc; ++ch) {
+      padded[i++] = src[s + ch];
+    }
+  }
+}
+
+/**
+ * Filters a padded row horizontally, to the n bytes at **dstOffset** in
+ * **dst**.
+ * @param {Uint8Array} padded - The padded row.
+ * @param {Uint8Array} dst - The destination buffer.
+ * @param {number} dstOffset - The offset in the destination.
+ * @param {number} n - The number of bytes to write.
+ * @param {number} nc - The number of channels.
+ * @param {Float64Array} k - The kernel coefficients.
+ * @param {Float64Array} acc - The accumulator.
+ */
+function filterRow(
+  padded: Uint8Array,
+  dst: Uint8Array,
+  dstOffset: number,
+  n: number,
+  nc: number,
+  k: Float64Array,
+  acc: Float64Array
+): void {
+  acc.fill(0, 0, n);
+  for (let j = 0; j < k.length; ++j) {
+    const c = k[j];
+    const o = j * nc;
+    for (let i = 0; i < n; ++i) {
+      acc[i] += c * padded[o + i];
+    }
+  }
+  for (let i = 0; i < n; ++i) {
+    dst[dstOffset + i] = Math.trunc(acc[i]);
+  }
+}
+
+/**
+ * Filters one row vertically, from the ring rows at **rowOffsets** to **dst**
+ * at **dstOffset**.
+ * @param {Uint8Array} ring - The ring of horizontally filtered rows.
+ * @param {Int32Array} rowOffsets - The ring offset of each tap.
+ * @param {Uint8Array} dst - The destination buffer.
+ * @param {number} dstOffset - The offset in the destination.
+ * @param {number} n - The number of bytes to write.
+ * @param {Float64Array} k - The kernel coefficients.
+ * @param {Float64Array} acc - The accumulator.
+ */
+function filterColumn(
+  ring: Uint8Array,
+  rowOffsets: Int32Array,
+  dst: Uint8Array,
+  dstOffset: number,
+  n: number,
+  k: Float64Array,
+  acc: Float64Array
+): void {
+  acc.fill(0, 0, n);
+  for (let j = 0; j < k.length; ++j) {
+    const c = k[j];
+    const o = rowOffsets[j];
+    for (let i = 0; i < n; ++i) {
+      acc[i] += c * ring[o + i];
+    }
+  }
+  for (let i = 0; i < n; ++i) {
+    dst[dstOffset + i] = Math.trunc(acc[i]);
+  }
+}
 
 /**
  * Interface representing a cache for contrast adjustments.
@@ -3319,6 +3475,9 @@ export abstract class Filter {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     for (const frame of image.frames) {
+      if (opt.mask === undefined && convolveUint8(frame, opt.kernel)) {
+        continue;
+      }
       const tmp = MemoryImage.from(frame, true);
 
       // Apply the filter horizontally

@@ -1,11 +1,15 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, encodePng, Filter } from '../../src';
+import { ColorRgb8, decodePng, encodePng, Filter, Format, MemoryImage } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
-import { checkerImage, imageVariance } from '../_utils/test-helpers.js';
+import {
+  checkerImage,
+  expectImagesClose,
+  imageVariance,
+} from '../_utils/test-helpers.js';
 
 /**
  * gaussianBlur filter: applies Gaussian blur with configurable radius.
@@ -76,6 +80,18 @@ describe('Filter', () => {
     expect(blurred.numFrames).toBe(2);
     for (const frame of blurred.frames) {
       expect(imageVariance(frame)).toBeLessThan(imageVariance(src));
+    }
+  });
+
+  /**
+   * Gaussian blur with a radius larger than the image.
+   */
+  test('gaussianBlur with a radius larger than the image', () => {
+    for (const format of [Format.uint8, Format.uint16]) {
+      const src = new MemoryImage({ width: 6, height: 4, format });
+      src.clear(new ColorRgb8(100, 150, 200));
+      const blurred = Filter.gaussianBlur({ image: src.clone(), radius: 20 });
+      expectImagesClose(blurred, src, 2);
     }
   });
 });

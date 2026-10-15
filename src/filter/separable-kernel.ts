@@ -4,6 +4,7 @@ import { Channel } from '../color/channel.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { MathUtils } from '../common/math-utils.js';
 import { MemoryImage } from '../image/image.js';
+import { reflectIndex } from './reflect-index.js';
 
 /**
  * Options for applying a separable kernel.
@@ -49,19 +50,21 @@ export class SeparableKernel {
   }
 
   /**
+   * Get the size of the kernel.
+   * @returns {number} The size of the kernel.
+   */
+  public get size(): number {
+    return this._size;
+  }
+
+  /**
    * Reflect the index within the bounds of the image.
    * @param {number} max - The maximum index.
    * @param {number} x - The current index.
    * @returns {number} The reflected index.
    */
   private reflect(max: number, x: number): number {
-    if (x < 0) {
-      return -x;
-    }
-    if (x >= max) {
-      return max - (x - max) - 1;
-    }
-    return x;
+    return reflectIndex(max, x);
   }
 
   /**
