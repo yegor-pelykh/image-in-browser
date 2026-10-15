@@ -189,9 +189,50 @@ export class GifDecoder implements Decoder {
     line: Uint8Array
   ): void {
     if (colorMap !== undefined) {
-      const width = line.length;
-      for (let x = 0; x < width; ++x) {
-        image.setPixelRgb(x, y, line[x], 0, 0);
+      // The frame is a 1 channel image of palette indices.
+      const start = y * image.width;
+      image.toUint8Array().set(line, start);
+    }
+  }
+
+  /**
+   * Draws the non-transparent pixels of **frame** onto **canvas** at (fx, fy).
+   * Both are 1 channel palette index images.
+   * @param {MemoryImage} frame - The frame to composite.
+   * @param {MemoryImage} canvas - The canvas to composite onto.
+   * @param {number} fx - The x offset.
+   * @param {number} fy - The y offset.
+   */
+  private static compositeFrame(
+    frame: MemoryImage,
+    canvas: MemoryImage,
+    fx: number,
+    fy: number
+  ): void {
+    const palette = frame.palette!;
+    const opaque = ArrayUtils.generate(
+      palette.numColors,
+      (i) => palette.getAlpha(i) !== 0
+    );
+    const src = frame.toUint8Array();
+    const dst = canvas.toUint8Array();
+    const w = frame.width;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    for (let y = 0; y < frame.height; ++y) {
+      const cy = y + fy;
+      if (cy >= ch) {
+        break;
+      }
+      for (let x = 0, si = y * w; x < w; ++x, ++si) {
+        const cx = x + fx;
+        if (cx >= cw) {
+          break;
+        }
+        const i = src[si];
+        if (i < opaque.length && opaque[i]) {
+          dst[cy * cw + cx] = i;
+        }
       }
     }
   }
@@ -824,12 +865,12 @@ export class GifDecoder implements Decoder {
       if (frame.disposal === 2) {
         const imageBytes = nextImage.toUint8Array();
         if (frame.transparent !== -1) {
-          imageBytes.fill(frame.transparent, 0, imageBytes.length - 1);
+          imageBytes.fill(frame.transparent, 0, imageBytes.length);
         } else {
           imageBytes.fill(
             this._info.backgroundColor!.r,
             0,
-            imageBytes.length - 1
+            imageBytes.length
           );
         }
       } else if (frame.disposal !== 3) {
@@ -860,11 +901,7 @@ export class GifDecoder implements Decoder {
 
       nextImage.frameDuration = image.frameDuration;
 
-      for (const p of image) {
-        if (p.a !== 0) {
-          nextImage.setPixel(p.x + frame.x, p.y + frame.y, p);
-        }
-      }
+      GifDecoder.compositeFrame(image, nextImage, frame.x, frame.y);
 
       firstImage.addFrame(nextImage);
       lastImage = nextImage;
