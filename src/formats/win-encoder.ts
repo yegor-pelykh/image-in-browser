@@ -3,6 +3,7 @@
 import { OutputBuffer } from '../common/output-buffer.js';
 import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
+import { checkEncode } from './check-encode.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { PngEncoder } from './png-encoder.js';
 
@@ -66,6 +67,7 @@ export abstract class WinEncoder implements Encoder {
    * @returns {Uint8Array} The encoded data.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const image = opt.image;
     const singleFrame = opt.singleFrame ?? false;
 
@@ -117,6 +119,7 @@ export abstract class WinEncoder implements Encoder {
       // Use png instead of bmp encoded data, it's supported since Windows Vista
       const data: Uint8Array = new PngEncoder().encode({
         image: img,
+        singleFrame: true,
       });
 
       // size of the image's data in bytes

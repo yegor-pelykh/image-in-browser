@@ -6,6 +6,7 @@ import { LibError } from '../error/lib-error.js';
 import { ExifData } from '../exif/exif-data.js';
 import { IfdUndefinedValue } from '../exif/ifd-value/ifd-undefined-value.js';
 import { MemoryImage } from '../image/image.js';
+import { checkEncode } from './check-encode.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { TiffCompression } from './tiff/tiff-compression.js';
 import { TiffFormat } from './tiff/tiff-format.js';
@@ -54,6 +55,7 @@ export class TiffEncoder implements Encoder {
    * @returns {Uint8Array} The encoded image.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const skipExif = opt.skipExif ?? false;
     let image = opt.image;
 

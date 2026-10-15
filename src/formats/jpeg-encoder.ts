@@ -11,6 +11,7 @@ import type { IccProfile } from '../image/icc-profile.js';
 import type { MemoryImage } from '../image/image.js';
 import type { Pixel } from '../image/pixel.js';
 import type { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { checkEncode } from './check-encode.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
 
 /**
@@ -1028,6 +1029,7 @@ export class JpegEncoder implements Encoder {
    * @returns {Uint8Array} The encoded JPEG image as a Uint8Array.
    */
   public encode(opt: JpegEncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const skipExif = opt.skipExif ?? false;
     const image = opt.image;
     const chroma = opt.chroma ?? JpegChroma.yuv444;

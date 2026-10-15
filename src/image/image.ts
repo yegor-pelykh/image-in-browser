@@ -532,6 +532,11 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
    */
   constructor(opt?: MemoryImageCreateOptions) {
     if (opt !== undefined) {
+      if (opt.width < 0 || opt.height < 0) {
+        throw new RangeError(
+          `Invalid image dimensions ${opt.width}x${opt.height}`
+        );
+      }
       this._loopCount = opt.loopCount ?? 0;
       this._frameType = opt.frameType ?? FrameType.sequence;
       this._frameDuration = opt.frameDuration ?? 0;

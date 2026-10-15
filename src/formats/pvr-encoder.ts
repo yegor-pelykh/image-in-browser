@@ -3,6 +3,7 @@
 import { OutputBuffer } from '../common/output-buffer.js';
 import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
+import { checkEncode } from './check-encode.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { PvrBitUtility } from './pvr/pvr-bit-utility.js';
 import { PvrColorBoundingBox } from './pvr/pvr-color-bounding-box.js';
@@ -120,6 +121,7 @@ export class PvrEncoder implements Encoder {
    * @returns {Uint8Array} The encoded image data
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const output = new OutputBuffer();
 
     let format = this._format;

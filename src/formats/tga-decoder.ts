@@ -3,8 +3,10 @@
 import { InputBuffer } from '../common/input-buffer.js';
 import { MemoryImage } from '../image/image.js';
 import { Palette } from '../image/palette.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
+import { checkPixels } from './max-pixels.js';
 import { TgaImageType } from './tga/tga-image-type.js';
 import { TgaInfo } from './tga/tga-info.js';
 
@@ -21,6 +23,28 @@ export class TgaDecoder implements Decoder {
    * Information about the TGA image.
    */
   private _info: TgaInfo | undefined = undefined;
+
+  /**
+   * The maximum number of pixels (width * height) of the image. Larger
+   * images throw a {@link LibError}. A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create a TGA decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
+  }
 
   /**
    * Get the image format.
@@ -302,12 +326,20 @@ export class TgaDecoder implements Decoder {
    * @returns {TgaInfo | undefined} The TGA image information or undefined if decoding fails.
    */
   public startDecode(bytes: Uint8Array): TgaInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): TgaInfo | undefined {
     this._info = new TgaInfo();
     this._input = new InputBuffer<Uint8Array>({ buffer: bytes });
 
     const header = this._input.readRange(18);
     this._info.read(header);
-    if (!this._info.isValid()) {
+    if (
+      !this._info.isValid() ||
+      this._info.width < 1 ||
+      this._info.height < 1
+    ) {
       return undefined;
     }
 
@@ -332,6 +364,10 @@ export class TgaDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
     if (this.startDecode(bytes) === undefined) {
@@ -347,10 +383,15 @@ export class TgaDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(_frameIndex));
+  }
+
+  private _decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined || this._input === undefined) {
       return undefined;
     }
 
+    checkPixels(this._info.width, this._info.height, this._maxPixels);
     if (this._info.imageType === TgaImageType.rgb) {
       return this.decodeRgb();
     } else if (

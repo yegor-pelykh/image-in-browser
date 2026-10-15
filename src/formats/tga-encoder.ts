@@ -4,6 +4,7 @@ import { Format } from '../color/format.js';
 import { OutputBuffer } from '../common/output-buffer.js';
 import { MemoryImage } from '../image/image.js';
 import { Pixel } from '../image/pixel.js';
+import { checkEncode } from './check-encode.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 
 /**
@@ -32,6 +33,7 @@ export class TgaEncoder implements Encoder {
    * @returns {Uint8Array} The encoded image in TGA format.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     let image = opt.image;
 
     if (image.format !== Format.uint8) {

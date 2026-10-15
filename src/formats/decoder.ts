@@ -5,6 +5,23 @@ import { DecodeInfo } from './decode-info.js';
 import { ImageFormat } from './image-format.js';
 
 /**
+ * The maxPixels used by decoders created without one, including the decoders
+ * used by decodeImage. The default of 2^28 (16384 x 16384) allows very large
+ * images while preventing a small, malicious file from declaring dimensions
+ * that would exhaust memory. A full animation decode is limited to this many
+ * pixels across all of its frames. A value <= 0 disables the limit.
+ */
+export let defaultMaxPixels = 1 << 28;
+
+/**
+ * Sets the default maxPixels used by decoders created without one.
+ * @param {number} value - The new default maxPixels.
+ */
+export function setDefaultMaxPixels(value: number): void {
+  defaultMaxPixels = value;
+}
+
+/**
  * Options for decoding image data.
  */
 export interface DecoderDecodeOptions {

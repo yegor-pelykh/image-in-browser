@@ -6,6 +6,7 @@ import { OutputBuffer } from '../common/output-buffer.js';
 import { StringUtils } from '../common/string-utils.js';
 import { CompressionLevel } from '../common/typings.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
+import { checkEncode } from './check-encode.js';
 import { Quantizer } from '../image/quantizer.js';
 import { PngFilterType } from './png/png-filter-type.js';
 import { MemoryImage } from '../image/image.js';
@@ -713,6 +714,7 @@ export class PngEncoder implements Encoder {
    * @returns {Uint8Array} The encoded PNG bytes.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const image = opt.image;
     const singleFrame = opt.singleFrame ?? false;
 

@@ -4,8 +4,10 @@ import { InputBuffer } from '../common/input-buffer.js';
 import { TypedArray } from '../common/typings.js';
 import { MemoryImage } from '../image/image.js';
 import { DecodeInfo } from './decode-info.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
+import { checkPixels } from './max-pixels.js';
 import { PvrAppleInfo } from './pvr/pvr-apple-info.js';
 import { PvrPacket } from './pvr/pvr-packet.js';
 import { Pvr2Info } from './pvr/pvr2-info.js';
@@ -20,6 +22,28 @@ export class PvrDecoder implements Decoder {
    * Size of the PVR header.
    */
   private static readonly pvrHeaderSize = 52;
+
+  /**
+   * The maximum number of pixels (width * height) of the image. Larger
+   * images throw a {@link LibError}. A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create a PVR decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
+  }
 
   /**
    * The data to be decoded.
@@ -55,8 +79,7 @@ export class PvrDecoder implements Decoder {
       buffer: bytes,
     });
 
-    const size = input.readUint32();
-    if (size !== PvrDecoder.pvrHeaderSize) {
+    if (input.length < PvrDecoder.pvrHeaderSize) {
       return undefined;
     }
 
@@ -452,7 +475,7 @@ export class PvrDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if invalid.
    */
   private decodePvr3(data: Uint8Array): MemoryImage | undefined {
-    if (this._info instanceof Pvr3Info) {
+    if (!(this._info instanceof Pvr3Info)) {
       return undefined;
     }
 
@@ -799,7 +822,11 @@ export class PvrDecoder implements Decoder {
    * @returns {boolean} True if the file is valid, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    return this.startDecode(bytes) !== undefined;
+    try {
+      return this.startDecode(bytes) !== undefined;
+    } catch (_) {
+      return false;
+    }
   }
 
   /**
@@ -808,6 +835,12 @@ export class PvrDecoder implements Decoder {
    * @returns {PvrAppleInfo | Pvr3Info | Pvr2Info | undefined} The decoded PvrAppleInfo, Pvr3Info, Pvr2Info, or undefined if decoding fails.
    */
   public startDecode(
+    bytes: Uint8Array
+  ): PvrAppleInfo | Pvr3Info | Pvr2Info | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(
     bytes: Uint8Array
   ): PvrAppleInfo | Pvr3Info | Pvr2Info | undefined {
     // Use a heuristic to detect potential apple PVRTC formats
@@ -847,6 +880,10 @@ export class PvrDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
       return undefined;
     }
@@ -859,10 +896,15 @@ export class PvrDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(_frameIndex));
+  }
+
+  private _decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined || this._data === undefined) {
       return undefined;
     }
 
+    checkPixels(this._info.width, this._info.height, this._maxPixels);
     if (this._info instanceof PvrAppleInfo) {
       return this.decodeRgba4bpp(
         this._info.width,

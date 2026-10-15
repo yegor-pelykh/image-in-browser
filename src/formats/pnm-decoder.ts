@@ -2,9 +2,12 @@
 
 import { Format } from '../color/format.js';
 import { InputBuffer } from '../common/input-buffer.js';
+import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
+import { checkPixels } from './max-pixels.js';
 import { PnmFormat } from './pnm/pnm-format.js';
 import { PnmInfo } from './pnm/pnm-info.js';
 
@@ -58,6 +61,28 @@ export class PnmDecoder implements Decoder {
    * Tokens for parsing the PNM image.
    */
   private _tokens: string[] = [];
+
+  /**
+   * The maximum number of pixels (width * height) of the image. Larger
+   * images throw a {@link LibError}. A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create a PNM decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
+  }
 
   /**
    * Gets the next token from the input buffer.
@@ -156,6 +181,10 @@ export class PnmDecoder implements Decoder {
    * @returns {PnmInfo | undefined} The PNM image information or undefined if decoding fails.
    */
   public startDecode(bytes: Uint8Array): PnmInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): PnmInfo | undefined {
     this._input = new InputBuffer({
       buffer: bytes,
     });
@@ -179,11 +208,12 @@ export class PnmDecoder implements Decoder {
     this._info.width = this.parseNextInt();
     this._info.height = this.parseNextInt();
 
-    if (this._info.width === 0 || this._info.height === 0) {
+    if (this._info.width < 1 || this._info.height < 1) {
       this._input = undefined;
       this._info = undefined;
       return undefined;
     }
+    checkPixels(this._info.width, this._info.height, this._maxPixels);
 
     return this._info;
   }
@@ -196,6 +226,10 @@ export class PnmDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
       return undefined;
     }
@@ -208,11 +242,16 @@ export class PnmDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image or undefined if decoding fails.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(_frameIndex));
+  }
+
+  private _decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined) {
       return undefined;
     }
 
     if (this._info.format === PnmFormat.pbm) {
+      this.checkLength(1);
       const image = new MemoryImage({
         width: this._info.width,
         height: this._info.height,
@@ -236,6 +275,7 @@ export class PnmDecoder implements Decoder {
       if (maxValue === 0) {
         return undefined;
       }
+      this.checkLength(1);
       const image = new MemoryImage({
         width: this._info.width,
         height: this._info.height,
@@ -255,6 +295,7 @@ export class PnmDecoder implements Decoder {
       if (maxValue === 0) {
         return undefined;
       }
+      this.checkLength(3);
       const image = new MemoryImage({
         width: this._info.width,
         height: this._info.height,
@@ -270,5 +311,13 @@ export class PnmDecoder implements Decoder {
     }
 
     return undefined;
+  }
+
+  // Every value takes at least a byte, so less data than values is truncated.
+  private checkLength(numChannels: number): void {
+    const values = this._info!.width * this._info!.height * numChannels;
+    if (this._input!.length + this._tokens.length < values) {
+      throw new LibError('Truncated PNM data');
+    }
   }
 }

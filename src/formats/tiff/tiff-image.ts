@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate } from '../../packer/packer.js';
+import { inflate } from '../../common/inflate.js';
 import { ColorUtils } from '../../color/color-utils.js';
 import { Format } from '../../color/format.js';
 import { ArrayUtils } from '../../common/array-utils.js';
@@ -523,6 +523,10 @@ export class TiffImage {
           this._tileHeight = l;
         }
       }
+      // The last strip holds the rows that remain.
+      if (this._tileHeight > this._height) {
+        this._tileHeight = this._height;
+      }
 
       this._tileOffsets = this.readTagList(
         ExifTagNameToID.get('StripOffsets')!
@@ -770,17 +774,15 @@ export class TiffImage {
       } catch (_) {
         // skip
       }
-    } else if (this._compression === TiffCompression.zip) {
+    } else if (
+      this._compression === TiffCompression.zip ||
+      this._compression === TiffCompression.deflate
+    ) {
       const data = p.toUint8Array(0, byteCount);
-      const outData = inflate(data);
+      // The bits are packed 8 pixels to a byte.
+      const maxBytes = ((this._tileWidth + 7) >> 3) * this._tileHeight;
       byteData = new InputBuffer<Uint8Array>({
-        buffer: outData,
-      });
-    } else if (this._compression === TiffCompression.deflate) {
-      const data = p.toUint8Array(0, byteCount);
-      const outData = inflate(data);
-      byteData = new InputBuffer<Uint8Array>({
-        buffer: outData,
+        buffer: inflate(data, maxBytes),
       });
     } else if (this._compression === TiffCompression.none) {
       byteData = p;
@@ -882,17 +884,20 @@ export class TiffImage {
           buffer: new Uint8Array(bytesInThisTile),
         });
         this.decodePackBits(p, bytesInThisTile, byteData.buffer);
-      } else if (this._compression === TiffCompression.deflate) {
+      } else if (
+        this._compression === TiffCompression.deflate ||
+        this._compression === TiffCompression.zip
+      ) {
         const data = p.toUint8Array(0, byteCount);
-        const outData = inflate(data);
+        const sampleBytes =
+          this._bitsPerSample < 8 ? 1 : (this._bitsPerSample + 7) >> 3;
+        const maxBytes =
+          this._tileWidth *
+          this._tileHeight *
+          this._samplesPerPixel *
+          sampleBytes;
         byteData = new InputBuffer<Uint8Array>({
-          buffer: outData,
-        });
-      } else if (this._compression === TiffCompression.zip) {
-        const data = p.toUint8Array(0, byteCount);
-        const outData = inflate(data);
-        byteData = new InputBuffer<Uint8Array>({
-          buffer: outData,
+          buffer: inflate(data, maxBytes),
         });
       } else if (
         this._compression === TiffCompression.oldJpeg ||

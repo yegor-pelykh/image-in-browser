@@ -189,6 +189,10 @@ export class JpegData {
 
   private _prepared = false;
 
+  private _numScans = 0;
+
+  private static readonly maxScans = 1000;
+
   private _allowStreaming = false;
 
   private _restartNeeded = false;
@@ -229,6 +233,7 @@ export class JpegData {
    * Reads JPEG markers from the input buffer.
    */
   private readMarkers(): void {
+    this._numScans = 0;
     let marker = this.nextMarker();
     if (marker !== JpegMarker.soi) {
       // SOI (Start of Image)
@@ -1210,6 +1215,11 @@ export class JpegData {
    * @throws {LibError} - Throws an error if the SOS block is invalid or if a component is invalid.
    */
   private readSOS(block: InputBuffer<Uint8Array>): void {
+    // Each scan is a pass over the image, so malformed data with many scans
+    // would take a very long time to decode.
+    if (++this._numScans > JpegData.maxScans) {
+      throw new LibError('Too many JPEG scans');
+    }
     const n = block.read();
     if (n < 1 || n > JpegData.maxCompsInScan) {
       throw new LibError('Invalid SOS block');

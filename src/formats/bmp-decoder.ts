@@ -2,11 +2,14 @@
 
 import { Format } from '../color/format.js';
 import { InputBuffer } from '../common/input-buffer.js';
+import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
 import { BmpFileHeader } from './bmp/bmp-file-header.js';
 import { BmpInfo } from './bmp/bmp-info.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
+import { checkPixels } from './max-pixels.js';
 
 /**
  * Class representing a BMP decoder.
@@ -28,6 +31,19 @@ export class BmpDecoder implements Decoder {
   protected _forceRgba: boolean;
 
   /**
+   * The maximum number of pixels (width * height) of the image. Larger
+   * images throw a {@link LibError}. A value <= 0 disables the limit.
+   */
+  protected readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
    * Get the image format.
    * @returns {ImageFormat} The image format.
    */
@@ -46,9 +62,12 @@ export class BmpDecoder implements Decoder {
   /**
    * Create a BMP decoder.
    * @param {boolean} [forceRgba=false] - Flag to force RGBA format.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
    */
-  constructor(forceRgba = false) {
+  constructor(forceRgba = false, maxPixels?: number) {
     this._forceRgba = forceRgba;
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
   }
 
   /**
@@ -79,6 +98,10 @@ export class BmpDecoder implements Decoder {
    * @returns {BmpInfo | undefined} The BMP information or undefined if invalid.
    */
   public startDecode(bytes: Uint8Array): BmpInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): BmpInfo | undefined {
     if (!this.isValidFile(bytes)) {
       return undefined;
     }
@@ -95,6 +118,10 @@ export class BmpDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image or undefined if there was an error.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(_frameIndex));
+  }
+
+  private _decodeFrame(_frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;
     }
@@ -102,8 +129,12 @@ export class BmpDecoder implements Decoder {
     const inf = this._info;
     this._input.offset = inf.header.imageOffset;
 
+    checkPixels(inf.width, inf.height, this._maxPixels);
     const bpp = inf.bitsPerPixel;
     const rowStride = Math.trunc((inf.width * bpp + 31) / 32) * 4;
+    if (rowStride * inf.height > this._input.length) {
+      throw new LibError('Truncated BMP data');
+    }
     const nc = this._forceRgba
       ? 4
       : bpp === 1 || bpp === 4 || bpp === 8
@@ -176,10 +207,15 @@ export class BmpDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image or undefined if there was an error.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
     const frameIndex = opt.frameIndex ?? 0;
 
-    if (this.startDecode(bytes) === undefined) {
+    const info = this.startDecode(bytes);
+    if (info === undefined || info.width < 1 || info.height < 1) {
       return undefined;
     }
     return this.decodeFrame(frameIndex);

@@ -7,6 +7,7 @@ import { LibError } from '../error/lib-error.js';
 import { IccProfile } from '../image/icc-profile.js';
 import { IccProfileCompression } from '../image/icc-profile-compression.js';
 import { MemoryImage } from '../image/image.js';
+import { checkEncode } from './check-encode.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { VP8Config } from './webp/vp8-config.js';
 import { encodeVP8 } from './webp/vp8-encoder.js';
@@ -85,6 +86,7 @@ export class WebPEncoder implements Encoder {
    * Encodes the given image into a WebP file.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const image = opt.image;
     const singleFrame = (opt as { singleFrame?: boolean }).singleFrame ?? false;
     const animate = !singleFrame && image.hasAnimation;

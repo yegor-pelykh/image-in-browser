@@ -6,7 +6,9 @@ import { InputBuffer } from '../common/input-buffer.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { StringUtils } from '../common/string-utils.js';
 import { LibError } from '../error/lib-error.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
+import { checkPixels, PixelBudget } from './max-pixels.js';
 import { PngFrame } from './png/png-frame.js';
 import { PngInfo } from './png/png-info.js';
 import { PngColorType } from './png/png-color-type.js';
@@ -54,6 +56,29 @@ export class PngDecoder implements Decoder {
    */
   public get info(): PngInfo {
     return this._info;
+  }
+
+  /**
+   * The maximum number of pixels (width * height) of the image, and of all
+   * the frames of a full animation decode. Larger images throw a
+   * {@link LibError}. A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create a PNG decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
   }
 
   /**
@@ -244,7 +269,8 @@ export class PngDecoder implements Decoder {
 
     const pixelDepth = this.pngChannels * this._info.bits;
     const bpp = (pixelDepth + 7) >>> 3;
-    const rowBytes = (pixelDepth * passWidth + 7) >>> 3;
+    // Not >>>, which is 32-bit on the web.
+    const rowBytes = Math.trunc((pixelDepth * passWidth + 7) / 8);
     const writeRows = this._info.bits === 8 || this._info.bits === 16;
 
     const pixel = [0, 0, 0, 0];
@@ -304,7 +330,8 @@ export class PngDecoder implements Decoder {
     const w = this._info.width;
     const h = this._info.height;
 
-    const rowBytes = (w * pixelDepth + 7) >>> 3;
+    // Not >>>, which is 32-bit on the web.
+    const rowBytes = Math.trunc((w * pixelDepth + 7) / 8);
     const bpp = (pixelDepth + 7) >>> 3;
     const writeRows = this._info.bits === 8 || this._info.bits === 16;
 
@@ -600,14 +627,16 @@ export class PngDecoder implements Decoder {
    * @returns {boolean} True if the file is valid, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
+    if (bytes.length < 8) {
+      return false;
+    }
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
     });
-    const headerBytes = this._input.readRange(8);
     const expectedHeaderBytes = [137, 80, 78, 71, 13, 10, 26, 10];
     for (let i = 0; i < 8; ++i) {
-      if (headerBytes.get(i) !== expectedHeaderBytes[i]) {
+      if (bytes[i] !== expectedHeaderBytes[i]) {
         return false;
       }
     }
@@ -622,9 +651,14 @@ export class PngDecoder implements Decoder {
    * @throws {LibError} If there is an invalid checksum or invalid chunk.
    */
   public startDecode(bytes: Uint8Array): PngInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): PngInfo | undefined {
     if (!this.isValidFile(bytes) || this._input === undefined) {
       return undefined;
     }
+    this._input.skip(8);
 
     while (true) {
       const inputPos = this._input.position;
@@ -670,6 +704,7 @@ export class PngDecoder implements Decoder {
           const hdrBytes: Uint8Array = hdr.toUint8Array();
           this._info.width = hdr.readUint32();
           this._info.height = hdr.readUint32();
+          checkPixels(this._info.width, this._info.height, this._maxPixels);
           this._info.bits = hdr.read();
           this._info.colorType = hdr.read();
           this._info.compressionMethod = hdr.read();
@@ -916,6 +951,10 @@ export class PngDecoder implements Decoder {
    * @throws {LibError} If an invalid checksum or frame number is encountered.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(frameIndex));
+  }
+
+  private _decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined) {
       return undefined;
     }
@@ -955,6 +994,7 @@ export class PngDecoder implements Decoder {
       const f = this._info.frames[frameIndex];
       width = f.width;
       height = f.height;
+      checkPixels(width, height, this._maxPixels);
       let totalSize = 0;
       const dataBlocks: Uint8Array[] = new Array<Uint8Array>();
       for (let i = 0; i < f.fdat.length; ++i) {
@@ -1148,6 +1188,10 @@ export class PngDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if decoding fails.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
     if (this.startDecode(bytes) === undefined) {
@@ -1160,7 +1204,14 @@ export class PngDecoder implements Decoder {
 
     let firstImage: MemoryImage | undefined = undefined;
     let lastImage: MemoryImage | undefined = undefined;
-    for (let i = 0; i < this._info.numFrames; ++i) {
+    const numFrames = Math.min(this._info.numFrames, this._info.frames.length);
+    // Each frame is composited to a full canvas, so check them all before
+    // decoding any.
+    new PixelBudget(this._maxPixels).add(
+      this._info.width * numFrames,
+      this._info.height
+    );
+    for (let i = 0; i < numFrames; ++i) {
       const frame = this._info.frames[i];
       const image = this.decodeFrame(i);
       if (image === undefined) {

@@ -14,13 +14,15 @@ export class DibDecoder extends BmpDecoder {
    * @param {InputBuffer<Uint8Array>} input - The input buffer containing the bitmap data.
    * @param {BmpInfo} info - The bitmap information.
    * @param {boolean} [forceRgba=false] - A boolean indicating whether to force RGBA output. Defaults to false.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height) to decode.
    */
   constructor(
     input: InputBuffer<Uint8Array>,
     info: BmpInfo,
-    forceRgba: boolean = false
+    forceRgba: boolean = false,
+    maxPixels?: number
   ) {
-    super(forceRgba);
+    super(forceRgba, maxPixels);
     this._input = input;
     this._info = info;
   }

@@ -2,7 +2,8 @@
 
 import { FrameType } from '../image/frame-type.js';
 import { MemoryImage } from '../image/image.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
 import { PsdImage } from './psd/psd-image.js';
 
@@ -14,6 +15,29 @@ export class PsdDecoder implements Decoder {
    * Information about the PSD image.
    */
   private _info: PsdImage | undefined;
+
+  /**
+   * The maximum number of pixels (width * height) of the image, and of all
+   * of its layers. Larger images throw a {@link LibError}. A value <= 0
+   * disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create a PSD decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
+  }
 
   /**
    * Get the PSD image information.
@@ -45,7 +69,11 @@ export class PsdDecoder implements Decoder {
    * @returns {PsdImage | undefined} The decoded PSD image.
    */
   public decodePsd(bytes: Uint8Array): PsdImage | undefined {
-    const psd = new PsdImage(bytes);
+    return guardDecode(() => this._decodePsd(bytes));
+  }
+
+  private _decodePsd(bytes: Uint8Array): PsdImage | undefined {
+    const psd = new PsdImage(bytes, this._maxPixels);
     return psd.decode() ? psd : undefined;
   }
 
@@ -55,8 +83,12 @@ export class PsdDecoder implements Decoder {
    * @returns {boolean} True if the file is valid, false otherwise.
    */
   public isValidFile(bytes: Uint8Array): boolean {
-    const image = new PsdImage(bytes);
-    return image.isValid;
+    try {
+      const image = new PsdImage(bytes);
+      return image.isValid;
+    } catch (_) {
+      return false;
+    }
   }
 
   /**
@@ -65,7 +97,11 @@ export class PsdDecoder implements Decoder {
    * @returns {PsdImage | undefined} The PSD image information.
    */
   public startDecode(bytes: Uint8Array): PsdImage | undefined {
-    this._info = new PsdImage(bytes);
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): PsdImage | undefined {
+    this._info = new PsdImage(bytes, this._maxPixels);
     return this._info;
   }
 
@@ -77,6 +113,10 @@ export class PsdDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
       return undefined;
     }
@@ -109,6 +149,10 @@ export class PsdDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded frame.
    */
   public decodeFrame(_frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(_frameIndex));
+  }
+
+  private _decodeFrame(_frameIndex: number): MemoryImage | undefined {
     return this._info?.decodeImage();
   }
 }

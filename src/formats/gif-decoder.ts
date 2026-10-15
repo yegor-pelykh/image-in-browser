@@ -2,10 +2,12 @@
 
 import { InputBuffer } from '../common/input-buffer.js';
 import { ArrayUtils } from '../common/array-utils.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
 import { GifColorMap } from './gif/gif-color-map.js';
 import { GifImageDesc } from './gif/gif-image-desc.js';
 import { GifInfo } from './gif/gif-info.js';
+import { guardDecode } from './guard-decode.js';
+import { checkPixels, PixelBudget } from './max-pixels.js';
 import { MemoryImage } from '../image/image.js';
 import { ColorUint8 } from '../color/color-uint8.js';
 import { ImageFormat } from './image-format.js';
@@ -138,6 +140,13 @@ export class GifDecoder implements Decoder {
   public get numFrames(): number {
     return this._info !== undefined ? this._info.numFrames : 0;
   }
+
+  /**
+   * The maximum number of pixels (width * height) of the image, and of all
+   * the frames of a full animation decode. Larger images throw a
+   * {@link LibError}. A value <= 0 disables the limit.
+   */
+  public maxPixels = defaultMaxPixels;
 
   /**
    * Constructor for GifDecoder.
@@ -731,7 +740,11 @@ export class GifDecoder implements Decoder {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
-    return this.getInfo();
+    try {
+      return this.getInfo();
+    } catch (_) {
+      return false;
+    }
   }
 
   /**
@@ -741,6 +754,10 @@ export class GifDecoder implements Decoder {
    * @returns {GifInfo | undefined} The Gif information or undefined if the file is not valid.
    */
   public startDecode(bytes: Uint8Array): GifInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): GifInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
@@ -748,6 +765,9 @@ export class GifDecoder implements Decoder {
     if (!this.getInfo()) {
       return undefined;
     }
+    checkPixels(this._info!.width, this._info!.height, this.maxPixels, {
+      allowEmpty: true,
+    });
 
     try {
       while (!this._input.isEOS) {
@@ -809,6 +829,10 @@ export class GifDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined on failure.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
     if (this.startDecode(bytes) === undefined || this._info === undefined) {
@@ -821,6 +845,12 @@ export class GifDecoder implements Decoder {
 
     let firstImage: MemoryImage | undefined = undefined;
     let lastImage: MemoryImage | undefined = undefined;
+    // Each frame is composited to a full canvas, so check them all before
+    // decoding any.
+    new PixelBudget(this.maxPixels).add(
+      this._info.width * this._info.numFrames,
+      this._info.height
+    );
     for (let i = 0; i < this._info.numFrames; ++i) {
       const frame = this._info.frames[i];
       const image = this.decodeFrame(i);
@@ -916,6 +946,10 @@ export class GifDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined on failure.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(frameIndex));
+  }
+
+  private _decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined || this._info === undefined) {
       return undefined;
     }

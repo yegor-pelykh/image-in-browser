@@ -5,8 +5,10 @@ import { LibError } from '../error/lib-error.js';
 import { ExifData } from '../exif/exif-data.js';
 import { FrameType } from '../image/frame-type.js';
 import { MemoryImage } from '../image/image.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
+import { checkPixels, PixelBudget } from './max-pixels.js';
 import { TiffImage } from './tiff/tiff-image.js';
 import { TiffInfo } from './tiff/tiff-info.js';
 
@@ -33,6 +35,29 @@ export class TiffDecoder implements Decoder {
    * The maximum number of IFD blocks to read from a file.
    */
   private static readonly maxImages = 1024;
+
+  /**
+   * The maximum number of pixels (width * height) of an image, and of all
+   * the pages of a full decode. Larger images throw a {@link LibError}.
+   * A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of an image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create a TIFF decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
+  }
 
   /**
    * Input buffer for the TIFF data.
@@ -181,6 +206,10 @@ export class TiffDecoder implements Decoder {
    * @returns {TiffInfo | undefined} The TIFF information if valid, otherwise undefined.
    */
   public startDecode(bytes: Uint8Array): TiffInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): TiffInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
@@ -202,11 +231,18 @@ export class TiffDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image if successful, otherwise undefined.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(frameIndex));
+  }
+
+  private _decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._info === undefined) {
       return undefined;
     }
 
-    const image = this._info.images[frameIndex].decode(this._input);
+    const tiff = this._info.images[frameIndex];
+    checkPixels(tiff.width, tiff.height, this._maxPixels);
+    checkPixels(tiff.tileWidth, tiff.tileHeight, this._maxPixels);
+    const image = tiff.decode(this._input);
     if (this._exifData !== undefined) {
       image.exifData = this._exifData;
     }
@@ -223,6 +259,10 @@ export class TiffDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image if successful, otherwise undefined.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
     this._input = new InputBuffer<Uint8Array>({
@@ -244,6 +284,11 @@ export class TiffDecoder implements Decoder {
         );
       }
       return this.decodeFrame(opt.frameIndex);
+    }
+
+    const budget = new PixelBudget(this._maxPixels);
+    for (const tiff of this._info.images) {
+      budget.add(tiff.width, tiff.height);
     }
 
     const image = this.decodeFrame(0);

@@ -8,6 +8,8 @@ import { LibError } from '../../error/lib-error.js';
 import { MemoryImage } from '../../image/image.js';
 import { Pixel } from '../../image/pixel.js';
 import { DecodeInfo } from '../decode-info.js';
+import { defaultMaxPixels } from '../decoder.js';
+import { checkPixels, PixelBudget } from '../max-pixels.js';
 import { PsdBlendMode } from './psd-blend-mode.js';
 import { PsdChannel } from './psd-channel.js';
 import { PsdColorMode } from './psd-color-mode.js';
@@ -116,10 +118,27 @@ export class PsdImage implements DecodeInfo {
   }
 
   /**
+   * The maximum number of pixels (width * height) of the image, and of all
+   * of its layers. Larger images throw a {@link LibError} from {@link decode}.
+   * A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of the image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
    * Constructs a PsdImage instance from the given byte array.
    * @param {Uint8Array} bytes - The byte array representing the PSD file.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
    */
-  constructor(bytes: Uint8Array) {
+  constructor(bytes: Uint8Array, maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
     this._fileLength = bytes.length;
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
@@ -743,9 +762,14 @@ export class PsdImage implements DecodeInfo {
     // Each channel is a plane of the image, and a PSD's RLE data can't be
     // much smaller than its planes, so malformed data claiming many large
     // planes is rejected rather than allocated.
+    const budget = new PixelBudget(this._maxPixels);
     const sampleBytes = this._depth === 16 ? 2 : 1;
     let planeBytes = this._width * this._height * this._channels * sampleBytes;
     for (const layer of this._layers) {
+      checkPixels(layer.width, layer.height, this._maxPixels, {
+        allowEmpty: true,
+      });
+      budget.add(layer.width, layer.height);
       planeBytes +=
         layer.width * layer.height * layer.channels.length * sampleBytes;
     }
@@ -830,6 +854,12 @@ export class PsdImage implements DecodeInfo {
   public decode(): boolean {
     if (!this.isValid || this._input === undefined) {
       return false;
+    }
+
+    checkPixels(this._width, this._height, this._maxPixels);
+    // The PSD specification allows 1 to 56 channels.
+    if (this._channels < 1 || this._channels > 56) {
+      throw new LibError(`Invalid number of PSD channels: ${this._channels}`);
     }
 
     // Color Mode Data Block:

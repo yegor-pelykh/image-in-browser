@@ -3,8 +3,14 @@
 import { InputBuffer } from '../common/input-buffer.js';
 import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import {
+  Decoder,
+  DecoderDecodeOptions,
+  defaultMaxPixels,
+  setDefaultMaxPixels,
+} from './decoder.js';
 import { ImageFormat } from './image-format.js';
+import { guardDecode } from './guard-decode.js';
 import { JpegData } from './jpeg/jpeg-data.js';
 import { JpegInfo } from './jpeg/jpeg-info.js';
 
@@ -18,8 +24,19 @@ export class JpegDecoder implements Decoder {
    * (16384 x 16384) allows very large photos while preventing a small,
    * malicious file from declaring dimensions that would exhaust memory.
    * A value <= 0 disables the limit.
+   * @deprecated Use {@link defaultMaxPixels} instead.
    */
-  public static defaultMaxPixels = 1 << 28;
+  public static get defaultMaxPixels(): number {
+    return defaultMaxPixels;
+  }
+
+  /**
+   * Sets the shared default maxPixels.
+   * @deprecated Use {@link setDefaultMaxPixels} instead.
+   */
+  public static set defaultMaxPixels(value: number) {
+    setDefaultMaxPixels(value);
+  }
 
   /**
    * The maximum number of pixels (width * height) this decoder will decode.
@@ -88,7 +105,7 @@ export class JpegDecoder implements Decoder {
    * @throws {LibError} If {@link scale} is not 1, 2, 4 or 8.
    */
   constructor(maxPixels?: number, scale = 1) {
-    this._maxPixels = maxPixels ?? JpegDecoder.defaultMaxPixels;
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
     if (scale !== 1 && scale !== 2 && scale !== 4 && scale !== 8) {
       throw new LibError('scale must be 1, 2, 4 or 8');
     }
@@ -104,7 +121,11 @@ export class JpegDecoder implements Decoder {
     if (bytes.length < 2 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
       return false;
     }
-    return new JpegData().validate(bytes);
+    try {
+      return new JpegData().validate(bytes);
+    } catch (_) {
+      return false;
+    }
   }
 
   /**
@@ -113,6 +134,10 @@ export class JpegDecoder implements Decoder {
    * @returns {JpegInfo | undefined} Information about the JPEG image, or undefined if decoding fails.
    */
   public startDecode(bytes: Uint8Array): JpegInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): JpegInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
       bigEndian: true,
@@ -128,6 +153,10 @@ export class JpegDecoder implements Decoder {
    * @throws {LibError} If the JPEG contains more than one frame.
    */
   public decodeFrame(_: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(_));
+  }
+
+  private _decodeFrame(_: number): MemoryImage | undefined {
     if (this._input === undefined) {
       return undefined;
     }
@@ -146,6 +175,10 @@ export class JpegDecoder implements Decoder {
    * @throws {LibError} If the JPEG contains more than one frame.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const jpeg = new JpegData();
     jpeg.maxPixels = this._maxPixels;
     jpeg.scale = this._scale;

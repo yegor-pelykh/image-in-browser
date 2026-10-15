@@ -3,10 +3,12 @@
 import { InputBuffer } from '../common/input-buffer.js';
 import { OutputBuffer } from '../common/output-buffer.js';
 import { BmpFileHeader } from './bmp/bmp-file-header.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
 import { DibDecoder } from './dib-decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { IcoBmpInfo } from './ico/ico-bmp-info.js';
 import { IcoInfo } from './ico/ico-info.js';
+import { PixelBudget } from './max-pixels.js';
 import { PngDecoder } from './png-decoder.js';
 import { MemoryImage } from '../image/image.js';
 import { FrameType } from '../image/frame-type.js';
@@ -25,6 +27,29 @@ export class IcoDecoder implements Decoder {
    * Information about the ICO file.
    */
   private _info?: IcoInfo;
+
+  /**
+   * The maximum number of pixels (width * height) of an image, and of all
+   * the images of a full decode. Larger images throw a {@link LibError}.
+   * A value <= 0 disables the limit.
+   */
+  private readonly _maxPixels: number;
+
+  /**
+   * Gets the maximum number of pixels (width * height) of an image.
+   */
+  public get maxPixels(): number {
+    return this._maxPixels;
+  }
+
+  /**
+   * Create an ICO decoder.
+   * @param {number} [maxPixels] - The maximum number of pixels (width * height)
+   * to decode. If not given, {@link defaultMaxPixels} is used.
+   */
+  constructor(maxPixels?: number) {
+    this._maxPixels = maxPixels ?? defaultMaxPixels;
+  }
 
   /**
    * Gets the image format.
@@ -51,7 +76,11 @@ export class IcoDecoder implements Decoder {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
-    this._info = IcoInfo.read(this._input);
+    try {
+      this._info = IcoInfo.read(this._input);
+    } catch (_) {
+      this._info = undefined;
+    }
     return this._info !== undefined;
   }
 
@@ -61,6 +90,10 @@ export class IcoDecoder implements Decoder {
    * @returns {IcoInfo | undefined} The information about the ICO file, or undefined if invalid.
    */
   public startDecode(bytes: Uint8Array): IcoInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): IcoInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
@@ -76,6 +109,10 @@ export class IcoDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding failed.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     const bytes = opt.bytes;
 
     const info = this.startDecode(bytes);
@@ -88,11 +125,13 @@ export class IcoDecoder implements Decoder {
     }
 
     let firstImage: MemoryImage | undefined = undefined;
+    const budget = new PixelBudget(this._maxPixels);
     for (let i = 0; i < info.images.length; i++) {
       const frame = this.decodeFrame(i);
       if (frame === undefined) {
         continue;
       }
+      budget.add(frame.width, frame.height);
       if (firstImage === undefined) {
         frame.frameType = FrameType.sequence;
         firstImage = frame;
@@ -110,6 +149,10 @@ export class IcoDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding failed.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(frameIndex));
+  }
+
+  private _decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (
       this._input === undefined ||
       this._info === undefined ||
@@ -124,10 +167,11 @@ export class IcoDecoder implements Decoder {
       this._input.start + imageInfo.bytesOffset + imageInfo.bytesSize
     );
 
-    const png = new PngDecoder();
+    const png = new PngDecoder(this._maxPixels);
     if (png.isValidFile(imageBuffer)) {
       return png.decode({
         bytes: imageBuffer,
+        frameIndex: 0,
       });
     }
 
@@ -169,7 +213,7 @@ export class IcoDecoder implements Decoder {
     const inp = new InputBuffer<Uint8Array>({
       buffer: imageBuffer,
     });
-    const bmp = new DibDecoder(inp, bmpInfo, true);
+    const bmp = new DibDecoder(inp, bmpInfo, true, this._maxPixels);
 
     const image = bmp.decodeFrame(0);
     if (image === undefined || bmpInfo.bitsPerPixel >= 32) {
@@ -208,6 +252,10 @@ export class IcoDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded MemoryImage, or undefined if decoding failed.
    */
   public decodeImageLargest(bytes: Uint8Array): MemoryImage | undefined {
+    return guardDecode(() => this._decodeImageLargest(bytes));
+  }
+
+  private _decodeImageLargest(bytes: Uint8Array): MemoryImage | undefined {
     const info = this.startDecode(bytes);
     if (info === undefined) {
       return undefined;

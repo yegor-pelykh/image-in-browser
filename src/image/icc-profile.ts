@@ -1,6 +1,7 @@
 /** @format */
 
-import { inflate, deflate } from '../packer/packer.js';
+import { deflate } from '../packer/packer.js';
+import { inflate } from '../common/inflate.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { IccProfileCompression } from './icc-profile-compression.js';
 
@@ -8,6 +9,12 @@ import { IccProfileCompression } from './icc-profile-compression.js';
  * ICC Profile data stored with an image.
  */
 export class IccProfile {
+  /**
+   * The largest decompressed profile, so malformed data can't inflate to an
+   * unbounded size.
+   */
+  private static readonly maxSize = 16 * 1024 * 1024;
+
   /**
    * The name of the ICC Profile.
    */
@@ -91,13 +98,14 @@ export class IccProfile {
 
   /**
    * Returns the uncompressed data of the ICC Profile, decompressing the stored data as necessary.
+   * Profiles larger than 16 MB are truncated.
    * @returns {Uint8Array} The uncompressed data.
    */
   public decompressed(): Uint8Array {
     if (this._compression === IccProfileCompression.none) {
       return this._data;
     }
-    this._data = inflate(this._data);
+    this._data = inflate(this._data, IccProfile.maxSize);
     this._compression = IccProfileCompression.none;
     return this._data;
   }

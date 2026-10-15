@@ -551,8 +551,7 @@ export interface DecodeNamedImageOptions extends DecodeImageLargestOptions {
 export interface DecodeJpgOptions extends DecodeOptions {
   /**
    * The maximum number of pixels (width * height) to decode; images with more
-   * throw a {@link LibError}. If not given, {@link JpegDecoder.defaultMaxPixels}
-   * is used.
+   * throw a {@link LibError}. If not given, {@link defaultMaxPixels} is used.
    */
   maxPixels?: number;
 
@@ -1159,7 +1158,7 @@ export function encodeNamedImage(
  *
  * Images with more than {@link DecodeJpgOptions.maxPixels} pixels
  * (width * height) throw a {@link LibError}; if not given,
- * {@link JpegDecoder.defaultMaxPixels} is used.
+ * {@link defaultMaxPixels} is used.
  *
  * @param {DecodeJpgOptions} opt - Options for decoding the image.
  * @param {Uint8Array} opt.data - The image file bytes.
@@ -1205,7 +1204,11 @@ export function encodeJpg(opt: EncodeJpgOptions): Uint8Array {
  */
 export function decodeJpgExif(opt: DecodeOptions): ExifData | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new JpegUtils().decodeExif(dataUint8);
+  try {
+    return new JpegUtils().decodeExif(dataUint8);
+  } catch (_) {
+    return undefined;
+  }
 }
 
 /**
@@ -1222,7 +1225,11 @@ export function injectJpgExif(
   opt: InjectJpgExifOptions
 ): Uint8Array | undefined {
   const dataUint8 = new Uint8Array(opt.data);
-  return new JpegUtils().injectExif(opt.exifData, dataUint8);
+  try {
+    return new JpegUtils().injectExif(opt.exifData, dataUint8);
+  } catch (_) {
+    return undefined;
+  }
 }
 
 /**

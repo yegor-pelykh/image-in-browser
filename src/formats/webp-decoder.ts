@@ -11,8 +11,10 @@ import { IccProfile } from '../image/icc-profile.js';
 import { IccProfileCompression } from '../image/icc-profile-compression.js';
 import { LibError } from '../error/lib-error.js';
 import { MemoryImage } from '../image/image.js';
-import { Decoder, DecoderDecodeOptions } from './decoder.js';
+import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
+import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
+import { checkPixels, PixelBudget } from './max-pixels.js';
 import { VP8 } from './webp/vp8.js';
 import { VP8L } from './webp/vp8l.js';
 import { WebPFormat } from './webp/webp-format.js';
@@ -60,6 +62,13 @@ export class WebPDecoder implements Decoder {
   public get numFrames(): number {
     return this._info.numFrames;
   }
+
+  /**
+   * The maximum number of pixels (width * height) of the image, and of all
+   * the frames of a full animation decode. Larger images throw a
+   * {@link LibError}. A value <= 0 disables the limit.
+   */
+  public maxPixels = defaultMaxPixels;
 
   /**
    * Constructor for WebPDecoder.
@@ -307,10 +316,11 @@ export class WebPDecoder implements Decoder {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
-    if (!this.getHeader(this._input)) {
+    try {
+      return this.getHeader(this._input);
+    } catch (_) {
       return false;
     }
-    return true;
   }
 
   /**
@@ -320,6 +330,10 @@ export class WebPDecoder implements Decoder {
    * @returns {WebPInfo | undefined} The WebP information.
    */
   public startDecode(bytes: Uint8Array): WebPInfo | undefined {
+    return guardDecode(() => this._startDecode(bytes));
+  }
+
+  private _startDecode(bytes: Uint8Array): WebPInfo | undefined {
     this._input = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
@@ -335,6 +349,10 @@ export class WebPDecoder implements Decoder {
 
     switch (this._info.format) {
       case WebPFormat.animated: {
+        checkPixels(this._info.width, this._info.height, this.maxPixels);
+        for (const f of this._info.frames) {
+          checkPixels(f.width, f.height, this.maxPixels);
+        }
         this._info.frameCount = this._info.frames.length;
         return this._info;
       }
@@ -344,6 +362,7 @@ export class WebPDecoder implements Decoder {
         if (!vp8l.decodeHeader()) {
           return undefined;
         }
+        checkPixels(this._info.width, this._info.height, this.maxPixels);
         this._info.frameCount = this._info.frames.length;
         return this._info;
       }
@@ -353,6 +372,7 @@ export class WebPDecoder implements Decoder {
         if (!vp8.decodeHeader()) {
           return undefined;
         }
+        checkPixels(this._info.width, this._info.height, this.maxPixels);
         this._info.frameCount = this._info.frames.length;
         return this._info;
       }
@@ -371,6 +391,10 @@ export class WebPDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image.
    */
   public decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
+    return guardDecode(() => this._decode(opt));
+  }
+
+  private _decode(opt: DecoderDecodeOptions): MemoryImage | undefined {
     if (this.startDecode(opt.bytes) === undefined) {
       return undefined;
     }
@@ -384,6 +408,12 @@ export class WebPDecoder implements Decoder {
     // Not frames[i - 1]: an undecodable frame is skipped, and must not dispose
     // in place of the frame that was actually drawn
     let previous: WebPFrame | undefined = undefined;
+    // Each frame is composited to a full canvas, so check them all before
+    // decoding any.
+    new PixelBudget(this.maxPixels).add(
+      this._info.width * this._info.numFrames,
+      this._info.height
+    );
     for (let i = 0; i < this._info.numFrames; ++i) {
       this._info.frame = i;
       const frame = this._info.frames[i];
@@ -485,6 +515,10 @@ export class WebPDecoder implements Decoder {
    * @returns {MemoryImage | undefined} The decoded image.
    */
   public decodeFrame(frameIndex: number): MemoryImage | undefined {
+    return guardDecode(() => this._decodeFrame(frameIndex));
+  }
+
+  private _decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._info.hasAnimation) {
       if (frameIndex >= this._info.frames.length || frameIndex < 0) {
         return undefined;

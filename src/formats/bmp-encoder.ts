@@ -6,6 +6,7 @@ import { PaletteUint8 } from '../image/palette-uint8.js';
 import { Pixel } from '../image/pixel.js';
 import { BmpCompressionMode } from './bmp/bmp-compression-mode.js';
 import { BmpFileHeader } from './bmp/bmp-file-header.js';
+import { checkEncode } from './check-encode.js';
 import { Encoder, EncoderEncodeOptions } from './encoder.js';
 
 /**
@@ -34,6 +35,7 @@ export class BmpEncoder implements Encoder {
    * @returns {Uint8Array} The encoded BMP image.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     let image = opt.image;
 
     const nc = image.numChannels;

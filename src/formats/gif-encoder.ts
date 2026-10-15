@@ -10,6 +10,7 @@ import { OctreeQuantizer } from '../image/octree-quantizer.js';
 import { Quantizer } from '../image/quantizer.js';
 import { Filter } from '../filter/filter.js';
 import { LibError } from '../error/lib-error.js';
+import { checkEncode } from './check-encode.js';
 import { DitherKernel } from '../filter/dither-kernel.js';
 import { BinaryQuantizer } from '../image/binary-quantizer.js';
 import { Pixel } from '../image/pixel.js';
@@ -743,6 +744,7 @@ export class GifEncoder implements Encoder {
    * @returns {Uint8Array} The encoded image as a Uint8Array.
    */
   public encode(opt: EncoderEncodeOptions): Uint8Array {
+    checkEncode(opt.image);
     const image = opt.image;
     const singleFrame = opt.singleFrame ?? false;
 
