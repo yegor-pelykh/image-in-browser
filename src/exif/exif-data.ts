@@ -185,6 +185,18 @@ export class ExifData extends IfdContainer {
   }
 
   /**
+   * The maximum number of IFDs to read.
+   */
+  private static readonly maxIfds = 64;
+
+  /**
+   * The maximum total size of the entry values to read.
+   */
+  private static readonly maxValueBytes = 16 * 1024 * 1024;
+
+  private _valueBytes = 0;
+
+  /**
    * Reads Exif data from the input buffer.
    * @param block Input buffer to read from.
    * @returns True if read was successful, false otherwise.
@@ -210,8 +222,17 @@ export class ExifData extends IfdContainer {
       return false;
     }
     let ifdOffset = block.readUint32();
+    this._valueBytes = 0;
+    // IFD blocks. Malformed data can make the chain of IFDs loop, so each
+    // IFD is read once, and the number of them is limited.
     let index = 0;
-    while (ifdOffset > 0) {
+    const visited = new Set<number>();
+    while (
+      ifdOffset > 0 &&
+      index < ExifData.maxIfds &&
+      !visited.has(ifdOffset)
+    ) {
+      visited.add(ifdOffset);
       try {
         block.offset = blockOffset + ifdOffset;
         if (block.length < 2) break;
@@ -228,9 +249,8 @@ export class ExifData extends IfdContainer {
         }
         this.directories.set(`ifd${index}`, directory);
         index++;
-        const nextIfdOffset = block.readUint32();
-        if (nextIfdOffset === ifdOffset) break;
-        else ifdOffset = nextIfdOffset;
+
+        ifdOffset = block.readUint32();
       } catch {
         break;
       }
@@ -418,6 +438,12 @@ export class ExifData extends IfdContainer {
     const f = format;
     const fsize = IfdValueTypeSize[format];
     const size = count * fsize;
+
+    // Many entries can refer to the same data, so the total read is limited.
+    if (this._valueBytes + size > ExifData.maxValueBytes) {
+      return entry;
+    }
+
     const endOffset = block.offset + 4;
     if (size > 4) {
       const fieldOffset = block.readUint32();
@@ -425,6 +451,7 @@ export class ExifData extends IfdContainer {
     }
     if (block.offset + size > block.end) return entry;
     const data = block.readRange(size);
+    this._valueBytes += size;
     switch (f) {
       case IfdValueType.none:
         break;
