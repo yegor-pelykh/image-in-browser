@@ -30,6 +30,11 @@ export class TiffDecoder implements Decoder {
   private static readonly _tiffBigEndian = 0x4d4d;
 
   /**
+   * The maximum number of IFD blocks to read from a file.
+   */
+  private static readonly maxImages = 1024;
+
+  /**
    * Input buffer for the TIFF data.
    */
   private _input!: InputBuffer<Uint8Array>;
@@ -77,9 +82,16 @@ export class TiffDecoder implements Decoder {
   /**
    * Read the TIFF header and IFD blocks.
    * @param {InputBuffer<Uint8Array>} p - The input buffer containing the TIFF data.
+   * @param {boolean} [firstImageOnly] - If true, only the first image is read.
    * @returns {TiffInfo | undefined} The TIFF information if valid, otherwise undefined.
    */
-  private readHeader(p: InputBuffer<Uint8Array>): TiffInfo | undefined {
+  private readHeader(
+    p: InputBuffer<Uint8Array>,
+    firstImageOnly = false
+  ): TiffInfo | undefined {
+    if (p.length < 8) {
+      return undefined;
+    }
     const byteOrder = p.readUint16();
     if (
       byteOrder !== TiffDecoder._tiffLittleEndian &&
@@ -110,7 +122,16 @@ export class TiffDecoder implements Decoder {
     p2.offset = offset;
 
     const images: TiffImage[] = [];
-    while (offset !== 0) {
+    // Malformed data can make the chain of IFDs loop, so each IFD is read
+    // once, and the number of them is limited.
+    const visited = new Set<number>();
+    while (
+      offset !== 0 &&
+      offset < p.end &&
+      images.length < TiffDecoder.maxImages &&
+      !visited.has(offset)
+    ) {
+      visited.add(offset);
       let img: TiffImage | undefined = undefined;
       try {
         img = new TiffImage(p2);
@@ -121,6 +142,9 @@ export class TiffDecoder implements Decoder {
         break;
       }
       images.push(img);
+      if (firstImageOnly) {
+        break;
+      }
 
       offset = p2.readUint32();
       if (offset !== 0) {
@@ -147,7 +171,7 @@ export class TiffDecoder implements Decoder {
     const buffer = new InputBuffer<Uint8Array>({
       buffer: bytes,
     });
-    return this.readHeader(buffer) !== undefined;
+    return this.readHeader(buffer, true) !== undefined;
   }
 
   /**
