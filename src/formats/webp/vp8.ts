@@ -614,62 +614,89 @@ export class VP8 {
    */
   private reconstructRow(): void {
     const mbY = this._mbY;
+    const yuv = this._yuvBlock;
     const yDst = new InputBuffer<Uint8Array>({
-      buffer: this._yuvBlock,
+      buffer: yuv,
       offset: VP8.yOffset,
     });
     const uDst = new InputBuffer<Uint8Array>({
-      buffer: this._yuvBlock,
+      buffer: yuv,
       offset: VP8.uOffset,
     });
     const vDst = new InputBuffer<Uint8Array>({
-      buffer: this._yuvBlock,
+      buffer: yuv,
       offset: VP8.vOffset,
     });
+    const cacheY = this._cacheY.buffer;
+    const cacheU = this._cacheU.buffer;
+    const cacheV = this._cacheV.buffer;
+    const cacheYStride = this._cacheYStride;
+    const cacheUVStride = this._cacheUVStride;
     for (let mbX = 0; mbX < this._mbWidth; ++mbX) {
       const block = this._mbData[mbX];
       if (mbX > 0) {
         for (let j = -1; j < 16; ++j)
-          yDst.memcpy(j * VP8.bps - 4, 4, yDst, j * VP8.bps + 12);
+          VP8.copy(
+            yuv,
+            VP8.yOffset + j * VP8.bps - 4,
+            yuv,
+            VP8.yOffset + j * VP8.bps + 12,
+            4
+          );
         for (let j = -1; j < 8; ++j) {
-          uDst.memcpy(j * VP8.bps - 4, 4, uDst, j * VP8.bps + 4);
-          vDst.memcpy(j * VP8.bps - 4, 4, vDst, j * VP8.bps + 4);
+          VP8.copy(
+            yuv,
+            VP8.uOffset + j * VP8.bps - 4,
+            yuv,
+            VP8.uOffset + j * VP8.bps + 4,
+            4
+          );
+          VP8.copy(
+            yuv,
+            VP8.vOffset + j * VP8.bps - 4,
+            yuv,
+            VP8.vOffset + j * VP8.bps + 4,
+            4
+          );
         }
       } else {
-        for (let j = 0; j < 16; ++j) yDst.set(j * VP8.bps - 1, 129);
+        for (let j = 0; j < 16; ++j) yuv[VP8.yOffset + j * VP8.bps - 1] = 129;
         for (let j = 0; j < 8; ++j) {
-          uDst.set(j * VP8.bps - 1, 129);
-          vDst.set(j * VP8.bps - 1, 129);
+          yuv[VP8.uOffset + j * VP8.bps - 1] = 129;
+          yuv[VP8.vOffset + j * VP8.bps - 1] = 129;
         }
         if (mbY > 0)
-          yDst.set(
-            -1 - VP8.bps,
-            uDst.set(-1 - VP8.bps, vDst.set(-1 - VP8.bps, 129))
-          );
+          yuv[VP8.yOffset - 1 - VP8.bps] =
+            yuv[VP8.uOffset - 1 - VP8.bps] =
+            yuv[VP8.vOffset - 1 - VP8.bps] =
+              129;
       }
       const topYuv = this._yuvT[mbX];
       const coeffs = block.coeffs;
       let bits = block.nonZeroY;
       if (mbY > 0) {
-        yDst.memcpy(-VP8.bps, 16, topYuv.y);
-        uDst.memcpy(-VP8.bps, 8, topYuv.u);
-        vDst.memcpy(-VP8.bps, 8, topYuv.v);
+        VP8.copy(yuv, VP8.yOffset - VP8.bps, topYuv.y, 0, 16);
+        VP8.copy(yuv, VP8.uOffset - VP8.bps, topYuv.u, 0, 8);
+        VP8.copy(yuv, VP8.vOffset - VP8.bps, topYuv.v, 0, 8);
       } else if (mbX === 0) {
-        yDst.memset(-VP8.bps - 1, 16 + 4 + 1, 127);
-        uDst.memset(-VP8.bps - 1, 8 + 1, 127);
-        vDst.memset(-VP8.bps - 1, 8 + 1, 127);
+        yuv.fill(
+          127,
+          VP8.yOffset - VP8.bps - 1,
+          VP8.yOffset - VP8.bps + 16 + 4
+        );
+        yuv.fill(127, VP8.uOffset - VP8.bps - 1, VP8.uOffset - VP8.bps + 8);
+        yuv.fill(127, VP8.vOffset - VP8.bps - 1, VP8.vOffset - VP8.bps + 8);
       }
       if (block.isIntra4x4) {
-        const topRight = InputBuffer.from(yDst, -VP8.bps + 16);
-        const topRight32 = topRight.toUint32Array();
+        const topRight = VP8.yOffset - VP8.bps + 16;
         if (mbY > 0) {
-          if (mbX >= this._mbWidth - 1) topRight.memset(0, 4, topYuv.y[15]);
-          else topRight.memcpy(0, 4, this._yuvT[mbX + 1].y);
+          if (mbX >= this._mbWidth - 1)
+            yuv.fill(topYuv.y[15], topRight, topRight + 4);
+          else VP8.copy(yuv, topRight, this._yuvT[mbX + 1].y, 0, 4);
         }
-        const p = topRight32[0];
-        topRight32[3 * VP8.bps] = p;
-        topRight32[2 * VP8.bps] = p;
-        topRight32[VP8.bps] = p;
+        VP8.copy(yuv, topRight + 4 * VP8.bps, yuv, topRight, 4);
+        VP8.copy(yuv, topRight + 8 * VP8.bps, yuv, topRight, 4);
+        VP8.copy(yuv, topRight + 12 * VP8.bps, yuv, topRight, 4);
         for (let n = 0; n < 16; ++n, bits = (bits << 2) & 0xffffffff) {
           const dst = InputBuffer.from(yDst, kScan[n]);
           VP8Filter.predLuma4[block.imodes[n]](dst);
@@ -708,32 +735,57 @@ export class VP8 {
       });
       this.doUVTransform(bitsUv >>> 8, c2, vDst);
       if (mbY < this._mbHeight - 1) {
-        ArrayUtils.copyRange(
-          yDst.toUint8Array(),
-          15 * VP8.bps,
-          topYuv.y,
-          0,
+        VP8.copy(topYuv.y, 0, yuv, VP8.yOffset + 15 * VP8.bps, 16);
+        VP8.copy(topYuv.u, 0, yuv, VP8.uOffset + 7 * VP8.bps, 8);
+        VP8.copy(topYuv.v, 0, yuv, VP8.vOffset + 7 * VP8.bps, 8);
+      }
+      const yOut = this._cacheY.offset + mbX * 16;
+      const uOut = this._cacheU.offset + mbX * 8;
+      const vOut = this._cacheV.offset + mbX * 8;
+      for (let j = 0; j < 16; ++j)
+        VP8.copy(
+          cacheY,
+          yOut + j * cacheYStride,
+          yuv,
+          VP8.yOffset + j * VP8.bps,
           16
         );
-        ArrayUtils.copyRange(uDst.toUint8Array(), 7 * VP8.bps, topYuv.u, 0, 8);
-        ArrayUtils.copyRange(vDst.toUint8Array(), 7 * VP8.bps, topYuv.v, 0, 8);
-      }
-      const yOut = mbX * 16;
-      const uOut = mbX * 8;
-      const vOut = mbX * 8;
-      for (let j = 0; j < 16; ++j)
-        this._cacheY.memcpy(
-          yOut + j * this._cacheYStride,
-          16,
-          yDst,
-          j * VP8.bps
-        );
       for (let j = 0; j < 8; ++j) {
-        let start = uOut + j * this._cacheUVStride;
-        this._cacheU.memcpy(start, 8, uDst, j * VP8.bps);
-        start = vOut + j * this._cacheUVStride;
-        this._cacheV.memcpy(start, 8, vDst, j * VP8.bps);
+        VP8.copy(
+          cacheU,
+          uOut + j * cacheUVStride,
+          yuv,
+          VP8.uOffset + j * VP8.bps,
+          8
+        );
+        VP8.copy(
+          cacheV,
+          vOut + j * cacheUVStride,
+          yuv,
+          VP8.vOffset + j * VP8.bps,
+          8
+        );
       }
+    }
+  }
+
+  /**
+   * Copies n bytes from src at si to dst at di.
+   * @param {Uint8Array} dst - The destination buffer.
+   * @param {number} di - The destination index.
+   * @param {Uint8Array} src - The source buffer.
+   * @param {number} si - The source index.
+   * @param {number} n - The number of bytes to copy.
+   */
+  private static copy(
+    dst: Uint8Array,
+    di: number,
+    src: Uint8Array,
+    si: number,
+    n: number
+  ): void {
+    for (let i = 0; i < n; ++i) {
+      dst[di + i] = src[si + i];
     }
   }
 
@@ -745,35 +797,38 @@ export class VP8 {
   private doFilter(mbX: number, mbY: number): void {
     const yBps = this._cacheYStride;
     const fInfo = this._fInfo[mbX];
-    const yDst = InputBuffer.from(this._cacheY, mbX * 16);
-    const iLevel = fInfo.fInnerLevel;
+    const y = this._cacheY.buffer;
+    const yo = this._cacheY.offset + mbX * 16;
     const limit = fInfo.fLimit;
     if (limit === 0) return;
     if (this._filterType === 1) {
-      if (mbX > 0) this._dsp.simpleHFilter16(yDst, yBps, limit + 4);
-      if (fInfo.fInner) this._dsp.simpleHFilter16i(yDst, yBps, limit);
-      if (mbY > 0) this._dsp.simpleVFilter16(yDst, yBps, limit + 4);
-      if (fInfo.fInner) this._dsp.simpleVFilter16i(yDst, yBps, limit);
+      if (mbX > 0) this._dsp.simpleHFilter16(y, yo, yBps, limit + 4);
+      if (fInfo.fInner) this._dsp.simpleHFilter16i(y, yo, yBps, limit);
+      if (mbY > 0) this._dsp.simpleVFilter16(y, yo, yBps, limit + 4);
+      if (fInfo.fInner) this._dsp.simpleVFilter16i(y, yo, yBps, limit);
     } else {
+      const iLevel = fInfo.fInnerLevel;
       const uvBps = this._cacheUVStride;
-      const uDst = InputBuffer.from(this._cacheU, mbX * 8);
-      const vDst = InputBuffer.from(this._cacheV, mbX * 8);
+      const u = this._cacheU.buffer;
+      const uo = this._cacheU.offset + mbX * 8;
+      const v = this._cacheV.buffer;
+      const vo = this._cacheV.offset + mbX * 8;
       const hevThresh = fInfo.hevThresh;
       if (mbX > 0) {
-        this._dsp.hFilter16(yDst, yBps, limit + 4, iLevel, hevThresh);
-        this._dsp.hFilter8(uDst, vDst, uvBps, limit + 4, iLevel, hevThresh);
+        this._dsp.hFilter16(y, yo, yBps, limit + 4, iLevel, hevThresh);
+        this._dsp.hFilter8(u, uo, v, vo, uvBps, limit + 4, iLevel, hevThresh);
       }
       if (fInfo.fInner) {
-        this._dsp.hFilter16i(yDst, yBps, limit, iLevel, hevThresh);
-        this._dsp.hFilter8i(uDst, vDst, uvBps, limit, iLevel, hevThresh);
+        this._dsp.hFilter16i(y, yo, yBps, limit, iLevel, hevThresh);
+        this._dsp.hFilter8i(u, uo, v, vo, uvBps, limit, iLevel, hevThresh);
       }
       if (mbY > 0) {
-        this._dsp.vFilter16(yDst, yBps, limit + 4, iLevel, hevThresh);
-        this._dsp.vFilter8(uDst, vDst, uvBps, limit + 4, iLevel, hevThresh);
+        this._dsp.vFilter16(y, yo, yBps, limit + 4, iLevel, hevThresh);
+        this._dsp.vFilter8(u, uo, v, vo, uvBps, limit + 4, iLevel, hevThresh);
       }
       if (fInfo.fInner) {
-        this._dsp.vFilter16i(yDst, yBps, limit, iLevel, hevThresh);
-        this._dsp.vFilter8i(uDst, vDst, uvBps, limit, iLevel, hevThresh);
+        this._dsp.vFilter16i(y, yo, yBps, limit, iLevel, hevThresh);
+        this._dsp.vFilter8i(u, uo, v, vo, uvBps, limit, iLevel, hevThresh);
       }
     }
   }
@@ -876,20 +931,25 @@ export class VP8 {
    */
   private emitAlphaRGB(mbY: number, mbW: number, mbH: number): void {
     if (this._a === undefined) return;
-    const alpha = InputBuffer.from(this._a);
+    const alpha = this._a.buffer;
+    let alphaOffset = this._a.offset;
     let startY = mbY;
     let numRows = mbH;
     if (startY === 0) --numRows;
     else {
       --startY;
-      alpha.offset -= this.webp.width;
+      alphaOffset -= this.webp.width;
     }
     if (this._cropTop + mbY + mbH === this._cropBottom)
       numRows = this._cropBottom - this._cropTop - startY;
+    const out = this._output!.toUint8Array();
+    const outStride = this._output!.width * 4;
     for (let y = 0; y < numRows; ++y) {
-      for (let x = 0; x < mbW; ++x)
-        this._output!.getPixel(x, y + startY).a = alpha.get(x);
-      alpha.offset += this.webp.width;
+      let di = (y + startY) * outStride + 3;
+      for (let x = 0; x < mbW; ++x, di += 4) {
+        out[di] = alpha[alphaOffset + x];
+      }
+      alphaOffset += this.webp.width;
     }
   }
 
@@ -1426,38 +1486,24 @@ export class VP8 {
   }
 
   /**
-   * Convert YUV to RGB.
-   * @param y Y
-   * @param u U
-   * @param v V
-   * @param rgb Output buffer
-   */
-  private yuvToRgb(
-    y: number,
-    u: number,
-    v: number,
-    rgb: InputBuffer<Uint8Array>
-  ): void {
-    rgb.set(0, this.yuvToR(y, v));
-    rgb.set(1, this.yuvToG(y, u, v));
-    rgb.set(2, this.yuvToB(y, u));
-  }
-
-  /**
    * Convert YUV to RGBA.
    * @param y Y
    * @param u U
    * @param v V
    * @param rgba Output buffer
+   * @param o Output offset
    */
   private yuvToRgba(
     y: number,
     u: number,
     v: number,
-    rgba: InputBuffer<Uint8Array>
+    rgba: Uint8Array,
+    o: number
   ): void {
-    this.yuvToRgb(y, u, v, rgba);
-    rgba.set(3, 0xff);
+    rgba[o] = this.yuvToR(y, v);
+    rgba[o + 1] = this.yuvToG(y, u, v);
+    rgba[o + 2] = this.yuvToB(y, u);
+    rgba[o + 3] = 0xff;
   }
 
   /**
@@ -1483,70 +1529,101 @@ export class VP8 {
     bottomDst: InputBuffer<Uint8Array> | undefined,
     len: number
   ): void {
-    const loadUv = (u: number, v: number): number => u | (v << 16);
+    const ty = topY.buffer;
+    const tyo = topY.offset;
+    const tu = topU.buffer;
+    const tuo = topU.offset;
+    const tv = topV.buffer;
+    const tvo = topV.offset;
+    const cu = curU.buffer;
+    const cuo = curU.offset;
+    const cv = curV.buffer;
+    const cvo = curV.offset;
+    const td = topDst.buffer;
+    const tdo = topDst.offset;
+    const by = bottomY === undefined ? undefined : bottomY.buffer;
+    const byo = bottomY?.offset ?? 0;
+    const bd = bottomDst === undefined ? undefined : bottomDst.buffer;
+    const bdo = bottomDst?.offset ?? 0;
+
     const lastPixelPair = (len - 1) >>> 1;
-    let tlUv = loadUv(topU.get(0), topV.get(0));
-    let lUv = loadUv(curU.get(0), curV.get(0));
+    let tlUv = tu[tuo] | (tv[tvo] << 16);
+    let lUv = cu[cuo] | (cv[cvo] << 16);
+
     let uv0 = (3 * tlUv + lUv + 0x00020002) >>> 2;
-    this.yuvToRgba(topY.get(0), uv0 & 0xff, uv0 >>> 16, topDst);
-    if (bottomY !== undefined) {
+    this.yuvToRgba(ty[tyo], uv0 & 0xff, uv0 >>> 16, td, tdo);
+
+    if (by !== undefined) {
       uv0 = (3 * lUv + tlUv + 0x00020002) >>> 2;
-      this.yuvToRgba(bottomY.get(0), uv0 & 0xff, uv0 >>> 16, bottomDst!);
+      this.yuvToRgba(by[byo], uv0 & 0xff, uv0 >>> 16, bd!, bdo);
     }
+
     for (let x = 1; x <= lastPixelPair; ++x) {
-      const tUv = loadUv(topU.get(x), topV.get(x));
-      const uv = loadUv(curU.get(x), curV.get(x));
+      const tUv = tu[tuo + x] | (tv[tvo + x] << 16);
+      const uv = cu[cuo + x] | (cv[cvo + x] << 16);
       const avg = tlUv + tUv + lUv + uv + 0x00080008;
       const diag12 = (avg + 2 * (tUv + lUv)) >>> 3;
       const diag03 = (avg + 2 * (tlUv + uv)) >>> 3;
-      let uv0 = (diag12 + tlUv) >>> 1;
+
+      uv0 = (diag12 + tlUv) >>> 1;
       let uv1 = (diag03 + tUv) >>> 1;
+
       this.yuvToRgba(
-        topY.get(2 * x - 1),
+        ty[tyo + 2 * x - 1],
         uv0 & 0xff,
         uv0 >>> 16,
-        InputBuffer.from(topDst, (2 * x - 1) * 4)
+        td,
+        tdo + (2 * x - 1) * 4
       );
       this.yuvToRgba(
-        topY.get(2 * x),
+        ty[tyo + 2 * x],
         uv1 & 0xff,
         uv1 >>> 16,
-        InputBuffer.from(topDst, 2 * x * 4)
+        td,
+        tdo + 2 * x * 4
       );
-      if (bottomY !== undefined) {
+
+      if (by !== undefined) {
         uv0 = (diag03 + lUv) >>> 1;
         uv1 = (diag12 + uv) >>> 1;
         this.yuvToRgba(
-          bottomY.get(2 * x - 1),
+          by[byo + 2 * x - 1],
           uv0 & 0xff,
           uv0 >>> 16,
-          InputBuffer.from(bottomDst!, (2 * x - 1) * 4)
+          bd!,
+          bdo + (2 * x - 1) * 4
         );
         this.yuvToRgba(
-          bottomY.get(2 * x),
+          by[byo + 2 * x],
           uv1 & 0xff,
           uv1 >>> 16,
-          InputBuffer.from(bottomDst!, (2 * x + 0) * 4)
+          bd!,
+          bdo + 2 * x * 4
         );
       }
+
       tlUv = tUv;
       lUv = uv;
     }
+
     if ((len & 1) === 0) {
       uv0 = (3 * tlUv + lUv + 0x00020002) >>> 2;
       this.yuvToRgba(
-        topY.get(len - 1),
+        ty[tyo + len - 1],
         uv0 & 0xff,
         uv0 >>> 16,
-        InputBuffer.from(topDst, (len - 1) * 4)
+        td,
+        tdo + (len - 1) * 4
       );
-      if (bottomY !== undefined) {
+
+      if (by !== undefined) {
         uv0 = (3 * lUv + tlUv + 0x00020002) >>> 2;
         this.yuvToRgba(
-          bottomY.get(len - 1),
+          by[byo + len - 1],
           uv0 & 0xff,
           uv0 >>> 16,
-          InputBuffer.from(bottomDst!, (len - 1) * 4)
+          bd!,
+          bdo + (len - 1) * 4
         );
       }
     }

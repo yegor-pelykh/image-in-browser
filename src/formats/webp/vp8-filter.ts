@@ -13,14 +13,15 @@ export class VP8Filter {
   }
 
   /**
-   * Multiplies two numbers and shifts the result right by 16 bits.
+   * Multiplies two numbers and shifts the result right by 16 bits. The product
+   * is within +-2^30, so it's shifted with a bias that makes it non-negative:
+   * exact, and safe from JavaScript's unsigned shifts.
    * @param {number} a - The first number.
    * @param {number} b - The second number.
    * @returns {number} The result of the multiplication shifted right by 16 bits.
    */
   private static mul(a: number, b: number): number {
-    const c = a * b;
-    return BitUtils.sshR(c, 16);
+    return ((a * b + 0x40000000) >>> 16) - 0x4000;
   }
 
   /**
@@ -38,10 +39,27 @@ export class VP8Filter {
     y: number,
     v: number
   ): void {
-    dst.set(
-      di + x + y * VP8.bps,
-      VP8Filter.clip8b(dst.get(di + x + y * VP8.bps) + BitUtils.sshR(v, 3))
-    );
+    const i = di + x + y * VP8.bps;
+    dst.set(i, VP8Filter.clip8b(dst.get(i) + VP8Filter.shift3(v)));
+  }
+
+  /**
+   * Stores a value in the destination buffer after clipping.
+   * @param {Uint8Array} dst - The destination buffer.
+   * @param {number} i - The destination index.
+   * @param {number} v - The value to store.
+   */
+  private static storeAt(dst: Uint8Array, i: number, v: number): void {
+    dst[i] = VP8Filter.clip8b(dst[i] + VP8Filter.shift3(v));
+  }
+
+  /**
+   * Shifts a value right by 3 bits, for a value in [-65536, 65535].
+   * @param {number} v - The value to shift.
+   * @returns {number} The shifted value.
+   */
+  private static shift3(v: number): number {
+    return ((v + 65536) >>> 3) - 8192;
   }
 
   /**
@@ -507,7 +525,8 @@ export class VP8Filter {
   /**
    * Applies a filter to the input buffer based on specified thresholds and strides.
    *
-   * @param {InputBuffer<Uint8Array>} p - The input buffer containing the data to be filtered.
+   * @param {Uint8Array} p - The buffer containing the data to be filtered.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} hstride - The horizontal stride, which determines the step size in the horizontal direction.
    * @param {number} vstride - The vertical stride, which determines the step size in the vertical direction.
    * @param {number} size - The number of elements to process in the buffer.
@@ -516,7 +535,8 @@ export class VP8Filter {
    * @param {number} hevThresh - The high edge variance threshold used to decide between different filtering methods.
    */
   private filterLoop26(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     hstride: number,
     vstride: number,
     size: number,
@@ -524,23 +544,21 @@ export class VP8Filter {
     ithresh: number,
     hevThresh: number
   ): void {
-    let _size = size;
-    const p2 = InputBuffer.from(p);
-    while (_size-- > 0) {
-      if (this.needsFilter2(p2, hstride, thresh, ithresh)) {
-        if (this.hev(p2, hstride, hevThresh)) {
-          this.doFilter2(p2, hstride);
+    for (let i = 0; i < size; ++i, o += vstride) {
+      if (this.needsFilter2(p, o, hstride, thresh, ithresh)) {
+        if (this.hev(p, o, hstride, hevThresh)) {
+          this.doFilter2(p, o, hstride);
         } else {
-          this.doFilter6(p2, hstride);
+          this.doFilter6(p, o, hstride);
         }
       }
-      p2.offset += vstride;
     }
   }
 
   /**
    * Filters a loop with specific parameters.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} hstride - Horizontal stride.
    * @param {number} vstride - Vertical stride.
    * @param {number} size - Size of the loop.
@@ -549,7 +567,8 @@ export class VP8Filter {
    * @param {number} hevThresh - HEV threshold value.
    */
   private filterLoop24(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     hstride: number,
     vstride: number,
     size: number,
@@ -557,408 +576,489 @@ export class VP8Filter {
     ithresh: number,
     hevThresh: number
   ): void {
-    let _size = size;
-    const p2 = InputBuffer.from(p);
-    while (_size-- > 0) {
-      if (this.needsFilter2(p2, hstride, thresh, ithresh)) {
-        if (this.hev(p2, hstride, hevThresh)) {
-          this.doFilter2(p2, hstride);
+    for (let i = 0; i < size; ++i, o += vstride) {
+      if (this.needsFilter2(p, o, hstride, thresh, ithresh)) {
+        if (this.hev(p, o, hstride, hevThresh)) {
+          this.doFilter2(p, o, hstride);
         } else {
-          this.doFilter4(p2, hstride);
+          this.doFilter4(p, o, hstride);
         }
       }
-      p2.offset += vstride;
     }
   }
 
   /**
    * Applies a 2-pixel filter.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} step - Step size.
    */
-  private doFilter2(p: InputBuffer<Uint8Array>, step: number): void {
-    const p1 = p.get(-2 * step);
-    const p0 = p.get(-step);
-    const q0 = p.get(0);
-    const q1 = p.get(step);
-    const a = 3 * (q0 - p0) + VP8Filter.sclip1[1020 + p1 - q1];
-    const a1 = VP8Filter.sclip2[112 + BitUtils.sshR(a + 4, 3)];
-    const a2 = VP8Filter.sclip2[112 + BitUtils.sshR(a + 3, 3)];
-    p.set(-step, VP8Filter.clip1[255 + p0 + a2]);
-    p.set(0, VP8Filter.clip1[255 + q0 - a1]);
+  private doFilter2(p: Uint8Array, o: number, step: number): void {
+    const p1 = p[o - 2 * step];
+    const p0 = p[o - step];
+    const q0 = p[o];
+    const q1 = p[o + step];
+    const a = 3 * (q0 - p0) + this._sclip1[1020 + p1 - q1];
+    const a1 = this._sclip2[((a + 4 + 1024) >>> 3) - 128 + 112];
+    const a2 = this._sclip2[((a + 3 + 1024) >>> 3) - 128 + 112];
+    p[o - step] = this._clip1[255 + p0 + a2];
+    p[o] = this._clip1[255 + q0 - a1];
   }
 
   /**
    * Applies a 4-pixel filter.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} step - Step size.
    */
-  private doFilter4(p: InputBuffer<Uint8Array>, step: number): void {
-    const p1 = p.get(-2 * step);
-    const p0 = p.get(-step);
-    const q0 = p.get(0);
-    const q1 = p.get(step);
+  private doFilter4(p: Uint8Array, o: number, step: number): void {
+    const p1 = p[o - 2 * step];
+    const p0 = p[o - step];
+    const q0 = p[o];
+    const q1 = p[o + step];
     const a = 3 * (q0 - p0);
-    const a1 = VP8Filter.sclip2[112 + BitUtils.sshR(a + 4, 3)];
-    const a2 = VP8Filter.sclip2[112 + BitUtils.sshR(a + 3, 3)];
-    const a3 = BitUtils.sshR(a1 + 1, 1);
-    p.set(-2 * step, VP8Filter.clip1[255 + p1 + a3]);
-    p.set(-step, VP8Filter.clip1[255 + p0 + a2]);
-    p.set(0, VP8Filter.clip1[255 + q0 - a1]);
-    p.set(step, VP8Filter.clip1[255 + q1 - a3]);
+    const a1 = this._sclip2[((a + 4 + 1024) >>> 3) - 128 + 112];
+    const a2 = this._sclip2[((a + 3 + 1024) >>> 3) - 128 + 112];
+    const a3 = ((a1 + 1 + 16) >>> 1) - 8;
+    p[o - 2 * step] = this._clip1[255 + p1 + a3];
+    p[o - step] = this._clip1[255 + p0 + a2];
+    p[o] = this._clip1[255 + q0 - a1];
+    p[o + step] = this._clip1[255 + q1 - a3];
   }
 
   /**
    * Applies a 6-pixel filter.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} step - Step size.
    */
-  private doFilter6(p: InputBuffer<Uint8Array>, step: number): void {
-    const p2 = p.get(-3 * step);
-    const p1 = p.get(-2 * step);
-    const p0 = p.get(-step);
-    const q0 = p.get(0);
-    const q1 = p.get(step);
-    const q2 = p.get(2 * step);
-    const a =
-      VP8Filter.sclip1[1020 + 3 * (q0 - p0) + VP8Filter.sclip1[1020 + p1 - q1]];
+  private doFilter6(p: Uint8Array, o: number, step: number): void {
+    const p2 = p[o - 3 * step];
+    const p1 = p[o - 2 * step];
+    const p0 = p[o - step];
+    const q0 = p[o];
+    const q1 = p[o + step];
+    const q2 = p[o + 2 * step];
+    const a = this._sclip1[1020 + 3 * (q0 - p0) + this._sclip1[1020 + p1 - q1]];
     // eq. to ((3 * a + 7) * 9) >>> 7
-    const a1 = BitUtils.sshR(27 * a + 63, 7);
+    const a1 = ((27 * a + 63 + 27 * 128) >>> 7) - 27;
     // eq. to ((2 * a + 7) * 9) >>> 7
-    const a2 = BitUtils.sshR(18 * a + 63, 7);
+    const a2 = ((18 * a + 63 + 18 * 128) >>> 7) - 18;
     // eq. to ((1 * a + 7) * 9) >>> 7
-    const a3 = BitUtils.sshR(9 * a + 63, 7);
-    p.set(-3 * step, VP8Filter.clip1[255 + p2 + a3]);
-    p.set(-2 * step, VP8Filter.clip1[255 + p1 + a2]);
-    p.set(-step, VP8Filter.clip1[255 + p0 + a1]);
-    p.set(0, VP8Filter.clip1[255 + q0 - a1]);
-    p.set(step, VP8Filter.clip1[255 + q1 - a2]);
-    p.set(2 * step, VP8Filter.clip1[255 + q2 - a3]);
+    const a3 = ((9 * a + 63 + 9 * 128) >>> 7) - 9;
+    p[o - 3 * step] = this._clip1[255 + p2 + a3];
+    p[o - 2 * step] = this._clip1[255 + p1 + a2];
+    p[o - step] = this._clip1[255 + p0 + a1];
+    p[o] = this._clip1[255 + q0 - a1];
+    p[o + step] = this._clip1[255 + q1 - a2];
+    p[o + 2 * step] = this._clip1[255 + q2 - a3];
   }
 
   /**
    * Determines if high edge variance (HEV) is present.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} step - Step size.
    * @param {number} thresh - Threshold value.
    * @returns {boolean} True if HEV is present, false otherwise.
    */
-  private hev(
-    p: InputBuffer<Uint8Array>,
-    step: number,
-    thresh: number
-  ): boolean {
-    const p1 = p.get(-2 * step);
-    const p0 = p.get(-step);
-    const q0 = p.get(0);
-    const q1 = p.get(step);
+  private hev(p: Uint8Array, o: number, step: number, thresh: number): boolean {
+    const p1 = p[o - 2 * step];
+    const p0 = p[o - step];
+    const q0 = p[o];
+    const q1 = p[o + step];
     return (
-      VP8Filter.abs0[255 + p1 - p0] > thresh ||
-      VP8Filter.abs0[255 + q1 - q0] > thresh
+      this._abs0[255 + p1 - p0] > thresh || this._abs0[255 + q1 - q0] > thresh
     );
   }
 
   /**
    * Determines if filtering is needed.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} step - Step size.
    * @param {number} thresh - Threshold value.
    * @returns {boolean} True if filtering is needed, false otherwise.
    */
   private needsFilter(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     step: number,
     thresh: number
   ): boolean {
-    const p1 = p.get(-2 * step);
-    const p0 = p.get(-step);
-    const q0 = p.get(0);
-    const q1 = p.get(step);
-    return (
-      2 * VP8Filter.abs0[255 + p0 - q0] + VP8Filter.abs1[255 + p1 - q1] <=
-      thresh
-    );
+    const p1 = p[o - 2 * step];
+    const p0 = p[o - step];
+    const q0 = p[o];
+    const q1 = p[o + step];
+    return 2 * this._abs0[255 + p0 - q0] + this._abs1[255 + p1 - q1] <= thresh;
   }
 
   /**
    * Determines if filtering is needed with additional parameters.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} step - Step size.
    * @param {number} t - Threshold value.
    * @param {number} it - Inner threshold value.
    * @returns {boolean} True if filtering is needed, false otherwise.
    */
   private needsFilter2(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     step: number,
     t: number,
     it: number
   ): boolean {
-    const p3 = p.get(-4 * step);
-    const p2 = p.get(-3 * step);
-    const p1 = p.get(-2 * step);
-    const p0 = p.get(-step);
-    const q0 = p.get(0);
-    const q1 = p.get(step);
-    const q2 = p.get(2 * step);
-    const q3 = p.get(3 * step);
-    if (2 * VP8Filter.abs0[255 + p0 - q0] + VP8Filter.abs1[255 + p1 - q1] > t) {
+    const p3 = p[o - 4 * step];
+    const p2 = p[o - 3 * step];
+    const p1 = p[o - 2 * step];
+    const p0 = p[o - step];
+    const q0 = p[o];
+    const q1 = p[o + step];
+    const q2 = p[o + 2 * step];
+    const q3 = p[o + 3 * step];
+    if (2 * this._abs0[255 + p0 - q0] + this._abs1[255 + p1 - q1] > t) {
       return false;
     }
 
     return (
-      VP8Filter.abs0[255 + p3 - p2] <= it &&
-      VP8Filter.abs0[255 + p2 - p1] <= it &&
-      VP8Filter.abs0[255 + p1 - p0] <= it &&
-      VP8Filter.abs0[255 + q3 - q2] <= it &&
-      VP8Filter.abs0[255 + q2 - q1] <= it &&
-      VP8Filter.abs0[255 + q1 - q0] <= it
+      this._abs0[255 + p3 - p2] <= it &&
+      this._abs0[255 + p2 - p1] <= it &&
+      this._abs0[255 + p1 - p0] <= it &&
+      this._abs0[255 + q3 - q2] <= it &&
+      this._abs0[255 + q2 - q1] <= it &&
+      this._abs0[255 + q1 - q0] <= it
     );
   }
 
   /**
    * Applies a simple vertical filter on 16 pixels.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   *
+   * The loop filters work on the bytes of `p` around the edge at byte offset
+   * `o`. Shifts of values that can be negative are done on a biased,
+   * non-negative value: `(v + k * 2^n) >>> n == (v >>> n) + k`, which is exact
+   * and safe from JavaScript's unsigned shifts.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} threshold - Threshold value.
    */
   public simpleVFilter16(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     threshold: number
   ): void {
-    const p2 = InputBuffer.from(p);
     for (let i = 0; i < 16; ++i) {
-      p2.offset = p.offset + i;
-      if (this.needsFilter(p2, stride, threshold)) {
-        this.doFilter2(p2, stride);
+      if (this.needsFilter(p, o + i, stride, threshold)) {
+        this.doFilter2(p, o + i, stride);
       }
     }
   }
 
   /**
    * Applies a simple horizontal filter on 16 pixels.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} threshold - Threshold value.
    */
   public simpleHFilter16(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     threshold: number
   ): void {
-    const p2 = InputBuffer.from(p);
     for (let i = 0; i < 16; ++i) {
-      p2.offset = p.offset + i * stride;
-      if (this.needsFilter(p2, 1, threshold)) {
-        this.doFilter2(p2, 1);
+      const q = o + i * stride;
+      if (this.needsFilter(p, q, 1, threshold)) {
+        this.doFilter2(p, q, 1);
       }
     }
   }
 
   /**
    * Applies a simple vertical filter on 16 pixels with inner edges.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} threshold - Threshold value.
    */
   public simpleVFilter16i(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     threshold: number
   ): void {
-    const p2 = InputBuffer.from(p);
-    for (let k = 3; k > 0; --k) {
-      p2.offset += 4 * stride;
-      this.simpleVFilter16(p2, stride, threshold);
+    for (let k = 1; k <= 3; ++k) {
+      this.simpleVFilter16(p, o + 4 * k * stride, stride, threshold);
     }
   }
 
   /**
    * Applies a simple horizontal filter on 16 pixels with inner edges.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} threshold - Threshold value.
    */
   public simpleHFilter16i(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     threshold: number
   ): void {
-    const p2 = InputBuffer.from(p);
-    for (let k = 3; k > 0; --k) {
-      p2.offset += 4;
-      this.simpleHFilter16(p2, stride, threshold);
+    for (let k = 1; k <= 3; ++k) {
+      this.simpleHFilter16(p, o + 4 * k, stride, threshold);
     }
   }
 
   /**
    * Applies a vertical filter on macroblock edges.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter16(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ) {
-    this.filterLoop26(p, stride, 1, 16, thresh, iThreshold, hevThreshold);
+    this.filterLoop26(p, o, stride, 1, 16, thresh, iThreshold, hevThreshold);
   }
 
   /**
    * Applies a horizontal filter on macroblock edges.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public hFilter16(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ) {
-    this.filterLoop26(p, 1, stride, 16, thresh, iThreshold, hevThreshold);
+    this.filterLoop26(p, o, 1, stride, 16, thresh, iThreshold, hevThreshold);
   }
 
   /**
    * Applies a vertical filter on three inner edges.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter16i(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ): void {
-    const p2 = InputBuffer.from(p);
-    for (let k = 3; k > 0; --k) {
-      p2.offset += 4 * stride;
-      this.filterLoop24(p2, stride, 1, 16, thresh, iThreshold, hevThreshold);
+    for (let k = 1; k <= 3; ++k) {
+      this.filterLoop24(
+        p,
+        o + 4 * k * stride,
+        stride,
+        1,
+        16,
+        thresh,
+        iThreshold,
+        hevThreshold
+      );
     }
   }
 
   /**
    * Applies a horizontal filter on three inner edges.
-   * @param {InputBuffer<Uint8Array>} p - The input buffer.
+   * @param {Uint8Array} p - The buffer containing the data.
+   * @param {number} o - The byte offset of the edge in the buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public hFilter16i(
-    p: InputBuffer<Uint8Array>,
+    p: Uint8Array,
+    o: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ): void {
-    const p2 = InputBuffer.from(p);
-    for (let k = 3; k > 0; --k) {
-      p2.offset += 4;
-      this.filterLoop24(p2, 1, stride, 16, thresh, iThreshold, hevThreshold);
+    for (let k = 1; k <= 3; ++k) {
+      this.filterLoop24(
+        p,
+        o + 4 * k,
+        1,
+        stride,
+        16,
+        thresh,
+        iThreshold,
+        hevThreshold
+      );
     }
   }
 
   /**
    * Applies an 8-pixel wide vertical filter for chroma filtering.
-   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
-   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {Uint8Array} u - The U component buffer.
+   * @param {number} uo - The byte offset of the edge in the U buffer.
+   * @param {Uint8Array} v - The V component buffer.
+   * @param {number} vo - The byte offset of the edge in the V buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter8(
-    u: InputBuffer<Uint8Array>,
-    v: InputBuffer<Uint8Array>,
+    u: Uint8Array,
+    uo: number,
+    v: Uint8Array,
+    vo: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ): void {
-    this.filterLoop26(u, stride, 1, 8, thresh, iThreshold, hevThreshold);
-    this.filterLoop26(v, stride, 1, 8, thresh, iThreshold, hevThreshold);
+    this.filterLoop26(u, uo, stride, 1, 8, thresh, iThreshold, hevThreshold);
+    this.filterLoop26(v, vo, stride, 1, 8, thresh, iThreshold, hevThreshold);
   }
 
   /**
    * Applies an 8-pixel wide horizontal filter for chroma filtering.
-   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
-   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {Uint8Array} u - The U component buffer.
+   * @param {number} uo - The byte offset of the edge in the U buffer.
+   * @param {Uint8Array} v - The V component buffer.
+   * @param {number} vo - The byte offset of the edge in the V buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public hFilter8(
-    u: InputBuffer<Uint8Array>,
-    v: InputBuffer<Uint8Array>,
+    u: Uint8Array,
+    uo: number,
+    v: Uint8Array,
+    vo: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ): void {
-    this.filterLoop26(u, 1, stride, 8, thresh, iThreshold, hevThreshold);
-    this.filterLoop26(v, 1, stride, 8, thresh, iThreshold, hevThreshold);
+    this.filterLoop26(u, uo, 1, stride, 8, thresh, iThreshold, hevThreshold);
+    this.filterLoop26(v, vo, 1, stride, 8, thresh, iThreshold, hevThreshold);
   }
 
   /**
    * Applies an 8-pixel wide vertical filter on inner edges for chroma filtering.
-   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
-   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {Uint8Array} u - The U component buffer.
+   * @param {number} uo - The byte offset of the edge in the U buffer.
+   * @param {Uint8Array} v - The V component buffer.
+   * @param {number} vo - The byte offset of the edge in the V buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public vFilter8i(
-    u: InputBuffer<Uint8Array>,
-    v: InputBuffer<Uint8Array>,
+    u: Uint8Array,
+    uo: number,
+    v: Uint8Array,
+    vo: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ) {
-    const u2 = InputBuffer.from(u, 4 * stride);
-    const v2 = InputBuffer.from(v, 4 * stride);
-    this.filterLoop24(u2, stride, 1, 8, thresh, iThreshold, hevThreshold);
-    this.filterLoop24(v2, stride, 1, 8, thresh, iThreshold, hevThreshold);
+    this.filterLoop24(
+      u,
+      uo + 4 * stride,
+      stride,
+      1,
+      8,
+      thresh,
+      iThreshold,
+      hevThreshold
+    );
+    this.filterLoop24(
+      v,
+      vo + 4 * stride,
+      stride,
+      1,
+      8,
+      thresh,
+      iThreshold,
+      hevThreshold
+    );
   }
 
   /**
    * Applies an 8-pixel wide horizontal filter on inner edges for chroma filtering.
-   * @param {InputBuffer<Uint8Array>} u - The U component input buffer.
-   * @param {InputBuffer<Uint8Array>} v - The V component input buffer.
+   * @param {Uint8Array} u - The U component buffer.
+   * @param {number} uo - The byte offset of the edge in the U buffer.
+   * @param {Uint8Array} v - The V component buffer.
+   * @param {number} vo - The byte offset of the edge in the V buffer.
    * @param {number} stride - Stride value.
    * @param {number} thresh - Threshold value.
    * @param {number} iThreshold - Inner threshold value.
    * @param {number} hevThreshold - HEV threshold value.
    */
   public hFilter8i(
-    u: InputBuffer<Uint8Array>,
-    v: InputBuffer<Uint8Array>,
+    u: Uint8Array,
+    uo: number,
+    v: Uint8Array,
+    vo: number,
     stride: number,
     thresh: number,
     iThreshold: number,
     hevThreshold: number
   ) {
-    const u2 = InputBuffer.from(u, 4);
-    const v2 = InputBuffer.from(v, 4);
-    this.filterLoop24(u2, 1, stride, 8, thresh, iThreshold, hevThreshold);
-    this.filterLoop24(v2, 1, stride, 8, thresh, iThreshold, hevThreshold);
+    this.filterLoop24(
+      u,
+      uo + 4,
+      1,
+      stride,
+      8,
+      thresh,
+      iThreshold,
+      hevThreshold
+    );
+    this.filterLoop24(
+      v,
+      vo + 4,
+      1,
+      stride,
+      8,
+      thresh,
+      iThreshold,
+      hevThreshold
+    );
   }
+
+  /**
+   * The tables, as fields to avoid the lazy initialization check of statics.
+   */
+  private readonly _abs0: Uint8Array = VP8Filter.abs0;
+  private readonly _abs1: Uint8Array = VP8Filter.abs1;
+  private readonly _sclip1: Int8Array = VP8Filter.sclip1;
+  private readonly _sclip2: Int8Array = VP8Filter.sclip2;
+  private readonly _clip1: Uint8Array = VP8Filter.clip1;
 
   /**
    * Transforms a block of data from the source buffer to the destination buffer.
@@ -969,32 +1069,33 @@ export class VP8Filter {
     src: InputBuffer<Int16Array>,
     dst: InputBuffer<Uint8Array>
   ): void {
-    const t = new Int32Array(4 * 4);
-    let si = 0;
-    let di = 0;
+    const s = src.buffer;
+    const d = dst.buffer;
+    const t = this._transformTmp;
+    let si = src.offset;
     let tmp = 0;
     for (let i = 0; i < 4; ++i) {
       // vertical pass
       // [-4096, 4094]
-      const a = src.get(si) + src.get(si + 8);
+      const a = s[si] + s[si + 8];
       // [-4095, 4095]
-      const b = src.get(si) - src.get(si + 8);
+      const b = s[si] - s[si + 8];
       // [-3783, 3783]
       const c =
-        VP8Filter.mul(src.get(si + 4), VP8Filter.kC2) -
-        VP8Filter.mul(src.get(si + 12), VP8Filter.kC1);
+        VP8Filter.mul(s[si + 4], VP8Filter.kC2) -
+        VP8Filter.mul(s[si + 12], VP8Filter.kC1);
       // [-3785, 3781]
-      const d =
-        VP8Filter.mul(src.get(si + 4), VP8Filter.kC1) +
-        VP8Filter.mul(src.get(si + 12), VP8Filter.kC2);
+      const e =
+        VP8Filter.mul(s[si + 4], VP8Filter.kC1) +
+        VP8Filter.mul(s[si + 12], VP8Filter.kC2);
       // [-7881, 7875]
-      t[tmp++] = a + d;
+      t[tmp++] = a + e;
       // [-7878, 7878]
       t[tmp++] = b + c;
       // [-7878, 7878]
       t[tmp++] = b - c;
       // [-7877, 7879]
-      t[tmp++] = a - d;
+      t[tmp++] = a - e;
       si++;
     }
 
@@ -1008,6 +1109,7 @@ export class VP8Filter {
      * [-60713, 60968].
      */
     tmp = 0;
+    let di = dst.offset;
     for (let i = 0; i < 4; ++i) {
       // horizontal pass
       const dc = t[tmp] + 4;
@@ -1016,17 +1118,22 @@ export class VP8Filter {
       const c =
         VP8Filter.mul(t[tmp + 4], VP8Filter.kC2) -
         VP8Filter.mul(t[tmp + 12], VP8Filter.kC1);
-      const d =
+      const e =
         VP8Filter.mul(t[tmp + 4], VP8Filter.kC1) +
         VP8Filter.mul(t[tmp + 12], VP8Filter.kC2);
-      VP8Filter.store(dst, di, 0, 0, a + d);
-      VP8Filter.store(dst, di, 1, 0, b + c);
-      VP8Filter.store(dst, di, 2, 0, b - c);
-      VP8Filter.store(dst, di, 3, 0, a - d);
+      VP8Filter.storeAt(d, di, a + e);
+      VP8Filter.storeAt(d, di + 1, b + c);
+      VP8Filter.storeAt(d, di + 2, b - c);
+      VP8Filter.storeAt(d, di + 3, a - e);
       tmp++;
       di += VP8.bps;
     }
   }
+
+  /**
+   * Temporary buffer for {@link transformOne}.
+   */
+  private readonly _transformTmp: Int32Array = new Int32Array(4 * 4);
 
   /**
    * Transforms a block of data from the source buffer to the destination buffer.
