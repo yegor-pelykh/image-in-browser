@@ -1978,6 +1978,13 @@ export abstract class Filter {
    * @returns {MemoryImage} The dithered image
    */
   public static ditherImage(opt: DitherImageOptions): MemoryImage {
+    // The error is diffused through color values, not palette indices.
+    if (opt.image.hasPalette) {
+      opt = {
+        ...opt,
+        image: opt.image.convert({ numChannels: opt.image.numChannels }),
+      };
+    }
     const quantizer = opt.quantizer ?? new NeuralQuantizer(opt.image);
     const kernel = opt.kernel ?? DitherKernel.floydSteinberg;
     const serpentine = opt.serpentine ?? false;

@@ -160,4 +160,26 @@ describe('Filter', () => {
     expect(src.width).toBe(64);
     expect(src.height).toBe(48);
   });
+
+  /**
+   * Error used to be diffused into the palette indices, running past the end
+   * of the palette.
+   */
+  test('dithering a palette image', () => {
+    const img = decodePng({
+      data: TestUtils.readFromFile(
+        TestFolder.input,
+        TestSection.png,
+        'logo.png'
+      ),
+    });
+    expect(img).toBeDefined();
+    if (img === undefined) {
+      return;
+    }
+    expect(img.hasPalette).toBe(true);
+    const dithered = Filter.ditherImage({ image: img });
+    expect(dithered.width).toBe(img.width);
+    expect(dithered.hasPalette).toBe(true);
+  });
 });
