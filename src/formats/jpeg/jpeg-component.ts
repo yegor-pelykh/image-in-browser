@@ -53,6 +53,13 @@ export class JpegComponent {
   }
 
   /**
+   * Sets the 2D array of blocks.
+   */
+  public set blocks(v: Array<Array<Int32Array>>) {
+    this._blocks = v;
+  }
+
+  /**
    * Number of blocks per line.
    */
   private _blocksPerLine = 0;

@@ -353,6 +353,9 @@ export class JpegData {
           break;
         // SOS (Start of Scan)
         case JpegMarker.sos:
+          if (hasSOF) {
+            return true;
+          }
           hasSOS = true;
           break;
         default:
@@ -554,7 +557,10 @@ export class JpegData {
           ArrayUtils.copyRange(r, j << 3, lines[scanLine + j]!, sample, 8);
         }
       }
+
+      component.blocks[blockRow] = [];
     }
+    component.blocks = [];
 
     return lines;
   }

@@ -6,6 +6,7 @@ import {
   ColorUint8,
   ExifData,
   JpegChroma,
+  JpegData,
   JpegDecoder,
   LibError,
   MemoryImage,
@@ -476,5 +477,22 @@ describe('Format: JPEG', () => {
     const original = image.clone();
     encodeJpg({ image: image });
     ImageTestUtils.testImageEquals(image, original);
+  });
+
+  /**
+   * JpegData.read releases the DCT coefficients as they are used.
+   */
+  test('JpegData.read releases DCT coefficients', () => {
+    const bytes = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'buck_24.jpg'
+    );
+    const jpeg = new JpegData();
+    jpeg.read(bytes);
+    for (const component of jpeg.frame!.components.values()) {
+      expect(component.blocks).toEqual([]);
+    }
+    expect(jpeg.getImage().width).toBe(jpeg.width);
   });
 });
