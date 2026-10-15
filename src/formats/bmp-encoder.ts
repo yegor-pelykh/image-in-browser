@@ -120,11 +120,8 @@ export class BmpEncoder implements Encoder {
         numChannels: 4,
       });
     } else if (format === Format.uint8 && nc === 1 && palette === undefined) {
-      // => uint8 palette
-      image = image.convert({
-        format: Format.uint8,
-        withPalette: true,
-      });
+      // Written as is: the grayscale values index the gray palette that's
+      // written when there is no palette.
     } else if (format === Format.uint8 && nc === 2) {
       // => uint8,4
       image = image.convert({
@@ -371,20 +368,44 @@ export class BmpEncoder implements Encoder {
         }
       }
     } else {
-      let p: Pixel | undefined = undefined;
-      for (let y = h - 1; y >= 0; --y) {
-        p = image.getPixel(0, y, p);
-        for (let x = 0; x < w; ++x) {
-          out.writeByte(Math.trunc(p.b));
-          out.writeByte(Math.trunc(p.g));
-          out.writeByte(Math.trunc(p.r));
-          if (hasAlpha) {
-            out.writeByte(Math.trunc(p.a));
+      // Rows are stored bottom to top, as BGR(A).
+      const bytesPerPixel = hasAlpha ? 4 : 3;
+      const row = new Uint8Array(w * bytesPerPixel);
+      if (image.format === Format.uint8 && !image.hasPalette) {
+        const data = image.toUint8Array();
+        const stride = image.data!.rowStride;
+        const nc = image.numChannels;
+        for (let y = h - 1; y >= 0; --y) {
+          for (let i = 0, s = y * stride; i < row.length; s += nc) {
+            row[i++] = data[s + 2];
+            row[i++] = data[s + 1];
+            row[i++] = data[s];
+            if (hasAlpha) {
+              row[i++] = data[s + 3];
+            }
           }
-          p.next();
+          out.writeBytes(row);
+          if (rowPadding !== undefined) {
+            out.writeBytes(rowPadding);
+          }
         }
-        if (rowPadding !== undefined) {
-          out.writeBytes(rowPadding);
+      } else {
+        let p: Pixel | undefined = undefined;
+        for (let y = h - 1; y >= 0; --y) {
+          p = image.getPixel(0, y, p);
+          for (let x = 0, i = 0; x < w; ++x) {
+            row[i++] = Math.trunc(p.b);
+            row[i++] = Math.trunc(p.g);
+            row[i++] = Math.trunc(p.r);
+            if (hasAlpha) {
+              row[i++] = Math.trunc(p.a);
+            }
+            p.next();
+          }
+          out.writeBytes(row);
+          if (rowPadding !== undefined) {
+            out.writeBytes(rowPadding);
+          }
         }
       }
     }

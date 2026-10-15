@@ -94,6 +94,7 @@ export class TiffEncoder implements Encoder {
     ifd0.set('TileWidth', image.width);
     ifd0.set('TileLength', image.height);
     ifd0.set('StripByteCounts', image.byteLength);
+    // The pixel data is written straight from the image, without a copy.
     ifd0.set('StripOffsets', new IfdUndefinedValue(image.toUint8Array()));
 
     if (image.hasPalette) {
