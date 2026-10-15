@@ -70,7 +70,7 @@ export function colorTransformDelta(multiplier: number, color: number): number {
  * Fits the multiplier that best predicts the first {@link n} of {@link target} from
  * {@link source}.
  *
- * The least squares estimate lands close, and the handful of neighbours around
+ * The least squares estimate lands close, and the handful of neighbors around
  * it are then scored on what they actually cost to code, which the closed form
  * cannot see because of the shift and the wrap to eight bits.
  */

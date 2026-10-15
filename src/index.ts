@@ -1412,7 +1412,7 @@ export interface EncodeWebPOptions extends EncodeOptions {
   singleFrame?: boolean;
 
   /**
-   * Whether to preserve the colour under fully transparent pixels.
+   * Whether to preserve the color under fully transparent pixels.
    */
   exact?: boolean;
 

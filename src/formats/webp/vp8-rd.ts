@@ -411,7 +411,7 @@ export class VP8Decimate {
   // Chroma DC error diffusion.
   //
   // The four chroma blocks of one channel sit in a 2x2 square. Each takes the
-  // error left over from its neighbours above and to the left before being
+  // error left over from its neighbors above and to the left before being
   // quantized, and passes its own on:
   //
   //           | top[0] | top[1]
@@ -436,7 +436,7 @@ export class VP8Decimate {
 
   /**
    * Nudges the four DC coefficients of each chroma channel by the error its
-   * neighbours left, and records what this macroblock passes on.
+   * neighbors left, and records what this macroblock passes on.
    */
   private correctDCValues(rd: VP8ModeScore, mtx: VP8Matrix): void {
     const top = this.enc.topDerr!;
@@ -477,7 +477,7 @@ export class VP8Decimate {
   }
 
   /**
-   * Hands the winning mode's errors to the neighbours still to be coded.
+   * Hands the winning mode's errors to the neighbors still to be coded.
    */
   private storeDiffusionErrors(rd: VP8ModeScore): void {
     const top = this.enc.topDerr!;
@@ -824,7 +824,7 @@ export class VP8Decimate {
   }
 
   /**
-   * The cost table for the current 4x4 block, given its neighbours' modes.
+   * The cost table for the current 4x4 block, given its neighbors' modes.
    */
   private getCostModeI4(modes: Uint8Array): number[] {
     const predsW = this.enc.predsW;

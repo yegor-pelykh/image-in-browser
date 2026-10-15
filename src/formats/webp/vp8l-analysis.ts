@@ -101,7 +101,7 @@ export function analyzeEntropy(
       const pix = argb[row + x];
       const pixDiff = subPixels(pix, pixPrev);
       pixPrev = pix;
-      // A pixel equal to its left or top neighbour codes as part of a run
+      // A pixel equal to its left or top neighbor codes as part of a run
       // whichever transform is chosen, so counting it would let flat areas
       // decide a question they have no stake in.
       if (pixDiff === 0 || (y > 0 && pix === argb[row - width + x])) {

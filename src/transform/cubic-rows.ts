@@ -12,7 +12,7 @@ import type { Pixel } from '../image/pixel.js';
  * only reads. It relies on getPixelCubic -> getPixelSafe -> getPixel dispatch;
  * direct data reads in that chain would bypass the cache and require adapting
  * this sampler. During downscaling, output row y ends before source row y + 1,
- * so newly needed future rows are untouched and overlapping neighbours stay in
+ * so newly needed future rows are untouched and overlapping neighbors stay in
  * the ring.
  */
 export class CubicRows extends MemoryImage {

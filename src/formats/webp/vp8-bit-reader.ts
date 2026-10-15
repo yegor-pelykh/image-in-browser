@@ -52,7 +52,7 @@ export class VP8BitReader {
       this._value = this._input.read() | (this._value << 8);
       this._bits += 8;
     } else if (!this._eof) {
-      // These are not strictly needed, but it makes the behaviour
+      // These are not strictly needed, but it makes the behavior
       // consistent for both USE_RIGHT_JUSTIFY and !USE_RIGHT_JUSTIFY.
       this._value <<= 8;
       this._bits += 8;

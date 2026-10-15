@@ -62,7 +62,7 @@ export class Lz77 {
    * puts far too many positions in a slot, and no match shorter than three
    * pixels is ever coded, so keying on two loses nothing.
    *
-   * libwebp keys a run of identical pixels on its colour and how much of it
+   * libwebp keys a run of identical pixels on its color and how much of it
    * is left, to spread the run across slots. Tried here and reverted: it made
    * the PNG suite 11% larger and the encode 36% slower. With a pair key, the
    * most recent entry in a run's slot is the immediately preceding pixel, so

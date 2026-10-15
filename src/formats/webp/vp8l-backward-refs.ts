@@ -76,7 +76,7 @@ const maxChain = 86;
  * Finds the best match at every position.
  *
  * Positions are visited from the end backwards, because a match found at one
- * position usually answers for its neighbours too: if the same distance still
+ * position usually answers for its neighbors too: if the same distance still
  * matches one pixel to the left, that pixel's best match is this one grown by
  * one, and no search is needed for it. On flat or repetitive images a single
  * search then covers a whole run, which is most of what makes such images
@@ -109,7 +109,7 @@ export function computeMatches(
   // before that, and the three directly above and to either side.
   //
   // libwebp's kLZ77Box strategy tries every offset whose plane code is a near
-  // neighbour, some ninety of them. Carrying the next ring out as well was
+  // neighbor, some ninety of them. Carrying the next ring out as well was
   // measured at 0.04 points of the corpus for 19% more encode time, which is
   // the wrong way round while size is inside budget and speed is not.
   const cheapDistances = Int32Array.from(
@@ -124,7 +124,7 @@ export function computeMatches(
   const numCheap = cheapDistances.length;
   if (numCheap > 5) {
     throw new LibError(
-      `the near-neighbour walk has five slots, not ${numCheap}`
+      `the near-neighbor walk has five slots, not ${numCheap}`
     );
   }
 

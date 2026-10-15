@@ -315,7 +315,7 @@ export class VP8Encoder {
     const bw = new VP8BoolEncoder(
       Math.trunc((this.enc.mbW * this.enc.mbH * 7) / 8)
     );
-    // Colour space and clamping type, both zero.
+    // color space and clamping type, both zero.
     bw.putBitUniform(0);
     bw.putBitUniform(0);
     this.putSegmentHeader(bw);

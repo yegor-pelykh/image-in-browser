@@ -45,7 +45,7 @@ export class VP8ModeScore {
   public modeUv: number = 0;
 
   /**
-   * The three chroma DC errors this coding passes to its neighbours, U then
+   * The three chroma DC errors this coding passes to its neighbors, U then
    * V. Only kept when error diffusion is on.
    */
   public readonly derr = new Int8Array(6);

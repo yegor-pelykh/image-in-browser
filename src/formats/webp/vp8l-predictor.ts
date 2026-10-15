@@ -25,7 +25,7 @@ import * as huffman from './vp8l-huffman-encoder.js';
 export const numPredictors = 14;
 
 /**
- * The prediction on the top-left pixel, where no neighbour exists.
+ * The prediction on the top-left pixel, where no neighbor exists.
  */
 export const argbBlack = 0xff000000;
 
@@ -90,7 +90,7 @@ function select(a: number, b: number, c: number): number {
 }
 
 /**
- * The A,R,G,B predicted by {@link mode} from the four neighbours, packed.
+ * The A,R,G,B predicted by {@link mode} from the four neighbors, packed.
  *
  * This is the readable statement of the transform. {@link predictAll} computes the
  * same values in a form the mode search can afford; a test holds the two to

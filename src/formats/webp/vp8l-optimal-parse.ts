@@ -80,7 +80,7 @@ export function optimalCover(
   const fromWhich = new Uint8Array(numPixels + 1);
   const lengthBits = costs.lengthBits;
   const match = matches.match;
-  // Each near-neighbour distance costs the same wherever it is used.
+  // Each near-neighbor distance costs the same wherever it is used.
   const cheapDistBits = new Float64Array(numCheap);
   for (let c = 0; c < numCheap; c++) {
     cheapDistBits[c] = costs.distanceBits(cheapDists[c], width);
@@ -100,9 +100,9 @@ export function optimalCover(
     }
 
     // Every way of reaching further is weighed: whatever the search settled
-    // on, and each near-neighbour offset. The search already tries those and
+    // on, and each near-neighbor offset. The search already tries those and
     // keeps one only when it is longest, but a shorter match at a
-    // near-neighbour distance can still win here, since those are the cheapest
+    // near-neighbor distance can still win here, since those are the cheapest
     // distances the format codes.
     for (let which = 0; which < candidates; which++) {
       let maxLen = 0;

@@ -12,7 +12,7 @@ export const maxMatchLength = (1 << matchLengthBits) - 1;
 
 /**
  * Distances stop at 1048576, and the first 120 values are taken by the
- * near-neighbour plane codes, leaving this as the real maximum.
+ * near-neighbor plane codes, leaving this as the real maximum.
  */
 export const maxMatchDistance = 1048456;
 
@@ -30,7 +30,7 @@ export class VP8LMatches {
   public readonly match: Uint32Array;
 
   /**
-   * Offsets landing on the near-neighbour plane codes, the cheapest distances
+   * Offsets landing on the near-neighbor plane codes, the cheapest distances
    * the format has, where a shorter match can beat a longer one from the chain.
    */
   public readonly cheapDistances: Int32Array;

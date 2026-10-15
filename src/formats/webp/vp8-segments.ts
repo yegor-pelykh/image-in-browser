@@ -77,7 +77,7 @@ export function analyzeSegments(enc: VP8EncState): void {
   const totalMb = enc.mbW * enc.mbH;
 
   do {
-    // The analysis pretends the reconstruction is perfect, so the neighbours
+    // The analysis pretends the reconstruction is perfect, so the neighbors
     // it predicts from are the source samples.
     it.import(true);
     analyzer.analyze(alphas);

@@ -18,7 +18,7 @@ import {
 const topLeftI4 = [17, 21, 25, 29, 13, 17, 21, 25, 9, 13, 17, 21, 5, 9, 13, 17];
 
 /**
- * The current macroblock, its neighbours, and the scratch buffers the search
+ * The current macroblock, its neighbors, and the scratch buffers the search
  * works in.
  */
 export class VP8EncIterator {
@@ -364,7 +364,7 @@ export class VP8EncIterator {
   }
 
   /**
-   * Keeps the reconstructed edges of this macroblock for its neighbours.
+   * Keeps the reconstructed edges of this macroblock for its neighbors.
    */
   public saveBoundary(): void {
     const ySrc = yOffEnc;
@@ -424,7 +424,7 @@ export class VP8EncIterator {
   // Non-zero context.
 
   /**
-   * Unpacks the neighbouring patterns into {@link topNz} and {@link leftNz}.
+   * Unpacks the neighboring patterns into {@link topNz} and {@link leftNz}.
    */
   public nzToBytes(): void {
     const tnz = this.enc.nz[this.nzPos];

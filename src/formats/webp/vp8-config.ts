@@ -90,7 +90,7 @@ export class VP8Config {
   public readonly alphaCompression: boolean;
 
   /**
-   * Whether to keep the colour hidden under fully transparent pixels.
+   * Whether to keep the color hidden under fully transparent pixels.
    */
   public readonly exact: boolean;
 

@@ -35,7 +35,7 @@ export class VP8EncState {
 
   /**
    * Intra modes of every 4x4 block, with a border of `B_DC_PRED` around the
-   * picture so that neighbour lookups need no bounds checks.
+   * picture so that neighbor lookups need no bounds checks.
    */
   public readonly preds: Uint8Array;
 

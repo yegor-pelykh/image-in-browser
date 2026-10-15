@@ -455,7 +455,7 @@ export class WebPDecoder implements Decoder {
               previous.width,
               previous.height
             ),
-            // libwebp clears to transparent, not to the ANIM colour
+            // libwebp clears to transparent, not to the ANIM color
             color: new ColorRgba8(0, 0, 0, 0),
             alphaBlend: false,
           });

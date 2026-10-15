@@ -34,7 +34,7 @@ import {
  */
 export class WebPEncoder implements Encoder {
   /**
-   * Whether to preserve the colour under fully transparent pixels.
+   * Whether to preserve the color under fully transparent pixels.
    */
   private readonly _exact: boolean;
 

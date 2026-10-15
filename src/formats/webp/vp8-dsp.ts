@@ -232,7 +232,7 @@ export function transformWHT(
 }
 
 /**
- * Whether a macroblock's source is a single flat colour.
+ * Whether a macroblock's source is a single flat color.
  */
 export function isFlatSource16(src: Uint8Array, off: number): boolean {
   const v = src[off];

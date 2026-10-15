@@ -47,7 +47,7 @@ const numHuffmanBits = 3;
  */
 export class VP8LEncoder {
   /**
-   * Whether the colour hidden under fully transparent pixels must be kept
+   * Whether the color hidden under fully transparent pixels must be kept
    *
    * Clearing it flattens those pixels into long runs, which is what cwebp
    * does unless given its own `-exact`
@@ -134,7 +134,7 @@ export class VP8LEncoder {
   }
 
   /**
-   * Encodes four colour planes as a bare VP8L stream, with no image header.
+   * Encodes four color planes as a bare VP8L stream, with no image header.
    *
    * The alpha channel of a lossy file is carried this way: it is a VP8L image
    * in its own right, but its size is already known from the frame, so the
@@ -168,7 +168,7 @@ export class VP8LEncoder {
     }
 
     // Done before the palette is counted, since flattening collapses whatever
-    // colours were hiding under transparent pixels and can bring an image
+    // colors were hiding under transparent pixels and can bring an image
     // under the palette limit.
     if (!this.exact && alphaIsUsed) {
       clearTransparentPixels(argb);
@@ -643,7 +643,7 @@ export class VP8LEncoder {
       }
     }
     // Ascending ARGB. libwebp also offers an order that minimises the
-    // difference between neighbouring entries, since the palette is stored
+    // difference between neighboring entries, since the palette is stored
     // delta-coded; ported and measured at 360 bytes *worse* over a 587 image
     // corpus. It optimises the palette's own storage, which is at most a few
     // hundred bytes, while the indices it does not touch are the bulk of the
