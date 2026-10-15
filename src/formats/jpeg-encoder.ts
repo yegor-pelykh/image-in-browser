@@ -9,6 +9,7 @@ import { OutputBuffer } from '../common/output-buffer.js';
 import type { ExifData } from '../exif/exif-data.js';
 import type { IccProfile } from '../image/icc-profile.js';
 import type { MemoryImage } from '../image/image.js';
+import type { Pixel } from '../image/pixel.js';
 import type { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
 
@@ -121,43 +122,30 @@ export class JpegEncoder implements Encoder {
   /** FDCT quantization table for UV components */
   private readonly _fdTableUv = new Float32Array(64);
 
-  /** Bit code array */
-  private readonly _bitCode = ArrayUtils.fill<number[] | undefined>(
-    65535,
-    undefined
-  );
-  /** Category array */
-  private readonly _category = ArrayUtils.fill<number | undefined>(
-    65535,
-    undefined
-  );
   /** Output FDCT quantization array */
-  private readonly _outputfDCTQuant = ArrayUtils.fill<number | undefined>(
-    64,
-    undefined
-  );
+  private readonly _outputfDCTQuant = new Int32Array(64);
   /** DU array */
-  private readonly _du = ArrayUtils.fill<number | undefined>(64, undefined);
+  private readonly _du = new Int32Array(64);
 
   /** RGB to YUV conversion table */
   private readonly _tableRgbYuv: Int32Array = new Int32Array(2048);
 
   /** Y DC Huffman table */
-  private _ydcHuffman: Array<Array<number> | undefined> | undefined;
+  private _ydcHuffman!: HuffmanTable;
   /** UV DC Huffman table */
-  private _uvdcHuffman: Array<Array<number> | undefined> | undefined;
+  private _uvdcHuffman!: HuffmanTable;
   /** Y AC Huffman table */
-  private _yacHuffman!: Array<Array<number> | undefined>;
+  private _yacHuffman!: HuffmanTable;
   /** UV AC Huffman table */
-  private _uvacHuffman!: Array<Array<number> | undefined>;
+  private _uvacHuffman!: HuffmanTable;
 
   /** Current quality setting */
   private _currentQuality?: number;
 
-  /** Byte new value for bit writing */
-  private _byteNew = 0;
-  /** Byte position for bit writing */
-  private _bytePos = 7;
+  /** Bit buffer for bit writing */
+  private _bitBuffer = 0;
+  /** Bit count for bit writing */
+  private _bitCount = 0;
 
   /** Flag indicating if animation is supported */
   private _supportsAnimation = false;
@@ -176,7 +164,6 @@ export class JpegEncoder implements Encoder {
    */
   constructor(quality = 100) {
     this.initHuffmanTable();
-    this.initCategoryNumber();
     this.initRgbYuvTable();
     this.setQuality(quality);
   }
@@ -185,22 +172,20 @@ export class JpegEncoder implements Encoder {
    * Computes the Huffman table.
    * @param {number[]} nrcodes - Number of codes.
    * @param {number[]} stdTable - Standard table.
-   * @returns {Array<Array<number> | undefined>} The computed Huffman table.
+   * @returns {HuffmanTable} The computed Huffman table.
    */
   private static computeHuffmanTable(
     nrcodes: number[],
     stdTable: number[]
-  ): Array<Array<number> | undefined> {
+  ): HuffmanTable {
     let codeValue = 0;
     let posInTable = 0;
-    const ht: (Array<number> | undefined)[] = [];
+    const ht = new HuffmanTable();
     for (let k = 1; k <= 16; k++) {
       for (let j = 1; j <= nrcodes[k]; j++) {
         const index = stdTable[posInTable];
-        if (ht.length <= index) {
-          ht.length = index + 1;
-        }
-        ht[index] = [codeValue, k];
+        ht.code[index] = codeValue;
+        ht.length[index] = k;
         posInTable++;
         codeValue++;
       }
@@ -465,6 +450,28 @@ export class JpegEncoder implements Encoder {
     vdu: Float32Array,
     backgroundColor: Color
   ): void {
+    if (
+      image.format === Format.uint8 &&
+      !image.hasPalette &&
+      image.numChannels >= 3
+    ) {
+      this.calculateYUV8(
+        image.data!.toUint8Array(),
+        image.data!.rowStride,
+        image.numChannels,
+        x,
+        y,
+        width,
+        height,
+        ydu,
+        udu,
+        vdu,
+        backgroundColor
+      );
+      return;
+    }
+
+    let pixel: Pixel | undefined = undefined;
     for (let pos = 0; pos < 64; pos++) {
       // / 8
       const row = pos >>> 3;
@@ -484,7 +491,8 @@ export class JpegEncoder implements Encoder {
         xx -= x + col - width + 1;
       }
 
-      let p: Color = image.getPixel(xx, yy);
+      pixel = image.getPixel(xx, yy, pixel);
+      let p: Color = pixel;
       if (p.format !== Format.uint8) {
         p = p.convert({
           format: Format.uint8,
@@ -536,6 +544,66 @@ export class JpegEncoder implements Encoder {
   }
 
   /**
+   * A fast path for RGB(A) uint8 images, reading the bytes directly. It
+   * computes the same values as the per-pixel path.
+   * @param {Uint8Array} data - The image pixel data.
+   * @param {number} stride - The image row stride.
+   * @param {number} nc - The number of channels.
+   * @param {number} x - The X offset of the block.
+   * @param {number} y - The Y offset of the block.
+   * @param {number} width - The image width.
+   * @param {number} height - The image height.
+   * @param {Float32Array} ydu - The Y output block.
+   * @param {Float32Array} udu - The U output block.
+   * @param {Float32Array} vdu - The V output block.
+   * @param {Color} backgroundColor - The background color used for alpha blending.
+   */
+  private calculateYUV8(
+    data: Uint8Array,
+    stride: number,
+    nc: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    ydu: Float32Array,
+    udu: Float32Array,
+    vdu: Float32Array,
+    backgroundColor: Color
+  ): void {
+    const table = this._tableRgbYuv;
+    const bgR = backgroundColor.r;
+    const bgG = backgroundColor.g;
+    const bgB = backgroundColor.b;
+    for (let row = 0, pos = 0; row < 8; ++row) {
+      // Rows and columns past the edge repeat the last one.
+      const yy = y + row < height ? y + row : height - 1;
+      const rowOffset = yy * stride;
+      for (let col = 0; col < 8; ++col, ++pos) {
+        const xx = x + col < width ? x + col : width - 1;
+        const i = rowOffset + xx * nc;
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+        if (nc > 3) {
+          // Blend with the background color.
+          const a = data[i + 3] / 255;
+          const invA = 1.0 - a;
+          r = MathUtils.clamp(Math.round(r * a + bgR * invA), 0, 255);
+          g = MathUtils.clamp(Math.round(g * a + bgG * invA), 0, 255);
+          b = MathUtils.clamp(Math.round(b * a + bgB * invA), 0, 255);
+        }
+        ydu[pos] = ((table[r] + table[g + 256] + table[b + 512]) >>> 16) - 128.0;
+        udu[pos] =
+          ((table[r + 768] + table[g + 1024] + table[b + 1280]) >>> 16) - 128.0;
+        vdu[pos] =
+          ((table[r + 1280] + table[g + 1536] + table[b + 1792]) >>> 16) -
+          128.0;
+      }
+    }
+  }
+
+  /**
    * Initializes the Huffman tables.
    */
   private initHuffmanTable(): void {
@@ -555,28 +623,6 @@ export class JpegEncoder implements Encoder {
       JpegEncoder._stdAcChrominanceNrCodes,
       JpegEncoder._stdAcChrominanceValues
     );
-  }
-
-  /**
-   * Initializes the category and bit code tables.
-   */
-  private initCategoryNumber(): void {
-    let nrLower = 1;
-    let nrUpper = 2;
-    for (let cat = 1; cat <= 15; cat++) {
-      // Positive numbers
-      for (let nr = nrLower; nr < nrUpper; nr++) {
-        this._category[32767 + nr] = cat;
-        this._bitCode[32767 + nr] = [nr, cat];
-      }
-      // Negative numbers
-      for (let nrneg = -(nrUpper - 1); nrneg <= -nrLower; nrneg++) {
-        this._category[32767 + nrneg] = cat;
-        this._bitCode[32767 + nrneg] = [nrUpper - 1 + nrneg, cat];
-      }
-      nrLower <<= 1;
-      nrUpper <<= 1;
-    }
   }
 
   /**
@@ -680,12 +726,9 @@ export class JpegEncoder implements Encoder {
    * Performs the Discrete Cosine Transform (DCT) and quantization on the data.
    * @param {Float32Array} data - The data to transform.
    * @param {Float32Array} fdtbl - The quantization table.
-   * @returns {Array<number | undefined>} The quantized DCT coefficients.
+   * @returns {Int32Array} The quantized DCT coefficients.
    */
-  private fDCTQuant(
-    data: Float32Array,
-    fdtbl: Float32Array
-  ): Array<number | undefined> {
+  private fDCTQuant(data: Float32Array, fdtbl: Float32Array): Int32Array {
     // Pass 1: process rows.
     let dataOff = 0;
     for (let i = 0; i < 8; ++i) {
@@ -853,38 +896,58 @@ export class JpegEncoder implements Encoder {
   }
 
   /**
-   * Writes bits to the output buffer.
-   * @param {OutputBuffer} out - The output buffer to write to.
-   * @param {number[]} bits - The bits to write.
+   * The JPEG category of a non-zero coefficient: its bit length.
+   * @param {number} v - The coefficient.
+   * @returns {number} The category.
    */
-  private writeBits(out: OutputBuffer, bits: number[]): void {
-    const value = bits[0];
-    let posval = bits[1] - 1;
-    while (posval >= 0) {
-      if ((value & (1 << posval)) !== 0) {
-        this._byteNew |= 1 << this._bytePos;
-      }
-      posval--;
-      this._bytePos--;
-      if (this._bytePos < 0) {
-        if (this._byteNew === 0xff) {
-          out.writeByte(0xff);
-          out.writeByte(0);
-        } else {
-          out.writeByte(this._byteNew);
-        }
-        this._bytePos = 7;
-        this._byteNew = 0;
+  private static category(v: number): number {
+    let n = v < 0 ? -v : v;
+    let bits = 0;
+    while (n > 0) {
+      bits++;
+      n >>>= 1;
+    }
+    return bits;
+  }
+
+  /**
+   * The bits coding a non-zero coefficient of the given category.
+   * @param {number} v - The coefficient.
+   * @param {number} category - The category.
+   * @returns {number} The bit code.
+   */
+  private static bitCode(v: number, category: number): number {
+    return v > 0 ? v : v + (1 << category) - 1;
+  }
+
+  /**
+   * Writes the low **length** bits of **code**, most significant first,
+   * stuffing a 0 after each 0xff byte. At most 7 + 16 bits are held, so this
+   * is safe with 32-bit bitwise operations.
+   * @param {OutputBuffer} out - The output buffer to write to.
+   * @param {number} code - The bits to write.
+   * @param {number} length - The number of bits.
+   */
+  private writeBits(out: OutputBuffer, code: number, length: number): void {
+    this._bitBuffer = (this._bitBuffer << length) | code;
+    this._bitCount += length;
+    while (this._bitCount >= 8) {
+      this._bitCount -= 8;
+      const b = (this._bitBuffer >>> this._bitCount) & 0xff;
+      out.writeByte(b);
+      if (b === 0xff) {
+        out.writeByte(0);
       }
     }
+    this._bitBuffer &= (1 << this._bitCount) - 1;
   }
 
   /**
    * Resets the bit buffer.
    */
   private resetBits(): void {
-    this._byteNew = 0;
-    this._bytePos = 7;
+    this._bitBuffer = 0;
+    this._bitCount = 0;
   }
 
   /**
@@ -902,67 +965,58 @@ export class JpegEncoder implements Encoder {
     cdu: Float32Array,
     fdtbl: Float32Array,
     dc: number,
-    htac: Array<number[] | undefined>,
-    htdc?: Array<number[] | undefined>
+    htac: HuffmanTable,
+    htdc: HuffmanTable
   ): number {
-    const eob = htac[0x00];
-    const m16Zeroes = htac[0xf0];
-    const I16 = 16;
-    const I63 = 63;
-    const I64 = 64;
     const duDct = this.fDCTQuant(cdu, fdtbl);
-    let _dc = dc;
-    let pos = 0;
 
-    // ZigZag reorder
-    for (let j = 0; j < I64; ++j) {
-      this._du[JpegEncoder._zigzag[j]] = duDct[j];
+    const du = this._du;
+    for (let j = 0; j < 64; ++j) {
+      du[JpegEncoder._zigzag[j]] = duDct[j];
     }
 
-    const diff = this._du[0]! - _dc;
-    _dc = this._du[0]!;
-    // Encode DC
+    const diff = du[0] - dc;
+    dc = du[0];
     if (diff === 0) {
-      // Diff might be 0
-      this.writeBits(out, htdc![0]!);
+      this.writeBits(out, htdc.code[0], htdc.length[0]);
     } else {
-      pos = 32767 + diff;
-      this.writeBits(out, htdc![this._category[pos]!]!);
-      this.writeBits(out, this._bitCode[pos]!);
+      const cat = JpegEncoder.category(diff);
+      this.writeBits(out, htdc.code[cat], htdc.length[cat]);
+      this.writeBits(out, JpegEncoder.bitCode(diff, cat), cat);
     }
 
-    // Encode ACs
     let end0pos = 63;
-    for (; end0pos > 0 && this._du[end0pos] === 0; end0pos--);
-    //End0pos = first element in reverse order !=0
+    for (; end0pos > 0 && du[end0pos] === 0; end0pos--);
     if (end0pos === 0) {
-      this.writeBits(out, eob!);
-      return _dc;
+      this.writeBits(out, htac.code[0x00], htac.length[0x00]);
+      return dc;
     }
 
     let i = 1;
     while (i <= end0pos) {
       const startpos = i;
-      for (; this._du[i] === 0 && i <= end0pos; ++i);
+      for (; du[i] === 0 && i <= end0pos; ++i);
       let nrzeroes = i - startpos;
-      if (nrzeroes >= I16) {
+      if (nrzeroes >= 16) {
         const lng = nrzeroes >>> 4;
         for (let nrmarker = 1; nrmarker <= lng; ++nrmarker) {
-          this.writeBits(out, m16Zeroes!);
+          this.writeBits(out, htac.code[0xf0], htac.length[0xf0]);
         }
-        nrzeroes &= 0xf;
+        nrzeroes = nrzeroes & 0xf;
       }
-      pos = 32767 + this._du[i]!;
-      this.writeBits(out, htac[(nrzeroes << 4) + this._category[pos]!]!);
-      this.writeBits(out, this._bitCode[pos]!);
+      const v = du[i];
+      const cat = JpegEncoder.category(v);
+      const rs = (nrzeroes << 4) + cat;
+      this.writeBits(out, htac.code[rs], htac.length[rs]);
+      this.writeBits(out, JpegEncoder.bitCode(v, cat), cat);
       i++;
     }
 
-    if (end0pos !== I63) {
-      this.writeBits(out, eob!);
+    if (end0pos !== 63) {
+      this.writeBits(out, htac.code[0x00], htac.length[0x00]);
     }
 
-    return _dc;
+    return dc;
   }
 
   /**
@@ -1169,13 +1223,22 @@ export class JpegEncoder implements Encoder {
     }
 
     // Do the bit alignment of the EOI marker
-    if (this._bytePos >= 0) {
-      const fillBits = [(1 << (this._bytePos + 1)) - 1, this._bytePos + 1];
-      this.writeBits(fp, fillBits);
-    }
+    const fill = 8 - this._bitCount;
+    this.writeBits(fp, (1 << fill) - 1, fill);
 
     JpegEncoder.writeMarker(fp, JpegMarker.eoi);
 
     return fp.getBytes();
   }
+}
+
+/**
+ * A computed JPEG Huffman table: **code** holds the code for each value and
+ * **length** the number of bits.
+ */
+class HuffmanTable {
+  /** The Huffman codes. */
+  public readonly code = new Int32Array(256);
+  /** The code lengths. */
+  public readonly length = new Uint8Array(256);
 }
