@@ -187,6 +187,39 @@ function filterColumn(
 }
 
 /**
+ * A fast path for RGB(A) uint8 images, computing the same values as the
+ * generic path.
+ * @param {Uint8Array} data - The image pixel data.
+ * @param {number} nc - The number of channels.
+ * @param {number} amount - The amount of grayscale effect.
+ */
+function grayscaleUint8(data: Uint8Array, nc: number, amount: number): void {
+  const a = amount;
+  const n = data.length;
+  if (a === 1) {
+    for (let i = 0; i < n; i += nc) {
+      const l = Math.trunc(
+        0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+      );
+      data[i] = l;
+      data[i + 1] = l;
+      data[i + 2] = l;
+    }
+    return;
+  }
+  const ia = 1 - a;
+  for (let i = 0; i < n; i += nc) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const l = 0.299 * r + 0.587 * g + 0.114 * b;
+    data[i] = Math.trunc(MathUtils.clamp(r * ia + l * a, 0, 255));
+    data[i + 1] = Math.trunc(MathUtils.clamp(g * ia + l * a, 0, 255));
+    data[i + 2] = Math.trunc(MathUtils.clamp(b * ia + l * a, 0, 255));
+  }
+}
+
+/**
  * Interface representing a cache for contrast adjustments.
  */
 interface ContrastCache {
@@ -2492,6 +2525,12 @@ export abstract class Filter {
             p.setBlue(i, l);
           }
         }
+      } else if (
+        opt.mask === undefined &&
+        frame.format === Format.uint8 &&
+        frame.numChannels >= 3
+      ) {
+        grayscaleUint8(frame.toUint8Array(), frame.numChannels, amount);
       } else {
         for (const p of frame) {
           const l = ColorUtils.getLuminanceRgb(p.r, p.g, p.b);

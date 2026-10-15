@@ -18,6 +18,7 @@ import { TrimMode } from './trim-mode.js';
 import { ExpandCanvasPosition } from './expand-canvas-position.js';
 import type { Color } from '../color/color.js';
 import { Format } from '../color/format.js';
+import { bytesPerPixel, copyPixels, reversePixels } from './pixel-bytes.js';
 
 /**
  * Interface for transform options.
@@ -198,6 +199,25 @@ export abstract class Transform {
         MemoryImage.fromResized(frame, frame.height, frame.width, true);
       firstFrame ??= dst;
       const hm1 = frame.height - 1;
+      const k = bytesPerPixel(frame);
+      if (k > 0 && bytesPerPixel(dst) === k) {
+        // dst (x, y) is frame (y, hm1 - x).
+        const rowStep = -frame.width * k;
+        const srcBytes = frame.toUint8Array();
+        const dstBytes = dst.toUint8Array();
+        for (let y = 0; y < dst.height; ++y) {
+          copyPixels(
+            srcBytes,
+            (hm1 * frame.width + y) * k,
+            rowStep,
+            dstBytes,
+            y * dst.width * k,
+            dst.width,
+            k
+          );
+        }
+        continue;
+      }
       for (let y = 0; y < dst.height; ++y) {
         for (let x = 0; x < dst.width; ++x) {
           dst.setPixel(x, y, frame.getPixel(y, hm1 - x));
@@ -220,6 +240,21 @@ export abstract class Transform {
       const dst: MemoryImage =
         firstFrame?.addFrame() ?? MemoryImage.from(frame, true, true);
       firstFrame ??= dst;
+      const k = bytesPerPixel(frame);
+      if (k > 0 && bytesPerPixel(dst) === k) {
+        // dst (x, y) is frame (wm1 - x, hm1 - y): the pixels in reverse order.
+        const n = frame.width * frame.height;
+        copyPixels(
+          frame.toUint8Array(),
+          (n - 1) * k,
+          -k,
+          dst.toUint8Array(),
+          0,
+          n,
+          k
+        );
+        continue;
+      }
       for (let y = 0; y < dst.height; ++y) {
         for (let x = 0; x < dst.width; ++x) {
           dst.setPixel(x, y, frame.getPixel(wm1 - x, hm1 - y));
@@ -242,6 +277,25 @@ export abstract class Transform {
         firstFrame?.addFrame() ??
         MemoryImage.fromResized(frame, frame.height, frame.width, true);
       firstFrame ??= dst;
+      const k = bytesPerPixel(frame);
+      if (k > 0 && bytesPerPixel(dst) === k && frame.width === src.width) {
+        // dst (x, y) is frame (wm1 - y, x).
+        const rowStep = frame.width * k;
+        const srcBytes = frame.toUint8Array();
+        const dstBytes = dst.toUint8Array();
+        for (let y = 0; y < dst.height; ++y) {
+          copyPixels(
+            srcBytes,
+            (wm1 - y) * k,
+            rowStep,
+            dstBytes,
+            y * dst.width * k,
+            dst.width,
+            k
+          );
+        }
+        continue;
+      }
       for (let y = 0; y < dst.height; ++y) {
         for (let x = 0; x < dst.width; ++x) {
           dst.setPixel(x, y, frame.getPixel(wm1 - y, x));
@@ -1392,6 +1446,20 @@ export abstract class Transform {
       const w = frame.width;
       const h = frame.height;
       const h2 = Math.trunc(h / 2);
+      if (frame.data !== undefined) {
+        // Rows are byte aligned, so swapping their bytes works for any format.
+        const bytes = frame.toUint8Array();
+        const stride = frame.data.rowStride;
+        const tmp = new Uint8Array(stride);
+        for (let y = 0, y2 = h - 1; y < h2; ++y, --y2) {
+          const o1 = y * stride;
+          const o2 = y2 * stride;
+          tmp.set(bytes.subarray(o1, o1 + stride));
+          bytes.set(bytes.subarray(o2, o2 + stride), o1);
+          bytes.set(tmp, o2);
+        }
+        continue;
+      }
       if (opt.image.hasPalette) {
         for (let y = 0, y2 = h - 1; y < h2; ++y, --y2) {
           for (let x = 0; x < w; ++x) {
@@ -1443,6 +1511,15 @@ export abstract class Transform {
       const w = frame.width;
       const h = frame.height;
       const w2 = Math.trunc(w / 2);
+      const k = bytesPerPixel(frame);
+      if (k > 0) {
+        const bytes = frame.toUint8Array();
+        const stride = frame.data!.rowStride;
+        for (let y = 0; y < h; ++y) {
+          reversePixels(bytes, y * stride, w, k);
+        }
+        continue;
+      }
       if (opt.image.hasPalette) {
         for (let y = 0; y < h; ++y) {
           for (let x = 0, x2 = w - 1; x < w2; ++x, --x2) {
@@ -1493,6 +1570,12 @@ export abstract class Transform {
       const frame = opt.image.frames[i];
       const w = frame.width;
       const h = frame.height;
+      const k = bytesPerPixel(frame);
+      if (k > 0) {
+        // With tightly packed rows, this reverses the order of all the pixels.
+        reversePixels(frame.toUint8Array(), 0, w * h, k);
+        continue;
+      }
 
       if (frame.hasPalette) {
         // When the height is odd, the middle row (y == y2) is reversed in
