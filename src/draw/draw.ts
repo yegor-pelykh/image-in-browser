@@ -13,6 +13,7 @@ import { ImageUtils } from '../image/image-utils.js';
 import { Pixel } from '../image/pixel.js';
 import { BlendMode } from './blend-mode.js';
 import { CircleQuadrant } from './circle-quadrant.js';
+import { bytesPerPixel } from '../transform/pixel-bytes.js';
 
 /**
  * Type definition for a function that tests a pixel during a flood fill operation.
@@ -974,6 +975,33 @@ export abstract class Draw {
         }
       }
     } else {
+      const k = bytesPerPixel(src);
+      if (
+        k > 0 &&
+        bytesPerPixel(dst) === k &&
+        src.format === dst.format &&
+        src.hasPalette === dst.hasPalette &&
+        dstX >= 0 &&
+        dstY >= 0
+      ) {
+        // Copy the bytes of each pixel.
+        const s = src.toUint8Array();
+        const d = dst.toUint8Array();
+        const srcStride = src.data!.rowStride;
+        const dstStride = dst.data!.rowStride;
+        const w = Math.min(dstW, dw - dstX);
+        for (let y = 0; y < dstH && dstY + y < dh; ++y) {
+          const srcRow = yCache[y] * srcStride;
+          let di = (dstY + y) * dstStride + dstX * k;
+          for (let x = 0; x < w; ++x) {
+            const si = srcRow + xCache[x] * k;
+            for (let c = 0; c < k; ++c) {
+              d[di++] = s[si + c];
+            }
+          }
+        }
+        return;
+      }
       for (let y = 0; y < dstH; ++y) {
         for (let x = 0; x < dstW; ++x) {
           const dx = dstX + x;

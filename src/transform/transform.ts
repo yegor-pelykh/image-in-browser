@@ -19,7 +19,12 @@ import { ExpandCanvasPosition } from './expand-canvas-position.js';
 import type { Color } from '../color/color.js';
 import { Format } from '../color/format.js';
 import { bytesPerPixel, copyPixels, reversePixels } from './pixel-bytes.js';
-import { resizeBytes } from './resize-bytes.js';
+import {
+  canResizeBytes,
+  orientedHeight,
+  orientedWidth,
+  resizeBytes,
+} from './resize-bytes.js';
 
 /**
  * Interface for transform options.
@@ -567,8 +572,21 @@ export abstract class Transform {
           }
         }
       } else {
-        for (const p of dst) {
-          p.set(frame.getPixel(x + p.x, y + p.y));
+        const k = bytesPerPixel(frame);
+        if (k > 0 && bytesPerPixel(dst) === k && dst.format === frame.format) {
+          // Copy the bytes of each row of the crop rectangle.
+          const src = frame.toUint8Array();
+          const out = dst.toUint8Array();
+          const srcStride = frame.data!.rowStride;
+          const rowBytes = width * k;
+          for (let row = 0; row < height; ++row) {
+            const s = (y + row) * srcStride + x * k;
+            out.set(src.subarray(s, s + rowBytes), row * rowBytes);
+          }
+        } else {
+          for (const p of dst) {
+            p.set(frame.getPixel(x + p.x, y + p.y));
+          }
         }
       }
     }
@@ -939,14 +957,28 @@ export abstract class Transform {
       interpolation = Interpolation.nearest;
     }
 
+    // An EXIF orientation is applied while resizing when the byte fast paths
+    // support the image, rather than first baking it into a rotated copy.
+    let orientation = 1;
     if (
       src.exifData.imageIfd.hasOrientation &&
       src.exifData.imageIfd.orientation !== 1
     ) {
-      src = Transform.bakeOrientation({
-        image: src,
-      });
+      const o = src.exifData.imageIfd.orientation!;
+      if (
+        o >= 2 &&
+        o <= 8 &&
+        src.frames.every((f) => canResizeBytes(f, interpolation))
+      ) {
+        orientation = o;
+      } else {
+        src = Transform.bakeOrientation({
+          image: src,
+        });
+      }
     }
+    const srcWidth = orientedWidth(src, orientation);
+    const srcHeight = orientedHeight(src, orientation);
 
     const linear = (
       icc: number,
@@ -966,7 +998,7 @@ export abstract class Transform {
     if (opt.width !== undefined && opt.height !== undefined && maintainAspect) {
       x1 = 0;
       x2 = opt.width;
-      const srcAspect = src.height / src.width;
+      const srcAspect = srcHeight / srcWidth;
       const h = Math.trunc(opt.width * srcAspect);
       const dy = Math.trunc((opt.height - h) / 2);
       y1 = dy;
@@ -974,7 +1006,7 @@ export abstract class Transform {
       if (y1 < 0 || y2 > opt.height) {
         y1 = 0;
         y2 = opt.height;
-        const srcAspect = src.width / src.height;
+        const srcAspect = srcWidth / srcHeight;
         const w = Math.trunc(opt.height * srcAspect);
         const dx = Math.trunc((opt.width - w) / 2);
         x1 = dx;
@@ -986,12 +1018,12 @@ export abstract class Transform {
 
     const height =
       opt.height === undefined || opt.height <= 0
-        ? Math.round(opt.width! * (src.height / src.width))
+        ? Math.round(opt.width! * (srcHeight / srcWidth))
         : opt.height;
 
     const width =
       opt.width === undefined || opt.width <= 0
-        ? Math.round(opt.height! * (src.width / src.height))
+        ? Math.round(opt.height! * (srcWidth / srcHeight))
         : opt.width;
 
     const w = maintainAspect ? x2 - x1 : width;
@@ -1004,17 +1036,19 @@ export abstract class Transform {
       y2 = height;
     }
 
-    if (width === src.width && height === src.height) {
-      return src.clone();
+    if (width === srcWidth && height === srcHeight) {
+      return orientation === 1
+        ? src.clone()
+        : Transform.bakeOrientation({ image: src });
     }
 
     const scaleX = new Int32Array(w);
-    const dx = src.width / w;
+    const dx = srcWidth / w;
     for (let x = 0; x < w; ++x) {
       scaleX[x] = Math.trunc(x * dx);
     }
     const scaleY = new Int32Array(h);
-    const dy = src.height / h;
+    const dy = srcHeight / h;
     for (let y = 0; y < h; ++y) {
       scaleY[y] = Math.trunc(y * dy);
     }
@@ -1028,8 +1062,8 @@ export abstract class Transform {
       firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
-      const dy = frame.height / h;
-      const dx = frame.width / w;
+      const dy = orientedHeight(frame, orientation) / h;
+      const dx = orientedWidth(frame, orientation) / w;
 
       if (maintainAspect && opt.backgroundColor !== undefined) {
         dst.clear(opt.backgroundColor);
@@ -1047,11 +1081,13 @@ export abstract class Transform {
           dx,
           dy,
           scaleX,
-          scaleY
+          scaleY,
+          orientation
         )
       ) {
         continue;
       }
+      // Orientation is only folded in when the fast paths support the image.
 
       if (interpolation === Interpolation.average) {
         const srcPixel = frame.getPixelSafe(0, 0);
@@ -1184,6 +1220,11 @@ export abstract class Transform {
           }
         }
       }
+    }
+
+    if (orientation !== 1) {
+      // As bakeOrientation does.
+      firstFrame!.exifData.imageIfd.orientation = undefined;
     }
 
     return firstFrame!;
@@ -1882,6 +1923,21 @@ export abstract class Transform {
       });
     }
 
+    if (
+      uint8Downscale &&
+      x1 === 0 &&
+      y1 === 0 &&
+      w === width &&
+      h === height &&
+      !(maintainAspect && opt.backgroundColor !== undefined) &&
+      interpolation !== Interpolation.cubic
+    ) {
+      for (const frame of src.frames) {
+        Transform.resizeDownBytes(frame, width, height, interpolation);
+      }
+      return src;
+    }
+
     const scaleX = new Int32Array(w);
     const dx = src.width / w;
     for (let x = 0; x < w; ++x) {
@@ -1994,6 +2050,124 @@ export abstract class Transform {
     }
 
     return src;
+  }
+
+  /**
+   * Downscales a uint8 **frame** in place, computing the same values as the
+   * per-pixel paths of {@link resize}. Every source byte read is at or after
+   * every destination byte already written, so the source is never overwritten
+   * before it's read.
+   *
+   * @param {MemoryImage} frame - The frame to downscale in place.
+   * @param {number} width - The destination width.
+   * @param {number} height - The destination height.
+   * @param {Interpolation} interpolation - The interpolation method.
+   */
+  private static resizeDownBytes(
+    frame: MemoryImage,
+    width: number,
+    height: number,
+    interpolation: Interpolation
+  ): void {
+    const bytes = frame.data!.toUint8Array();
+    const nc = frame.numChannels;
+    const sw = frame.width;
+    const sh = frame.height;
+    const dy = sh / height;
+    const dx = sw / width;
+    let di = 0;
+    switch (interpolation) {
+      case Interpolation.nearest: {
+        const sxs = new Int32Array(width);
+        for (let x = 0; x < width; ++x) {
+          sxs[x] = Math.trunc(x * dx) * nc;
+        }
+        for (let y = 0; y < height; ++y) {
+          const row = Math.trunc(y * dy) * sw * nc;
+          for (let x = 0; x < width; ++x) {
+            const si = row + sxs[x];
+            for (let c = 0; c < nc; ++c) {
+              bytes[di++] = bytes[si + c];
+            }
+          }
+        }
+        break;
+      }
+      case Interpolation.average: {
+        const sums = new Int32Array(nc);
+        for (let y = 0; y < height; ++y) {
+          const ay1 = Math.trunc(y * dy);
+          let ay2 = Math.trunc((y + 1) * dy);
+          if (ay2 === ay1) {
+            ay2++;
+          }
+          for (let x = 0; x < width; ++x) {
+            const ax1 = Math.trunc(x * dx);
+            let ax2 = Math.trunc((x + 1) * dx);
+            if (ax2 === ax1) {
+              ax2++;
+            }
+            for (let c = 0; c < nc; ++c) {
+              sums[c] = 0;
+            }
+            for (let sy = ay1; sy < ay2; ++sy) {
+              for (
+                let si = (sy * sw + ax1) * nc, se = (sy * sw + ax2) * nc;
+                si < se;
+                si += nc
+              ) {
+                for (let c = 0; c < nc; ++c) {
+                  sums[c] += bytes[si + c];
+                }
+              }
+            }
+            const np = (ay2 - ay1) * (ax2 - ax1);
+            for (let c = 0; c < nc; ++c) {
+              // In [0, 255], so getColor's clamp does nothing.
+              bytes[di++] = Math.trunc(sums[c] / np);
+            }
+          }
+        }
+        break;
+      }
+      case Interpolation.linear:
+        // As Image.getPixelLinear: taps past the right or bottom edge use the
+        // center pixel.
+        for (let y = 0; y < height; ++y) {
+          const fy = y * dy;
+          const iy = Math.trunc(fy);
+          const ky = fy - iy;
+          const ny = iy + 1;
+          const r0 = iy * sw;
+          const r1 = ny * sw;
+          for (let x = 0; x < width; ++x) {
+            const fx = x * dx;
+            const ix = Math.trunc(fx);
+            const kx = fx - ix;
+            const nx = ix + 1;
+            const cc = (r0 + ix) * nc;
+            const cn = ny >= sh ? cc : (r1 + ix) * nc;
+            const nc0 = nx >= sw ? cc : (r0 + nx) * nc;
+            const nn = nx >= sw || ny >= sh ? cc : (r1 + nx) * nc;
+            for (let c = 0; c < nc; ++c) {
+              const icc = bytes[cc + c];
+              const inc = bytes[nc0 + c];
+              const icn = bytes[cn + c];
+              const inn = bytes[nn + c];
+              const v =
+                icc +
+                kx * (inc - icc + ky * (icc + inn - icn - inc)) +
+                ky * (icn - icc);
+              bytes[di++] = v < 0 ? 0 : v > 255 ? 255 : Math.trunc(v);
+            }
+          }
+        }
+        break;
+      case Interpolation.cubic:
+        throw new LibError('cubic is not supported');
+    }
+    frame.data!.width = width;
+    frame.data!.height = height;
   }
 
   /**
