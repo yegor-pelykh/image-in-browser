@@ -369,7 +369,7 @@ export class PngDecoder implements Decoder {
 
       for (let x = 0; x < w; ++x) {
         this.readPixel(rowInput, pixel);
-        this.setPixel(pIterRes.value as Pixel, pixel);
+        this.setPixel(pIterRes.value, pixel);
         pIterRes = pIter.next();
       }
     }

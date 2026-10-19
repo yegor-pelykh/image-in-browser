@@ -1,5 +1,4 @@
 /** @format */
-/* eslint-disable no-self-assign */
 
 import { Channel } from '../color/channel.js';
 import type { Color } from '../color/color.js';
@@ -4529,20 +4528,12 @@ export abstract class Filter {
                 p.r = max - p.r;
                 p.g = max - p.g;
                 p.b = max - p.b;
-              } else {
-                p.r = p.r;
-                p.g = p.g;
-                p.b = p.b;
               }
             } else {
               if (p.g < thresholdRange) {
                 p.r = max - p.r;
                 p.g = max - p.g;
                 p.b = max - p.b;
-              } else {
-                p.r = p.r;
-                p.g = p.g;
-                p.b = p.b;
               }
             }
           }

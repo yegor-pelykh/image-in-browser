@@ -219,9 +219,8 @@ export function expectImagesClose(
 ): void {
   expect(b.width).toBe(a.width);
   expect(b.height).toBe(a.height);
-  const it: Iterator<Pixel> = b[Symbol.iterator]();
+  const it: Iterator<Pixel, Pixel> = b[Symbol.iterator]();
   for (const pa of a) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const pb: Pixel | undefined = it.next().value;
     expect(pb).toBeDefined();
     if (pb === undefined) continue;

@@ -1,6 +1,4 @@
 /** @format */
-/* eslint-disable no-multi-assign */
-/* eslint-disable no-param-reassign */
 
 /**
  * @property {number} lit - The literal value of the node.
@@ -107,7 +105,9 @@ export function deflateRaw(
           out,
           pos
         );
-        li = lc = ebits = 0;
+        li = 0;
+        lc = 0;
+        ebits = 0;
         bs = i;
       }
 
@@ -143,7 +143,7 @@ export function deflateRaw(
     pos = _writeBlock(1, lits, li, ebits, data, bs, i - bs, out, pos);
     li = 0;
     lc = 0;
-    li = lc = ebits = 0;
+    ebits = 0;
     bs = i;
   }
   while ((pos & 7) !== 0) pos++;
@@ -176,7 +176,8 @@ function _bestMatch(
   let tl = 0;
   let td = 0;
   const dlim = Math.min(0x7fff, i);
-  while (dif <= dlim && --chain !== 0 && pi !== ci) {
+  let remaining = chain;
+  while (dif <= dlim && --remaining !== 0 && pi !== ci) {
     if (tl === 0 || data[i + tl] === data[i + tl - dif]) {
       let cl = _howLong(data, i, dif);
       if (cl > tl) {
@@ -221,9 +222,9 @@ function _howLong(data: Uint8Array, i: number, dif: number): number {
     return 0;
   const oi = i;
   const l = Math.min(data.length, i + 258);
-  i += 3;
-  while (i < l && data[i] === data[i - dif]) i++;
-  return i - oi;
+  let pos = i + 3;
+  while (pos < l && data[pos] === data[pos - dif]) pos++;
+  return pos - oi;
 }
 
 /**
@@ -262,6 +263,7 @@ function _writeBlock(
   out: Uint8Array,
   pos: number
 ): number {
+  let outPos = pos;
   const putsF = _putsF;
   const putsE = _putsE;
   U.lhst[256]++;
@@ -276,7 +278,7 @@ function _writeBlock(
   const dset = T[7] as number[];
 
   const cstSize =
-    (((pos + 3) & 7) === 0 ? 0 : 8 - ((pos + 3) & 7)) + 32 + (l0 << 3);
+    (((outPos + 3) & 7) === 0 ? 0 : 8 - ((outPos + 3) & 7)) + 32 + (l0 << 3);
   const fxdSize =
     ebits + contSize(U.fltree, U.lhst) + contSize(U.fdtree, U.dhst);
   let dynSize = ebits + contSize(U.ltree, U.lhst) + contSize(U.dtree, U.dhst);
@@ -291,14 +293,14 @@ function _writeBlock(
   for (let j = 0; j < 19; j++) U.ihst[j] = 0;
   const BTYPE =
     cstSize < fxdSize && cstSize < dynSize ? 0 : fxdSize < dynSize ? 1 : 2;
-  putsF(out, pos, BFINAL);
-  putsF(out, pos + 1, BTYPE);
-  pos += 3;
+  putsF(out, outPos, BFINAL);
+  putsF(out, outPos + 1, BTYPE);
+  outPos += 3;
 
-  const opos = pos;
+  const opos = outPos;
   if (BTYPE === 0) {
-    while ((pos & 7) !== 0) pos++;
-    pos = _copyExact(data, o0, l0, out, pos);
+    while ((outPos & 7) !== 0) outPos++;
+    outPos = _copyExact(data, o0, l0, out, outPos);
   } else {
     let ltree: number[] = U.fltree;
     let dtree: number[] = U.fdtree;
@@ -316,18 +318,18 @@ function _writeBlock(
       ltree = U.ltree;
       dtree = U.dtree;
 
-      putsE(out, pos, numl - 257);
-      pos += 5;
-      putsE(out, pos, numd - 1);
-      pos += 5;
-      putsE(out, pos, numh - 4);
-      pos += 4;
+      putsE(out, outPos, numl - 257);
+      outPos += 5;
+      putsE(out, outPos, numd - 1);
+      outPos += 5;
+      putsE(out, outPos, numh - 4);
+      outPos += 4;
 
       for (let i = 0; i < numh; i++)
-        putsE(out, pos + i * 3, U.itree[(U.ordr[i] << 1) + 1]);
-      pos += 3 * numh;
-      pos = _codeTiny(lset, U.itree, out, pos);
-      pos = _codeTiny(dset, U.itree, out, pos);
+        putsE(out, outPos + i * 3, U.itree[(U.ordr[i] << 1) + 1]);
+      outPos += 3 * numh;
+      outPos = _codeTiny(lset, U.itree, out, outPos);
+      outPos = _codeTiny(dset, U.itree, out, outPos);
     }
 
     let off = o0;
@@ -335,26 +337,26 @@ function _writeBlock(
       const qb = lits[si];
       const len = qb >>> 23;
       const end = off + (qb & ((1 << 23) - 1));
-      while (off < end) pos = _writeLit(data[off++], ltree, out, pos);
+      while (off < end) outPos = _writeLit(data[off++], ltree, out, outPos);
 
       if (len !== 0) {
         const qc = lits[si + 1];
         const dst = qc >> 16;
         const lgi = (qc >> 8) & 255;
         const dgi = qc & 255;
-        pos = _writeLit(257 + lgi, ltree, out, pos);
-        putsE(out, pos, len - U.of0[lgi]);
-        pos += U.exb[lgi];
+        outPos = _writeLit(257 + lgi, ltree, out, outPos);
+        putsE(out, outPos, len - U.of0[lgi]);
+        outPos += U.exb[lgi];
 
-        pos = _writeLit(dgi, dtree, out, pos);
-        putsF(out, pos, dst - U.df0[dgi]);
-        pos += U.dxb[dgi];
+        outPos = _writeLit(dgi, dtree, out, outPos);
+        putsF(out, outPos, dst - U.df0[dgi]);
+        outPos += U.dxb[dgi];
         off += len;
       }
     }
-    pos = _writeLit(256, ltree, out, pos);
+    outPos = _writeLit(256, ltree, out, outPos);
   }
-  return pos;
+  return outPos;
 }
 
 /**
@@ -432,17 +434,18 @@ function _codeTiny(
   out: Uint8Array,
   pos: number
 ): number {
+  let outPos = pos;
   for (let i = 0; i < set.length; i += 2) {
     const l = set[i];
     const rst = set[i + 1];
-    pos = _writeLit(l, tree, out, pos);
+    outPos = _writeLit(l, tree, out, outPos);
     const rsl = l === 16 ? 2 : l === 17 ? 3 : 7;
     if (l > 15) {
-      _putsE(out, pos, rst);
-      pos += rsl;
+      _putsE(out, outPos, rst);
+      outPos += rsl;
     }
   }
-  return pos;
+  return outPos;
 }
 
 /**
@@ -640,7 +643,7 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
   const get17 = _get17;
 
   const noBuf = buf === undefined;
-  if (noBuf) buf = new U8((data.length >>> 2) << 3);
+  let out = buf ?? new U8((data.length >>> 2) << 3);
 
   let BFINAL = 0;
   let BTYPE = 0;
@@ -662,13 +665,13 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
       if ((pos & 7) !== 0) pos += 8 - (pos & 7);
       const p8 = (pos >>> 3) + 4;
       const len = data[p8 - 4] | (data[p8 - 3] << 8);
-      if (noBuf) buf = _check(buf!, off + len);
-      buf!.set(new U8(data.buffer, data.byteOffset + p8, len), off);
+      if (noBuf) out = _check(out, off + len);
+      out.set(new U8(data.buffer, data.byteOffset + p8, len), off);
       pos = (p8 + len) << 3;
       off += len;
       continue;
     }
-    if (noBuf) buf = _check(buf!, off + (1 << 17));
+    if (noBuf) out = _check(out, off + (1 << 17));
     if (BTYPE === 1) {
       lmap = U.flmap;
       dmap = U.fdmap;
@@ -716,7 +719,7 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
       pos += code & 15;
       const lit = code >>> 4;
       if (lit >>> 8 === 0) {
-        buf![off++] = lit;
+        out[off++] = lit;
       } else if (lit === 256) {
         break;
       } else {
@@ -734,18 +737,18 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
         const dst = (dbs >>> 4) + bitsF(data, pos, dbs & 15);
         pos += dbs & 15;
 
-        if (noBuf) buf = _check(buf!, off + (1 << 17));
+        if (noBuf) out = _check(out, off + (1 << 17));
         while (off < end) {
-          buf![off] = buf![off++ - dst];
-          buf![off] = buf![off++ - dst];
-          buf![off] = buf![off++ - dst];
-          buf![off] = buf![off++ - dst];
+          out[off] = out[off++ - dst];
+          out[off] = out[off++ - dst];
+          out[off] = out[off++ - dst];
+          out[off] = out[off++ - dst];
         }
         off = end;
       }
     }
   }
-  return buf!.length === off ? buf! : buf!.slice(0, off);
+  return out.length === off ? out : out.slice(0, off);
 }
 
 /**
@@ -782,12 +785,13 @@ function _decodeTiny(
   pos: number,
   tree: number[]
 ): number {
+  let dataPos = pos;
   const bitsE = _bitsE;
   const get17 = _get17;
   let i = 0;
   while (i < len) {
-    const code = lmap[get17(data, pos) & LL];
-    pos += code & 15;
+    const code = lmap[get17(data, dataPos) & LL];
+    dataPos += code & 15;
     const lit = code >>> 4;
     if (lit <= 15) {
       tree[i] = lit;
@@ -796,15 +800,15 @@ function _decodeTiny(
       let ll = 0;
       let n = 0;
       if (lit === 16) {
-        n = 3 + bitsE(data, pos, 2);
-        pos += 2;
+        n = 3 + bitsE(data, dataPos, 2);
+        dataPos += 2;
         ll = tree[i - 1];
       } else if (lit === 17) {
-        n = 3 + bitsE(data, pos, 3);
-        pos += 3;
+        n = 3 + bitsE(data, dataPos, 3);
+        dataPos += 3;
       } else if (lit === 18) {
-        n = 11 + bitsE(data, pos, 7);
-        pos += 7;
+        n = 11 + bitsE(data, dataPos, 7);
+        dataPos += 7;
       }
       const ni = i + n;
       while (i < ni) {
@@ -813,7 +817,7 @@ function _decodeTiny(
       }
     }
   }
-  return pos;
+  return dataPos;
 }
 
 /**
@@ -933,10 +937,10 @@ export function revCodes(tree: number[], MAX_BITS: number): void {
  * @param {number} val - The value to put.
  */
 function _putsE(dt: Uint8Array, pos: number, val: number): void {
-  val <<= pos & 7;
+  const shifted = val << (pos & 7);
   const o = pos >>> 3;
-  dt[o] |= val;
-  dt[o + 1] |= val >>> 8;
+  dt[o] |= shifted;
+  dt[o + 1] |= shifted >>> 8;
 }
 
 /**
@@ -947,11 +951,11 @@ function _putsE(dt: Uint8Array, pos: number, val: number): void {
  * @param {number} val - The value to put.
  */
 function _putsF(dt: Uint8Array, pos: number, val: number): void {
-  val <<= pos & 7;
+  const shifted = val << (pos & 7);
   const o = pos >>> 3;
-  dt[o] |= val;
-  dt[o + 1] |= val >>> 8;
-  dt[o + 2] |= val >>> 16;
+  dt[o] |= shifted;
+  dt[o + 1] |= shifted >>> 8;
+  dt[o + 2] |= shifted >>> 16;
 }
 
 /**
@@ -1085,7 +1089,8 @@ export const U = (() => {
    * @param {number} sv - The value to be pushed.
    */
   function pushV(tgt: number[], n: number, sv: number): void {
-    while (n-- !== 0) tgt.push(0, sv);
+    let remaining = n;
+    while (remaining-- !== 0) tgt.push(0, sv);
   }
 
   for (let i = 0; i < 32; i++) {

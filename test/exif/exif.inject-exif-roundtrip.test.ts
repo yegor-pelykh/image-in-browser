@@ -5,17 +5,15 @@ import { describe, expect, test } from 'vitest';
 import { TestUtils } from '../_utils/test-utils';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
-import { ExifData, IfdAsciiValue, JpegUtils } from '../../src';
+import { ExifData, IfdAsciiValue, IfdValue, JpegUtils } from '../../src';
 
 /**
  * Realistic EXIF tag roundtrip in JPEG files.
  */
 describe('injectExif realistic tags roundtrip', () => {
-  function getAsciiValue(v: unknown): string | undefined {
-    if (v === null || v === undefined) return undefined;
+  function getAsciiValue(v: IfdValue | string | undefined): string | undefined {
+    if (v === undefined) return undefined;
     if (typeof v === 'string') return v;
-    if (v instanceof IfdAsciiValue) return v.toString();
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return v.toString();
   }
 

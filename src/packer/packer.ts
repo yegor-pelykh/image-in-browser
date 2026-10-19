@@ -1,5 +1,4 @@
 /** @format */
-/* eslint-disable no-param-reassign */
 
 import {
   readUshort,
@@ -66,9 +65,10 @@ const crc = {
    * @returns {number} The updated CRC value.
    */
   update: (c: number, buf: Uint8Array, off: number, len: number): number => {
+    let crcValue = c;
     for (let i = 0; i < len; i++)
-      c = crc.table[(c ^ buf[off + i]) & 0xff] ^ (c >>> 8);
-    return c;
+      crcValue = crc.table[(crcValue ^ buf[off + i]) & 0xff] ^ (crcValue >>> 8);
+    return crcValue;
   },
   /**
    * Calculates the CRC value for a given buffer.
@@ -99,36 +99,38 @@ function _readLocal(
   usize: number,
   onlyNames: boolean
 ): void {
+  let offset = o;
   const rUs = readUshort;
   const rUi = readUint;
-  const sign = rUi(data, o);
-  o += 4;
-  const ver = rUs(data, o);
-  o += 2;
-  const gpflg = rUs(data, o);
-  o += 2;
-  const cmpr = rUs(data, o);
-  o += 2;
-  const time = rUi(data, o);
-  o += 4;
-  const crc32 = rUi(data, o);
-  o += 4;
-  o += 8;
+  const sign = rUi(data, offset);
+  offset += 4;
+  const ver = rUs(data, offset);
+  offset += 2;
+  const gpflg = rUs(data, offset);
+  offset += 2;
+  const cmpr = rUs(data, offset);
+  offset += 2;
+  const time = rUi(data, offset);
+  offset += 4;
+  const crc32 = rUi(data, offset);
+  offset += 4;
+  offset += 8;
 
-  const nlen = rUs(data, o);
-  o += 2;
-  const elen = rUs(data, o);
-  o += 2;
+  const nlen = rUs(data, offset);
+  offset += 2;
+  const elen = rUs(data, offset);
+  offset += 2;
 
-  const name = readUTF8(data, o, nlen);
-  o += nlen;
-  o += elen;
+  const name = readUTF8(data, offset, nlen);
+  offset += nlen;
+  offset += elen;
   if (onlyNames) {
     out[name] = { size: usize, csize: csize };
     return;
   }
-  const file = new Uint8Array(data.buffer, o);
-  if (cmpr === 0) out[name] = new Uint8Array(file.buffer.slice(o, o + csize));
+  const file = new Uint8Array(data.buffer, offset);
+  if (cmpr === 0)
+    out[name] = new Uint8Array(file.buffer.slice(offset, offset + csize));
   else if (cmpr === 8) {
     const buf = new Uint8Array(usize);
     inflateRaw(file, buf);
@@ -164,48 +166,49 @@ function _writeHeader(
   t: number,
   roff?: number
 ): number {
+  let offset = o;
   const wUi = writeUint;
   const wUs = writeUshort;
   const file = obj.file;
 
-  wUi(data, o, t === 0 ? 0x04034b50 : 0x02014b50);
-  o += 4;
-  if (t === 1) o += 2;
-  wUs(data, o, 20);
-  o += 2;
-  wUs(data, o, 0);
-  o += 2;
-  wUs(data, o, obj.cpr ? 8 : 0);
-  o += 2;
+  wUi(data, offset, t === 0 ? 0x04034b50 : 0x02014b50);
+  offset += 4;
+  if (t === 1) offset += 2;
+  wUs(data, offset, 20);
+  offset += 2;
+  wUs(data, offset, 0);
+  offset += 2;
+  wUs(data, offset, obj.cpr ? 8 : 0);
+  offset += 2;
 
-  wUi(data, o, 0);
-  o += 4;
-  wUi(data, o, obj.crc);
-  o += 4;
-  wUi(data, o, file.length);
-  o += 4;
-  wUi(data, o, obj.usize);
-  o += 4;
+  wUi(data, offset, 0);
+  offset += 4;
+  wUi(data, offset, obj.crc);
+  offset += 4;
+  wUi(data, offset, file.length);
+  offset += 4;
+  wUi(data, offset, obj.usize);
+  offset += 4;
 
-  wUs(data, o, sizeUTF8(p));
-  o += 2;
-  wUs(data, o, 0);
-  o += 2;
+  wUs(data, offset, sizeUTF8(p));
+  offset += 2;
+  wUs(data, offset, 0);
+  offset += 2;
 
   if (t === 1) {
-    o += 2;
-    o += 2;
-    o += 6;
-    wUi(data, o, roff!);
-    o += 4;
+    offset += 2;
+    offset += 2;
+    offset += 6;
+    wUi(data, offset, roff!);
+    offset += 4;
   }
-  const nlen = writeUTF8(data, o, p);
-  o += nlen;
+  const nlen = writeUTF8(data, offset, p);
+  offset += nlen;
   if (t === 0) {
-    data.set(file, o);
-    o += file.length;
+    data.set(file, offset);
+    offset += file.length;
   }
-  return o;
+  return offset;
 }
 
 /**
@@ -302,9 +305,8 @@ export function parse(
  */
 export function encode(
   obj: Record<string, Uint8Array>,
-  noCmpr?: boolean
+  noCmpr = false
 ): ArrayBuffer {
-  if (noCmpr === undefined) noCmpr = false;
   let tot = 0;
   const wUi = writeUint;
   const wUs = writeUshort;
@@ -368,9 +370,9 @@ export function deflateRaw(
   data: Uint8Array,
   opts?: DeflateOptions
 ): Uint8Array {
-  if (opts === undefined) opts = { level: 6 };
+  const level = opts?.level ?? 6;
   const buf = new Uint8Array(50 + Math.floor(data.length * 1.1));
-  const off = f_deflateRaw(data, buf, 0, opts.level);
+  const off = f_deflateRaw(data, buf, 0, level);
   return new Uint8Array(buf.buffer, 0, off);
 }
 
@@ -382,13 +384,13 @@ export function deflateRaw(
  * @returns {Uint8Array} The compressed data.
  */
 export function deflate(data: Uint8Array, opts?: DeflateOptions): Uint8Array {
-  if (opts === undefined) opts = { level: 6 };
+  const level = opts?.level ?? 6;
   let off = 0;
   const buf = new Uint8Array(50 + Math.floor(data.length * 1.1));
   buf[off] = 120;
   buf[off + 1] = 156;
   off += 2;
-  off = f_deflateRaw(data, buf, off, opts.level);
+  off = f_deflateRaw(data, buf, off, level);
   const crc = _adler(data, 0, data.length);
   buf[off + 0] = (crc >>> 24) & 255;
   buf[off + 1] = (crc >>> 16) & 255;

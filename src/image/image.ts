@@ -1782,17 +1782,16 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
   /**
    * Returns an iterator for the Pixel data.
    *
-   * @returns {Iterator<Pixel>} An iterator for the Pixel data.
+   * @returns {Iterator<Pixel, Pixel>} An iterator for the Pixel data.
    */
-  public [Symbol.iterator](): Iterator<Pixel> {
+  public [Symbol.iterator](): Iterator<Pixel, Pixel> {
     return this._data !== undefined
       ? this._data[Symbol.iterator]()
       : {
-          next: () =>
-            <IteratorResult<Pixel>>{
-              done: true,
-              value: UndefinedPixel,
-            },
+          next: () => ({
+            done: true,
+            value: UndefinedPixel,
+          }),
         };
   }
 }

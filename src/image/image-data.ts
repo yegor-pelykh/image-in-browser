@@ -19,7 +19,7 @@ export interface MemoryImageDataGetBytesOptions {
 /**
  * Interface representing memory image data.
  */
-export interface MemoryImageData extends Iterable<Pixel> {
+export interface MemoryImageData extends Iterable<Pixel, Pixel> {
   /** The width of the image. */
   width: number;
 
