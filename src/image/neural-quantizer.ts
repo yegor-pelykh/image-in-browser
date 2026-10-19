@@ -78,9 +78,7 @@ export class NeuralQuantizer implements Quantizer {
   private static readonly _cacheMask = 0xffff;
 
   /** The cached search keys */
-  private readonly _cacheKeys = new Int32Array(
-    NeuralQuantizer._cacheMask + 1
-  );
+  private readonly _cacheKeys = new Int32Array(NeuralQuantizer._cacheMask + 1);
 
   /** The cached search results */
   private readonly _cacheValues = new Uint16Array(

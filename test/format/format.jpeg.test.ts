@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ColorRgba8,
   ColorUint8,
+  defaultMaxPixels,
   ExifData,
   JpegChroma,
   JpegData,
@@ -17,6 +18,7 @@ import {
   encodeJpg,
   encodePng,
   injectJpgExif,
+  setDefaultMaxPixels,
 } from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
@@ -77,15 +79,15 @@ describe('Format: JPEG', () => {
    * The defaultMaxPixels limit applies to decoders created without one.
    */
   test('defaultMaxPixels', () => {
-    const saved = JpegDecoder.defaultMaxPixels;
-    JpegDecoder.defaultMaxPixels = 64 * 64;
+    const saved = defaultMaxPixels;
+    setDefaultMaxPixels(64 * 64);
     try {
       expect(() => decodeImage({ data: jpgWithSize(65, 64) })).toThrow(
         LibError
       );
       expect(decodeImage({ data: jpgWithSize(64, 64) })?.width).toBe(64);
     } finally {
-      JpegDecoder.defaultMaxPixels = saved;
+      setDefaultMaxPixels(saved);
     }
   });
 
@@ -106,9 +108,9 @@ describe('Format: JPEG', () => {
    */
   test('rejects invalid frame headers', () => {
     expect(() => decodeJpg({ data: jpgWithSize(0, 8) })).toThrow(LibError);
-    expect(() => decodeJpg({ data: jpgWithSize(8, 8, { components: 0 }) })).toThrow(
-      LibError
-    );
+    expect(() =>
+      decodeJpg({ data: jpgWithSize(8, 8, { components: 0 }) })
+    ).toThrow(LibError);
   });
 
   /**

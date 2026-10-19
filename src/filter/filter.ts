@@ -32,10 +32,7 @@ import { DitherScanOrder } from './dither-scan-order.js';
 import { reflectIndex } from './reflect-index.js';
 import { PaletteUint8 } from '../image/palette-uint8.js';
 import { MemoryImageDataFloat32 } from '../image/image-data-float32.js';
-import {
-  filterLinear,
-  linearColor,
-} from '../common/linear-rgb.js';
+import { filterLinear, linearColor } from '../common/linear-rgb.js';
 
 /**
  * A fast path for uint8 images, giving the same result as
@@ -1895,7 +1892,8 @@ export abstract class Filter {
           interpolation: interpolation,
           mask: opt.mask,
           maskChannel: maskChannel,
-        }));
+        })
+      );
     }
 
     const image = opt.image.hasPalette
@@ -2529,25 +2527,23 @@ export abstract class Filter {
    */
   public static ditherImage(opt: DitherImageOptions): MemoryImage {
     // The error is diffused through color values, not palette indices.
-    if (opt.image.hasPalette) {
-      opt = {
-        ...opt,
-        image: opt.image.convert({ numChannels: opt.image.numChannels }),
-      };
+    let image = opt.image;
+    if (image.hasPalette) {
+      image = image.convert({ numChannels: image.numChannels });
     }
-    const quantizer = opt.quantizer ?? new NeuralQuantizer(opt.image);
+    const quantizer = opt.quantizer ?? new NeuralQuantizer(image);
     const kernel = opt.kernel ?? DitherKernel.floydSteinberg;
     const serpentine = opt.serpentine ?? false;
     const scanOrder = opt.scanOrder ?? DitherScanOrder.zigzag;
     const strength = opt.strength ?? 1;
 
     if (kernel === DitherKernel.none) {
-      return quantizer.getIndexImage(opt.image);
+      return quantizer.getIndexImage(image);
     }
 
     if (bayerMatrices.has(kernel)) {
       return this.ditherImageBayer({
-        image: opt.image,
+        image: image,
         quantizer,
         kernel,
         strength,
@@ -2558,8 +2554,8 @@ export abstract class Filter {
 
     const q = quantizer;
     const ds = errorDiffusionKernels.get(kernel)!;
-    const height = opt.image.height;
-    const width = opt.image.width;
+    const height = image.height;
+    const width = image.width;
 
     const palette = quantizer.palette;
     const indexedImage = new MemoryImage({
@@ -2570,12 +2566,12 @@ export abstract class Filter {
     });
 
     const fast =
-      opt.image.format === Format.uint8 &&
-      !opt.image.hasPalette &&
-      opt.image.numChannels >= 3 &&
+      image.format === Format.uint8 &&
+      !image.hasPalette &&
+      image.numChannels >= 3 &&
       palette instanceof PaletteUint8;
-    const nc = opt.image.numChannels;
-    const pixels = fast ? Uint8Array.from(opt.image.toUint8Array()) : undefined;
+    const nc = image.numChannels;
+    const pixels = fast ? Uint8Array.from(image.toUint8Array()) : undefined;
     const indices = indexedImage.toUint8Array();
     const paletteRgb = new Int32Array(fast ? palette.numColors * 3 : 0);
     if (fast) {
@@ -2625,7 +2621,7 @@ export abstract class Filter {
       }
     };
 
-    const imageCopy = fast ? opt.image : opt.image.clone();
+    const imageCopy = fast ? image : image.clone();
 
     // Quantizes the pixel at (x, y) and diffuses its error to the neighbors.
     // direction is the horizontal scan direction (1 or -1) and controls the
@@ -2733,7 +2729,7 @@ export abstract class Filter {
    * Apply the dot screen filter to the image.
    *
    * @param {DotScreenOptions} opt - The options for the dot screen filter.
-   * @param {MemoryImage} opt.image - The image to apply the filter to.
+   * @param {MemoryImage} image - The image to apply the filter to.
    * @param {number} [opt.size=5.75] - The size of the dot pattern. Default is 5.75.
    * @param {number} [opt.amount=1] - The amount of the effect to apply. Default is 1.
    * @param {Channel} [opt.maskChannel=Channel.luminance] - The channel to use as a mask. Default is Channel.luminance.
@@ -3356,8 +3352,7 @@ export abstract class Filter {
     for (const frame of image.frames) {
       const w = frame.width - 1;
       const h = frame.height - 1;
-      const cntX =
-        opt.centerX ?? (w > 0 ? Math.trunc(frame.width / 2) / w : 0);
+      const cntX = opt.centerX ?? (w > 0 ? Math.trunc(frame.width / 2) / w : 0);
       const cntY =
         opt.centerY ?? (h > 0 ? Math.trunc(frame.height / 2) / h : 0);
       scratch = copyFrameReusing(frame, scratch);
@@ -3899,7 +3894,8 @@ export abstract class Filter {
           amount: amount,
           mask: opt.mask,
           maskChannel: maskChannel,
-        }));
+        })
+      );
     }
 
     const image = opt.image.hasPalette
@@ -3956,8 +3952,7 @@ export abstract class Filter {
             }
             for (const p of frame) {
               const si =
-                (Math.trunc(p.y / opt.size) * bw +
-                  Math.trunc(p.x / opt.size)) *
+                (Math.trunc(p.y / opt.size) * bw + Math.trunc(p.x / opt.size)) *
                 4;
               const msk = opt.mask
                 ?.getPixel(p.x, p.y)
@@ -4212,7 +4207,8 @@ export abstract class Filter {
           kernel: opt.kernel,
           mask: opt.mask,
           maskChannel: maskChannel,
-        }));
+        })
+      );
     }
 
     const image = opt.image.hasPalette
@@ -4224,8 +4220,7 @@ export abstract class Filter {
     for (const frame of image.frames) {
       if (
         opt.mask === undefined &&
-        (convolveUint8(frame, opt.kernel) ||
-          convolveFloat32(frame, opt.kernel))
+        (convolveUint8(frame, opt.kernel) || convolveFloat32(frame, opt.kernel))
       ) {
         continue;
       }
@@ -4388,7 +4383,8 @@ export abstract class Filter {
           weight: opt.weight,
           mask: opt.mask,
           maskChannel: maskChannel,
-        }));
+        })
+      );
     }
 
     const filter = [1, 1, 1, 1, opt.weight, 1, 1, 1, 1];
@@ -4607,7 +4603,8 @@ export abstract class Filter {
           interpolation: interpolation,
           mask: opt.mask,
           maskChannel: maskChannel,
-        }));
+        })
+      );
     }
 
     const image = opt.image.hasPalette
@@ -4698,7 +4695,8 @@ export abstract class Filter {
           color: linearColor(opt.color),
           mask: opt.mask,
           maskChannel: maskChannel,
-        }));
+        })
+      );
     }
 
     const image = opt.image.hasPalette

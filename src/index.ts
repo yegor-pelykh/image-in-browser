@@ -383,7 +383,12 @@ export {
 export { BmpDecoder } from './formats/bmp-decoder.js';
 export { BmpEncoder } from './formats/bmp-encoder.js';
 export { DecodeInfo } from './formats/decode-info.js';
-export { Decoder, DecoderDecodeOptions } from './formats/decoder.js';
+export {
+  Decoder,
+  DecoderDecodeOptions,
+  defaultMaxPixels,
+  setDefaultMaxPixels,
+} from './formats/decoder.js';
 export { DibDecoder } from './formats/dib-decoder.js';
 export { Encoder, EncoderEncodeOptions } from './formats/encoder.js';
 export { GifDecoder } from './formats/gif-decoder.js';

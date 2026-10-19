@@ -333,6 +333,7 @@ function linearRow(
   kxs: Float64Array,
   ky: number
 ): void {
+  let d = di;
   for (let x = 0; x < w; ++x) {
     const i0 = row0 + ixs[x];
     const n0 = row0 + nxs[x];
@@ -344,7 +345,7 @@ function linearRow(
       const inc = src[n0 + c];
       const icn = src[i1 + c];
       const inn = src[n1 + c];
-      out[di++] = Math.trunc(
+      out[d++] = Math.trunc(
         icc + kx * (inc - icc + ky * (icc + inn - icn - inc)) + ky * (icn - icc)
       );
     }
@@ -436,9 +437,10 @@ function sumRow(
   nc: number,
   sums: Int32Array
 ): void {
-  for (let i = 0; i < n; ++i, si += step) {
+  let s = si;
+  for (let i = 0; i < n; ++i, s += step) {
     for (let c = 0; c < nc; ++c) {
-      sums[c] += src[si + c];
+      sums[c] += src[s + c];
     }
   }
 }

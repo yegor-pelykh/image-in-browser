@@ -82,9 +82,11 @@ export function copyPixels(
   n: number,
   k: number
 ): void {
-  for (let x = 0; x < n; ++x, si += srcStep) {
+  let s = si;
+  let d = di;
+  for (let x = 0; x < n; ++x, s += srcStep) {
     for (let c = 0; c < k; ++c) {
-      dst[di++] = src[si + c];
+      dst[d++] = src[s + c];
     }
   }
 }

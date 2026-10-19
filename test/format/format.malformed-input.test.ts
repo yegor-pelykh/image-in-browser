@@ -66,12 +66,18 @@ function animation(
  * A JPEG holding an APP1 EXIF segment with the given TIFF structure.
  */
 function jpegWithExif(tiff: number[]): Uint8Array {
-  const app1 = [...[...'Exif'].map((c) => c.charCodeAt(0)), 0, 0, ...tiff];
+  const app1 = [...Array.from('Exif', (c) => c.charCodeAt(0)), 0, 0, ...tiff];
   const length = app1.length + 2;
   return new Uint8Array([
-    0xff, 0xd8, //
-    0xff, 0xe1, length >> 8, length & 0xff, ...app1,
-    0xff, 0xd9,
+    0xff,
+    0xd8,
+    0xff,
+    0xe1,
+    length >> 8,
+    length & 0xff,
+    ...app1,
+    0xff,
+    0xd9,
   ]);
 }
 
@@ -83,9 +89,13 @@ describe('Format: malformed input', () => {
     test('EXIF IFDs that form a cycle', () => {
       // Two empty IFDs that point at each other.
       const jpeg = jpegWithExif([
-        0x49, 0x49, 0x2a, 0x00, 8, 0, 0, 0, // little endian, first IFD at 8
-        0, 0, 14, 0, 0, 0, // 0 entries, next IFD at 14
-        0, 0, 8, 0, 0, 0, // 0 entries, next IFD at 8
+        0x49, 0x49, 0x2a, 0x00, 8, 0, 0,
+        // little endian, first IFD at 8
+        0, 0, 0, 14, 0, 0,
+        // 0 entries, next IFD at 14
+        0, 0, 0, 8, 0, 0,
+        // 0 entries, next IFD at 8
+        0,
       ]);
       const exif = decodeJpgExif({ data: jpeg });
       expect(exif).toBeDefined();
@@ -124,7 +134,7 @@ describe('Format: malformed input', () => {
       encodeIco({ image: small }),
       encodePvr({ image: small }),
       new Uint8Array([0x76, 0x2f, 0x31, 0x01, 2]),
-      new Uint8Array([...'8BPS'].map((c) => c.charCodeAt(0))),
+      new Uint8Array(Array.from('8BPS', (c) => c.charCodeAt(0))),
     ];
     const decoders = [
       () => new JpegDecoder(),
@@ -208,14 +218,17 @@ describe('Format: malformed input', () => {
   });
 
   test('TIFF tag with a huge count', () => {
-    const tiff = encodeTiff({ image: new MemoryImage({ width: 2, height: 2 }) });
+    const tiff = encodeTiff({
+      image: new MemoryImage({ width: 2, height: 2 }),
+    });
     const littleEndian = tiff[0] !== 0x4d;
     const data = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
     const ifd = data.getUint32(4, littleEndian);
     for (let i = 0; i < data.getUint16(ifd, littleEndian); ++i) {
       const entry = ifd + 2 + i * 12;
       if (data.getUint16(entry, littleEndian) === 273) {
-        data.setUint32(entry + 4, 0x7fffffff, littleEndian); // StripOffsets count
+        // StripOffsets count
+        data.setUint32(entry + 4, 0x7fffffff, littleEndian);
       }
     }
     expect(decodeTiff({ data: tiff })).toBeUndefined();
@@ -232,7 +245,8 @@ describe('Format: malformed input', () => {
     const bytes = new Uint8Array([
       ...jpeg.subarray(0, sos),
       ...Array.from({ length: 1001 }, () => scan).flatMap((s) => [...s]),
-      0xff, 0xd9, //
+      0xff,
+      0xd9,
     ]);
     expect(() => decodeJpg({ data: bytes })).toThrow(LibError);
   });
@@ -240,7 +254,11 @@ describe('Format: malformed input', () => {
   describe('decompression limits', () => {
     test('ICC profile', () => {
       const deflated = deflate(new Uint8Array(64 << 20));
-      const icc = new IccProfile('icc', IccProfileCompression.deflate, deflated);
+      const icc = new IccProfile(
+        'icc',
+        IccProfileCompression.deflate,
+        deflated
+      );
       expect(icc.decompressed().length).toBe(16 << 20);
     });
 
@@ -252,7 +270,11 @@ describe('Format: malformed input', () => {
       const littleEndian = tiff[0] !== 0x4d;
       const bomb = deflate(new Uint8Array(64 << 20));
       const bytes = new Uint8Array([...tiff, ...bomb]);
-      const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const data = new DataView(
+        bytes.buffer,
+        bytes.byteOffset,
+        bytes.byteLength
+      );
       const ifd = data.getUint32(4, littleEndian);
       let patched = 0;
       for (let i = 0; i < data.getUint16(ifd, littleEndian); ++i) {
@@ -262,7 +284,8 @@ describe('Format: malformed input', () => {
           patched++;
         }
         if (tag === 259) {
-          data.setUint16(entry + 8, 8, littleEndian); // deflate
+          // deflate
+          data.setUint16(entry + 8, 8, littleEndian);
         } else if (tag === 273) {
           data.setUint32(entry + 8, tiff.length, littleEndian);
         } else if (tag === 279) {
@@ -283,7 +306,11 @@ describe('Format: malformed input', () => {
       gif.maxPixels = 1000;
       const webp = new WebPDecoder();
       webp.maxPixels = 1000;
-      const files: [string, Uint8Array, { decode: (o: { bytes: Uint8Array }) => unknown }][] = [
+      const files: [
+        string,
+        Uint8Array,
+        { decode: (o: { bytes: Uint8Array }) => unknown },
+      ][] = [
         ['png', encodePng({ image: small }), new PngDecoder(1000)],
         ['gif', encodeGif({ image: small }), gif],
         ['webp', encodeWebP({ image: small }), webp],
@@ -308,7 +335,9 @@ describe('Format: malformed input', () => {
         );
         expect(() =>
           decodeImage({
-            data: encodePng({ image: new MemoryImage({ width: 65, height: 64 }) }),
+            data: encodePng({
+              image: new MemoryImage({ width: 65, height: 64 }),
+            }),
           })
         ).toThrow(LibError);
       } finally {
@@ -317,7 +346,9 @@ describe('Format: malformed input', () => {
     });
 
     test('PNG declaring a huge size', () => {
-      const png = encodePng({ image: new MemoryImage({ width: 1, height: 1 }) });
+      const png = encodePng({
+        image: new MemoryImage({ width: 1, height: 1 }),
+      });
       // IHDR data starts at 16: width, height, then the CRC at 29.
       const data = new DataView(png.buffer, png.byteOffset, png.byteLength);
       data.setUint32(16, 100000);
@@ -330,8 +361,11 @@ describe('Format: malformed input', () => {
     });
 
     test('GIF declaring a huge canvas', () => {
-      const gif = encodeGif({ image: new MemoryImage({ width: 1, height: 1 }) });
-      gif.fill(0xff, 6, 10); // screen width and height
+      const gif = encodeGif({
+        image: new MemoryImage({ width: 1, height: 1 }),
+      });
+      // screen width and height
+      gif.fill(0xff, 6, 10);
       expect(() => decodeGif({ data: gif })).toThrow(LibError);
     });
 
@@ -342,7 +376,11 @@ describe('Format: malformed input', () => {
       gif.maxPixels = 250;
       const webp = new WebPDecoder();
       webp.maxPixels = 250;
-      const files: [string, Uint8Array, { decode: (o: { bytes: Uint8Array; frameIndex?: number }) => unknown }][] = [
+      const files: [
+        string,
+        Uint8Array,
+        { decode: (o: { bytes: Uint8Array; frameIndex?: number }) => unknown },
+      ][] = [
         ['gif', encodeGif({ image: anim }), gif],
         ['png', encodePng({ image: anim }), new PngDecoder(250)],
         ['webp', encodeWebP({ image: anim }), webp],
@@ -358,39 +396,58 @@ describe('Format: malformed input', () => {
     test('PSD declaring a huge size', () => {
       const psd = new Uint8Array(26 + 12 + 2);
       const data = new DataView(psd.buffer);
-      data.setUint32(0, 0x38425053); // 8BPS
-      data.setUint16(4, 1); // version
-      data.setUint16(12, 3); // channels
-      data.setUint32(14, 30000); // height
-      data.setUint32(18, 30000); // width
-      data.setUint16(22, 8); // depth
-      data.setUint16(24, 3); // RGB
+      // 8BPS
+      data.setUint32(0, 0x38425053);
+      // version
+      data.setUint16(4, 1);
+      // channels
+      data.setUint16(12, 3);
+      // height
+      data.setUint32(14, 30000);
+      // width
+      data.setUint32(18, 30000);
+      // depth
+      data.setUint16(22, 8);
+      // RGB
+      data.setUint16(24, 3);
       expect(() => decodePsd({ data: psd })).toThrow(LibError);
     });
 
     test('PSD with large planes and no data', () => {
       const psd = new Uint8Array(26 + 4 + 4 + 12 + 2);
       const data = new DataView(psd.buffer);
-      data.setUint32(0, 0x38425053); // 8BPS
-      data.setUint16(4, 1); // version
-      data.setUint16(12, 4); // channels
-      data.setUint32(14, 8000); // height
-      data.setUint32(18, 8000); // width
-      data.setUint16(22, 8); // depth
-      data.setUint16(24, 3); // RGB
-      data.setUint32(34, 8); // empty layer and mask sections
+      // 8BPS
+      data.setUint32(0, 0x38425053);
+      // version
+      data.setUint16(4, 1);
+      // channels
+      data.setUint16(12, 4);
+      // height
+      data.setUint32(14, 8000);
+      // width
+      data.setUint32(18, 8000);
+      // depth
+      data.setUint16(22, 8);
+      // RGB
+      data.setUint16(24, 3);
+      // empty layer and mask sections
+      data.setUint32(34, 8);
       expect(() => decodePsd({ data: psd })).toThrow(LibError);
     });
 
     test('BMP with a negative width', () => {
-      const bmp = encodeBmp({ image: new MemoryImage({ width: 2, height: 2 }) });
+      const bmp = encodeBmp({
+        image: new MemoryImage({ width: 2, height: 2 }),
+      });
       const data = new DataView(bmp.buffer, bmp.byteOffset, bmp.byteLength);
       data.setInt32(18, -2147483648, true);
       expect(decodeBmp({ data: bmp })).toBeUndefined();
     });
 
     test('BMP with too little data for its size', () => {
-      const bmp = encodeBmp({ image: new MemoryImage({ width: 2, height: 2 }) });
+      const bmp = encodeBmp({
+        image: new MemoryImage({ width: 2, height: 2 }),
+      });
       const data = new DataView(bmp.buffer, bmp.byteOffset, bmp.byteLength);
       data.setInt32(22, 10000, true);
       expect(() => decodeBmp({ data: bmp })).toThrow(LibError);
@@ -398,14 +455,14 @@ describe('Format: malformed input', () => {
 
     test('PNM with a negative size', () => {
       const pnm = new Uint8Array(
-        [...'P1\n-2 -2\n0 1 0 1\n'].map((c) => c.charCodeAt(0))
+        Array.from('P1\n-2 -2\n0 1 0 1\n', (c) => c.charCodeAt(0))
       );
       expect(decodePnm({ data: pnm })).toBeUndefined();
     });
 
     test('PNM with too little data for its size', () => {
       const pnm = new Uint8Array(
-        [...'P1\n10000 10000\n0 1 0 1\n'].map((c) => c.charCodeAt(0))
+        Array.from('P1\n10000 10000\n0 1 0 1\n', (c) => c.charCodeAt(0))
       );
       expect(() => decodePnm({ data: pnm })).toThrow(LibError);
     });

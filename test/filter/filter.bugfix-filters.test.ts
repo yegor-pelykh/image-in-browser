@@ -99,7 +99,9 @@ describe('Filter bug fixes', () => {
     // b is a shifted right by 3 and down by 2 pixels.
     const b = new MemoryImage({ width: 64, height: 48 });
     for (const p of b) {
-      p.set(a.getPixel(((p.x - 3) % 64 + 64) % 64, ((p.y - 2) % 48 + 48) % 48));
+      p.set(
+        a.getPixel((((p.x - 3) % 64) + 64) % 64, (((p.y - 2) % 48) + 48) % 48)
+      );
     }
     const ha = Filter.hexagonPixelate({
       image: a.clone(),

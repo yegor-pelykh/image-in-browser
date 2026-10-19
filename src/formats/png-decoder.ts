@@ -25,6 +25,7 @@ import { IccProfileCompression } from '../image/icc-profile-compression.js';
 import { Draw } from '../draw/draw.js';
 import { BlendMode } from '../draw/blend-mode.js';
 import { PngFilterType } from './png/png-filter-type.js';
+import { InvalidPngData } from './png/invalid-png-data.js';
 import { Pixel } from '../image/pixel.js';
 import { ImageFormat } from './image-format.js';
 import { Rectangle } from '../common/rectangle.js';
@@ -152,27 +153,27 @@ export class PngDecoder implements Decoder {
         break;
       case PngFilterType.sub:
         for (let x = bpp; x < rowBytes; ++x) {
-          row[x] = row[x] + row[x - bpp];
+          row[x] += row[x - bpp];
         }
         break;
       case PngFilterType.up:
         if (prevRow !== undefined) {
           for (let x = 0; x < rowBytes; ++x) {
-            row[x] = row[x] + prevRow[x];
+            row[x] += prevRow[x];
           }
         }
         break;
       case PngFilterType.average:
         if (prevRow === undefined) {
           for (let x = bpp; x < rowBytes; ++x) {
-            row[x] = row[x] + (row[x - bpp] >> 1);
+            row[x] += row[x - bpp] >> 1;
           }
         } else {
           for (let x = 0; x < n; ++x) {
-            row[x] = row[x] + (prevRow[x] >> 1);
+            row[x] += prevRow[x] >> 1;
           }
           for (let x = bpp; x < rowBytes; ++x) {
-            row[x] = row[x] + ((row[x - bpp] + prevRow[x]) >> 1);
+            row[x] += (row[x - bpp] + prevRow[x]) >> 1;
           }
         }
         break;
@@ -180,12 +181,12 @@ export class PngDecoder implements Decoder {
         if (prevRow === undefined) {
           // With no previous row, the predictor is always the left byte.
           for (let x = bpp; x < rowBytes; ++x) {
-            row[x] = row[x] + row[x - bpp];
+            row[x] += row[x - bpp];
           }
         } else {
           // With no left byte, the predictor is always the byte above.
           for (let x = 0; x < n; ++x) {
-            row[x] = row[x] + prevRow[x];
+            row[x] += prevRow[x];
           }
           for (let x = bpp; x < rowBytes; ++x) {
             const a = row[x - bpp];
@@ -203,7 +204,7 @@ export class PngDecoder implements Decoder {
             if (pc < 0) {
               pc = -pc;
             }
-            row[x] = row[x] + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
+            row[x] += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
           }
         }
         break;
@@ -1157,11 +1158,56 @@ export class PngDecoder implements Decoder {
     this._progressY = 0;
     try {
       if (this._info.interlaceMethod !== 0) {
-        this.processPass(input, image, 0, 0, 8, 8, (w + 7) >>> 3, (h + 7) >>> 3);
-        this.processPass(input, image, 4, 0, 8, 8, (w + 3) >>> 3, (h + 7) >>> 3);
-        this.processPass(input, image, 0, 4, 4, 8, (w + 3) >>> 2, (h + 3) >>> 3);
-        this.processPass(input, image, 2, 0, 4, 4, (w + 1) >>> 2, (h + 3) >>> 2);
-        this.processPass(input, image, 0, 2, 2, 4, (w + 1) >>> 1, (h + 1) >>> 2);
+        this.processPass(
+          input,
+          image,
+          0,
+          0,
+          8,
+          8,
+          (w + 7) >>> 3,
+          (h + 7) >>> 3
+        );
+        this.processPass(
+          input,
+          image,
+          4,
+          0,
+          8,
+          8,
+          (w + 3) >>> 3,
+          (h + 7) >>> 3
+        );
+        this.processPass(
+          input,
+          image,
+          0,
+          4,
+          4,
+          8,
+          (w + 3) >>> 2,
+          (h + 3) >>> 3
+        );
+        this.processPass(
+          input,
+          image,
+          2,
+          0,
+          4,
+          4,
+          (w + 1) >>> 2,
+          (h + 3) >>> 2
+        );
+        this.processPass(
+          input,
+          image,
+          0,
+          2,
+          2,
+          4,
+          (w + 1) >>> 1,
+          (h + 1) >>> 2
+        );
         this.processPass(input, image, 1, 0, 2, 2, w >>> 1, (h + 1) >>> 1);
         this.processPass(input, image, 0, 1, 1, 2, w, h >>> 1);
       } else {
@@ -1297,9 +1343,9 @@ export class PngDecoder implements Decoder {
 }
 
 /**
- * Thrown when the decompressed image data ends before the last row.
+ * The number of PNG filter types.
  */
-class InvalidPngData extends Error {}
+const pngFilterTypeCount = PngFilterType.paeth + 1;
 
 /**
  * Validates a PNG filter type byte.
@@ -1308,8 +1354,8 @@ class InvalidPngData extends Error {}
  * @throws {InvalidPngData} If the filter type is invalid.
  */
 function pngFilterType(b: number): PngFilterType {
-  if (b < 0 || b > PngFilterType.paeth) {
+  if (b < 0 || b >= pngFilterTypeCount) {
     throw new InvalidPngData();
   }
-  return b as PngFilterType;
+  return b;
 }

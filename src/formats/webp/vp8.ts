@@ -665,11 +665,11 @@ export class VP8 {
           yuv[VP8.uOffset + j * VP8.bps - 1] = 129;
           yuv[VP8.vOffset + j * VP8.bps - 1] = 129;
         }
-        if (mbY > 0)
-          yuv[VP8.yOffset - 1 - VP8.bps] =
-            yuv[VP8.uOffset - 1 - VP8.bps] =
-            yuv[VP8.vOffset - 1 - VP8.bps] =
-              129;
+        if (mbY > 0) {
+          yuv[VP8.yOffset - 1 - VP8.bps] = 129;
+          yuv[VP8.uOffset - 1 - VP8.bps] = 129;
+          yuv[VP8.vOffset - 1 - VP8.bps] = 129;
+        }
       }
       const topYuv = this._yuvT[mbX];
       const coeffs = block.coeffs;

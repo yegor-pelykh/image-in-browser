@@ -1685,8 +1685,7 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
           const nr = Math.floor(op.rNormalized * 255);
           const ng = Math.floor(op.gNormalized * 255);
           const nb = Math.floor(op.bNormalized * 255);
-          const na =
-            pal.numChannels > 3 ? Math.floor(op.aNormalized * 255) : 0;
+          const na = pal.numChannels > 3 ? Math.floor(op.aNormalized * 255) : 0;
           const h = ColorUtils.rgbaToUint32(nr, ng, nb, na);
           if (usedColors.has(h)) {
             np.index = usedColors.get(h)!;

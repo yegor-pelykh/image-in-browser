@@ -20,6 +20,7 @@ import { HuffmanNode } from './huffman-node.js';
 import { HuffmanValue } from './huffman-value.js';
 import { HuffmanParent } from './huffman-parent.js';
 import { huffmanLookup } from './huffman-lookup.js';
+import { RestartDecode } from './restart-decode.js';
 import { IccProfile } from '../../image/icc-profile.js';
 import { IccProfileCompression } from '../../image/icc-profile-compression.js';
 
@@ -1305,9 +1306,3 @@ export class JpegData {
     scan.decode();
   }
 }
-
-/**
- * Thrown when an image being decoded a band at a time can't be: it's then
- * decoded fully.
- */
-class RestartDecode extends Error {}

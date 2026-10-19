@@ -71,7 +71,14 @@ function buildGif(
   }
   for (const f of frames) {
     const t = f.transparent;
-    out.push(0x21, 0xf9, 4, (f.disposal << 2) | (t !== undefined ? 1 : 0), 0, 0);
+    out.push(
+      0x21,
+      0xf9,
+      4,
+      (f.disposal << 2) | (t !== undefined ? 1 : 0),
+      0,
+      0
+    );
     out.push(t ?? 0, 0);
     // Image descriptor, no local color table.
     out.push(0x2c);
@@ -191,7 +198,9 @@ describe('Format: bug fixes', () => {
 
   describe('psd', () => {
     test('startDecode returns undefined for non-PSD data', () => {
-      const png = encodePng({ image: new MemoryImage({ width: 8, height: 8 }) });
+      const png = encodePng({
+        image: new MemoryImage({ width: 8, height: 8 }),
+      });
       const decoder = new PsdDecoder();
       expect(decoder.isValidFile(png)).toBe(false);
       expect(decoder.startDecode(png)).toBeUndefined();
@@ -232,9 +241,33 @@ describe('Format: bug fixes', () => {
   describe('gif animation', () => {
     test('first frame is placed on the logical screen and disposal 2 clears only the frame area', () => {
       const gif = buildGif(4, 4, [
-        { x: 1, y: 1, width: 2, height: 2, disposal: 2, transparent: 0, pixels: [1, 1, 1, 1] },
-        { x: 0, y: 0, width: 1, height: 1, disposal: 1, transparent: 0, pixels: [2] },
-        { x: 3, y: 3, width: 1, height: 1, disposal: 0, transparent: 0, pixels: [3] },
+        {
+          x: 1,
+          y: 1,
+          width: 2,
+          height: 2,
+          disposal: 2,
+          transparent: 0,
+          pixels: [1, 1, 1, 1],
+        },
+        {
+          x: 0,
+          y: 0,
+          width: 1,
+          height: 1,
+          disposal: 1,
+          transparent: 0,
+          pixels: [2],
+        },
+        {
+          x: 3,
+          y: 3,
+          width: 1,
+          height: 1,
+          disposal: 0,
+          transparent: 0,
+          pixels: [3],
+        },
       ]);
       const anim = decodeGif({ data: gif });
       expect(anim).toBeDefined();
@@ -271,8 +304,24 @@ describe('Format: bug fixes', () => {
       // the cleared area, and frame 2 must still see frame 1.
       const gif = buildGif(2, 1, [
         { x: 0, y: 0, width: 2, height: 1, disposal: 1, pixels: [1, 1] },
-        { x: 0, y: 0, width: 1, height: 1, disposal: 2, transparent: 0, pixels: [2] },
-        { x: 1, y: 0, width: 1, height: 1, disposal: 1, transparent: 0, pixels: [3] },
+        {
+          x: 0,
+          y: 0,
+          width: 1,
+          height: 1,
+          disposal: 2,
+          transparent: 0,
+          pixels: [2],
+        },
+        {
+          x: 1,
+          y: 0,
+          width: 1,
+          height: 1,
+          disposal: 1,
+          transparent: 0,
+          pixels: [3],
+        },
       ]);
       const anim = decodeGif({ data: gif });
       expect(anim).toBeDefined();
@@ -293,7 +342,14 @@ describe('Format: bug fixes', () => {
 
     test('disposal 3 restores the previous canvas', () => {
       const gif = buildGif(4, 4, [
-        { x: 0, y: 0, width: 4, height: 4, disposal: 1, pixels: Array(16).fill(1) },
+        {
+          x: 0,
+          y: 0,
+          width: 4,
+          height: 4,
+          disposal: 1,
+          pixels: Array<number>(16).fill(1),
+        },
         { x: 1, y: 1, width: 1, height: 1, disposal: 3, pixels: [2] },
         { x: 2, y: 2, width: 1, height: 1, disposal: 0, pixels: [3] },
       ]);

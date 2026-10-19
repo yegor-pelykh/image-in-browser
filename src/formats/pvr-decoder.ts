@@ -519,7 +519,7 @@ export class PvrDecoder implements Decoder {
     // Header
     input.skip(PvrDecoder.pvrHeaderSize);
 
-    const info = this._info as Pvr3Info;
+    const info = this._info;
 
     input.skip(info.metadataSize);
 

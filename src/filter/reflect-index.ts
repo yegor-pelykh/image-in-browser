@@ -8,11 +8,12 @@
  * @returns {number} The reflected index.
  */
 export function reflectIndex(max: number, x: number): number {
-  if (x < 0) {
-    x = -x;
+  let v = x;
+  if (v < 0) {
+    v = -v;
   }
-  if (x >= max) {
-    x = max - (x - max) - 1;
+  if (v >= max) {
+    v = max - (v - max) - 1;
   }
-  return x < 0 ? 0 : x >= max ? max - 1 : x;
+  return v < 0 ? 0 : v >= max ? max - 1 : v;
 }

@@ -1,7 +1,14 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { ColorRgb8, decodePng, encodePng, Filter, Format, MemoryImage } from '../../src';
+import {
+  ColorRgb8,
+  decodePng,
+  encodePng,
+  Filter,
+  Format,
+  MemoryImage,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';

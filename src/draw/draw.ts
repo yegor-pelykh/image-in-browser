@@ -737,7 +737,8 @@ export abstract class Draw {
       if (compareAlpha) {
         lab.push(a);
       }
-      return (x, y) => !Draw.testPixelLabColorDistance(src, x, y, lab, threshold);
+      return (x, y) =>
+        !Draw.testPixelLabColorDistance(src, x, y, lab, threshold);
     }
     let p: Pixel | undefined = undefined;
     if (compareAlpha) {
@@ -2547,7 +2548,7 @@ export abstract class Draw {
         p.r = MathUtils.mix(p.r, opt.color.r, am);
         p.g = MathUtils.mix(p.g, opt.color.g, am);
         p.b = MathUtils.mix(p.b, opt.color.b, am);
-        p.a = p.a + (p.maxChannelValue - p.a) * am;
+        p.a += (p.maxChannelValue - p.a) * am;
       }
     }
 

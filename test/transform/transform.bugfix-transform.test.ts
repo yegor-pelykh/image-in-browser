@@ -5,8 +5,7 @@ import { ColorRgba8, Interpolation, MemoryImage, Transform } from '../../src';
 
 describe('Transform bug fixes', () => {
   for (const interp of [Interpolation.nearest, Interpolation.linear]) {
-    const name =
-      `copyResizeCropSquare with a radius keeps all frames (${interp})`;
+    const name = `copyResizeCropSquare with a radius keeps all frames (${interp})`;
     test(name, () => {
       const anim = new MemoryImage({ width: 20, height: 10, numChannels: 4 });
       anim.clear(new ColorRgba8(255, 0, 0, 255));

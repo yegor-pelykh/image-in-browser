@@ -1207,7 +1207,7 @@ describe('Format: PNG', () => {
     const sequence: number[] = [];
     let idatChunks = 0;
     let fdatChunks = 0;
-    for (let offset = 8; offset < png.length; ) {
+    for (let offset = 8; offset < png.length;) {
       const length = bd.getUint32(offset);
       const type = String.fromCharCode(
         png[offset + 4],
@@ -1250,7 +1250,7 @@ describe('Format: PNG', () => {
   ): Uint8Array {
     const bd = new DataView(png.buffer, png.byteOffset, png.byteLength);
     let last = -1;
-    for (let offset = 8; offset < png.length; ) {
+    for (let offset = 8; offset < png.length;) {
       if (
         String.fromCharCode(
           png[offset + 4],

@@ -952,7 +952,12 @@ export class GifDecoder implements Decoder {
    * @param {number} b - The blue channel.
    * @returns {number} The closest opaque palette index.
    */
-  private findOpaqueColor(palette: Palette, r: number, g: number, b: number): number {
+  private findOpaqueColor(
+    palette: Palette,
+    r: number,
+    g: number,
+    b: number
+  ): number {
     let closestIndex = 0;
     let closestDistance = -1;
     const numColors = palette.numColors;

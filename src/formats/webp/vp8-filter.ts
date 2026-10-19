@@ -526,7 +526,7 @@ export class VP8Filter {
    * Applies a filter to the input buffer based on specified thresholds and strides.
    *
    * @param {Uint8Array} p - The buffer containing the data to be filtered.
-   * @param {number} o - The byte offset of the edge in the buffer.
+   * @param {number} o0 - The byte offset of the edge in the buffer.
    * @param {number} hstride - The horizontal stride, which determines the step size in the horizontal direction.
    * @param {number} vstride - The vertical stride, which determines the step size in the vertical direction.
    * @param {number} size - The number of elements to process in the buffer.
@@ -536,7 +536,7 @@ export class VP8Filter {
    */
   private filterLoop26(
     p: Uint8Array,
-    o: number,
+    o0: number,
     hstride: number,
     vstride: number,
     size: number,
@@ -544,6 +544,7 @@ export class VP8Filter {
     ithresh: number,
     hevThresh: number
   ): void {
+    let o = o0;
     for (let i = 0; i < size; ++i, o += vstride) {
       if (this.needsFilter2(p, o, hstride, thresh, ithresh)) {
         if (this.hev(p, o, hstride, hevThresh)) {
@@ -558,7 +559,7 @@ export class VP8Filter {
   /**
    * Filters a loop with specific parameters.
    * @param {Uint8Array} p - The buffer containing the data.
-   * @param {number} o - The byte offset of the edge in the buffer.
+   * @param {number} o0 - The byte offset of the edge in the buffer.
    * @param {number} hstride - Horizontal stride.
    * @param {number} vstride - Vertical stride.
    * @param {number} size - Size of the loop.
@@ -568,7 +569,7 @@ export class VP8Filter {
    */
   private filterLoop24(
     p: Uint8Array,
-    o: number,
+    o0: number,
     hstride: number,
     vstride: number,
     size: number,
@@ -576,6 +577,7 @@ export class VP8Filter {
     ithresh: number,
     hevThresh: number
   ): void {
+    let o = o0;
     for (let i = 0; i < size; ++i, o += vstride) {
       if (this.needsFilter2(p, o, hstride, thresh, ithresh)) {
         if (this.hev(p, o, hstride, hevThresh)) {

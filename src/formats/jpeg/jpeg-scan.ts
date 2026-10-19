@@ -498,7 +498,11 @@ export class JpegScan {
    * @param {Int16Array} zz - The DCT coefficients.
    * @param {number} o - The offset of the block's coefficients.
    */
-  private decodeDCSuccessive(_: JpegComponent, zz: Int16Array, o: number): void {
+  private decodeDCSuccessive(
+    _: JpegComponent,
+    zz: Int16Array,
+    o: number
+  ): void {
     zz[o] |= this.readBit()! << this._successive;
   }
 
