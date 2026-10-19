@@ -449,45 +449,38 @@ export abstract class Transform {
     // Rotations make a new image, so they read straight from opt.image; flips
     // work in place, on a copy.
     const orientation = opt.image.exifData.imageIfd.orientation;
-    let baked: MemoryImage;
-    switch (orientation) {
-      case 2:
-        baked = Transform.flipHorizontal({
-          image: MemoryImage.from(opt.image),
-        });
-        break;
-      case 3:
-        baked = Transform.flip({
-          image: MemoryImage.from(opt.image),
-          direction: FlipDirection.both,
-        });
-        break;
-      case 4:
-        // Rotating 180 degrees and flipping horizontally is a vertical flip.
-        baked = Transform.flipVertical({
-          image: MemoryImage.from(opt.image),
-        });
-        break;
-      case 5:
-        baked = Transform.flipHorizontal({
-          image: Transform.copyRotate({ image: opt.image, angle: 90 }),
-        });
-        break;
-      case 6:
-        baked = Transform.copyRotate({ image: opt.image, angle: 90 });
-        break;
-      case 7:
-        baked = Transform.flipHorizontal({
-          image: Transform.copyRotate({ image: opt.image, angle: -90 }),
-        });
-        break;
-      case 8:
-        baked = Transform.copyRotate({ image: opt.image, angle: -90 });
-        break;
-      default:
-        baked = MemoryImage.from(opt.image);
-        break;
-    }
+    const baked = ((): MemoryImage => {
+      switch (orientation) {
+        case 2:
+          return Transform.flipHorizontal({
+            image: MemoryImage.from(opt.image),
+          });
+        case 3:
+          return Transform.flip({
+            image: MemoryImage.from(opt.image),
+            direction: FlipDirection.both,
+          });
+        case 4:
+          // Rotating 180 degrees and flipping horizontally is a vertical flip.
+          return Transform.flipVertical({
+            image: MemoryImage.from(opt.image),
+          });
+        case 5:
+          return Transform.flipHorizontal({
+            image: Transform.copyRotate({ image: opt.image, angle: 90 }),
+          });
+        case 6:
+          return Transform.copyRotate({ image: opt.image, angle: 90 });
+        case 7:
+          return Transform.flipHorizontal({
+            image: Transform.copyRotate({ image: opt.image, angle: -90 }),
+          });
+        case 8:
+          return Transform.copyRotate({ image: opt.image, angle: -90 });
+        default:
+          return MemoryImage.from(opt.image);
+      }
+    })();
 
     // Copy all exif data except for orientation
     baked.exifData = ExifData.from(opt.image.exifData);
@@ -1117,14 +1110,12 @@ export abstract class Transform {
     }
 
     const scaleX = new Int32Array(w);
-    const dx = srcWidth / w;
     for (let x = 0; x < w; ++x) {
-      scaleX[x] = Math.trunc(x * dx);
+      scaleX[x] = Math.trunc((x * srcWidth) / w);
     }
     const scaleY = new Int32Array(h);
-    const dy = srcHeight / h;
     for (let y = 0; y < h; ++y) {
-      scaleY[y] = Math.trunc(y * dy);
+      scaleY[y] = Math.trunc((y * srcHeight) / h);
     }
 
     let firstFrame: MemoryImage | undefined = undefined;

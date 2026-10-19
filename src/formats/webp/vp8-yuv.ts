@@ -1,5 +1,6 @@
 /** @format */
 
+import { ChannelOrder } from '../../color/channel-order.js';
 import { Format } from '../../color/format.js';
 import { MemoryImageDataUint8 } from '../../image/image-data-uint8.js';
 import { MemoryImage } from '../../image/image.js';
@@ -357,15 +358,9 @@ function rgbaBytes(image: MemoryImage): Uint8Array {
   ) {
     return paletteRgba(data.data, palette);
   }
-  const out = new Uint8Array(image.width * image.height * 4);
-  let o = 0;
-  for (const p of image) {
-    out[o++] = p.r;
-    out[o++] = p.g;
-    out[o++] = p.b;
-    out[o++] = p.a;
-  }
-  return out;
+  return image
+    .convert({ format: Format.uint8, numChannels: 4, alpha: 255 })
+    .getBytes({ order: ChannelOrder.rgba });
 }
 
 /**

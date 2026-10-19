@@ -301,8 +301,7 @@ export abstract class ColorUtils {
    */
   public static srgbToLinear(c: number): number {
     const v = Math.abs(c);
-    const l =
-      v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    const l = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     return c < 0 ? -l : l;
   }
 
@@ -315,8 +314,7 @@ export abstract class ColorUtils {
    */
   public static linearToSrgb(c: number): number {
     const v = Math.abs(c);
-    const s =
-      v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+    const s = v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
     return c < 0 ? -s : s;
   }
 
@@ -443,10 +441,10 @@ export abstract class ColorUtils {
       return;
     }
 
-    while (h < 0) {
+    while (_h < 0) {
       _h += 360;
     }
-    while (h > 360) {
+    while (_h > 360) {
       _h -= 360;
     }
 

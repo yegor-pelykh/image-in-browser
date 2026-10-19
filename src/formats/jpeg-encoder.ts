@@ -13,6 +13,7 @@ import type { Pixel } from '../image/pixel.js';
 import type { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { checkEncode } from './check-encode.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
+import { HuffmanTable } from './jpeg/huffman-table.js';
 
 /**
  * JPEG Chroma (sub)sampling format.
@@ -594,7 +595,8 @@ export class JpegEncoder implements Encoder {
           g = MathUtils.clamp(Math.round(g * a + bgG * invA), 0, 255);
           b = MathUtils.clamp(Math.round(b * a + bgB * invA), 0, 255);
         }
-        ydu[pos] = ((table[r] + table[g + 256] + table[b + 512]) >>> 16) - 128.0;
+        ydu[pos] =
+          ((table[r] + table[g + 256] + table[b + 512]) >>> 16) - 128.0;
         udu[pos] =
           ((table[r + 768] + table[g + 1024] + table[b + 1280]) >>> 16) - 128.0;
         vdu[pos] =
@@ -691,7 +693,7 @@ export class JpegEncoder implements Encoder {
       17, 18, 24, 47, 99, 99, 99, 99, 18, 21, 26, 66, 99, 99, 99, 99, 24, 26,
       56, 99, 99, 99, 99, 99, 47, 66, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
       99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
-      99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+      99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
     ];
 
     for (let j = 0; j < 64; j++) {
@@ -956,19 +958,20 @@ export class JpegEncoder implements Encoder {
    * @param {OutputBuffer} out - The output buffer to write to.
    * @param {Float32Array} cdu - The current data unit.
    * @param {Float32Array} fdtbl - The quantization table.
-   * @param {number} dc - The DC coefficient.
-   * @param {Array<number[] | undefined>} htac - The AC Huffman table.
-   * @param {Array<number[] | undefined>} [htdc] - The DC Huffman table (optional).
+   * @param {number} dc0 - The DC coefficient.
+   * @param {HuffmanTable} htac - The AC Huffman table.
+   * @param {HuffmanTable} htdc - The DC Huffman table.
    * @returns {number} The new DC coefficient.
    */
   private processDU(
     out: OutputBuffer,
     cdu: Float32Array,
     fdtbl: Float32Array,
-    dc: number,
+    dc0: number,
     htac: HuffmanTable,
     htdc: HuffmanTable
   ): number {
+    let dc = dc0;
     const duDct = this.fDCTQuant(cdu, fdtbl);
 
     const du = this._du;
@@ -1003,7 +1006,7 @@ export class JpegEncoder implements Encoder {
         for (let nrmarker = 1; nrmarker <= lng; ++nrmarker) {
           this.writeBits(out, htac.code[0xf0], htac.length[0xf0]);
         }
-        nrzeroes = nrzeroes & 0xf;
+        nrzeroes &= 0xf;
       }
       const v = du[i];
       const cat = JpegEncoder.category(v);
@@ -1232,15 +1235,4 @@ export class JpegEncoder implements Encoder {
 
     return fp.getBytes();
   }
-}
-
-/**
- * A computed JPEG Huffman table: **code** holds the code for each value and
- * **length** the number of bits.
- */
-class HuffmanTable {
-  /** The Huffman codes. */
-  public readonly code = new Int32Array(256);
-  /** The code lengths. */
-  public readonly length = new Uint8Array(256);
 }
