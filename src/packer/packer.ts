@@ -431,15 +431,19 @@ export function inflate(file: Uint8Array, buf?: Uint8Array): Uint8Array {
     new Uint8Array(file.buffer, file.byteOffset + 2, file.length - 6),
     buf
   );
-  // The Adler-32 checksum is the last 4 bytes of the stream, big-endian.
-  const expected =
-    ((file[file.length - 4] << 24) |
-      (file[file.length - 3] << 16) |
-      (file[file.length - 2] << 8) |
-      file[file.length - 1]) >>>
-    0;
-  if (adler32(out) !== expected) {
-    throw new LibError('Invalid zlib checksum');
+  // The Adler-32 checksum is the last 4 bytes of the stream, big-endian. It
+  // can only be checked when the whole stream was decompressed: a caller that
+  // caps the output size never sees the end of the stream.
+  if (buf === undefined || out.length < buf.length) {
+    const expected =
+      ((file[file.length - 4] << 24) |
+        (file[file.length - 3] << 16) |
+        (file[file.length - 2] << 8) |
+        file[file.length - 1]) >>>
+      0;
+    if (adler32(out) !== expected) {
+      throw new LibError('Invalid zlib checksum');
+    }
   }
   return out;
 }
