@@ -96,8 +96,9 @@ export class IcoInfo implements DecodeInfo {
       imageCount,
       (_) =>
         new IcoInfoImage({
-          width: input.read(),
-          height: input.read(),
+          // A width or height of 0 means 256.
+          width: IcoInfo.dimension(input.read()),
+          height: IcoInfo.dimension(input.read()),
           colorPalette: input.read(),
           // ignore 1 byte
           colorPlanes: (input.skip(1), input).readUint16(),
@@ -108,5 +109,14 @@ export class IcoInfo implements DecodeInfo {
     );
 
     return new IcoInfo(type, imageCount, images);
+  }
+
+  /**
+   * Converts an ICO dimension byte to a pixel count, where 0 means 256.
+   * @param {number} value - The dimension byte.
+   * @returns {number} The dimension in pixels.
+   */
+  private static dimension(value: number): number {
+    return value === 0 ? 256 : value;
   }
 }

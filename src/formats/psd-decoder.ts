@@ -101,7 +101,12 @@ export class PsdDecoder implements Decoder {
   }
 
   private _startDecode(bytes: Uint8Array): PsdImage | undefined {
-    this._info = new PsdImage(bytes, this._maxPixels);
+    const psd = new PsdImage(bytes, this._maxPixels);
+    if (!psd.isValid) {
+      this._info = undefined;
+      return undefined;
+    }
+    this._info = psd;
     return this._info;
   }
 

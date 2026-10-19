@@ -9,6 +9,7 @@ import { GifDecoder } from './formats/gif-decoder.js';
 import { GifEncoder } from './formats/gif-encoder.js';
 import { IcoDecoder } from './formats/ico-decoder.js';
 import { IcoEncoder } from './formats/ico-encoder.js';
+import { CurEncoder } from './formats/cur-encoder.js';
 import { JpegDecoder } from './formats/jpeg-decoder.js';
 import { JpegChroma, JpegEncoder } from './formats/jpeg-encoder.js';
 import { PngDecoder } from './formats/png-decoder.js';
@@ -389,6 +390,7 @@ export { GifDecoder } from './formats/gif-decoder.js';
 export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder.js';
 export { IcoDecoder } from './formats/ico-decoder.js';
 export { IcoEncoder } from './formats/ico-encoder.js';
+export { CurEncoder } from './formats/cur-encoder.js';
 export { ImageFormat } from './formats/image-format.js';
 export { JpegDecoder } from './formats/jpeg-decoder.js';
 export {
@@ -848,7 +850,7 @@ export function findEncoderForNamedImage(name: string): Encoder | undefined {
     return new IcoEncoder();
   }
   if (n.endsWith('.cur')) {
-    return new IcoEncoder();
+    return new CurEncoder();
   }
   if (n.endsWith('.pvr')) {
     return new PvrEncoder();

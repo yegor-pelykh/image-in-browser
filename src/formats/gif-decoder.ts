@@ -9,6 +9,7 @@ import { GifInfo } from './gif/gif-info.js';
 import { guardDecode } from './guard-decode.js';
 import { checkPixels, PixelBudget } from './max-pixels.js';
 import { MemoryImage } from '../image/image.js';
+import { Palette } from '../image/palette.js';
 import { ColorUint8 } from '../color/color-uint8.js';
 import { ImageFormat } from './image-format.js';
 
@@ -843,101 +844,206 @@ export class GifDecoder implements Decoder {
       return this.decodeFrame(opt.frameIndex ?? 0);
     }
 
-    let firstImage: MemoryImage | undefined = undefined;
-    let lastImage: MemoryImage | undefined = undefined;
     // Each frame is composited to a full canvas, so check them all before
     // decoding any.
     new PixelBudget(this.maxPixels).add(
       this._info.width * this._info.numFrames,
       this._info.height
     );
-    for (let i = 0; i < this._info.numFrames; ++i) {
-      const frame = this._info.frames[i];
-      const image = this.decodeFrame(i);
+
+    // Each output frame is the logical screen as displayed after drawing the
+    // GIF frame. A frame's disposal method says what happens to the canvas
+    // after it has been displayed, so it is applied when building the canvas
+    // for the frame that follows it.
+    let firstImage: MemoryImage | undefined = undefined;
+    // The canvas as displayed for the previous frame.
+    let lastImage: MemoryImage | undefined = undefined;
+    let lastFrame: GifImageDesc | undefined = undefined;
+    // The canvas before the previous frame was drawn, for disposal method 3.
+    let restoreImage: MemoryImage | undefined = undefined;
+    for (let frameIndex = 0; frameIndex < this._info.numFrames; ++frameIndex) {
+      const frame = this._info.frames[frameIndex];
+      const image = this.decodeFrame(frameIndex);
       if (image === undefined) {
-        return undefined;
+        // Keep the frames decoded so far.
+        if (firstImage === undefined) {
+          return undefined;
+        }
+        break;
       }
+
+      const canvas: MemoryImage = new MemoryImage({
+        width: this._info.width,
+        height: this._info.height,
+        numChannels: 1,
+        palette: image.palette,
+      });
+      const clearIndex = this.clearIndex(canvas.palette!);
+
+      const base =
+        lastFrame === undefined
+          ? undefined
+          : lastFrame.disposal === 3
+            ? restoreImage
+            : lastImage;
+      if (base === undefined) {
+        const bytes = canvas.toUint8Array();
+        bytes.fill(clearIndex, 0, bytes.length);
+      } else {
+        this.copyCanvas(base, canvas, clearIndex);
+      }
+
+      if (lastFrame !== undefined && lastFrame.disposal === 2) {
+        // Restore the area of the previous frame to the background.
+        this.clearRect(canvas, lastFrame, clearIndex);
+      }
+
+      restoreImage = frame.disposal === 3 ? canvas.clone() : undefined;
+
+      GifDecoder.compositeFrame(image, canvas, frame.x, frame.y);
 
       // Convert to MS
-      image.frameDuration = frame.duration * 10;
+      canvas.frameDuration = frame.duration * 10;
 
-      if (firstImage === undefined || lastImage === undefined) {
-        firstImage = image;
-        lastImage = image;
-        image.loopCount = this._repeat;
-        continue;
+      if (firstImage === undefined) {
+        firstImage = canvas;
+        canvas.loopCount = this._repeat;
+      } else {
+        firstImage.addFrame(canvas);
       }
-
-      if (
-        image.width === lastImage.width &&
-        image.height === lastImage.height &&
-        frame.x === 0 &&
-        frame.y === 0 &&
-        frame.disposal === 2
-      ) {
-        lastImage = image;
-        firstImage.addFrame(lastImage);
-        continue;
-      }
-
-      const colorMap =
-        frame.colorMap !== undefined
-          ? frame.colorMap
-          : this._info.globalColorMap!;
-
-      const nextImage: MemoryImage = new MemoryImage({
-        width: lastImage.width,
-        height: lastImage.height,
-        numChannels: 1,
-        palette: colorMap.getPalette(),
-      });
-
-      if (frame.disposal === 2) {
-        const imageBytes = nextImage.toUint8Array();
-        if (frame.transparent !== -1) {
-          imageBytes.fill(frame.transparent, 0, imageBytes.length);
-        } else {
-          imageBytes.fill(
-            this._info.backgroundColor!.r,
-            0,
-            imageBytes.length
-          );
-        }
-      } else if (frame.disposal !== 3) {
-        if (frame.colorMap !== undefined) {
-          const lp = lastImage.palette!;
-          const remapColors = new Map<number, number>();
-          for (let ci = 0; ci < lp.numColors; ++ci) {
-            const nc = colorMap.findColor(
-              lp.getRed(ci),
-              lp.getGreen(ci),
-              lp.getBlue(ci),
-              lp.getAlpha(ci)
-            );
-            remapColors.set(ci, nc);
-          }
-
-          const nextBytes = nextImage.toUint8Array();
-          const lastBytes = lastImage.toUint8Array();
-          for (let i = 0, l = nextBytes.length; i < l; ++i) {
-            const lc = lastBytes[i];
-            const nc = remapColors.get(lc);
-            if (nc !== undefined && nc !== -1) {
-              nextBytes[i] = nc;
-            }
-          }
-        }
-      }
-
-      nextImage.frameDuration = image.frameDuration;
-
-      GifDecoder.compositeFrame(image, nextImage, frame.x, frame.y);
-
-      firstImage.addFrame(nextImage);
-      lastImage = nextImage;
+      lastImage = canvas;
+      lastFrame = frame;
     }
 
     return firstImage;
+  }
+
+  /**
+   * The palette index used to clear the canvas: the transparent color if the
+   * palette has one, otherwise the background color.
+   * @param {Palette} palette - The canvas palette.
+   * @returns {number} The clear index.
+   */
+  private clearIndex(palette: Palette): number {
+    const numColors = palette.numColors;
+    for (let i = 0; i < numColors; ++i) {
+      if (palette.getAlpha(i) === 0) {
+        return i;
+      }
+    }
+    const globalColorMap = this._info!.globalColorMap;
+    const bg = Math.trunc(this._info!.backgroundColor?.r ?? 0);
+    if (globalColorMap === undefined || bg >= globalColorMap.numColors) {
+      return 0;
+    }
+    return this.findOpaqueColor(
+      palette,
+      globalColorMap.getRed(bg),
+      globalColorMap.getGreen(bg),
+      globalColorMap.getBlue(bg)
+    );
+  }
+
+  /**
+   * The index of the opaque color in **palette** closest to r, g, b.
+   * @param {Palette} palette - The canvas palette.
+   * @param {number} r - The red channel.
+   * @param {number} g - The green channel.
+   * @param {number} b - The blue channel.
+   * @returns {number} The closest opaque palette index.
+   */
+  private findOpaqueColor(palette: Palette, r: number, g: number, b: number): number {
+    let closestIndex = 0;
+    let closestDistance = -1;
+    const numColors = palette.numColors;
+    for (let i = 0; i < numColors; ++i) {
+      if (palette.getAlpha(i) === 0) {
+        continue;
+      }
+      const dr = r - palette.getRed(i);
+      const dg = g - palette.getGreen(i);
+      const db = b - palette.getBlue(i);
+      const d2 = dr * dr + dg * dg + db * db;
+      if (d2 === 0) {
+        return i;
+      }
+      if (closestDistance === -1 || d2 < closestDistance) {
+        closestIndex = i;
+        closestDistance = d2;
+      }
+    }
+    return closestIndex;
+  }
+
+  /**
+   * Copies the palette index image **from** to **to**, remapping the colors
+   * from the palette of **from** to the palette of **to**. Transparent colors
+   * map to **clearIndex**.
+   * @param {MemoryImage} from - The source canvas.
+   * @param {MemoryImage} to - The destination canvas.
+   * @param {number} clearIndex - The index transparent colors map to.
+   */
+  private copyCanvas(
+    from: MemoryImage,
+    to: MemoryImage,
+    clearIndex: number
+  ): void {
+    const src = from.toUint8Array();
+    const dst = to.toUint8Array();
+    const fp = from.palette!;
+    const tp = to.palette!;
+    const remap = new Uint8Array(256);
+    let identity = true;
+    const numColors = fp.numColors < 256 ? fp.numColors : 256;
+    for (let i = 0; i < numColors; ++i) {
+      const r = fp.getRed(i);
+      const g = fp.getGreen(i);
+      const b = fp.getBlue(i);
+      const a = fp.getAlpha(i);
+      if (
+        i < tp.numColors &&
+        tp.getRed(i) === r &&
+        tp.getGreen(i) === g &&
+        tp.getBlue(i) === b &&
+        tp.getAlpha(i) === a
+      ) {
+        remap[i] = i;
+        continue;
+      }
+      identity = false;
+      remap[i] = a === 0 ? clearIndex : this.findOpaqueColor(tp, r, g, b);
+    }
+    if (identity) {
+      dst.set(src, 0);
+    } else {
+      for (let i = 0, l = dst.length; i < l; ++i) {
+        dst[i] = remap[src[i]];
+      }
+    }
+  }
+
+  /**
+   * Fills the area of **frame** in **canvas** with **index**.
+   * @param {MemoryImage} canvas - The canvas.
+   * @param {GifImageDesc} frame - The frame whose area is cleared.
+   * @param {number} index - The palette index to fill with.
+   */
+  private clearRect(
+    canvas: MemoryImage,
+    frame: GifImageDesc,
+    index: number
+  ): void {
+    const bytes = canvas.toUint8Array();
+    const cw = canvas.width;
+    const x0 = frame.x < cw ? frame.x : cw;
+    const x1 = frame.x + frame.width < cw ? frame.x + frame.width : cw;
+    const y1 =
+      frame.y + frame.height < canvas.height
+        ? frame.y + frame.height
+        : canvas.height;
+    for (let y = frame.y; y < y1; ++y) {
+      bytes.fill(index, y * cw + x0, y * cw + x1);
+    }
   }
 
   /**
