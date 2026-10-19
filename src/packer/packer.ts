@@ -11,6 +11,7 @@ import {
   sizeUTF8,
 } from './bin.js';
 import { inflate as f_inflate, deflateRaw as f_deflateRaw } from './f.js';
+import { LibError } from '../error/lib-error.js';
 
 /**
  * Represents metadata for a file.
@@ -397,20 +398,50 @@ export function deflate(data: Uint8Array, opts?: DeflateOptions): Uint8Array {
 }
 
 /**
+ * Computes the Adler-32 checksum of the bytes.
+ * @param {Uint8Array} data - The bytes to checksum.
+ * @returns {number} The Adler-32 checksum.
+ */
+function adler32(data: Uint8Array): number {
+  let a = 1;
+  let b = 0;
+  for (let i = 0; i < data.length; i++) {
+    a = (a + data[i]) % 65521;
+    b = (b + a) % 65521;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+/**
  * Decompresses data using the inflate algorithm.
  * @param {Uint8Array} file - The compressed data.
  * @param {Uint8Array} buf - The buffer to store decompressed data.
  * @returns {Uint8Array} The decompressed data.
+ * @throws {LibError} If the zlib header or Adler-32 checksum is invalid.
  */
 export function inflate(file: Uint8Array, buf?: Uint8Array): Uint8Array {
   const CMF = file[0];
   const FLG = file[1];
   const CM = CMF & 15;
   const CINFO = CMF >>> 4;
-  return inflateRaw(
+  if (CM !== 8 || CINFO > 7 || ((CMF << 8) | FLG) % 31 !== 0) {
+    throw new LibError('Invalid zlib header');
+  }
+  const out = inflateRaw(
     new Uint8Array(file.buffer, file.byteOffset + 2, file.length - 6),
     buf
   );
+  // The Adler-32 checksum is the last 4 bytes of the stream, big-endian.
+  const expected =
+    ((file[file.length - 4] << 24) |
+      (file[file.length - 3] << 16) |
+      (file[file.length - 2] << 8) |
+      file[file.length - 1]) >>>
+    0;
+  if (adler32(out) !== expected) {
+    throw new LibError('Invalid zlib checksum');
+  }
+  return out;
 }
 
 /**

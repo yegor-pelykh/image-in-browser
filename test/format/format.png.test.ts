@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ArrayUtils,
   ColorRgb8,
+  Crc32,
   decodePng,
   Draw,
   encodePng,
@@ -25,6 +26,7 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
+import { deflate, inflate } from '../../src/packer/packer.js';
 
 /**
  * PNG encoding and decoding across bit depths, filter types, animations, metadata, and color profiles.
@@ -1236,5 +1238,83 @@ describe('Format: PNG', () => {
     for (let i = 0; i < 3; ++i) {
       ImageTestUtils.testImageEquals(decoded.frames[i], anim.frames[i]);
     }
+  });
+
+  /**
+   * Returns **png** with the data of its last IDAT chunk replaced by **edit**,
+   * and the chunk's CRC updated to match.
+   */
+  function editIdat(
+    png: Uint8Array,
+    edit: (data: Uint8Array) => Uint8Array
+  ): Uint8Array {
+    const bd = new DataView(png.buffer, png.byteOffset, png.byteLength);
+    let last = -1;
+    for (let offset = 8; offset < png.length; ) {
+      if (
+        String.fromCharCode(
+          png[offset + 4],
+          png[offset + 5],
+          png[offset + 6],
+          png[offset + 7]
+        ) === 'IDAT'
+      ) {
+        last = offset;
+      }
+      offset += 12 + bd.getUint32(offset);
+    }
+    const offset = last;
+    const length = bd.getUint32(offset);
+    const data = edit(png.subarray(offset + 8, offset + 8 + length));
+    const idat = Uint8Array.from('IDAT', (c) => c.charCodeAt(0));
+    const chunk = new Uint8Array(12 + data.length);
+    const cbd = new DataView(chunk.buffer);
+    cbd.setUint32(0, data.length);
+    cbd.setUint32(
+      8 + data.length,
+      Crc32.getChecksum({
+        buffer: Uint8Array.from([...idat, ...data]),
+      })
+    );
+    chunk.set(idat, 4);
+    chunk.set(data, 8);
+    const out = new Uint8Array(png.length - (12 + length) + chunk.length);
+    out.set(png.subarray(0, offset), 0);
+    out.set(chunk, offset);
+    out.set(png.subarray(offset + 12 + length), offset + chunk.length);
+    return out;
+  }
+
+  /**
+   * A PNG with an unknown row filter type decodes to undefined.
+   */
+  test('unknown filter type', () => {
+    // Small enough for a single IDAT chunk.
+    const png = editIdat(
+      encodePng({ image: new MemoryImage({ width: 8, height: 8 }) }),
+      (zlib) => {
+        const rows = inflate(zlib);
+        rows[0] = 5;
+        return deflate(rows);
+      }
+    );
+    expect(decodePng({ data: png })).toBeUndefined();
+  });
+
+  /**
+   * A PNG with a wrong Adler-32 checksum decodes to undefined.
+   */
+  test('wrong Adler-32', () => {
+    // The checksum follows the last row, so decoding the rows alone
+    // doesn't check it.
+    const png = editIdat(
+      TestUtils.readFromFile(TestFolder.input, TestSection.png, 'buck_24.png'),
+      (data) => {
+        const d = Uint8Array.from(data);
+        d[d.length - 1] ^= 0xff;
+        return d;
+      }
+    );
+    expect(decodePng({ data: png })).toBeUndefined();
   });
 });

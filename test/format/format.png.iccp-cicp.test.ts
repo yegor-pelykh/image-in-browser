@@ -1,10 +1,19 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodePng, PngCicpData, PngDecoder, PngEncoder } from '../../src';
+import {
+  decodePng,
+  IccProfile,
+  IccProfileCompression,
+  LibError,
+  PngCicpData,
+  PngDecoder,
+  PngEncoder,
+} from '../../src';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
+import { deflate } from '../../src/packer/packer.js';
 
 describe('Format: PNG (ICCP/CICP)', () => {
   test('decodes pixel values correctly (not all-black)', () => {
@@ -149,5 +158,27 @@ describe('Format: PNG (ICCP/CICP)', () => {
       reDecoder.info.cicpData.videoFullRangeFlag ===
         expectedCicp.videoFullRangeFlag;
     expect(isEqual).toBeTruthy();
+  });
+
+  /**
+   * An ICC profile with invalid compressed data throws.
+   */
+  test('invalid compressed data', () => {
+    const icc = new IccProfile(
+      'p',
+      IccProfileCompression.deflate,
+      Uint8Array.from([0x78, 0x9c, 0xff, 0xff, 0xff, 0xff])
+    );
+    expect(() => icc.decompressed()).toThrow(LibError);
+  });
+
+  /**
+   * An ICC profile with a wrong Adler-32 checksum throws.
+   */
+  test('wrong Adler-32', () => {
+    const zlib = deflate(Uint8Array.from({ length: 100 }, () => 7));
+    zlib[zlib.length - 1] ^= 0xff;
+    const icc = new IccProfile('p', IccProfileCompression.deflate, zlib);
+    expect(() => icc.decompressed()).toThrow(LibError);
   });
 });

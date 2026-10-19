@@ -282,10 +282,10 @@ export class PngDecoder implements Decoder {
       srcY < passHeight;
       ++srcY, dstY += yStep, this._progressY++
     ) {
-      const filterType = input.read();
+      const filterType = pngFilterType(input.read());
       const row = input.readRange(rowBytes).toUint8Array();
       if (row.length !== rowBytes) {
-        throw new TruncatedPngData();
+        throw new InvalidPngData();
       }
 
       // Before the image is compressed, it was filtered to improve compression.
@@ -341,10 +341,10 @@ export class PngDecoder implements Decoder {
     const pIter = image[Symbol.iterator]();
     let pIterRes = pIter.next();
     for (let y = 0; y < h; ++y) {
-      const filterType = input.read();
+      const filterType = pngFilterType(input.read());
       const row = input.readRange(rowBytes).toUint8Array();
       if (row.length !== rowBytes) {
-        throw new TruncatedPngData();
+        throw new InvalidPngData();
       }
 
       // Before the image is compressed, it was filtered to improve compression.
@@ -1168,7 +1168,7 @@ export class PngDecoder implements Decoder {
         this.process(input, image);
       }
     } catch (e) {
-      if (e instanceof TruncatedPngData) {
+      if (e instanceof InvalidPngData) {
         return undefined;
       }
       throw e;
@@ -1299,4 +1299,17 @@ export class PngDecoder implements Decoder {
 /**
  * Thrown when the decompressed image data ends before the last row.
  */
-class TruncatedPngData extends Error {}
+class InvalidPngData extends Error {}
+
+/**
+ * Validates a PNG filter type byte.
+ * @param {number} b - The filter type byte.
+ * @returns {PngFilterType} The filter type.
+ * @throws {InvalidPngData} If the filter type is invalid.
+ */
+function pngFilterType(b: number): PngFilterType {
+  if (b < 0 || b > PngFilterType.paeth) {
+    throw new InvalidPngData();
+  }
+  return b as PngFilterType;
+}
