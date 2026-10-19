@@ -72,8 +72,11 @@ export abstract class ColorUtils {
     const fromFormat = c.palette?.format ?? c.format;
     const cl = c.length;
     if (numChannels === 1) {
-      const g = Math.trunc(c.length > 2 ? c.luminance : c.getChannel(0));
-      c2.setChannel(0, convertFormatValue(Math.floor(g), fromFormat, format));
+      let g = c.length > 2 ? c.luminance : c.getChannel(0);
+      if (!floatFormats.has(fromFormat)) {
+        g = Math.floor(g);
+      }
+      c2.setChannel(0, convertFormatValue(g, fromFormat, format));
     } else if (numChannels === 2) {
       let g = cl > 2 ? c.luminance : c.r;
       if (!floatFormats.has(fromFormat)) {
@@ -285,6 +288,36 @@ export abstract class ColorUtils {
    */
   public static getLuminanceRgb(r: number, g: number, b: number): number {
     return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  /**
+   * Converts a normalized sRGB color channel value to linear light, using the
+   * sRGB transfer function. 0.5 becomes about 0.214: the stored value halfway
+   * up is only about a fifth of the light. Values outside [0, 1] are
+   * extended, mirrored for negative values.
+   *
+   * @param {number} c - The normalized sRGB color channel value.
+   * @returns {number} The normalized linear light value.
+   */
+  public static srgbToLinear(c: number): number {
+    const v = Math.abs(c);
+    const l =
+      v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    return c < 0 ? -l : l;
+  }
+
+  /**
+   * Converts a normalized linear light color channel value to sRGB, the
+   * inverse of {@link ColorUtils.srgbToLinear}.
+   *
+   * @param {number} c - The normalized linear light color channel value.
+   * @returns {number} The normalized sRGB color channel value.
+   */
+  public static linearToSrgb(c: number): number {
+    const v = Math.abs(c);
+    const s =
+      v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+    return c < 0 ? -s : s;
   }
 
   /**

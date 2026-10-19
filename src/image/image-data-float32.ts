@@ -376,9 +376,24 @@ export class MemoryImageDataFloat32
 
   /**
    * Clears the image.
-   * @param {Color} [_c] - The color to clear with.
+   * @param {Color} [c] - The color to clear with.
    */
-  public clear(_c?: Color): void {}
+  public clear(c?: Color): void {
+    if (c === undefined) {
+      this._data.fill(0);
+      return;
+    }
+    const values =
+      this._numChannels === 2
+        ? [c.rNormalized, c.aNormalized]
+        : [c.rNormalized, c.gNormalized, c.bNormalized, c.aNormalized];
+    const n = this._width * this._height * this._numChannels;
+    for (let i = 0; i < n; i += this._numChannels) {
+      for (let ch = 0; ch < this._numChannels; ++ch) {
+        this._data[i + ch] = values[ch];
+      }
+    }
+  }
 
   /**
    * Clones the current instance of MemoryImageDataFloat32.

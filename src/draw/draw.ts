@@ -27,6 +27,8 @@ interface DrawLineWuOptions {
   color: Color;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -61,6 +63,8 @@ interface DrawAntialiasCircleOptions {
   quadrants?: CircleQuadrant;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The mask image. */
   mask?: MemoryImage;
   /** The channel to use for masking. */
@@ -83,6 +87,8 @@ export interface DrawCircleOptions {
   antialias?: boolean;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The mask image. */
   mask?: MemoryImage;
   /** The channel to use for masking. */
@@ -129,6 +135,8 @@ export interface DrawPolygonOptions {
   thickness?: number;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -151,6 +159,8 @@ export interface DrawRectOptions {
   radius?: number;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -173,6 +183,8 @@ export interface FillCircleOptions {
   antialias?: boolean;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -227,6 +239,8 @@ export interface FillPolygonOptions {
   color: Color;
   /** The blend mode to use. */
   blend?: BlendMode;
+  /** Whether to use linear blending. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -430,6 +444,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: alpha,
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -443,6 +458,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: alpha,
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -456,6 +472,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: alpha,
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -469,6 +486,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: alpha,
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: maskChannel,
           mask: opt.mask,
         });
@@ -544,6 +562,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -553,6 +572,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -563,6 +583,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -572,6 +593,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -596,6 +618,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         mask: opt.mask,
         maskChannel: opt.maskChannel,
       });
@@ -605,6 +628,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -617,6 +641,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: 1 - (intery - Math.floor(intery)),
           blend: blend,
+          linearBlend: opt.linearBlend,
           mask: opt.mask,
           maskChannel: opt.maskChannel,
         });
@@ -626,6 +651,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: intery - Math.floor(intery),
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -639,6 +665,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (1 - (yend - Math.floor(yend))) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -648,6 +675,7 @@ export abstract class Draw {
         color: opt.color,
         alpha: (yend - Math.floor(yend)) * xgap,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: opt.maskChannel,
         mask: opt.mask,
       });
@@ -660,6 +688,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: 1 - (intery - Math.floor(intery)),
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -669,6 +698,7 @@ export abstract class Draw {
           color: opt.color,
           alpha: intery - Math.floor(intery),
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -976,6 +1006,10 @@ export abstract class Draw {
   /**
    * Draws a circle on the provided image with the specified options.
    *
+   * If **linearBlend** is true, partly transparent and antialiased pixels are
+   * blended as linear light, the colors taken as sRGB, which is slower but
+   * keeps thin and soft edges from looking too dark.
+   *
    * @param {DrawCircleOptions} opt - The options for drawing the circle, including:
    * @param {MemoryImage} opt.image - The image on which to draw the circle.
    * @param {Point} opt.center - The center point of the circle.
@@ -999,6 +1033,7 @@ export abstract class Draw {
         radius: opt.radius,
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         mask: opt.mask,
         maskChannel: maskChannel,
       });
@@ -1015,6 +1050,7 @@ export abstract class Draw {
         pos: new Point(pt.x, pt.y),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         mask: opt.mask,
         maskChannel: maskChannel,
       });
@@ -1024,6 +1060,10 @@ export abstract class Draw {
 
   /**
    * Fills a circle on the given image with the specified options.
+   *
+   * If **linearBlend** is true, partly transparent and antialiased pixels are
+   * blended as linear light, the colors taken as sRGB, which is slower but
+   * keeps thin and soft edges from looking too dark.
    *
    * @param {FillCircleOptions} opt - The options for filling the circle.
    * @param {MemoryImage} opt.image - The image to draw on.
@@ -1060,6 +1100,7 @@ export abstract class Draw {
             color: opt.color,
             alpha: alpha,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1074,6 +1115,7 @@ export abstract class Draw {
             pos: new Point(p.x, p.y),
             color: opt.color,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1086,6 +1128,10 @@ export abstract class Draw {
 
   /**
    * Draws a line on the given image based on the provided options.
+   *
+   * If **linearBlend** is true, partly transparent and antialiased pixels are
+   * blended as linear light, the colors taken as sRGB, which is slower but
+   * keeps thin and soft edges from looking too dark.
    *
    * @param {DrawLineOptions} opt The options for drawing the line.
    * @param {MemoryImage} opt.image The image on which the line will be drawn.
@@ -1125,6 +1171,7 @@ export abstract class Draw {
           pos: new Point(line.x1, line.y1),
           color: opt.color,
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -1135,6 +1182,7 @@ export abstract class Draw {
           radius: radius,
           color: opt.color,
           blend: blend,
+          linearBlend: opt.linearBlend,
           maskChannel: opt.maskChannel,
           mask: opt.mask,
         });
@@ -1152,6 +1200,7 @@ export abstract class Draw {
               pos: new Point(line.x1, y),
               color: opt.color,
               blend: blend,
+              linearBlend: opt.linearBlend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1162,6 +1211,7 @@ export abstract class Draw {
                 pos: new Point(line.x1 - radius + i, y),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1176,6 +1226,7 @@ export abstract class Draw {
               pos: new Point(line.x1, y),
               color: opt.color,
               blend: blend,
+              linearBlend: opt.linearBlend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1186,6 +1237,7 @@ export abstract class Draw {
                 pos: new Point(line.x1 - radius + i, y),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1203,6 +1255,7 @@ export abstract class Draw {
               pos: new Point(x, line.y1),
               color: opt.color,
               blend: blend,
+              linearBlend: opt.linearBlend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1213,6 +1266,7 @@ export abstract class Draw {
                 pos: new Point(x, line.y1 - radius + i),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1227,6 +1281,7 @@ export abstract class Draw {
               pos: new Point(x, line.y1),
               color: opt.color,
               blend: blend,
+              linearBlend: opt.linearBlend,
               maskChannel: maskChannel,
               mask: opt.mask,
             });
@@ -1237,6 +1292,7 @@ export abstract class Draw {
                 pos: new Point(x, line.y1 - radius + i),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1297,6 +1353,7 @@ export abstract class Draw {
             pos: new Point(x, w),
             color: opt.color,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1318,6 +1375,7 @@ export abstract class Draw {
                 pos: new Point(x, w),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1339,6 +1397,7 @@ export abstract class Draw {
                 pos: new Point(x, w),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1385,6 +1444,7 @@ export abstract class Draw {
             pos: new Point(w, y),
             color: opt.color,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1406,6 +1466,7 @@ export abstract class Draw {
                 pos: new Point(w, y),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1427,6 +1488,7 @@ export abstract class Draw {
                 pos: new Point(w, y),
                 color: opt.color,
                 blend: blend,
+                linearBlend: opt.linearBlend,
                 maskChannel: maskChannel,
                 mask: opt.mask,
               });
@@ -1445,6 +1507,7 @@ export abstract class Draw {
         line: new Line(line.x1, line.y1, line.x2, line.y2),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
       });
     }
 
@@ -1482,6 +1545,7 @@ export abstract class Draw {
             color: opt.color,
             alpha: ((frac >>> 8) & 0xff) / 255,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1492,6 +1556,7 @@ export abstract class Draw {
             color: opt.color,
             alpha: ((xor(frac) >>> 8) & 0xff) / 255,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1524,6 +1589,7 @@ export abstract class Draw {
             pos: new Point(w, y),
             color: opt.color,
             alpha: ((frac >>> 8) & 0xff) / 255,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1533,6 +1599,7 @@ export abstract class Draw {
             pos: new Point(w + 1, y),
             color: opt.color,
             alpha: ((xor(frac) >>> 8) & 0xff) / 255,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -1554,6 +1621,10 @@ export abstract class Draw {
 
   /**
    * Draws a pixel on the given image with various blending modes and options.
+   *
+   * If **linearBlend** is true, partly transparent pixels are blended as linear
+   * light, the colors taken as sRGB, which is slower but keeps thin and soft
+   * edges from looking too dark.
    *
    * @param {DrawPixelOptions} opt The options for drawing the pixel, including:
    * @param {MemoryImage} opt.image The image to draw on.
@@ -1852,17 +1923,23 @@ export abstract class Draw {
     const invA = 1 - overlayA;
 
     if (linearBlend) {
-      const lbr = Math.pow(baseR, 2.2);
-      const lbg = Math.pow(baseG, 2.2);
-      const lbb = Math.pow(baseB, 2.2);
-      const lor = Math.pow(overlayR, 2.2);
-      const log = Math.pow(overlayG, 2.2);
-      const lob = Math.pow(overlayB, 2.2);
+      const lbr = ColorUtils.srgbToLinear(baseR);
+      const lbg = ColorUtils.srgbToLinear(baseG);
+      const lbb = ColorUtils.srgbToLinear(baseB);
+      const lor = ColorUtils.srgbToLinear(overlayR);
+      const log = ColorUtils.srgbToLinear(overlayG);
+      const lob = ColorUtils.srgbToLinear(overlayB);
       const a = overlayA + baseA * invA;
       const s = a > 0 ? 1 / a : 0;
-      const r = Math.pow((lor * overlayA + lbr * baseA * invA) * s, 1 / 2.2);
-      const g = Math.pow((log * overlayA + lbg * baseA * invA) * s, 1 / 2.2);
-      const b = Math.pow((lob * overlayA + lbb * baseA * invA) * s, 1 / 2.2);
+      const r = ColorUtils.linearToSrgb(
+        (lor * overlayA + lbr * baseA * invA) * s
+      );
+      const g = ColorUtils.linearToSrgb(
+        (log * overlayA + lbg * baseA * invA) * s
+      );
+      const b = ColorUtils.linearToSrgb(
+        (lob * overlayA + lbb * baseA * invA) * s
+      );
       dst.rNormalized = r;
       dst.gNormalized = g;
       dst.bNormalized = b;
@@ -1884,6 +1961,10 @@ export abstract class Draw {
 
   /**
    * Draws a polygon on the given image based on the provided options.
+   *
+   * If **linearBlend** is true, partly transparent and antialiased pixels are
+   * blended as linear light, the colors taken as sRGB, which is slower but
+   * keeps thin and soft edges from looking too dark.
    *
    * @param {DrawPolygonOptions} opt The options for drawing the polygon.
    * @param {MemoryImage} opt.image The image on which to draw the polygon.
@@ -1919,6 +2000,7 @@ export abstract class Draw {
         pos: vertices[0],
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -1937,6 +2019,7 @@ export abstract class Draw {
         antialias: antialias,
         thickness: thickness,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -1955,6 +2038,7 @@ export abstract class Draw {
         antialias: antialias,
         thickness: thickness,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -1972,6 +2056,7 @@ export abstract class Draw {
       antialias: antialias,
       thickness: thickness,
       blend: blend,
+      linearBlend: opt.linearBlend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -1981,6 +2066,10 @@ export abstract class Draw {
 
   /**
    * Draw a rectangle in the image with the specified options.
+   *
+   * If **linearBlend** is true, partly transparent and antialiased pixels are
+   * blended as linear light, the colors taken as sRGB, which is slower but
+   * keeps thin and soft edges from looking too dark.
    *
    * @param {DrawRectOptions} opt - Options for drawing the rectangle.
    * @param {MemoryImage} opt.image - The image on which to draw the rectangle.
@@ -2013,24 +2102,36 @@ export abstract class Draw {
         line: new Line(x0 + rad, y0, x1 - rad, y0),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
+        mask: opt.mask,
+        maskChannel: maskChannel,
       });
       Draw.drawLine({
         image: opt.image,
         line: new Line(x1, y0 + rad, x1, y1 - rad),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
+        mask: opt.mask,
+        maskChannel: maskChannel,
       });
       Draw.drawLine({
         image: opt.image,
         line: new Line(x0 + rad, y1, x1 - rad, y1),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
+        mask: opt.mask,
+        maskChannel: maskChannel,
       });
       Draw.drawLine({
         image: opt.image,
         line: new Line(x0, y0 + rad, x0, y1 - rad),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
+        mask: opt.mask,
+        maskChannel: maskChannel,
       });
 
       const c1x = x0 + rad;
@@ -2049,6 +2150,7 @@ export abstract class Draw {
         radius: rad,
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.topLeft,
         mask: opt.mask,
@@ -2061,6 +2163,7 @@ export abstract class Draw {
         radius: rad,
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.topRight,
         mask: opt.mask,
@@ -2073,6 +2176,7 @@ export abstract class Draw {
         radius: rad,
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.bottomRight,
         mask: opt.mask,
@@ -2085,6 +2189,7 @@ export abstract class Draw {
         radius: rad,
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         quadrants: CircleQuadrant.bottomLeft,
         mask: opt.mask,
@@ -2101,6 +2206,7 @@ export abstract class Draw {
       color: opt.color,
       thickness: thickness,
       blend: blend,
+      linearBlend: opt.linearBlend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2111,6 +2217,7 @@ export abstract class Draw {
       color: opt.color,
       thickness: thickness,
       blend: blend,
+      linearBlend: opt.linearBlend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2129,6 +2236,7 @@ export abstract class Draw {
       color: opt.color,
       thickness: thickness,
       blend: blend,
+      linearBlend: opt.linearBlend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2139,6 +2247,7 @@ export abstract class Draw {
       color: opt.color,
       thickness: thickness,
       blend: blend,
+      linearBlend: opt.linearBlend,
       maskChannel: maskChannel,
       mask: opt.mask,
     });
@@ -2207,6 +2316,10 @@ export abstract class Draw {
   /**
    * Fills a polygon on the given image with the specified options.
    *
+   * If **linearBlend** is true, partly transparent and antialiased pixels are
+   * blended as linear light, the colors taken as sRGB, which is slower but
+   * keeps thin and soft edges from looking too dark.
+   *
    * @param {FillPolygonOptions} opt - The options for filling the polygon.
    * @param {MemoryImage} opt.image - The image to draw on.
    * @param {Array<Point>} opt.vertices - An array of points representing the vertices of the polygon.
@@ -2236,6 +2349,7 @@ export abstract class Draw {
         pos: opt.vertices[0],
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         maskChannel: maskChannel,
         mask: opt.mask,
       });
@@ -2252,6 +2366,7 @@ export abstract class Draw {
         ),
         color: opt.color,
         blend: blend,
+        linearBlend: opt.linearBlend,
         mask: opt.mask,
         maskChannel: maskChannel,
       });
@@ -2306,6 +2421,7 @@ export abstract class Draw {
             pos: new Point(xi, yi),
             color: opt.color,
             blend: blend,
+            linearBlend: opt.linearBlend,
             maskChannel: maskChannel,
             mask: opt.mask,
           });
@@ -2398,7 +2514,7 @@ export abstract class Draw {
         const pr = MathUtils.mix(p.r, opt.color.r, am);
         const pg = MathUtils.mix(p.g, opt.color.g, am);
         const pb = MathUtils.mix(p.b, opt.color.b, am);
-        const pa = p.a * (1.0 - am) + opt.color.a;
+        const pa = p.a + (p.maxChannelValue - p.a) * am;
 
         p.r = pr;
         p.g = pg;
@@ -2420,18 +2536,18 @@ export abstract class Draw {
         it.value.set(opt.color);
       }
     } else {
-      const a = opt.color.a / opt.color.maxChannelValue;
+      const a = opt.color.aNormalized;
       const range = opt.image.getRange(xx0, yy0, ww, hh);
       let it: IteratorResult<Pixel> | undefined = undefined;
       while (((it = range.next()), !it.done)) {
         const p = it.value;
         const m =
           opt.mask?.getPixel(p.x, p.y).getChannelNormalized(maskChannel) ?? 1;
-        const am = opt.color.a * m;
-        p.r = MathUtils.mix(p.r, opt.color.r, a * m);
-        p.g = MathUtils.mix(p.g, opt.color.g, a * m);
-        p.b = MathUtils.mix(p.b, opt.color.b, a * m);
-        p.a = p.a * (1 - am) + am;
+        const am = a * m;
+        p.r = MathUtils.mix(p.r, opt.color.r, am);
+        p.g = MathUtils.mix(p.g, opt.color.g, am);
+        p.b = MathUtils.mix(p.b, opt.color.b, am);
+        p.a = p.a + (p.maxChannelValue - p.a) * am;
       }
     }
 
@@ -2525,6 +2641,10 @@ export abstract class Draw {
    * but overlapping regions may produce unpredictable results.
    *
    * If **center** is true, the **src** will be centered within **dst**.
+   *
+   * If **linearBlend** is true, partly transparent pixels are blended as linear
+   * light, the colors taken as sRGB, which is slower but keeps thin and soft
+   * edges from looking too dark.
    *
    * @param {CompositeImageOptions} opt - Options for compositing the image.
    * @param {MemoryImage} opt.dst - The destination image.

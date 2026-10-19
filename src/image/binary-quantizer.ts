@@ -64,7 +64,7 @@ export class BinaryQuantizer implements Quantizer {
    * @returns {number} The color index (0 or 1).
    */
   public getColorIndexRgb(r: number, g: number, b: number): number {
-    return ColorUtils.getLuminanceRgb(r, g, b) < this._threshold ? 0 : 1;
+    return ColorUtils.getLuminanceRgb(r, g, b) / 255 < this._threshold ? 0 : 1;
   }
 
   /**

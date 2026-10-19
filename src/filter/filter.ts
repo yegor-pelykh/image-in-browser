@@ -31,6 +31,11 @@ import { ArrayUtils } from '../common/array-utils.js';
 import { DitherScanOrder } from './dither-scan-order.js';
 import { reflectIndex } from './reflect-index.js';
 import { PaletteUint8 } from '../image/palette-uint8.js';
+import { MemoryImageDataFloat32 } from '../image/image-data-float32.js';
+import {
+  filterLinear,
+  linearColor,
+} from '../common/linear-rgb.js';
 
 /**
  * A fast path for uint8 images, giving the same result as
@@ -92,6 +97,93 @@ function convolveUint8(frame: MemoryImage, kernel: SeparableKernel): boolean {
       rowOffsets[j] = (reflectIndex(h, y + j - size) % taps) * stride;
     }
     filterColumn(ring, rowOffsets, data, y * stride, stride, k, acc);
+  }
+
+  return true;
+}
+
+/**
+ * The same as {@link convolveUint8} for float32 images, which also store the
+ * horizontal results as float32, so it gives the same values as
+ * {@link SeparableKernel.apply}.
+ * @param {MemoryImage} frame - The frame to convolve.
+ * @param {SeparableKernel} kernel - The kernel to apply.
+ * @returns {boolean} True if the fast path was used.
+ */
+function convolveFloat32(frame: MemoryImage, kernel: SeparableKernel): boolean {
+  const size = kernel.size;
+  const w = frame.width;
+  const h = frame.height;
+  if (frame.format !== Format.float32 || frame.hasPalette || w < 2 || h < 2) {
+    return false;
+  }
+
+  const data = (frame.data as MemoryImageDataFloat32).data;
+  const nc = frame.numChannels;
+  const stride = w * nc;
+  const taps = 2 * size + 1;
+  const k = new Float64Array(taps);
+  for (let i = 0; i < taps; ++i) {
+    k[i] = kernel.getCoefficient(i);
+  }
+
+  const padSource = new Int32Array(w + 2 * size);
+  for (let x = -size; x < w + size; ++x) {
+    padSource[x + size] = reflectIndex(w, x) * nc;
+  }
+  const padded = new Float32Array((w + 2 * size) * nc);
+
+  const ring = new Float32Array(taps * stride);
+  const acc = new Float64Array(stride);
+  const rowOffsets = new Int32Array(taps);
+  let nextRow = 0;
+
+  for (let y = 0; y < h; ++y) {
+    const last = y + size < h ? y + size : h - 1;
+    for (; nextRow <= last; ++nextRow) {
+      const s = nextRow * stride;
+      for (let x = 0, i = 0; x < padSource.length; ++x) {
+        const si = s + padSource[x];
+        for (let ch = 0; ch < nc; ++ch) {
+          padded[i++] = data[si + ch];
+        }
+      }
+      const o = (nextRow % taps) * stride;
+      const c0 = k[0];
+      for (let i = 0; i < stride; ++i) {
+        acc[i] = c0 * padded[i];
+      }
+      for (let j = 1; j < taps; ++j) {
+        const c = k[j];
+        const po = j * nc;
+        for (let i = 0; i < stride; ++i) {
+          acc[i] += c * padded[po + i];
+        }
+      }
+      for (let i = 0; i < stride; ++i) {
+        ring[o + i] = acc[i];
+      }
+    }
+
+    for (let j = 0; j < taps; ++j) {
+      rowOffsets[j] = (reflectIndex(h, y + j - size) % taps) * stride;
+    }
+    const c0 = k[0];
+    const o0 = rowOffsets[0];
+    for (let i = 0; i < stride; ++i) {
+      acc[i] = c0 * ring[o0 + i];
+    }
+    for (let j = 1; j < taps; ++j) {
+      const c = k[j];
+      const o = rowOffsets[j];
+      for (let i = 0; i < stride; ++i) {
+        acc[i] += c * ring[o + i];
+      }
+    }
+    const d = y * stride;
+    for (let i = 0; i < stride; ++i) {
+      data[d + i] = acc[i];
+    }
   }
 
   return true;
@@ -589,6 +681,8 @@ function sobelRow(
 interface ContrastCache {
   /** The last contrast value used. */
   lastContrast: number;
+  /** The last contrast mode used. */
+  lastMode: ContrastMode;
   /** The contrast data as a Uint8Array. */
   contrast: Uint8Array;
 }
@@ -671,6 +765,8 @@ export interface BulgeDistortionOptions {
   scale?: number;
   /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** Whether to blend as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -917,6 +1013,8 @@ export interface GaussianBlurOptions {
   image: MemoryImage;
   /** The radius of the blur. */
   radius: number;
+  /** Whether to average as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -1057,6 +1155,8 @@ export interface PixelateOptions {
   mode?: PixelateMode;
   /** The amount of the effect to apply. */
   amount?: number;
+  /** Whether to average and mix as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -1133,6 +1233,8 @@ export interface SeparableConvolutionOptions {
   image: MemoryImage;
   /** The separable kernel to use for the filter. */
   kernel: SeparableKernel;
+  /** Whether to filter as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -1175,6 +1277,8 @@ export interface SmoothOptions {
   image: MemoryImage;
   /** The weight of the smoothing effect. */
   weight: number;
+  /** Whether to average as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -1219,6 +1323,8 @@ export interface StretchDistortionOptions {
   centerY?: number;
   /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** Whether to interpolate as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -1239,6 +1345,8 @@ export interface VignetteOptions {
   amount?: number;
   /** The color of the vignette. */
   color?: Color;
+  /** Whether to blend as linear light. */
+  linearBlend?: boolean;
   /** The channel to use for masking. */
   maskChannel?: Channel;
   /** The mask image. */
@@ -1756,6 +1864,10 @@ export abstract class Filter {
   /**
    * Applies a bulge distortion effect to the given image.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are interpolated as
+   * linear light, which is slower but keeps fine bright details from
+   * darkening. It has no effect with **Interpolation.nearest**.
+   *
    * @param {BulgeDistortionOptions} opt - The options for the bulge distortion effect.
    * @param {MemoryImage} opt.image - The image to apply the effect to.
    * @param {number} [opt.scale=0.5] - The scale of the bulge effect.
@@ -1768,14 +1880,29 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the bulge distortion effect applied.
    */
   public static bulgeDistortion(opt: BulgeDistortionOptions): MemoryImage {
+    const scale = opt.scale ?? 0.5;
+    const interpolation = opt.interpolation ?? Interpolation.nearest;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.linearBlend && interpolation !== Interpolation.nearest) {
+      return filterLinear(opt.image, (linear) =>
+        Filter.bulgeDistortion({
+          image: linear,
+          centerX: opt.centerX,
+          centerY: opt.centerY,
+          radius: opt.radius,
+          scale: scale,
+          interpolation: interpolation,
+          mask: opt.mask,
+          maskChannel: maskChannel,
+        }));
+    }
+
     const image = opt.image.hasPalette
       ? opt.image.convert({
           numChannels: opt.image.numChannels,
         })
       : opt.image;
-    const scale = opt.scale ?? 0.5;
-    const interpolation = opt.interpolation ?? Interpolation.nearest;
-    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
@@ -2110,10 +2237,12 @@ export abstract class Filter {
 
     if (
       Filter._contrastCache === undefined ||
-      opt.contrast !== Filter._contrastCache.lastContrast
+      opt.contrast !== Filter._contrastCache.lastContrast ||
+      mode !== Filter._contrastCache.lastMode
     ) {
       Filter._contrastCache = {
         lastContrast: opt.contrast,
+        lastMode: mode,
         contrast: new Uint8Array(256),
       };
 
@@ -2299,10 +2428,10 @@ export abstract class Filter {
           p.bNormalized = b;
           p.aNormalized = a;
         } else {
-          p.rNormalized = MathUtils.mix(p.r, r, msk);
-          p.gNormalized = MathUtils.mix(p.g, g, msk);
-          p.bNormalized = MathUtils.mix(p.b, b, msk);
-          p.aNormalized = MathUtils.mix(p.a, a, msk);
+          p.rNormalized = MathUtils.mix(p.rNormalized, r, msk);
+          p.gNormalized = MathUtils.mix(p.gNormalized, g, msk);
+          p.bNormalized = MathUtils.mix(p.bNormalized, b, msk);
+          p.aNormalized = MathUtils.mix(p.aNormalized, a, msk);
         }
       }
     }
@@ -2971,6 +3100,10 @@ export abstract class Filter {
    * away from the current pixel should contribute to the blur, where 0 is no
    * blur and the larger the radius, the stronger the blur.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are averaged as
+   * linear light, which is slower but keeps bright details from fading into
+   * darker surroundings.
+   *
    * @param {GaussianBlurOptions} opt - Options for the Gaussian blur operation.
    * @param {MemoryImage} opt.image - The image to which the blur will be applied.
    * @param {number} opt.radius - The radius of the blur effect.
@@ -3013,6 +3146,7 @@ export abstract class Filter {
     return Filter.separableConvolution({
       image: opt.image,
       kernel: kernel,
+      linearBlend: opt.linearBlend,
       mask: opt.mask,
       maskChannel: maskChannel,
     });
@@ -3193,6 +3327,11 @@ export abstract class Filter {
 
   /**
    * Apply the hexagon pixelate filter to the image.
+   *
+   * **centerX** and **centerY** are the pixel position of the hexagon grid's
+   * origin. By default the grid keeps its original placement, about half a
+   * pixel from the image origin.
+   *
    * @param {HexagonPixelateOptions} opt - Options for the hexagon pixelate filter.
    * @param {MemoryImage} opt.image - The image to apply the filter to.
    * @param {number} [opt.size=5] - The size of the hexagons. Default is 5.
@@ -3217,8 +3356,10 @@ export abstract class Filter {
     for (const frame of image.frames) {
       const w = frame.width - 1;
       const h = frame.height - 1;
-      const cntX = (opt.centerX ?? Math.trunc(frame.width / 2)) / w;
-      const cntY = (opt.centerY ?? Math.trunc(frame.height / 2)) / h;
+      const cntX =
+        opt.centerX ?? (w > 0 ? Math.trunc(frame.width / 2) / w : 0);
+      const cntY =
+        opt.centerY ?? (h > 0 ? Math.trunc(frame.height / 2) / h : 0);
       scratch = copyFrameReusing(frame, scratch);
       const orig = scratch;
 
@@ -3282,13 +3423,9 @@ export abstract class Filter {
 
         choiceX += choiceY * 0.5;
         choiceY *= 0.866025404;
-        choiceX *= size / w;
-        choiceY *= size / h;
 
-        const nx = choiceX + cntX / w;
-        const ny = choiceY + cntY / h;
-        const x = MathUtils.clamp(nx * w, 0, w);
-        const y = MathUtils.clamp(ny * h, 0, h);
+        const x = MathUtils.clamp(choiceX * size + cntX, 0, w);
+        const y = MathUtils.clamp(choiceY * size + cntY, 0, h);
         const newColor = orig.getPixel(Math.floor(x), Math.floor(y));
 
         const msk = opt.mask
@@ -3394,7 +3531,7 @@ export abstract class Filter {
           const mx = (msk ?? 1) * amount;
           p.r = MathUtils.mix(p.r, p.r * sl, mx);
           p.g = MathUtils.mix(p.g, p.g * sl, mx);
-          p.b *= MathUtils.mix(p.b, p.b * sl, mx);
+          p.b = MathUtils.mix(p.b, p.b * sl, mx);
         } else {
           const y2 = y < threshold ? 0 : p.maxChannelValue;
           const msk = opt.mask
@@ -3731,6 +3868,10 @@ export abstract class Filter {
   /**
    * Pixelate the image.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are averaged and
+   * mixed as linear light, which is slower but keeps the blocks from
+   * darkening.
+   *
    * @param {PixelateOptions} opt - The options for pixelation.
    * @param {MemoryImage} opt.image - The image to be pixelated.
    * @param {number} opt.size - The size of the pixelated blocks.
@@ -3741,11 +3882,6 @@ export abstract class Filter {
    * @returns {MemoryImage} The pixelated image.
    */
   public static pixelate(opt: PixelateOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
     const mode = opt.mode ?? PixelateMode.upperLeft;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -3753,6 +3889,24 @@ export abstract class Filter {
     if (opt.size <= 1) {
       return opt.image;
     }
+
+    if (opt.linearBlend) {
+      return filterLinear(opt.image, (linear) =>
+        Filter.pixelate({
+          image: linear,
+          size: opt.size,
+          mode: mode,
+          amount: amount,
+          mask: opt.mask,
+          maskChannel: maskChannel,
+        }));
+    }
+
+    const image = opt.image.hasPalette
+      ? opt.image.convert({
+          numChannels: opt.image.numChannels,
+        })
+      : opt.image;
 
     for (const frame of image.frames) {
       const w = frame.width;
@@ -3779,54 +3933,40 @@ export abstract class Filter {
           break;
         case PixelateMode.average:
           {
-            let r = 0;
-            let g = 0;
-            let b = 0;
-            let a = 0;
-            let lx = -1;
-            let ly = -1;
+            const bw = Math.trunc((w + opt.size - 1) / opt.size);
+            const bh = Math.trunc((h + opt.size - 1) / opt.size);
+            const sums = new Float64Array(bw * bh * 4);
+            const counts = new Int32Array(bw * bh);
             for (const p of frame) {
-              const x2 = Math.trunc(p.x / opt.size) * opt.size;
-              const y2 = Math.trunc(p.y / opt.size) * opt.size;
+              const bi =
+                Math.trunc(p.y / opt.size) * bw + Math.trunc(p.x / opt.size);
+              const si = bi * 4;
+              sums[si] += p.r;
+              sums[si + 1] += p.g;
+              sums[si + 2] += p.b;
+              sums[si + 3] += p.a;
+              counts[bi]++;
+            }
+            for (let bi = 0, si = 0; bi < counts.length; ++bi, si += 4) {
+              const total = counts[bi];
+              sums[si] /= total;
+              sums[si + 1] /= total;
+              sums[si + 2] /= total;
+              sums[si + 3] /= total;
+            }
+            for (const p of frame) {
+              const si =
+                (Math.trunc(p.y / opt.size) * bw +
+                  Math.trunc(p.x / opt.size)) *
+                4;
               const msk = opt.mask
                 ?.getPixel(p.x, p.y)
                 .getChannelNormalized(maskChannel);
               const mx = (msk ?? 1) * amount;
-              if (x2 !== lx || y2 <= ly) {
-                lx = x2;
-                ly = y2;
-                r = 0;
-                g = 0;
-                b = 0;
-                a = 0;
-                for (
-                  let by = 0, by2 = y2;
-                  by < opt.size && by2 < h;
-                  ++by, ++by2
-                ) {
-                  for (
-                    let bx = 0, bx2 = x2;
-                    bx < opt.size && bx2 < w;
-                    ++bx, ++bx2
-                  ) {
-                    const p2 = frame.getPixel(bx2, by2);
-                    r += p2.r;
-                    g += p2.g;
-                    b += p2.b;
-                    a += p2.a;
-                  }
-                }
-                const total = opt.size * opt.size;
-                r /= total;
-                g /= total;
-                b /= total;
-                a /= total;
-              }
-
-              p.r = MathUtils.mix(p.r, r, mx);
-              p.g = MathUtils.mix(p.g, g, mx);
-              p.b = MathUtils.mix(p.b, b, mx);
-              p.a = MathUtils.mix(p.a, a, mx);
+              p.r = MathUtils.mix(p.r, sums[si], mx);
+              p.g = MathUtils.mix(p.g, sums[si + 1], mx);
+              p.b = MathUtils.mix(p.b, sums[si + 2], mx);
+              p.a = MathUtils.mix(p.a, sums[si + 3], mx);
             }
           }
 
@@ -3880,6 +4020,12 @@ export abstract class Filter {
   /**
    * Applies Reinhard tone mapping to the hdr image, in-place.
    *
+   * This is the global operator of Reinhard et al., "Photographic Tone
+   * Reproduction for Digital Images". Luminance is scaled so the log-average
+   * maps to a key of 0.18, then compressed by L * (1 + L / Lwhite^2) / (1 + L),
+   * where Lwhite is the largest scaled luminance, so the luminance of the
+   * result is in the 0-1 range.
+   *
    * @param {ReinhardToneMapOptions} opt - Options for Reinhard tone mapping.
    * @param {MemoryImage} opt.image - The HDR image to be tone mapped.
    * @param {MemoryImage} [opt.mask] - Optional mask image for selective tone mapping.
@@ -3890,9 +4036,11 @@ export abstract class Filter {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const yw = [0.212671, 0.71516, 0.072169];
+    const key = 0.18;
 
     // Compute world adaptation luminance, _Ywa_
     let ywa = 0.0;
+    let yMax = 0.0;
     for (const p of opt.image) {
       const r = p.r;
       const g = p.g;
@@ -3901,11 +4049,20 @@ export abstract class Filter {
       if (lum > 1.0e-4) {
         ywa += Math.log(lum);
       }
+      if (lum > yMax) {
+        yMax = lum;
+      }
+    }
+
+    if (yMax <= 0.0) {
+      return opt.image;
     }
 
     ywa = Math.exp(ywa / (opt.image.width * opt.image.height));
 
-    const invY2 = 1 / (ywa * ywa);
+    const lumScale = key / ywa;
+    const white = yMax * lumScale;
+    const invY2 = 1 / (white * white);
 
     for (const p of opt.image) {
       const r = p.r;
@@ -3914,7 +4071,8 @@ export abstract class Filter {
 
       const lum = yw[0] * r + yw[1] * g + yw[2] * b;
 
-      const s = (1 + lum * invY2) / (1 + lum);
+      const ys = lum * lumScale;
+      const s = (lumScale * (1 + ys * invY2)) / (1 + ys);
 
       const msk = opt.mask
         ?.getPixel(p.x, p.y)
@@ -4031,6 +4189,10 @@ export abstract class Filter {
    *
    * **gaussianBlur** is an example of such a filter.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are filtered as
+   * linear light, which is slower but keeps bright details from fading into
+   * darker surroundings.
+   *
    * @param {SeparableConvolutionOptions} opt - Options for the separable convolution operation.
    * @param {MemoryImage} opt.image - The image to which the convolution filter will be applied.
    * @param {Kernel} opt.kernel - The kernel to be used for the convolution filter.
@@ -4041,15 +4203,30 @@ export abstract class Filter {
   public static separableConvolution(
     opt: SeparableConvolutionOptions
   ): MemoryImage {
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.linearBlend) {
+      return filterLinear(opt.image, (linear) =>
+        Filter.separableConvolution({
+          image: linear,
+          kernel: opt.kernel,
+          mask: opt.mask,
+          maskChannel: maskChannel,
+        }));
+    }
+
     const image = opt.image.hasPalette
       ? opt.image.convert({
           numChannels: opt.image.numChannels,
         })
       : opt.image;
-    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     for (const frame of image.frames) {
-      if (opt.mask === undefined && convolveUint8(frame, opt.kernel)) {
+      if (
+        opt.mask === undefined &&
+        (convolveUint8(frame, opt.kernel) ||
+          convolveFloat32(frame, opt.kernel))
+      ) {
         continue;
       }
       const tmp = MemoryImage.from(frame, true);
@@ -4190,6 +4367,10 @@ export abstract class Filter {
   /**
    * Apply a smoothing convolution filter to the image.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are averaged as
+   * linear light, which is slower but keeps bright details from fading into
+   * darker surroundings.
+   *
    * @param {SmoothOptions} opt - The options for the smoothing operation.
    * @param {MemoryImage} opt.image - The image to be processed.
    * @param {number} opt.weight - The weight of the current pixel being filtered. If it's greater than 1, it will make the image sharper.
@@ -4199,6 +4380,16 @@ export abstract class Filter {
    */
   public static smooth(opt: SmoothOptions): MemoryImage {
     const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.linearBlend) {
+      return filterLinear(opt.image, (linear) =>
+        Filter.smooth({
+          image: linear,
+          weight: opt.weight,
+          mask: opt.mask,
+          maskChannel: maskChannel,
+        }));
+    }
 
     const filter = [1, 1, 1, 1, opt.weight, 1, 1, 1, 1];
     return Filter.convolution({
@@ -4390,6 +4581,10 @@ export abstract class Filter {
   /**
    * Applies a stretch distortion effect to the given image.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are interpolated as
+   * linear light, which is slower but keeps fine bright details from
+   * darkening. It has no effect with **Interpolation.nearest**.
+   *
    * @param {StretchDistortionOptions} opt - Options for the stretch distortion.
    * @param {MemoryImage} opt.image - The image to be distorted.
    * @param {Interpolation} [opt.interpolation] - The interpolation method to use. Defaults to nearest.
@@ -4400,13 +4595,26 @@ export abstract class Filter {
    * @returns {MemoryImage} - The distorted image.
    */
   public static stretchDistortion(opt: StretchDistortionOptions): MemoryImage {
+    const interpolation = opt.interpolation ?? Interpolation.nearest;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.linearBlend && interpolation !== Interpolation.nearest) {
+      return filterLinear(opt.image, (linear) =>
+        Filter.stretchDistortion({
+          image: linear,
+          centerX: opt.centerX,
+          centerY: opt.centerY,
+          interpolation: interpolation,
+          mask: opt.mask,
+          maskChannel: maskChannel,
+        }));
+    }
+
     const image = opt.image.hasPalette
       ? opt.image.convert({
           numChannels: opt.image.numChannels,
         })
       : opt.image;
-    const interpolation = opt.interpolation ?? Interpolation.nearest;
-    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
@@ -4461,6 +4669,9 @@ export abstract class Filter {
   /**
    * Apply a vignette filter to the image.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are blended as
+   * linear light, which is slower but darkens the way a lens does.
+   *
    * @param {VignetteOptions} opt - The options for the vignette filter.
    * @param {MemoryImage} opt.image - The image to which the vignette filter will be applied.
    * @param {number} [opt.start] - The inner radius from the center of the image where the fade to color starts to be applied.
@@ -4472,15 +4683,29 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the vignette filter applied.
    */
   public static vignette(opt: VignetteOptions): MemoryImage {
+    const start = opt.start ?? 0.3;
+    const end = opt.end ?? 0.85;
+    const amount = opt.amount ?? 0.9;
+    const maskChannel = opt.maskChannel ?? Channel.luminance;
+
+    if (opt.linearBlend) {
+      return filterLinear(opt.image, (linear) =>
+        Filter.vignette({
+          image: linear,
+          start: start,
+          end: end,
+          amount: amount,
+          color: linearColor(opt.color),
+          mask: opt.mask,
+          maskChannel: maskChannel,
+        }));
+    }
+
     const image = opt.image.hasPalette
       ? opt.image.convert({
           numChannels: opt.image.numChannels,
         })
       : opt.image;
-    const start = opt.start ?? 0.3;
-    const end = opt.end ?? 0.85;
-    const amount = opt.amount ?? 0.9;
-    const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const h = image.height - 1;
     const w = image.width - 1;

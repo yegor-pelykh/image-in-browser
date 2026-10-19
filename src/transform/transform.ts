@@ -25,6 +25,12 @@ import {
   orientedWidth,
   resizeBytes,
 } from './resize-bytes.js';
+import {
+  linearColor,
+  linearRgbCopy,
+  srgbCopy,
+  writeSrgbFrame,
+} from '../common/linear-rgb.js';
 
 /**
  * Interface for transform options.
@@ -92,6 +98,8 @@ export interface CopyRectifyOptions extends TransformOptions {
   interpolation?: Interpolation;
   /** The image to copy to. */
   toImage?: MemoryImage;
+  /** Whether to interpolate as linear light. */
+  linearBlend?: boolean;
 }
 
 /**
@@ -106,6 +114,8 @@ export interface CopyResizeCropSquareOptions extends TransformOptions {
   radius?: number;
   /** Whether to apply antialiasing. */
   antialias?: boolean;
+  /** Whether to blend as linear light. */
+  linearBlend?: boolean;
 }
 
 /**
@@ -122,6 +132,8 @@ export interface CopyResizeOptionsUsingWidth extends TransformOptions {
   maintainAspect?: boolean;
   /** The background color to use. */
   backgroundColor?: Color;
+  /** Whether to blend as linear light. */
+  linearBlend?: boolean;
 }
 
 /**
@@ -138,6 +150,8 @@ export interface CopyResizeOptionsUsingHeight extends TransformOptions {
   maintainAspect?: boolean;
   /** The background color to use. */
   backgroundColor?: Color;
+  /** Whether to blend as linear light. */
+  linearBlend?: boolean;
 }
 
 /**
@@ -148,6 +162,8 @@ export interface CopyRotateOptions extends TransformOptions {
   angle: number;
   /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** Whether to interpolate as linear light. */
+  linearBlend?: boolean;
 }
 
 /**
@@ -186,6 +202,8 @@ export interface ResizeOptions extends TransformOptions {
   backgroundColor?: Color;
   /** The interpolation method to use. */
   interpolation?: Interpolation;
+  /** Whether to blend as linear light. */
+  linearBlend?: boolean;
 }
 
 /**
@@ -858,6 +876,10 @@ export abstract class Transform {
    * Returns a copy of the **image**, where the given rectangle
    * has been mapped to the full image.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are interpolated as
+   * linear light, which is slower but keeps fine bright details from
+   * darkening. It has no effect with **Interpolation.nearest**.
+   *
    * @param {CopyRectifyOptions} opt - The options for rectifying the image.
    * @param {MemoryImage} opt.image - The source image to be rectified.
    * @param {Point} opt.topLeft - The top-left coordinate of the rectangle.
@@ -870,6 +892,35 @@ export abstract class Transform {
    */
   public static copyRectify(opt: CopyRectifyOptions): MemoryImage {
     const interpolation = opt.interpolation ?? Interpolation.nearest;
+
+    if (
+      opt.linearBlend &&
+      interpolation !== Interpolation.nearest &&
+      opt.toImage?.hasPalette !== true
+    ) {
+      const linear = Transform.copyRectify({
+        image: linearRgbCopy(opt.image),
+        topLeft: opt.topLeft,
+        topRight: opt.topRight,
+        bottomLeft: opt.bottomLeft,
+        bottomRight: opt.bottomRight,
+        interpolation: interpolation,
+        toImage:
+          opt.toImage !== undefined
+            ? linearRgbCopy(opt.toImage, true)
+            : undefined,
+      });
+      if (opt.toImage === undefined) {
+        return srgbCopy(linear, opt.image.format);
+      }
+      for (let i = 0; i < linear.numFrames; ++i) {
+        writeSrgbFrame(
+          linear.frames[i],
+          i === 0 ? opt.toImage : opt.toImage.addFrame()
+        );
+      }
+      return opt.toImage;
+    }
 
     // You can't interpolate index pixels, so we need to convert the image
     // to a non-palette image if non-nearest interpolation is used.
@@ -931,6 +982,11 @@ export abstract class Transform {
    * If **width** isn't specified, then it will be determined by the aspect ratio
    * of **image** and **height**.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are blended as linear
+   * light, which is slower but keeps fine bright details, such as text or
+   * highlights, from darkening as the image shrinks. It has no effect with
+   * **Interpolation.nearest**.
+   *
    * @param {CopyResizeOptionsUsingWidth | CopyResizeOptionsUsingHeight} opt - The options for resizing the image.
    * @param {MemoryImage} opt.image - The image to be resized.
    * @param {number} [opt.width] - The width to resize the image to.
@@ -950,6 +1006,24 @@ export abstract class Transform {
 
     if (opt.width === undefined && opt.height === undefined) {
       throw new LibError('Invalid size. Please specify the width or height.');
+    }
+
+    if (
+      opt.linearBlend &&
+      interpolation !== Interpolation.nearest &&
+      !src.hasPalette
+    ) {
+      return srgbCopy(
+        Transform.copyResize({
+          image: linearRgbCopy(src),
+          width: opt.width ?? 0,
+          height: opt.height ?? 0,
+          maintainAspect: maintainAspect,
+          backgroundColor: linearColor(opt.backgroundColor),
+          interpolation: interpolation,
+        }),
+        src.format
+      );
     }
 
     // You can't interpolate index pixels
@@ -1233,6 +1307,11 @@ export abstract class Transform {
   /**
    * Returns a resized and square cropped copy of the image of size size.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are blended as linear
+   * light, which is slower but keeps fine bright details, such as text or
+   * highlights, from darkening as the image shrinks. It has no effect with
+   * **Interpolation.nearest**.
+   *
    * @param {CopyResizeCropSquareOptions} opt - The options for resizing and cropping.
    * @param {MemoryImage} opt.image - The source image to be resized and cropped.
    * @param {number} opt.size - The size to which the image should be resized and cropped.
@@ -1252,6 +1331,23 @@ export abstract class Transform {
 
     if (opt.size <= 0) {
       throw new LibError('Invalid size.');
+    }
+
+    if (
+      opt.linearBlend &&
+      interpolation !== Interpolation.nearest &&
+      !src.hasPalette
+    ) {
+      return srgbCopy(
+        Transform.copyResizeCropSquare({
+          image: linearRgbCopy(src),
+          size: opt.size,
+          interpolation: interpolation,
+          radius: radius,
+          antialias: antialias,
+        }),
+        src.format
+      );
     }
 
     // You can't interpolate index pixels
@@ -1355,7 +1451,7 @@ export abstract class Transform {
           }
         }
 
-        return dst;
+        continue;
       }
 
       if (interpolation === Interpolation.nearest) {
@@ -1379,6 +1475,11 @@ export abstract class Transform {
 
   /**
    * Returns a copy of the image, rotated by the specified angle in degrees.
+   *
+   * If **linearBlend** is true, the colors, taken as sRGB, are interpolated as
+   * linear light, which is slower but keeps fine bright details from
+   * darkening. It has no effect with **Interpolation.nearest**.
+   *
    * @param {CopyRotateOptions} opt - The options for the rotation.
    * @param {MemoryImage} opt.image - The image to be rotated.
    * @param {number} opt.angle - The angle in degrees to rotate the image.
@@ -1394,6 +1495,21 @@ export abstract class Transform {
     // You can't interpolate index pixels
     if (src.hasPalette) {
       interpolation = Interpolation.nearest;
+    }
+
+    if (
+      opt.linearBlend &&
+      interpolation !== Interpolation.nearest &&
+      nAngle % 90 !== 0
+    ) {
+      return srgbCopy(
+        Transform.copyRotate({
+          image: linearRgbCopy(src),
+          angle: opt.angle,
+          interpolation: interpolation,
+        }),
+        src.format
+      );
     }
 
     // Optimized version for orthogonal angles.
@@ -1736,6 +1852,11 @@ export abstract class Transform {
    * retains the original buffer capacity, so raw getBytes() may include bytes
    * beyond the resized logical pixel range.
    *
+   * If **linearBlend** is true, the colors, taken as sRGB, are blended as linear
+   * light, which is slower but keeps fine bright details, such as text or
+   * highlights, from darkening as the image shrinks. It returns a new
+   * image, and has no effect with **Interpolation.nearest**.
+   *
    * @param {ResizeOptions} opt - The options for resizing the image.
    * @param {MemoryImage} opt.image - The image to be resized.
    * @param {number} opt.width - The desired width of the resized image.
@@ -1755,6 +1876,24 @@ export abstract class Transform {
 
     if (width === undefined && height === undefined) {
       throw new LibError('Invalid size');
+    }
+
+    if (
+      opt.linearBlend &&
+      interpolation !== Interpolation.nearest &&
+      !src.hasPalette
+    ) {
+      return srgbCopy(
+        Transform.resize({
+          image: linearRgbCopy(src),
+          width: width,
+          height: height,
+          maintainAspect: maintainAspect,
+          backgroundColor: linearColor(opt.backgroundColor),
+          interpolation: interpolation,
+        }),
+        src.format
+      );
     }
 
     // You can't interpolate index pixels
