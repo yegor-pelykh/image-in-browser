@@ -89,7 +89,7 @@ describe('Format: malformed input', () => {
       ]);
       const exif = decodeJpgExif({ data: jpeg });
       expect(exif).toBeDefined();
-      expect(exif!.directories.size).toBeLessThanOrEqual(2);
+      expect(exif!.size).toBeLessThanOrEqual(2);
     });
 
     test('TIFF IFDs that form a cycle', () => {
