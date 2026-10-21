@@ -31,8 +31,6 @@ Whether you're working with static images or animated graphics, this library is 
 
 <h1 id="supported-image-formats">🖼️ Supported Image Formats</h1>
 
-## Supported Image Formats
-
 **image-in-browser** provides extensive support for various image formats, allowing for both reading and writing capabilities. Below is a detailed overview of each supported format, including specific nuances and additional information.
 
 | Format                   | Read Support | Write Support | Notes                                                                                                                                                                                                                                                                 |
