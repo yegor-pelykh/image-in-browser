@@ -10,14 +10,22 @@
 
 <h1 id="introduction">🌟 Introduction</h1>
 
-Welcome to **image-in-browser**! This powerful NPM package allows you to effortlessly load, manipulate, and save images in a variety of formats, all within your browser or Node.js environment—no server-side setup required!
+Welcome to **image-in-browser**! This powerful NPM package allows you to effortlessly load, manipulate, and save images in a variety of formats, all within your browser or Node.js environment - no server-side setup required!
 
 Key Features:
 
 - Fully compatible with both Node.js and browser environments
 - Developed entirely in TypeScript, compiled to JavaScript
-- No external dependencies — lightweight and efficient
+- No external dependencies - lightweight and efficient
 - A modern ES (ECMAScript) module for seamless integration
+- Reads and writes a wide range of image formats, including animated GIF, APNG and WebP
+- WebP encoding in both lossless and lossy modes
+- Unified `MemoryImage` model with 12 pixel formats (uint1–uint32, int8–int32, float16–float64), palettes and multi-frame animation
+- 40+ filters and 15 transforms for resizing, cropping, rotating, blurring, dithering, quantization and tone mapping
+- Drawing and compositing with blend modes and optional linear-light (`linearBlend`) blending
+- EXIF metadata for JPEG and WebP, ICC profiles for JPEG, and PNG cICP/physical-size chunks
+- Automatic format detection, plus decode/encode helpers by MIME type or file name
+- Guards against oversized or malformed images, and decodes JPEG at 1/2, 1/4 or 1/8 scale for fast thumbnails
 
 Whether you're working with static images or animated graphics, this library is perfect for projects where you want to keep your code isolated from the underlying system.
 
@@ -27,20 +35,20 @@ Whether you're working with static images or animated graphics, this library is 
 
 **image-in-browser** provides extensive support for various image formats, allowing for both reading and writing capabilities. Below is a detailed overview of each supported format, including specific nuances and additional information.
 
-| Format                   | Read Support | Write Support          | Notes                                                                                                                                                                                                                                                                                               |
-| :----------------------- | :----------- | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **BMP**                  | ✅ Yes       | ✅ Yes                 | Bitmap Image File, a common uncompressed raster image format. Often used in Windows environments.                                                                                                                                                                                                   |
-| **GIF** / animated GIF   | ✅ Yes       | ✅ Yes                 | Graphics Interchange Format, widely known for supporting animation and transparency. It uses a palette of up to 256 colors.                                                                                                                                                                         |
-| **ICO**                  | ✅ Yes       | ✅ Yes                 | Microsoft Icon format, primarily used for favicons, application icons, and cursors within Windows operating systems. It can store multiple images of different sizes and color depths.                                                                                                              |
-| **JPG** / JPEG           | ✅ Yes       | ✅ Yes                 | Joint Photographic Experts Group, a widely used lossy compression format, ideal for photographs and complex images where file size is a primary concern. It achieves small file sizes by selectively discarding visual information.                                                                 |
-| **PNG** / animated APNG  | ✅ Yes       | ✅ Yes                 | Portable Network Graphics, a lossless compression format that supports transparency (alpha channel) and is excellent for web graphics, logos, and images requiring sharp edges. Animated PNG (APNG) extends PNG to support animation.                                                               |
-| **TGA**                  | ✅ Yes       | ✅ Yes                 | Truevision Targa (TGA), an older raster graphics file format often used in 3D animation, video games, and professional image editing for storing raw image data.                                                                                                                                    |
-| **PVR**                  | ✅ Yes       | ✅ Yes                 | PowerVR Texture, a texture compression format specifically designed for PowerVR graphics processors. It's commonly used in mobile and embedded graphics applications for efficient texture rendering.                                                                                               |
-| **TIFF**                 | ✅ Yes       | ✅ Yes                 | Tagged Image File Format, a highly flexible and versatile format for storing raster images, often used in professional photography, scanning, and printing due to its ability to store high-quality image data with various compression schemes (lossless and lossy).                               |
-| **WEBP** / animated WEBP | ✅ Yes       | ✅ Yes                 | A modern image format developed by Google, offering superior compression for both lossy and lossless images, often resulting in smaller file sizes compared to JPEG and PNG. It also supports animation and alpha transparency.                                                                       |
-| **PNM** / PBM, PGM, PPM  | ✅ Yes       | ❌ No                  | Portable Anymap format family, which includes Portable Bitmap (PBM), Portable Graymap (PGM), and Portable Pixmap (PPM). These are simple, uncompressed image formats often used for basic image manipulation and conversions.                                                                       |
-| **PSD**                  | ✅ Yes       | ❌ No                  | Adobe Photoshop Document, the native file format for Adobe Photoshop. It can store image layers, adjustments, masks, and other Photoshop-specific features. This package supports reading the flattened image data.                                                                                 |
-| **CUR**                  | ❌ No        | ✅ Yes                 | Microsoft Cursor format, used for custom static or animated mouse cursors within Windows. Unlike ICO, CUR files are specifically designed for cursor usage and include a "hot spot" (the pixel that defines the exact click point).                                                                 |
+| Format                   | Read Support | Write Support | Notes                                                                                                                                                                                                                                                                 |
+| :----------------------- | :----------- | :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **BMP**                  | ✅ Yes       | ✅ Yes        | Bitmap Image File, a common uncompressed raster image format. Often used in Windows environments.                                                                                                                                                                     |
+| **GIF** / animated GIF   | ✅ Yes       | ✅ Yes        | Graphics Interchange Format, widely known for supporting animation and transparency. It uses a palette of up to 256 colors.                                                                                                                                           |
+| **ICO**                  | ✅ Yes       | ✅ Yes        | Microsoft Icon format, primarily used for favicons, application icons, and cursors within Windows operating systems. It can store multiple images of different sizes and color depths.                                                                                |
+| **JPG** / JPEG           | ✅ Yes       | ✅ Yes        | Joint Photographic Experts Group, a widely used lossy compression format, ideal for photographs and complex images where file size is a primary concern. It achieves small file sizes by selectively discarding visual information.                                   |
+| **PNG** / animated APNG  | ✅ Yes       | ✅ Yes        | Portable Network Graphics, a lossless compression format that supports transparency (alpha channel) and is excellent for web graphics, logos, and images requiring sharp edges. Animated PNG (APNG) extends PNG to support animation.                                 |
+| **TGA**                  | ✅ Yes       | ✅ Yes        | Truevision Targa (TGA), an older raster graphics file format often used in 3D animation, video games, and professional image editing for storing raw image data.                                                                                                      |
+| **PVR**                  | ✅ Yes       | ✅ Yes        | PowerVR Texture, a texture compression format specifically designed for PowerVR graphics processors. It's commonly used in mobile and embedded graphics applications for efficient texture rendering.                                                                 |
+| **TIFF**                 | ✅ Yes       | ✅ Yes        | Tagged Image File Format, a highly flexible and versatile format for storing raster images, often used in professional photography, scanning, and printing due to its ability to store high-quality image data with various compression schemes (lossless and lossy). |
+| **WEBP** / animated WEBP | ✅ Yes       | ✅ Yes        | A modern image format developed by Google, offering superior compression for both lossy and lossless images, often resulting in smaller file sizes compared to JPEG and PNG. It also supports animation and alpha transparency.                                       |
+| **PNM** / PBM, PGM, PPM  | ✅ Yes       | ❌ No         | Portable Anymap format family, which includes Portable Bitmap (PBM), Portable Graymap (PGM), and Portable Pixmap (PPM). These are simple, uncompressed image formats often used for basic image manipulation and conversions.                                         |
+| **PSD**                  | ✅ Yes       | ❌ No         | Adobe Photoshop Document, the native file format for Adobe Photoshop. It can store image layers, adjustments, masks, and other Photoshop-specific features. This package supports reading the flattened image data.                                                   |
+| **CUR**                  | ❌ No        | ✅ Yes        | Microsoft Cursor format, used for custom static or animated mouse cursors within Windows. Unlike ICO, CUR files are specifically designed for cursor usage and include a "hot spot" (the pixel that defines the exact click point).                                   |
 
 <h1 id="usage-examples">💡 Usage Examples</h1>
 
