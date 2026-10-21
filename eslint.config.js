@@ -80,6 +80,7 @@ export default config.defineConfig(
       '@typescript-eslint/no-extraneous-class': ['off'],
       '@typescript-eslint/no-non-null-assertion': ['off'],
       '@typescript-eslint/no-unnecessary-condition': ['off'],
+      '@typescript-eslint/no-unsafe-enum-assignment': ['off'],
       '@typescript-eslint/no-unused-vars': ['off'],
       '@typescript-eslint/prefer-literal-enum-member': ['off'],
       '@typescript-eslint/restrict-template-expressions': ['off'],
