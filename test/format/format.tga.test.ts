@@ -66,4 +66,53 @@ describe('Format: TGA', () => {
       );
     });
   }
+
+  /**
+   * Builds the header of a 2x2 TGA image with 8 bits per pixel.
+   * @param {number} imageType - The TGA image type.
+   * @returns {number[]} The header bytes.
+   */
+  function grayHeader(imageType: number): number[] {
+    return [0, 0, imageType, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 8, 0];
+  }
+
+  /**
+   * Decodes an uncompressed grayscale image (image type 3).
+   */
+  test('grayscale', () => {
+    // Rows are stored from bottom to top.
+    const image = decodeTga({
+      data: new Uint8Array([...grayHeader(3), 0x10, 0x20, 0x30, 0x40]),
+    });
+
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+    expect(image.numChannels).toBe(1);
+    expect(image.getPixel(0, 0).r).toBe(0x30);
+    expect(image.getPixel(1, 0).r).toBe(0x40);
+    expect(image.getPixel(0, 1).r).toBe(0x10);
+    expect(image.getPixel(1, 1).r).toBe(0x20);
+  });
+
+  /**
+   * Decodes a run-length encoded grayscale image (image type 11).
+   */
+  test('grayscale RLE', () => {
+    // A run packet of two 0x10 pixels, then a raw packet of 0x30 and 0x40.
+    const image = decodeTga({
+      data: new Uint8Array([...grayHeader(11), 0x81, 0x10, 0x01, 0x30, 0x40]),
+    });
+
+    expect(image).toBeDefined();
+    if (image === undefined) {
+      return;
+    }
+    expect(image.numChannels).toBe(1);
+    expect(image.getPixel(0, 0).r).toBe(0x30);
+    expect(image.getPixel(1, 0).r).toBe(0x40);
+    expect(image.getPixel(0, 1).r).toBe(0x10);
+    expect(image.getPixel(1, 1).r).toBe(0x10);
+  });
 });

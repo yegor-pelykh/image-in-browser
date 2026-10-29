@@ -114,10 +114,11 @@ export class TgaDecoder implements Decoder {
 
     const bpp = this._info.pixelDepth;
     const hasAlpha = bpp === 16 || bpp === 32;
+    const isGray = this._info.imageType === TgaImageType.grayRle;
     const image = new MemoryImage({
       width: this._info.width,
       height: this._info.height,
-      numChannels: hasAlpha ? 4 : 3,
+      numChannels: isGray ? 1 : hasAlpha ? 4 : 3,
       withPalette: this._info.hasColorMap,
     });
 
@@ -260,11 +261,12 @@ export class TgaDecoder implements Decoder {
       bpp === 32 ||
       (this._info.hasColorMap &&
         (this._info.colorMapDepth === 16 || this._info.colorMapDepth === 32));
+    const isGray = this._info.imageType === TgaImageType.gray;
 
     const image = new MemoryImage({
       width: this._info.width,
       height: this._info.height,
-      numChannels: hasAlpha ? 4 : 3,
+      numChannels: isGray ? 1 : hasAlpha ? 4 : 3,
       withPalette: this._info.hasColorMap,
     });
 
@@ -401,6 +403,13 @@ export class TgaDecoder implements Decoder {
       return this.decodeRle();
     } else if (this._info.imageType === TgaImageType.palette) {
       return this.decodeRgb();
+    } else if (this._info.pixelDepth === 8) {
+      // 8-bit grayscale is read like the 8-bit palette indices.
+      if (this._info.imageType === TgaImageType.gray) {
+        return this.decodeRgb();
+      } else if (this._info.imageType === TgaImageType.grayRle) {
+        return this.decodeRle();
+      }
     }
 
     return undefined;
