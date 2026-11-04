@@ -23,6 +23,7 @@ import { huffmanLookup } from './huffman-lookup.js';
 import { RestartDecode } from './restart-decode.js';
 import { IccProfile } from '../../image/icc-profile.js';
 import { IccProfileCompression } from '../../image/icc-profile-compression.js';
+import { JpegIccProfileReader } from './jpeg-icc.js';
 
 /**
  * Class representing JPEG data.
@@ -199,6 +200,8 @@ export class JpegData {
   private _restartNeeded = false;
 
   private _writer?: JpegImageWriter;
+
+  private readonly _iccProfileReader = new JpegIccProfileReader();
 
   private readonly _bandLines = new Array<Array<Uint8Array>>();
 
@@ -908,23 +911,14 @@ export class JpegData {
    * @param {InputBuffer<Uint8Array>} block - The input buffer containing the ICC profile data.
    */
   private readIccProfile(block: InputBuffer<Uint8Array>): void {
-    // "ICC_PROFILE\0"
-    const iccProfileSignature = [
-      0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0x00,
-    ];
-    for (let i = 0; i < iccProfileSignature.length; i++) {
-      const b = block.read();
-      if (b !== iccProfileSignature[i]) {
-        return;
-      }
+    const data = this._iccProfileReader.read(block);
+    if (data !== undefined) {
+      this._iccProfile = new IccProfile(
+        'ICC_PROFILE',
+        IccProfileCompression.none,
+        data
+      );
     }
-
-    const data = block.toUint8Array();
-    this._iccProfile = new IccProfile(
-      'ICC_PROFILE',
-      IccProfileCompression.none,
-      data
-    );
   }
 
   /**

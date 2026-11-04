@@ -7,11 +7,11 @@ import { ArrayUtils } from '../common/array-utils.js';
 import { MathUtils } from '../common/math-utils.js';
 import { OutputBuffer } from '../common/output-buffer.js';
 import type { ExifData } from '../exif/exif-data.js';
-import type { IccProfile } from '../image/icc-profile.js';
 import type { MemoryImage } from '../image/image.js';
 import type { Pixel } from '../image/pixel.js';
 import type { Encoder, EncoderEncodeOptions } from './encoder.js';
 import { checkEncode } from './check-encode.js';
+import { writeJpegIccProfile } from './jpeg/jpeg-icc.js';
 import { JpegMarker } from './jpeg/jpeg-marker.js';
 import { HuffmanTable } from './jpeg/huffman-table.js';
 
@@ -291,24 +291,6 @@ export class JpegEncoder implements Encoder {
     out.writeUint32(exifSignature);
     out.writeUint16(0);
     out.writeBytes(exifBytes);
-  }
-
-  /**
-   * Writes the APP2 (ICC Profile) marker to the output buffer.
-   * @param {OutputBuffer} out - The output buffer.
-   * @param {IccProfile} profile - The ICC profile data.
-   */
-  private static writeICCProfile(out: OutputBuffer, profile: IccProfile): void {
-    JpegEncoder.writeMarker(out, JpegMarker.app2);
-    const profileData = profile.decompressed();
-    const blockSize = 12 + 2 + profileData.length;
-    // Signature: ICC_PROFILE\0
-    const signature = new Uint8Array([
-      0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0x00,
-    ]);
-    out.writeUint16(blockSize);
-    out.writeBytes(signature);
-    out.writeBytes(profileData);
   }
 
   /**
@@ -1048,7 +1030,7 @@ export class JpegEncoder implements Encoder {
       JpegEncoder.writeExif(fp, image.exifData);
     }
     if (image.iccProfile !== undefined) {
-      JpegEncoder.writeICCProfile(fp, image.iccProfile);
+      writeJpegIccProfile(fp, image.iccProfile.decompressed());
     }
     this.writeDQT(fp);
     JpegEncoder.writeSOF0(fp, image.width, image.height, chroma);

@@ -6,6 +6,8 @@ import {
   ColorUint8,
   defaultMaxPixels,
   ExifData,
+  IccProfile,
+  IccProfileCompression,
   JpegChroma,
   JpegData,
   JpegDecoder,
@@ -55,6 +57,26 @@ describe('Format: JPEG', () => {
       }
     }
     throw new Error('SOF0 not found');
+  }
+
+  /**
+   * Returns the data after the 'ICC_PROFILE\0' signature of each APP2 segment.
+   */
+  function iccSegments(jpg: Uint8Array): Uint8Array[] {
+    const segments: Uint8Array[] = [];
+    let offset = 2;
+    while (jpg[offset] === 0xff && jpg[offset + 1] !== 0xda) {
+      const length = (jpg[offset + 2] << 8) | jpg[offset + 3];
+      const data = jpg.subarray(offset + 4, offset + 2 + length);
+      if (
+        jpg[offset + 1] === 0xe2 &&
+        String.fromCharCode(...data.subarray(0, 12)) === 'ICC_PROFILE\x00'
+      ) {
+        segments.push(data.subarray(12));
+      }
+      offset += 2 + length;
+    }
+    return segments;
   }
 
   /**
@@ -261,6 +283,80 @@ describe('Format: JPEG', () => {
       'icc_profile_data.jpg',
       output
     );
+  });
+
+  /**
+   * Writes the APP2 sequence number and count of an ICC profile.
+   */
+  test('encode icc_profile with sequence number and count', () => {
+    const bytes = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'iCCP.png'
+    );
+    const profile = decodePng({ data: bytes })!.iccProfile!.decompressed();
+    const image = new MemoryImage({ width: 8, height: 8 });
+    image.iccProfile = new IccProfile(
+      'ICC_PROFILE',
+      IccProfileCompression.none,
+      profile
+    );
+    const jpg = encodeJpg({ image: image });
+
+    const segments = iccSegments(jpg);
+    expect(segments).toHaveLength(1);
+    expect(Array.from(segments[0].subarray(0, 2))).toEqual([1, 1]);
+    expect(segments[0].subarray(2)).toEqual(profile);
+    expect(decodeJpg({ data: jpg })!.iccProfile!.data).toEqual(profile);
+  });
+
+  /**
+   * Removes the APP2 sequence number and count from an ICC profile.
+   */
+  test('remove the APP2 sequence number and count from icc_profile', () => {
+    const jpg = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'icc_profile_data.jpg'
+    );
+    const segment = iccSegments(jpg)[0];
+
+    const profile = decodeJpg({ data: jpg })!.iccProfile!.data;
+
+    expect(Array.from(profile)).toEqual(Array.from(segment.subarray(2)));
+    expect(
+      new DataView(
+        profile.buffer,
+        profile.byteOffset,
+        profile.byteLength
+      ).getUint32(0)
+    ).toBe(profile.length);
+  });
+
+  /**
+   * Splits a large ICC profile into APP2 segments.
+   */
+  test('split a large icc_profile into APP2 segments', () => {
+    const profile = new Uint8Array(150000);
+    for (let i = 0; i < profile.length; ++i) {
+      profile[i] = i % 251;
+    }
+    const image = new MemoryImage({ width: 8, height: 8 });
+    image.iccProfile = new IccProfile(
+      'ICC_PROFILE',
+      IccProfileCompression.none,
+      profile
+    );
+    const jpg = encodeJpg({ image: image });
+
+    const segments = iccSegments(jpg);
+    expect(segments.map((s) => Array.from(s.subarray(0, 2)))).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
+    expect(segments.map((s) => s.length - 2)).toEqual([65519, 65519, 18962]);
+    expect(decodeJpg({ data: jpg })!.iccProfile!.data).toEqual(profile);
   });
 
   /**
