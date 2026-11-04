@@ -80,6 +80,25 @@ describe('Format: JPEG', () => {
   }
 
   /**
+   * Builds a JPEG with an APP2 ICC profile segment for each of the **segments**,
+   * the data after the 'ICC_PROFILE\0' signature.
+   */
+  function jpgWithIccSegments(segments: Array<ArrayLike<number>>): Uint8Array {
+    const jpg = encodeJpg({
+      image: new MemoryImage({ width: 8, height: 8 }),
+    });
+    const out = Array.from(jpg.subarray(0, 2));
+    for (const data of segments) {
+      const length = 14 + data.length;
+      out.push(0xff, 0xe2, length >> 8, length & 0xff);
+      out.push(...'ICC_PROFILE\x00'.split('').map((c) => c.charCodeAt(0)));
+      out.push(...Array.from(data));
+    }
+    out.push(...Array.from(jpg.subarray(2)));
+    return Uint8Array.from(out);
+  }
+
+  /**
    * Rejects frames that declare dimensions over the maxPixels limit.
    */
   test('rejects dimensions over maxPixels', () => {
@@ -334,6 +353,89 @@ describe('Format: JPEG', () => {
   });
 
   /**
+   * Decodes an ICC profile written without a sequence number and count.
+   */
+  test('decode icc_profile written without sequence number and count', () => {
+    const bytes = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.png,
+      'iCCP.png'
+    );
+    const profile = decodePng({ data: bytes })!.iccProfile!.decompressed();
+
+    const jpg = jpgWithIccSegments([profile]);
+
+    expect(decodeJpg({ data: jpg })!.iccProfile!.data).toEqual(profile);
+  });
+
+  /**
+   * Decodes an ICC profile split into APP2 segments.
+   */
+  test('decode an icc_profile split into APP2 segments', () => {
+    const jpg = TestUtils.readFromFile(
+      TestFolder.input,
+      TestSection.jpeg,
+      'cmyk.jpg'
+    );
+
+    const profile = decodeJpg({ data: jpg })!.iccProfile!.data;
+
+    expect(profile).toHaveLength(557168);
+    expect(
+      new DataView(
+        profile.buffer,
+        profile.byteOffset,
+        profile.byteLength
+      ).getUint32(0)
+    ).toBe(profile.length);
+  });
+
+  /**
+   * Joins ICC profile segments in sequence order.
+   */
+  test('join icc_profile segments in sequence order', () => {
+    const jpg = jpgWithIccSegments([
+      [3, 3, 7, 8],
+      [1, 3, 3, 4],
+      [2, 3, 5, 6],
+    ]);
+
+    expect(Array.from(decodeJpg({ data: jpg })!.iccProfile!.data)).toEqual([
+      3, 4, 5, 6, 7, 8,
+    ]);
+  });
+
+  /**
+   * Ignores an ICC profile with invalid APP2 segments.
+   */
+  test('ignore an icc_profile with invalid APP2 segments', () => {
+    const invalid: Record<string, number[][]> = {
+      'missing part': [[1, 2, 1]],
+      'different counts': [
+        [1, 2, 1],
+        [2, 3, 2],
+        [3, 3, 3],
+      ],
+      'repeated part': [
+        [1, 1, 1],
+        [1, 1, 2],
+      ],
+      'stray part after a complete profile': [
+        [1, 3, 1],
+        [2, 3, 2],
+        [3, 3, 3],
+        [1, 2, 4],
+      ],
+      'sequence number 0': [[0, 1, 1]],
+      'sequence number over the count': [[2, 1, 1]],
+    };
+    for (const [name, segments] of Object.entries(invalid)) {
+      const image = decodeJpg({ data: jpgWithIccSegments(segments) });
+      expect(image!.iccProfile, name).toBeUndefined();
+    }
+  });
+
+  /**
    * Splits a large ICC profile into APP2 segments.
    */
   test('split a large icc_profile into APP2 segments', () => {
@@ -357,6 +459,48 @@ describe('Format: JPEG', () => {
     ]);
     expect(segments.map((s) => s.length - 2)).toEqual([65519, 65519, 18962]);
     expect(decodeJpg({ data: jpg })!.iccProfile!.data).toEqual(profile);
+  });
+
+  /**
+   * Splits an ICC profile only when it exceeds a segment.
+   */
+  test('split an icc_profile only when it exceeds a segment', () => {
+    for (const [size, numParts] of [
+      [65519, 1],
+      [65520, 2],
+    ] as const) {
+      const profile = new Uint8Array(size).fill(7);
+      const image = new MemoryImage({ width: 8, height: 8 });
+      image.iccProfile = new IccProfile(
+        'ICC_PROFILE',
+        IccProfileCompression.none,
+        profile
+      );
+      const jpg = encodeJpg({ image: image });
+
+      expect(iccSegments(jpg)).toHaveLength(numParts);
+      expect(decodeJpg({ data: jpg })!.iccProfile!.data).toEqual(profile);
+    }
+  });
+
+  /**
+   * Throws for an ICC profile too large for 255 segments.
+   */
+  test('throw for an icc_profile too large for 255 segments', () => {
+    const image = new MemoryImage({ width: 8, height: 8 });
+    image.iccProfile = new IccProfile(
+      'ICC_PROFILE',
+      IccProfileCompression.none,
+      new Uint8Array(255 * 65519)
+    );
+    expect(iccSegments(encodeJpg({ image: image }))).toHaveLength(255);
+
+    image.iccProfile = new IccProfile(
+      'ICC_PROFILE',
+      IccProfileCompression.none,
+      new Uint8Array(255 * 65519 + 1)
+    );
+    expect(() => encodeJpg({ image: image })).toThrow(LibError);
   });
 
   /**

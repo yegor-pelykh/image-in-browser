@@ -351,6 +351,15 @@ export class JpegData {
 
       marker = this.nextMarker();
     }
+
+    const profile = this._iccProfileReader.profile;
+    if (profile !== undefined) {
+      this._iccProfile = new IccProfile(
+        'ICC_PROFILE',
+        IccProfileCompression.none,
+        profile
+      );
+    }
   }
 
   /**
@@ -907,21 +916,6 @@ export class JpegData {
   }
 
   /**
-   * Reads the ICC profile data from the provided input buffer.
-   * @param {InputBuffer<Uint8Array>} block - The input buffer containing the ICC profile data.
-   */
-  private readIccProfile(block: InputBuffer<Uint8Array>): void {
-    const data = this._iccProfileReader.read(block);
-    if (data !== undefined) {
-      this._iccProfile = new IccProfile(
-        'ICC_PROFILE',
-        IccProfileCompression.none,
-        data
-      );
-    }
-  }
-
-  /**
    * Reads the EXIF data from the provided input buffer.
    * @param {InputBuffer<Uint8Array>} block - The input buffer containing the EXIF data.
    */
@@ -995,7 +989,7 @@ export class JpegData {
       // 'EXIF\0'
       this.readExifData(appData);
     } else if (marker === JpegMarker.app2) {
-      this.readIccProfile(appData);
+      this._iccProfileReader.read(appData);
     } else if (marker === JpegMarker.app14) {
       // 'Adobe\0'
       if (
