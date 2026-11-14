@@ -417,7 +417,8 @@ function adler32(data: Uint8Array): number {
 /**
  * Decompresses data using the inflate algorithm.
  * @param {Uint8Array} file - The compressed data.
- * @param {Uint8Array} buf - The buffer to store decompressed data.
+ * @param {Uint8Array} buf - The buffer to store decompressed data. Inflation
+ * stops once it is full.
  * @returns {Uint8Array} The decompressed data.
  * @throws {LibError} If the zlib header or Adler-32 checksum is invalid.
  */

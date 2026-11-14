@@ -81,15 +81,22 @@ export class WebPDecoder implements Decoder {
   }
 
   /**
-   * Decode a frame internally.
+   * Decodes the frame in {@link input}. An ANMF frame passes its {@link width}
+   * and {@link height}, which were checked against maxPixels, and the
+   * bitstream inside it must match them: the decoders allocate from the
+   * bitstream's own size, so its header is checked before decoding.
    * @private
    * @param {InputBuffer<Uint8Array>} input - The input buffer.
    * @param {number} [frameIndex=0] - The frame index.
+   * @param {number} [width] - The width of the ANMF frame.
+   * @param {number} [height] - The height of the ANMF frame.
    * @returns {MemoryImage | undefined} The decoded image.
    */
   private decodeFrameInternal(
     input: InputBuffer<Uint8Array>,
-    frameIndex: number = 0
+    frameIndex: number = 0,
+    width?: number,
+    height?: number
   ): MemoryImage | undefined {
     const webp = new WebPInfoInternal();
     if (!this.getInfo(input, webp)) {
@@ -110,17 +117,32 @@ export class WebPDecoder implements Decoder {
       const f = webp.frames[frameIndex];
       const frameData = input.subarray(f.frameSize, f.framePosition);
 
-      return this.decodeFrameInternal(frameData, frameIndex);
+      return this.decodeFrameInternal(frameData, frameIndex, f.width, f.height);
     } else {
-      const data = input.subarray(webp.vp8Size, webp.vp8Position);
-      if (webp.format === WebPFormat.lossless) {
-        return new VP8L(data, webp).decode();
-      } else if (webp.format === WebPFormat.lossy) {
-        return new VP8(data, webp).decode();
+      const bitstream = (): InputBuffer<Uint8Array> =>
+        input.subarray(webp.vp8Size, webp.vp8Position);
+      const lossless = webp.format === WebPFormat.lossless;
+      if (!lossless && webp.format !== WebPFormat.lossy) {
+        return undefined;
       }
+      if (width !== undefined && height !== undefined) {
+        const ok = lossless
+          ? new VP8L(bitstream(), webp).decodeHeader()
+          : new VP8(bitstream(), webp).decodeHeader();
+        if (!ok) {
+          return undefined;
+        }
+        if (webp.width !== width || webp.height !== height) {
+          throw new LibError(
+            `WebP frame bitstream size ${webp.width}x${webp.height} does not ` +
+              `match its frame size ${width}x${height}`
+          );
+        }
+      }
+      return lossless
+        ? new VP8L(bitstream(), webp).decode()
+        : new VP8(bitstream(), webp).decode();
     }
-
-    return undefined;
   }
 
   /**
@@ -527,7 +549,7 @@ export class WebPDecoder implements Decoder {
       const f = this._info.frames[frameIndex];
       const frameData = this._input.subarray(f.frameSize, f.framePosition);
 
-      return this.decodeFrameInternal(frameData, frameIndex);
+      return this.decodeFrameInternal(frameData, frameIndex, f.width, f.height);
     }
 
     if (this._info.format === WebPFormat.lossless) {

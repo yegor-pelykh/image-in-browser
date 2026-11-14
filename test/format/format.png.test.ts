@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ArrayUtils,
   ColorRgb8,
+  ColorRgba8,
   Crc32,
   decodePng,
   Draw,
@@ -1316,5 +1317,23 @@ describe('Format: PNG', () => {
       }
     );
     expect(decodePng({ data: png })).toBeUndefined();
+  });
+
+  /**
+   * A PNG whose IDAT inflates far past the image still decodes: the IDAT is
+   * inflated into a buffer the size of the rows, so the megabytes of zeros
+   * after them are not kept.
+   */
+  test('IDAT inflating far past the image', () => {
+    const source = new MemoryImage({ width: 100, height: 100, numChannels: 4 });
+    source.clear(new ColorRgba8(10, 20, 30, 40));
+    const png = editIdat(encodePng({ image: source }), (zlib) => {
+      const rows = inflate(zlib);
+      return deflate(new Uint8Array([...rows, ...new Uint8Array(8 << 20)]));
+    });
+    const image = decodePng({ data: png });
+    expect(image).toBeDefined();
+    expect(image!.width).toBe(100);
+    expect(image!.getPixel(99, 99).equals([10, 20, 30, 40])).toBe(true);
   });
 });

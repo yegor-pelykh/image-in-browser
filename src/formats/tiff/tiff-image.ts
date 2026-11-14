@@ -810,6 +810,8 @@ export class TiffImage {
 
   /**
    * Decodes a tile from the input buffer and writes the decoded data to the image.
+   * A JPEG tile is decoded with maxPixels set to the tile size, so a JPEG
+   * declaring more is refused rather than allocated.
    *
    * @param {InputBuffer<Uint8Array>} p - The input buffer containing the tile data.
    * @param {MemoryImage} image - The image to write the decoded tile data to.
@@ -904,9 +906,11 @@ export class TiffImage {
         this._compression === TiffCompression.jpeg
       ) {
         const data = p.toUint8Array(0, byteCount);
-        const tile = new JpegDecoder().decode({
-          bytes: data,
-        });
+        const tile = new JpegDecoder(this._tileWidth * this._tileHeight).decode(
+          {
+            bytes: data,
+          }
+        );
         if (tile !== undefined) {
           this.jpegToImage(
             tile,

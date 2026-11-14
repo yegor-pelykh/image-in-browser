@@ -1,6 +1,6 @@
 /** @format */
 
-import { inflate } from '../packer/packer.js';
+import { inflate } from '../common/inflate.js';
 import { Crc32 } from '../common/crc32.js';
 import { InputBuffer } from '../common/input-buffer.js';
 import { ArrayUtils } from '../common/array-utils.js';
@@ -955,6 +955,14 @@ export class PngDecoder implements Decoder {
     return guardDecode(() => this._decodeFrame(frameIndex));
   }
 
+  /**
+   * Decodes the image data of a frame. It is inflated into a buffer the size
+   * its rows can take, including the seven Adam7 passes for an interlaced
+   * image, so crafted data can't inflate past it. The buffer is one byte
+   * larger, so that the checksum after the last row is still checked.
+   * @param {number} frameIndex - The index of the frame to decode.
+   * @returns {MemoryImage | undefined} The decoded MemoryImage or undefined if input is not defined.
+   */
   private _decodeFrame(frameIndex: number): MemoryImage | undefined {
     if (this._input === undefined) {
       return undefined;
@@ -1030,8 +1038,15 @@ export class PngDecoder implements Decoder {
               : 3;
 
     let uncompressed: Uint8Array | undefined = undefined;
+    const pixelDepth = this.pngChannels * this._info.bits;
+    const rowBytes = Math.trunc((width * pixelDepth + 7) / 8);
+    const maxBytes =
+      this._info.interlaceMethod === 0
+        ? height * (rowBytes + 1)
+        : Math.trunc((width * height * pixelDepth + 7) / 8) +
+          2 * (2 * height + 7);
     try {
-      uncompressed = inflate(imageData);
+      uncompressed = inflate(imageData, maxBytes + 1);
     } catch (error) {
       return undefined;
     }

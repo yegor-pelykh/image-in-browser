@@ -630,6 +630,9 @@ function _writeLit(
 /**
  * Inflates the given data using the provided buffer.
  *
+ * When {@link buf} is given, inflation stops once it is full, so crafted data
+ * can't inflate past its end.
+ *
  * @param {Uint8Array} data - The data to inflate.
  * @param {Uint8Array} [buf] - The buffer to use for inflation.
  * @returns {Uint8Array} The inflated data.
@@ -656,8 +659,9 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
   let pos = 0;
   let lmap: Uint16Array | undefined = undefined;
   let dmap: Uint16Array | undefined = undefined;
+  let full = false;
 
-  while (BFINAL === 0) {
+  while (BFINAL === 0 && !full) {
     BFINAL = bitsF(data, pos, 1);
     BTYPE = bitsF(data, pos + 1, 2);
     pos += 3;
@@ -666,6 +670,15 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
       const p8 = (pos >>> 3) + 4;
       const len = data[p8 - 4] | (data[p8 - 3] << 8);
       if (noBuf) out = _check(out, off + len);
+      if (!noBuf && off + len > out.length) {
+        const n = out.length - off;
+        if (n > 0) {
+          out.set(new U8(data.buffer, data.byteOffset + p8, n), off);
+        }
+        off = out.length;
+        full = true;
+        break;
+      }
       out.set(new U8(data.buffer, data.byteOffset + p8, len), off);
       pos = (p8 + len) << 3;
       off += len;
@@ -715,6 +728,10 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
       codes2map(U.dtree, mx1, dmap);
     }
     while (true) {
+      if (!noBuf && off >= out.length) {
+        full = true;
+        break;
+      }
       const code = lmap![get17(data, pos) & ML];
       pos += code & 15;
       const lit = code >>> 4;
@@ -738,6 +755,13 @@ export function inflate(data: Uint8Array, buf?: Uint8Array): Uint8Array {
         pos += dbs & 15;
 
         if (noBuf) out = _check(out, off + (1 << 17));
+        if (!noBuf && end > out.length) {
+          while (off < out.length) {
+            out[off] = out[off++ - dst];
+          }
+          full = true;
+          break;
+        }
         while (off < end) {
           out[off] = out[off++ - dst];
           out[off] = out[off++ - dst];

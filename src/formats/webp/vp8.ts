@@ -270,7 +270,8 @@ export class VP8 {
   }
 
   /**
-   * Decode VP8 header from input stream.
+   * Decode VP8 header from input stream. The top 2 bits of the width and
+   * height are an upscaling hint, not part of the size.
    * @returns True if header is valid.
    */
   public decodeHeader(): boolean {
@@ -285,8 +286,8 @@ export class VP8 {
     this._frameHeader.partitionLength = bits >>> 5;
     const signature = this._input.readUint24();
     if (signature !== VP8.vp8Signature) return false;
-    this._webp.width = this._input.readUint16();
-    this._webp.height = this._input.readUint16();
+    this._webp.width = this._input.readUint16() & 0x3fff;
+    this._webp.height = this._input.readUint16() & 0x3fff;
     return true;
   }
 
