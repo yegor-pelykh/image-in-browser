@@ -9,10 +9,10 @@ import {
   Draw,
   encodeBmp,
   Format,
+  getRowStride,
   MemoryImage,
   Pixel,
 } from '../../src';
-import { getRowStride } from '../../src/color/format';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';

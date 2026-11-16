@@ -31,6 +31,7 @@ import {
   decodePnm,
   decodePsd,
   decodeTiff,
+  deflateZlib,
   encodeBmp,
   encodeGif,
   encodeIco,
@@ -41,9 +42,8 @@ import {
   encodeTiff,
   encodeWebP,
   findDecoderForData,
+  setDefaultMaxPixels,
 } from '../../src';
-import { deflate } from '../../src/packer/packer';
-import { setDefaultMaxPixels } from '../../src/formats/decoder';
 
 /**
  * An animation of {@link numFrames} frames of {@link width} x {@link height}.
@@ -255,7 +255,7 @@ describe('Format: malformed input', () => {
 
   describe('decompression limits', () => {
     test('ICC profile', () => {
-      const deflated = deflate(new Uint8Array(64 << 20));
+      const deflated = deflateZlib(new Uint8Array(64 << 20));
       const icc = new IccProfile(
         'icc',
         IccProfileCompression.deflate,
@@ -270,7 +270,7 @@ describe('Format: malformed input', () => {
         image: new MemoryImage({ width: 2, height: 2 }),
       });
       const littleEndian = tiff[0] !== 0x4d;
-      const bomb = deflate(new Uint8Array(64 << 20));
+      const bomb = deflateZlib(new Uint8Array(64 << 20));
       const bytes = new Uint8Array([...tiff, ...bomb]);
       const data = new DataView(
         bytes.buffer,

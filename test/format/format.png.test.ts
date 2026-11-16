@@ -7,12 +7,14 @@ import {
   ColorRgba8,
   Crc32,
   decodePng,
+  deflateZlib,
   Draw,
   encodePng,
   FlipDirection,
   Format,
   IccProfile,
   IccProfileCompression,
+  inflateZlib,
   LibError,
   MemoryImage,
   PaletteUint8,
@@ -27,7 +29,6 @@ import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
 import { ImageTestUtils } from '../_utils/image-test-utils';
-import { deflate, inflate } from '../../src/packer/packer.js';
 
 /**
  * PNG encoding and decoding across bit depths, filter types, animations, metadata, and color profiles.
@@ -1294,9 +1295,9 @@ describe('Format: PNG', () => {
     const png = editIdat(
       encodePng({ image: new MemoryImage({ width: 8, height: 8 }) }),
       (zlib) => {
-        const rows = inflate(zlib);
+        const rows = inflateZlib(zlib);
         rows[0] = 5;
-        return deflate(rows);
+        return deflateZlib(rows);
       }
     );
     expect(decodePng({ data: png })).toBeUndefined();
@@ -1328,8 +1329,8 @@ describe('Format: PNG', () => {
     const source = new MemoryImage({ width: 100, height: 100, numChannels: 4 });
     source.clear(new ColorRgba8(10, 20, 30, 40));
     const png = editIdat(encodePng({ image: source }), (zlib) => {
-      const rows = inflate(zlib);
-      return deflate(new Uint8Array([...rows, ...new Uint8Array(8 << 20)]));
+      const rows = inflateZlib(zlib);
+      return deflateZlib(new Uint8Array([...rows, ...new Uint8Array(8 << 20)]));
     });
     const image = decodePng({ data: png });
     expect(image).toBeDefined();

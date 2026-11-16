@@ -2,26 +2,24 @@
 
 import { describe, expect, test } from 'vitest';
 import {
+  absBranchless,
   ChannelOrder,
-  Format,
-  MemoryImage,
-  MemoryImageDataUint8,
-  PaletteUint8,
   decodeWebP,
   encodeWebP,
-} from '../../src';
-import { VP8Config } from '../../src/formats/webp/vp8-config';
-import { maxCost } from '../../src/formats/webp/vp8-rd';
-import {
-  absBranchless,
+  Format,
+  importYuv,
+  maxCost,
+  maxDimension,
+  MemoryImage,
+  MemoryImageDataUint8,
   min2,
   nonZero,
+  PaletteUint8,
   sar,
   signOf,
-} from '../../src/formats/webp/vp8-sar';
-import { VP8EncState } from '../../src/formats/webp/vp8-state';
-import { importYuv } from '../../src/formats/webp/vp8-yuv';
-import { maxDimension } from '../../src/formats/webp/vp8l-encoder';
+  VP8Config,
+  VP8EncState,
+} from '../../src';
 
 /**
  * WEBP lossy encoder behavior.

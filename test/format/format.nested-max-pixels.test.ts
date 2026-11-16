@@ -2,7 +2,10 @@
 
 import { describe, expect, test } from 'vitest';
 import {
+  animChunkData,
+  anmfChunkData,
   BmpDecoder,
+  buildRiff,
   ColorRgba8,
   Crc32,
   decodeJpg,
@@ -14,16 +17,11 @@ import {
   PngDecoder,
   PnmDecoder,
   TiffDecoder,
+  VP8LEncoder,
+  vp8xChunkData,
+  WebPChunk,
   WebPDecoder,
 } from '../../src';
-import {
-  WebPChunk,
-  animChunkData,
-  anmfChunkData,
-  buildRiff,
-  vp8xChunkData,
-} from '../../src/formats/webp/webp-chunk';
-import { VP8LEncoder } from '../../src/formats/webp/vp8l-encoder';
 
 /**
  * Calls {@link decode} and asserts that it is refused with a {@link LibError}

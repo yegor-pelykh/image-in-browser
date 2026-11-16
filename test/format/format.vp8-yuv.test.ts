@@ -1,8 +1,7 @@
 /** @format */
 
 import { describe, expect, it } from 'vitest';
-import { ColorRgb8, MemoryImage } from '../../src/index';
-import { importYuv } from '../../src/formats/webp/vp8-yuv';
+import { ColorRgb8, importYuv, MemoryImage } from '../../src';
 
 describe('vp8-yuv', () => {
   it('converts a small RGB image to YUV 4:2:0', () => {

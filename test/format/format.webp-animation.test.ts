@@ -1,15 +1,18 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { ColorRgba8, MemoryImage, decodeWebP, encodeWebP } from '../../src';
 import {
-  WebPChunk,
   animChunkData,
   anmfChunkData,
   buildRiff,
+  ColorRgba8,
+  decodeWebP,
+  encodeWebP,
+  MemoryImage,
+  VP8LEncoder,
   vp8xChunkData,
-} from '../../src/formats/webp/webp-chunk';
-import { VP8LEncoder } from '../../src/formats/webp/vp8l-encoder';
+  WebPChunk,
+} from '../../src';
 
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';

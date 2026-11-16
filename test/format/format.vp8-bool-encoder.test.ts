@@ -1,7 +1,7 @@
 /** @format */
 
 import { describe, expect, it } from 'vitest';
-import { VP8BoolEncoder } from '../../src/formats/webp/vp8-bool-encoder';
+import { VP8BoolEncoder } from '../../src';
 
 describe('vp8-bool-encoder', () => {
   it('encodes a sequence of bits', () => {

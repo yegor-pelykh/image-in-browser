@@ -2,7 +2,7 @@
 
 import { deflateSync } from 'node:zlib';
 import { describe, expect, test } from 'vitest';
-import { inflate } from '../../src/common/inflate';
+import { inflate } from '../../src';
 
 /**
  * A sequence of {@link length} bytes that repeat, so any prefix is known.

@@ -1,9 +1,14 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { Format, MemoryImage, decodeWebP, encodeWebP } from '../../src';
-import { VP8LBitWriter } from '../../src/formats/webp/vp8l-bit-writer';
-import { writeHuffmanCode } from '../../src/formats/webp/vp8l-huffman-encoder';
+import {
+  Format,
+  MemoryImage,
+  decodeWebP,
+  encodeWebP,
+  VP8LBitWriter,
+  writeHuffmanCode,
+} from '../../src';
 
 /**
  * WEBP lossless encoder behavior.

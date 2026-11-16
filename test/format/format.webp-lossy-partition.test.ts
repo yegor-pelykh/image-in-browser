@@ -1,11 +1,16 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodeWebP, LibError, MemoryImage } from '../../src';
-import { VP8Config } from '../../src/formats/webp/vp8-config';
-import { VP8Encoder } from '../../src/formats/webp/vp8-encoder';
-import { importYuv } from '../../src/formats/webp/vp8-yuv';
-import { WebPChunk, buildRiff } from '../../src/formats/webp/webp-chunk';
+import {
+  buildRiff,
+  decodeWebP,
+  importYuv,
+  LibError,
+  MemoryImage,
+  VP8Config,
+  VP8Encoder,
+  WebPChunk,
+} from '../../src';
 
 /**
  * Partition #0 holds every macroblock's modes and the format caps it at 512k,

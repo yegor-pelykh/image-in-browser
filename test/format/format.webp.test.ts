@@ -3,41 +3,38 @@
 import { existsSync } from 'fs';
 import { describe, expect, test } from 'vitest';
 import {
+  buildRiff,
   ColorRgb8,
   ColorRgba8,
+  computeMatches,
+  decodePng,
+  decodeWebP,
+  encodePng,
+  encodeVP8,
+  encodeWebP,
   Format,
   IccProfile,
   IccProfileCompression,
   IfdShortValue,
   LibError,
-  MemoryImage,
-  Pixel,
-  decodePng,
-  decodeWebP,
-  encodePng,
-  encodeWebP,
-} from '../../src';
-import { WebPDecoder } from '../../src/formats/webp-decoder';
-import { VP8Config } from '../../src/formats/webp/vp8-config';
-import { encodeVP8 } from '../../src/formats/webp/vp8-encoder';
-import { WebPFormat } from '../../src/formats/webp/webp-format';
-import { VP8LEncoder, maxDimension } from '../../src/formats/webp/vp8l-encoder';
-import { computeMatches } from '../../src/formats/webp/vp8l-backward-refs';
-import { VP8LCostModel } from '../../src/formats/webp/vp8l-cost-model';
-import { VP8LCover } from '../../src/formats/webp/vp8l-cover';
-import {
-  VP8LMatches,
+  matchLengthBits,
+  maxDimension,
   maxMatchDistance,
   maxMatchLength,
-  matchLengthBits,
-} from '../../src/formats/webp/vp8l-matches';
-import { optimalCover } from '../../src/formats/webp/vp8l-optimal-parse';
-import {
-  WebPChunk,
-  buildRiff,
+  MemoryImage,
+  optimalCover,
+  Pixel,
+  VP8Config,
+  VP8LCostModel,
+  VP8LCover,
+  VP8LEncoder,
+  VP8LMatches,
   vp8xChunkData,
   vp8xFlags,
-} from '../../src/formats/webp/webp-chunk';
+  WebPChunk,
+  WebPDecoder,
+  WebPFormat,
+} from '../../src';
 import { ImageTestUtils } from '../_utils/image-test-utils';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';

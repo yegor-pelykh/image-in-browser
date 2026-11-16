@@ -3,6 +3,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   decodePng,
+  deflateZlib,
   IccProfile,
   IccProfileCompression,
   LibError,
@@ -13,7 +14,6 @@ import {
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
-import { deflate } from '../../src/packer/packer.js';
 
 describe('Format: PNG (ICCP/CICP)', () => {
   test('decodes pixel values correctly (not all-black)', () => {
@@ -176,7 +176,7 @@ describe('Format: PNG (ICCP/CICP)', () => {
    * An ICC profile with a wrong Adler-32 checksum throws.
    */
   test('wrong Adler-32', () => {
-    const zlib = deflate(Uint8Array.from({ length: 100 }, () => 7));
+    const zlib = deflateZlib(Uint8Array.from({ length: 100 }, () => 7));
     zlib[zlib.length - 1] ^= 0xff;
     const icc = new IccProfile('p', IccProfileCompression.deflate, zlib);
     expect(() => icc.decompressed()).toThrow(LibError);

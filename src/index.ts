@@ -66,6 +66,7 @@ export { ArrayUtils } from './common/array-utils.js';
 export { BitUtils } from './common/bit-utils.js';
 export { Crc32, Crc32Options } from './common/crc32.js';
 export { Float16 } from './common/float16.js';
+export { inflate } from './common/inflate.js';
 export { InputBuffer, InputBufferInitOptions } from './common/input-buffer.js';
 export { Interpolation } from './common/interpolation.js';
 export { Line } from './common/line.js';
@@ -85,6 +86,10 @@ export {
   CompressionLevel,
   TypedArray,
 } from './common/typings.js';
+export {
+  deflate as deflateZlib,
+  inflate as inflateZlib,
+} from './packer/packer.js';
 
 // Export types from 'draw' directory
 export { BlendMode } from './draw/blend-mode.js';
@@ -346,7 +351,7 @@ export { VP8BitReader } from './formats/webp/vp8-bit-reader.js';
 export { VP8BoolEncoder } from './formats/webp/vp8-bool-encoder.js';
 export { VP8Config, VP8ConfigOptions } from './formats/webp/vp8-config.js';
 export { VP8EncProba } from './formats/webp/vp8-enc-proba.js';
-export { VP8Encoder } from './formats/webp/vp8-encoder.js';
+export { VP8Encoder, encodeVP8 } from './formats/webp/vp8-encoder.js';
 export { VP8EncIterator } from './formats/webp/vp8-iterator.js';
 export { VP8FInfo } from './formats/webp/vp8-f-info.js';
 export { VP8FilterHeader } from './formats/webp/vp8-filter-header.js';
@@ -362,21 +367,31 @@ export { VP8Proba } from './formats/webp/vp8-proba.js';
 export { VP8QuantMatrix } from './formats/webp/vp8-quant-matrix.js';
 export { VP8Quantizers } from './formats/webp/vp8-quant.js';
 export { VP8Random } from './formats/webp/vp8-random.js';
-export { VP8Decimate } from './formats/webp/vp8-rd.js';
+export { VP8Decimate, maxCost } from './formats/webp/vp8-rd.js';
 export { VP8Residual } from './formats/webp/vp8-residual.js';
+export {
+  absBranchless,
+  min2,
+  nonZero,
+  sar,
+  signOf,
+} from './formats/webp/vp8-sar.js';
 export { VP8SegmentHeader } from './formats/webp/vp8-segment-header.js';
 export { VP8SegmentInfo } from './formats/webp/vp8-segment-info.js';
 export { MBAnalyzer } from './formats/webp/vp8-segments.js';
 export { VP8EncState } from './formats/webp/vp8-state.js';
 export { VP8TokenBuffer } from './formats/webp/vp8-tokens.js';
 export { VP8TopSamples } from './formats/webp/vp8-top-samples.js';
-export { VP8Yuv } from './formats/webp/vp8-yuv.js';
+export { VP8Yuv, importYuv } from './formats/webp/vp8-yuv.js';
 export { VP8 } from './formats/webp/vp8.js';
 export {
   VP8LAnalysis,
   VP8LAnalysisOptions,
 } from './formats/webp/vp8l-analysis.js';
-export { VP8LBackwardRefs } from './formats/webp/vp8l-backward-refs.js';
+export {
+  VP8LBackwardRefs,
+  computeMatches,
+} from './formats/webp/vp8l-backward-refs.js';
 export { VP8LBitReader } from './formats/webp/vp8l-bit-reader.js';
 export { VP8LBitWriter } from './formats/webp/vp8l-bit-writer.js';
 export { VP8LClustering } from './formats/webp/vp8l-clustering.js';
@@ -385,15 +400,22 @@ export { colorCacheKey, mul32 } from './formats/webp/vp8l-color-hash.js';
 export { VP8LCostModel } from './formats/webp/vp8l-cost-model.js';
 export { VP8LCover } from './formats/webp/vp8l-cover.js';
 export { VP8LColorMultipliers } from './formats/webp/vp8l-cross-color.js';
-export { VP8LEncoder } from './formats/webp/vp8l-encoder.js';
+export { VP8LEncoder, maxDimension } from './formats/webp/vp8l-encoder.js';
 export { VP8LHistogram } from './formats/webp/vp8l-histogram.js';
 export { VP8LHuffmanCodes } from './formats/webp/vp8l-huffman-codes.js';
+export { writeHuffmanCode } from './formats/webp/vp8l-huffman-encoder.js';
 export { VP8LImageTransformType } from './formats/webp/vp8l-image-transform-type.js';
 export { VP8LInternal } from './formats/webp/vp8l-internal.js';
 export { Lz77 } from './formats/webp/vp8l-lz77.js';
-export { VP8LMatches } from './formats/webp/vp8l-matches.js';
+export {
+  VP8LMatches,
+  matchLengthBits,
+  maxMatchDistance,
+  maxMatchLength,
+} from './formats/webp/vp8l-matches.js';
 export { VP8LMetaHuffman } from './formats/webp/vp8l-meta-huffman.js';
 export { VP8LMultipliers } from './formats/webp/vp8l-multipliers.js';
+export { optimalCover } from './formats/webp/vp8l-optimal-parse.js';
 export { VP8LTransform } from './formats/webp/vp8l-transform.js';
 export { VP8L } from './formats/webp/vp8l.js';
 export { WebPAlpha } from './formats/webp/webp-alpha.js';

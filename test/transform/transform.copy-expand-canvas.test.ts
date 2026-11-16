@@ -8,11 +8,11 @@ import {
   decodePng,
   encodePng,
   ExifData,
+  ExpandCanvasPosition,
   LibError,
   MemoryImage,
   Transform,
 } from '../../src';
-import { ExpandCanvasPosition } from '../../src/transform/expand-canvas-position';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
