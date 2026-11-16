@@ -10,6 +10,11 @@ import {
   FormatType,
   getRowStride,
 } from '../color/format.js';
+import {
+  alphaWeightedCubic,
+  alphaWeightedLinear,
+  cubicAlphaWeights,
+} from '../common/alpha-weight.js';
 import { ArrayUtils } from '../common/array-utils.js';
 import { Interpolation } from '../common/interpolation.js';
 import { MathUtils } from '../common/math-utils.js';
@@ -1349,7 +1354,9 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
   }
 
   /**
-   * Retrieves the color of a pixel using bilinear interpolation.
+   * Retrieves the color of a pixel using bilinear interpolation. Taps with
+   * different alpha are weighted by alpha, so the colors of fully transparent
+   * pixels don't bleed into the visible ones.
    *
    * @param {number} fx - The x-coordinate of the pixel in floating-point.
    * @param {number} fy - The y-coordinate of the pixel in floating-point.
@@ -1389,16 +1396,106 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     const inn =
       nx >= this.width || ny >= this.height ? icc : this.getPixelSafe(nx, ny);
 
+    const centerAlpha = icc.a;
+    const rightAlpha = inc.a;
+    const belowAlpha = icn.a;
+    const diagonalAlpha = inn.a;
+    const alpha = linear(centerAlpha, rightAlpha, belowAlpha, diagonalAlpha);
+    const isUniform =
+      !this.hasAlpha ||
+      (centerAlpha === rightAlpha &&
+        centerAlpha === belowAlpha &&
+        centerAlpha === diagonalAlpha);
+
+    if (!isUniform && alpha > 0) {
+      return this.weightedLinearColor(icc, inc, icn, inn, dx, dy, alpha);
+    }
+
     return this.getColor(
       linear(icc.r, inc.r, icn.r, inn.r),
       linear(icc.g, inc.g, icn.g, inn.g),
       linear(icc.b, inc.b, icn.b, inn.b),
-      linear(icc.a, inc.a, icn.a, inn.a)
+      alpha
     );
   }
 
   /**
-   * Performs cubic interpolation to get the color of a pixel at a given floating-point coordinate.
+   * Returns the bilinear color of four taps weighted by alpha, as an offset
+   * from the reference tap, which keeps the result exact where only one tap
+   * has weight.
+   *
+   * @param {Color} center - The center tap.
+   * @param {Color} right - The right tap.
+   * @param {Color} below - The below tap.
+   * @param {Color} diagonal - The diagonal tap.
+   * @param {number} fractionX - The horizontal fraction.
+   * @param {number} fractionY - The vertical fraction.
+   * @param {number} alpha - The blended alpha.
+   * @returns {Color} The alpha-weighted color.
+   */
+  private weightedLinearColor(
+    center: Color,
+    right: Color,
+    below: Color,
+    diagonal: Color,
+    fractionX: number,
+    fractionY: number,
+    alpha: number
+  ): Color {
+    const centerAlpha = center.a;
+    const rightAlpha = right.a;
+    const belowAlpha = below.a;
+    const diagonalAlpha = diagonal.a;
+
+    const red = alphaWeightedLinear(
+      center.r,
+      right.r,
+      below.r,
+      diagonal.r,
+      centerAlpha,
+      rightAlpha,
+      belowAlpha,
+      diagonalAlpha,
+      fractionX,
+      fractionY,
+      alpha
+    );
+
+    const green = alphaWeightedLinear(
+      center.g,
+      right.g,
+      below.g,
+      diagonal.g,
+      centerAlpha,
+      rightAlpha,
+      belowAlpha,
+      diagonalAlpha,
+      fractionX,
+      fractionY,
+      alpha
+    );
+
+    const blue = alphaWeightedLinear(
+      center.b,
+      right.b,
+      below.b,
+      diagonal.b,
+      centerAlpha,
+      rightAlpha,
+      belowAlpha,
+      diagonalAlpha,
+      fractionX,
+      fractionY,
+      alpha
+    );
+
+    return this.getColor(red, green, blue, alpha);
+  }
+
+  /**
+   * Performs cubic interpolation to get the color of a pixel at a given
+   * floating-point coordinate. Taps with different alpha are weighted by
+   * alpha, and the result is kept within the range of the visible taps.
    *
    * @param {number} fx - The x-coordinate of the pixel in floating-point.
    * @param {number} fy - The y-coordinate of the pixel in floating-point.
@@ -1444,25 +1541,36 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     };
 
     const icc = this.getPixelSafe(x, y);
+    const iccAlpha = icc.a;
 
     const ipp = px < 0 || py < 0 ? icc : this.getPixelSafe(px, py);
     const icp = py < 0 ? icc : this.getPixelSafe(x, py);
     const inp = py < 0 || nx >= this.width ? icc : this.getPixelSafe(nx, py);
     const iap = ax >= this.width || py < 0 ? icc : this.getPixelSafe(ax, py);
 
-    const ip0 = cubic(dx, ipp.r, icp.r, inp.r, iap.r);
-    const ip1 = cubic(dx, ipp.g, icp.g, inp.g, iap.g);
-    const ip2 = cubic(dx, ipp.b, icp.b, inp.b, iap.b);
-    const ip3 = cubic(dx, ipp.a, icp.a, inp.a, iap.a);
+    const ippAlpha = ipp.a;
+    const icpAlpha = icp.a;
+    const inpAlpha = inp.a;
+    const iapAlpha = iap.a;
+    const ip3 = cubic(dx, ippAlpha, icpAlpha, inpAlpha, iapAlpha);
+
+    const isPreviousRowUniform =
+      ippAlpha === iccAlpha &&
+      icpAlpha === iccAlpha &&
+      inpAlpha === iccAlpha &&
+      iapAlpha === iccAlpha;
 
     const ipc = px < 0 ? icc : this.getPixelSafe(px, y);
     const inc = nx >= this.width ? icc : this.getPixelSafe(nx, y);
     const iac = ax >= this.width ? icc : this.getPixelSafe(ax, y);
 
-    const ic0 = cubic(dx, ipc.r, icc.r, inc.r, iac.r);
-    const ic1 = cubic(dx, ipc.g, icc.g, inc.g, iac.g);
-    const ic2 = cubic(dx, ipc.b, icc.b, inc.b, iac.b);
-    const ic3 = cubic(dx, ipc.a, icc.a, inc.a, iac.a);
+    const ipcAlpha = ipc.a;
+    const incAlpha = inc.a;
+    const iacAlpha = iac.a;
+    const ic3 = cubic(dx, ipcAlpha, iccAlpha, incAlpha, iacAlpha);
+
+    const isCurrentRowUniform =
+      ipcAlpha === iccAlpha && incAlpha === iccAlpha && iacAlpha === iccAlpha;
 
     const ipn = px < 0 || ny >= this.height ? icc : this.getPixelSafe(px, ny);
     const icn = ny >= this.height ? icc : this.getPixelSafe(x, ny);
@@ -1471,10 +1579,17 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     const ian =
       ax >= this.width || ny >= this.height ? icc : this.getPixelSafe(ax, ny);
 
-    const in0 = cubic(dx, ipn.r, icn.r, inn.r, ian.r);
-    const in1 = cubic(dx, ipn.g, icn.g, inn.g, ian.g);
-    const in2 = cubic(dx, ipn.b, icn.b, inn.b, ian.b);
-    const in3 = cubic(dx, ipn.a, icn.a, inn.a, ian.a);
+    const ipnAlpha = ipn.a;
+    const icnAlpha = icn.a;
+    const innAlpha = inn.a;
+    const ianAlpha = ian.a;
+    const in3 = cubic(dx, ipnAlpha, icnAlpha, innAlpha, ianAlpha);
+
+    const isNextRowUniform =
+      ipnAlpha === iccAlpha &&
+      icnAlpha === iccAlpha &&
+      innAlpha === iccAlpha &&
+      ianAlpha === iccAlpha;
 
     const ipa = px < 0 || ay >= this.height ? icc : this.getPixelSafe(px, ay);
     const ica = ay >= this.height ? icc : this.getPixelSafe(x, ay);
@@ -1483,17 +1598,204 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     const iaa =
       ax >= this.width || ay >= this.height ? icc : this.getPixelSafe(ax, ay);
 
+    const ipaAlpha = ipa.a;
+    const icaAlpha = ica.a;
+    const inaAlpha = ina.a;
+    const iaaAlpha = iaa.a;
+    const ia3 = cubic(dx, ipaAlpha, icaAlpha, inaAlpha, iaaAlpha);
+
+    const isAfterRowUniform =
+      ipaAlpha === iccAlpha &&
+      icaAlpha === iccAlpha &&
+      inaAlpha === iccAlpha &&
+      iaaAlpha === iccAlpha;
+
+    const c3 = cubic(dy, ip3, ic3, in3, ia3);
+
+    const clamps = this.formatType !== FormatType.float;
+    const highest = this.maxChannelValue;
+    const lowest = this.formatType === FormatType.int ? -highest - 1 : 0;
+
+    const isUniform =
+      !this.hasAlpha ||
+      (isPreviousRowUniform &&
+        isCurrentRowUniform &&
+        isNextRowUniform &&
+        isAfterRowUniform);
+
+    if (!isUniform && c3 > 0) {
+      const taps = [
+        ipp,
+        icp,
+        inp,
+        iap,
+        ipc,
+        icc,
+        inc,
+        iac,
+        ipn,
+        icn,
+        inn,
+        ian,
+        ipa,
+        ica,
+        ina,
+        iaa,
+      ];
+
+      return this.weightedCubicColor(taps, dx, dy, c3, clamps, lowest, highest);
+    }
+
+    const ip0 = cubic(dx, ipp.r, icp.r, inp.r, iap.r);
+    const ip1 = cubic(dx, ipp.g, icp.g, inp.g, iap.g);
+    const ip2 = cubic(dx, ipp.b, icp.b, inp.b, iap.b);
+
+    const ic0 = cubic(dx, ipc.r, icc.r, inc.r, iac.r);
+    const ic1 = cubic(dx, ipc.g, icc.g, inc.g, iac.g);
+    const ic2 = cubic(dx, ipc.b, icc.b, inc.b, iac.b);
+
+    const in0 = cubic(dx, ipn.r, icn.r, inn.r, ian.r);
+    const in1 = cubic(dx, ipn.g, icn.g, inn.g, ian.g);
+    const in2 = cubic(dx, ipn.b, icn.b, inn.b, ian.b);
+
     const ia0 = cubic(dx, ipa.r, ica.r, ina.r, iaa.r);
     const ia1 = cubic(dx, ipa.g, ica.g, ina.g, iaa.g);
     const ia2 = cubic(dx, ipa.b, ica.b, ina.b, iaa.b);
-    const ia3 = cubic(dx, ipa.a, ica.a, ina.a, iaa.a);
 
     const c0 = cubic(dy, ip0, ic0, in0, ia0);
     const c1 = cubic(dy, ip1, ic1, in1, ia1);
     const c2 = cubic(dy, ip2, ic2, in2, ia2);
-    const c3 = cubic(dy, ip3, ic3, in3, ia3);
+
+    if (clamps) {
+      return this.getColor(
+        MemoryImage.limitDouble(c0, lowest, highest),
+        MemoryImage.limitDouble(c1, lowest, highest),
+        MemoryImage.limitDouble(c2, lowest, highest),
+        MemoryImage.limitDouble(c3, lowest, highest)
+      );
+    }
 
     return this.getColor(c0, c1, c2, c3);
+  }
+
+  /**
+   * Returns the bicubic color of 16 taps weighted by alpha, clamped to the
+   * range of integer formats and limited to the range of the visible taps.
+   *
+   * @param {Color[]} taps - The 16 taps in row order.
+   * @param {number} fractionX - The horizontal fraction.
+   * @param {number} fractionY - The vertical fraction.
+   * @param {number} alpha - The blended alpha.
+   * @param {boolean} clamps - Whether the result is clamped to the format.
+   * @param {number} lowest - The lowest integer format value.
+   * @param {number} highest - The highest integer format value.
+   * @returns {Color} The alpha-weighted color.
+   */
+  private weightedCubicColor(
+    taps: Color[],
+    fractionX: number,
+    fractionY: number,
+    alpha: number,
+    clamps: boolean,
+    lowest: number,
+    highest: number
+  ): Color {
+    const weights = new Float64Array(16);
+    const colors = new Float64Array(16);
+    let visible = 0;
+    for (let i = 0; i < 16; ++i) {
+      const tapAlpha = taps[i].a;
+      weights[i] = tapAlpha;
+      if (tapAlpha !== 0) {
+        visible |= 1 << i;
+      }
+    }
+
+    const referenceTap = cubicAlphaWeights(weights, fractionX, fractionY);
+
+    for (let i = 0; i < 16; ++i) {
+      colors[i] = taps[i].r;
+    }
+
+    const red = this.limitToTaps(
+      alphaWeightedCubic(colors, weights, referenceTap, alpha),
+      colors,
+      visible
+    );
+    for (let i = 0; i < 16; ++i) {
+      colors[i] = taps[i].g;
+    }
+
+    const green = this.limitToTaps(
+      alphaWeightedCubic(colors, weights, referenceTap, alpha),
+      colors,
+      visible
+    );
+    for (let i = 0; i < 16; ++i) {
+      colors[i] = taps[i].b;
+    }
+
+    const blue = this.limitToTaps(
+      alphaWeightedCubic(colors, weights, referenceTap, alpha),
+      colors,
+      visible
+    );
+    if (!clamps) {
+      return this.getColor(red, green, blue, alpha);
+    }
+
+    return this.getColor(
+      red,
+      green,
+      blue,
+      MemoryImage.limitDouble(alpha, lowest, highest)
+    );
+  }
+
+  /**
+   * Returns **value** limited to the range of **colors** over the taps with
+   * non-zero alpha, which have their bit set in **visible**.
+   *
+   * @param {number} value - The value to limit.
+   * @param {Float64Array} colors - The tap colors.
+   * @param {number} visible - The bit set of taps with non-zero alpha.
+   * @returns {number} The limited value.
+   */
+  private limitToTaps(
+    value: number,
+    colors: Float64Array,
+    visible: number
+  ): number {
+    let lowest = Infinity;
+    let highest = -Infinity;
+    for (let i = 0; i < 16; ++i) {
+      if ((visible & (1 << i)) !== 0) {
+        const c = colors[i];
+        if (c < lowest) {
+          lowest = c;
+        }
+        if (c > highest) {
+          highest = c;
+        }
+      }
+    }
+    return MemoryImage.limitDouble(value, lowest, highest);
+  }
+
+  /**
+   * Returns **value** limited to the range **lowest**..**highest**.
+   *
+   * @param {number} value - The value to limit.
+   * @param {number} lowest - The lowest allowed value.
+   * @param {number} highest - The highest allowed value.
+   * @returns {number} The limited value.
+   */
+  private static limitDouble(
+    value: number,
+    lowest: number,
+    highest: number
+  ): number {
+    return value < lowest ? lowest : value > highest ? highest : value;
   }
 
   /**
@@ -1607,7 +1909,7 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
   public convert(opt: MemoryImageConvertOptions): MemoryImage {
     const format = opt.format ?? this.format;
     const numChannels = opt.numChannels ?? this.numChannels;
-    const alpha = opt.alpha ?? FormatMaxValue.get(format);
+    const alpha = opt.alpha ?? FormatMaxValue.get(format)!;
     const withPalette = opt.withPalette ?? false;
     const skipAnimation = opt.skipAnimation ?? false;
 
@@ -1642,7 +1944,7 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
       if (setAlpha && newImage.hasAlpha) {
         for (const frame of newImage.frames) {
           for (const p of frame) {
-            p.a = alpha as number;
+            p.a = alpha;
           }
         }
       }
@@ -1709,16 +2011,8 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
           }
           op.next();
         }
-      } else {
-        const op = frame.getPixel(0, 0);
-        for (const np of newImage) {
-          ColorUtils.convertColor({
-            from: op,
-            to: np,
-            alpha: alpha,
-          });
-          op.next();
-        }
+      } else if (!MemoryImage.expandPalette(frame, newImage, alpha)) {
+        MemoryImage.convertPixels(frame, newImage, alpha);
       }
 
       if (skipAnimation) {
@@ -1727,6 +2021,115 @@ export class MemoryImage implements Iterable<Pixel, Pixel> {
     }
 
     return firstFrame!;
+  }
+
+  /**
+   * Converts the pixels of **source** into **target**.
+   *
+   * @param {MemoryImage} source - The source image.
+   * @param {MemoryImage} target - The target image.
+   * @param {number} alpha - The alpha value for an added alpha channel.
+   */
+  private static convertPixels(
+    source: MemoryImage,
+    target: MemoryImage,
+    alpha: number
+  ): void {
+    const sourcePixel = source.getPixel(0, 0);
+
+    for (const targetPixel of target) {
+      ColorUtils.convertColor({
+        from: sourcePixel,
+        to: targetPixel,
+        alpha: alpha,
+      });
+      sourcePixel.next();
+    }
+  }
+
+  /**
+   * Expands the palette indices of **source** into **target** through a table
+   * of the converted palette colors. Returns false if the images aren't both
+   * uint8 or an index is outside the palette.
+   *
+   * @param {MemoryImage} source - The source palette image.
+   * @param {MemoryImage} target - The target image.
+   * @param {number} alpha - The alpha value for an added alpha channel.
+   * @returns {boolean} True if the pixels were converted through the table.
+   */
+  private static expandPalette(
+    source: MemoryImage,
+    target: MemoryImage,
+    alpha: number
+  ): boolean {
+    const indexData = source.data;
+    const targetData = target.data;
+    const palette = source.palette;
+
+    if (
+      !(indexData instanceof MemoryImageDataUint8) ||
+      !(targetData instanceof MemoryImageDataUint8) ||
+      palette === undefined ||
+      palette.numColors === 0
+    ) {
+      return false;
+    }
+
+    const numColors = Math.min(palette.numColors, 256);
+    const colors = new MemoryImage({
+      width: numColors,
+      height: 1,
+      palette: palette,
+    });
+    const colorIndices = (colors.data as MemoryImageDataUint8).data;
+
+    for (let i = 0; i < numColors; ++i) {
+      colorIndices[i] = i;
+    }
+
+    const numChannels = targetData.numChannels;
+    const converted = new MemoryImage({
+      width: numColors,
+      height: 1,
+      numChannels: numChannels,
+    });
+    MemoryImage.convertPixels(colors, converted, alpha);
+
+    const table = (converted.data as MemoryImageDataUint8).data;
+    const indices = indexData.data;
+    const output = targetData.data;
+    const pixelCount = indexData.width * indexData.height;
+
+    if (numChannels === 4) {
+      for (let i = 0, offset = 0; i < pixelCount; ++i, offset += 4) {
+        const index = indices[i];
+        if (index >= numColors) {
+          return false;
+        }
+
+        const entry = index * 4;
+        output[offset] = table[entry];
+        output[offset + 1] = table[entry + 1];
+        output[offset + 2] = table[entry + 2];
+        output[offset + 3] = table[entry + 3];
+      }
+
+      return true;
+    }
+
+    for (let i = 0, offset = 0; i < pixelCount; ++i) {
+      const index = indices[i];
+      if (index >= numColors) {
+        return false;
+      }
+
+      const entry = index * numChannels;
+      for (let k = 0; k < numChannels; ++k) {
+        output[offset++] = table[entry + k];
+      }
+    }
+
+    return true;
   }
 
   /**

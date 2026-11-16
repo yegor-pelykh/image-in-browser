@@ -1,5 +1,6 @@
 /** @format */
 
+import { alphaWeightedLinear } from '../common/alpha-weight.js';
 import { LibError } from '../error/lib-error.js';
 import { Point } from '../common/point.js';
 import { Interpolation } from '../common/interpolation.js';
@@ -18,12 +19,19 @@ import { TrimMode } from './trim-mode.js';
 import { ExpandCanvasPosition } from './expand-canvas-position.js';
 import type { Color } from '../color/color.js';
 import { Format } from '../color/format.js';
+import {
+  withoutLaterPalettes,
+  withoutPalette,
+  withoutPalettes,
+} from '../common/without-palette.js';
 import { bytesPerPixel, copyPixels, reversePixels } from './pixel-bytes.js';
 import {
   canResizeBytes,
   orientedHeight,
   orientedWidth,
   resizeBytes,
+  resizeDownAverageAlpha,
+  resizeDownLinearAlpha,
 } from './resize-bytes.js';
 import {
   linearColor,
@@ -218,9 +226,13 @@ export abstract class Transform {
   private static rotate90(src: MemoryImage): MemoryImage {
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(frame, frame.height, frame.width, true);
+      const dst = MemoryImage.fromResized(
+        frame,
+        frame.height,
+        frame.width,
+        true
+      );
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
       const hm1 = frame.height - 1;
       const k = bytesPerPixel(frame);
@@ -261,8 +273,8 @@ export abstract class Transform {
     for (const frame of src.frames) {
       const wm1 = frame.width - 1;
       const hm1 = frame.height - 1;
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ?? MemoryImage.from(frame, true, true);
+      const dst = MemoryImage.from(frame, true, true);
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
       const k = bytesPerPixel(frame);
       if (k > 0 && bytesPerPixel(dst) === k) {
@@ -296,10 +308,14 @@ export abstract class Transform {
   private static rotate270(src: MemoryImage): MemoryImage {
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
-      const wm1 = src.width - 1;
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(frame, frame.height, frame.width, true);
+      const wm1 = frame.width - 1;
+      const dst = MemoryImage.fromResized(
+        frame,
+        frame.height,
+        frame.width,
+        true
+      );
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
       const k = bytesPerPixel(frame);
       if (k > 0 && bytesPerPixel(dst) === k && frame.width === src.width) {
@@ -498,7 +514,7 @@ export abstract class Transform {
    * @returns {MemoryImage} The cropped image.
    */
   public static copyCrop(opt: CopyCropOptions): MemoryImage {
-    let image = opt.image;
+    const image = opt.image;
     const radius = opt.radius ?? 0;
     const antialias = opt.antialias ?? true;
 
@@ -511,19 +527,19 @@ export abstract class Transform {
     const height =
       y + opt.rect.height > image.height ? image.height - y : opt.rect.height;
 
-    if (radius > 0 && image.hasPalette) {
-      image = image.convert({
-        numChannels: image.numChannels,
-      });
-    }
-
     let firstFrame: MemoryImage | undefined = undefined;
     const numFrames = image.numFrames;
     for (let i = 0; i < numFrames; ++i) {
-      const frame = image.frames[i];
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(frame, width, height, true);
+      let frame = image.frames[i];
+      if (radius > 0 && frame.hasPalette) {
+        frame = frame.convert({
+          numChannels: frame.numChannels,
+          skipAnimation: true,
+        });
+      }
+
+      const dst = MemoryImage.fromResized(frame, width, height, true);
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
       if (radius > 0) {
@@ -643,6 +659,7 @@ export abstract class Transform {
     const wh = radius * 2;
     const radiusSqr = radius * radius;
 
+    image = withoutLaterPalettes(image);
     if (image.hasPalette) {
       image = image.convert({
         numChannels: 4,
@@ -653,8 +670,8 @@ export abstract class Transform {
     const numFrames = image.numFrames;
     for (let i = 0; i < numFrames; ++i) {
       const frame = image.frames[i];
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ?? MemoryImage.fromResized(frame, wh, wh, true);
+      const dst = MemoryImage.fromResized(frame, wh, wh, true);
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
       const bg = frame.backgroundColor ?? image.backgroundColor;
@@ -666,6 +683,10 @@ export abstract class Transform {
       const dw = radius * 2;
       for (let yi = 0, sy = tly; yi < dh; ++yi, ++sy) {
         for (let xi = 0, sx = tlx; xi < dw; ++xi, ++sx) {
+          if (sx < 0 || sy < 0 || sx >= frame.width || sy >= frame.height) {
+            continue;
+          }
+
           const p = frame.getPixel(sx, sy);
           const a = ImageUtils.circleTest(
             p,
@@ -734,9 +755,7 @@ export abstract class Transform {
 
     // Convert the image if it has a palette
     const srcConverted: MemoryImage = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
+      ? withoutPalette(opt.image)
       : opt.image;
 
     // Check if new dimensions are larger or equal to the original image
@@ -817,13 +836,33 @@ export abstract class Transform {
 
     // Copy the original image to the new frames/canvas
     for (let i = 0; i < srcConverted.numFrames; ++i) {
+      const frame = srcConverted.frames[i];
+
       // Ensure the frame exists in the expanded canvas
       if (i >= expandedCanvas.numFrames) {
-        expandedCanvas.addFrame();
+        const added =
+          opt.toImage !== undefined
+            ? expandedCanvas.addFrame()
+            : expandedCanvas.addFrame(
+                new MemoryImage({
+                  width: newWidth!,
+                  height: newHeight!,
+                  format: frame.format,
+                  numChannels: frame.numChannels,
+                })
+              );
+
+        if (opt.backgroundColor !== undefined) {
+          added.clear(opt.backgroundColor);
+        }
       }
 
-      const frame = srcConverted.frames[i];
       const expandedCanvasFrame = expandedCanvas.frames[i];
+      if (opt.toImage === undefined || i > 0) {
+        expandedCanvasFrame.frameDuration = frame.frameDuration;
+        expandedCanvasFrame.frameType = frame.frameType;
+        expandedCanvasFrame.loopCount = frame.loopCount;
+      }
 
       for (const p of frame) {
         // Skip if the pixel position is outside the bounds of the new canvas
@@ -886,13 +925,18 @@ export abstract class Transform {
   public static copyRectify(opt: CopyRectifyOptions): MemoryImage {
     const interpolation = opt.interpolation ?? Interpolation.nearest;
 
+    const src =
+      interpolation === Interpolation.nearest
+        ? withoutLaterPalettes(opt.image)
+        : withoutPalettes(opt.image);
+
     if (
       opt.linearBlend &&
       interpolation !== Interpolation.nearest &&
       opt.toImage?.hasPalette !== true
     ) {
       const linear = Transform.copyRectify({
-        image: linearRgbCopy(opt.image),
+        image: linearRgbCopy(src),
         topLeft: opt.topLeft,
         topRight: opt.topRight,
         bottomLeft: opt.bottomLeft,
@@ -904,30 +948,32 @@ export abstract class Transform {
             : undefined,
       });
       if (opt.toImage === undefined) {
-        return srgbCopy(linear, opt.image.format);
+        return srgbCopy(linear, src.format);
       }
       for (let i = 0; i < linear.numFrames; ++i) {
-        writeSrgbFrame(
-          linear.frames[i],
-          i === 0 ? opt.toImage : opt.toImage.addFrame()
-        );
+        const target = i === 0 ? opt.toImage : opt.toImage.addFrame();
+        if (i > 0) {
+          target.frameDuration = linear.frames[i].frameDuration;
+        }
+
+        writeSrgbFrame(linear.frames[i], target);
       }
       return opt.toImage;
     }
 
-    // You can't interpolate index pixels, so we need to convert the image
-    // to a non-palette image if non-nearest interpolation is used.
-    const src =
-      interpolation !== Interpolation.nearest && opt.image.hasPalette
-        ? opt.image.convert({
-            numChannels: opt.image.numChannels,
-          })
-        : opt.image;
-
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
       const dst: MemoryImage =
-        firstFrame?.addFrame() ?? opt.toImage ?? MemoryImage.from(frame, true);
+        firstFrame === undefined
+          ? (opt.toImage ?? MemoryImage.from(frame, true))
+          : opt.toImage !== undefined
+            ? MemoryImage.from(opt.toImage, true, true)
+            : MemoryImage.from(frame, true);
+
+      if (firstFrame !== undefined) {
+        dst.frameDuration = frame.frameDuration;
+        firstFrame.addFrame(dst);
+      }
       firstFrame ??= dst;
       for (let y = 0; y < dst.height; ++y) {
         const v = y / (dst.height - 1);
@@ -935,16 +981,11 @@ export abstract class Transform {
           const u = x / (dst.width - 1);
           // bilinear interpolation
           const srcPixelCoord = opt.topLeft
-            .mul((1 - u) * (1 - v))
-            .add(
-              opt.topRight
-                .mul(u * (1 - v))
-                .add(
-                  opt.bottomLeft
-                    .mul((1 - u) * v)
-                    .add(opt.bottomRight.mul(u * v))
-                )
-            );
+            .mul(1 - u)
+            .mul(1 - v)
+            .add(opt.topRight.mul(u).mul(1 - v))
+            .add(opt.bottomLeft.mul(1 - u).mul(v))
+            .add(opt.bottomRight.mul(u).mul(v));
 
           const srcPixel =
             interpolation === Interpolation.nearest
@@ -1156,6 +1197,7 @@ export abstract class Transform {
 
       if (interpolation === Interpolation.average) {
         const srcPixel = frame.getPixelSafe(0, 0);
+        const hasAlpha = frame.hasAlpha;
         for (let y = 0; y < h; ++y) {
           const ay1 = Math.trunc(y * dy);
           let ay2 = Math.trunc((y + 1) * dy);
@@ -1176,17 +1218,55 @@ export abstract class Transform {
             let b = 0;
             let a = 0;
             let np = 0;
+            let weightedRed = 0;
+            let weightedGreen = 0;
+            let weightedBlue = 0;
+            let firstAlpha = 0;
+            let isMixed = false;
+            let hasNegativeAlpha = false;
+
             for (let sy = ay1; sy < ay2; ++sy) {
               for (let sx = ax1; sx < ax2; ++sx, ++np) {
                 frame.getPixel(sx, sy, srcPixel);
-                r += srcPixel.r;
-                g += srcPixel.g;
-                b += srcPixel.b;
-                a += srcPixel.a;
+                const pixelRed = srcPixel.r;
+                const pixelGreen = srcPixel.g;
+                const pixelBlue = srcPixel.b;
+                const pixelAlpha = srcPixel.a;
+
+                if (isMixed) {
+                  weightedRed += pixelRed * pixelAlpha;
+                  weightedGreen += pixelGreen * pixelAlpha;
+                  weightedBlue += pixelBlue * pixelAlpha;
+                } else if (np === 0) {
+                  firstAlpha = pixelAlpha;
+                } else if (hasAlpha && pixelAlpha !== firstAlpha) {
+                  isMixed = true;
+                  weightedRed = r * firstAlpha + pixelRed * pixelAlpha;
+                  weightedGreen = g * firstAlpha + pixelGreen * pixelAlpha;
+                  weightedBlue = b * firstAlpha + pixelBlue * pixelAlpha;
+                }
+
+                hasNegativeAlpha = hasNegativeAlpha || pixelAlpha < 0;
+                r += pixelRed;
+                g += pixelGreen;
+                b += pixelBlue;
+                a += pixelAlpha;
               }
             }
-            const inv = 1.0 / np;
-            dst.setPixelRgba(x1 + x, dstY, r * inv, g * inv, b * inv, a * inv);
+
+            if (isMixed && !hasNegativeAlpha) {
+              dst.setPixelRgba(
+                x1 + x,
+                dstY,
+                weightedRed / a,
+                weightedGreen / a,
+                weightedBlue / a,
+                a / np
+              );
+              continue;
+            }
+
+            dst.setPixelRgba(x1 + x, dstY, r / np, g / np, b / np, a / np);
           }
         }
       } else if (interpolation === Interpolation.nearest) {
@@ -1261,13 +1341,78 @@ export abstract class Transform {
             frame.getPixel(nx, iy, inc);
             frame.getPixel(nx, ny, inn);
 
+            const centerAlpha = icc.a;
+            const rightAlpha = inc.a;
+            const belowAlpha = icn.a;
+            const diagonalAlpha = inn.a;
+            const alpha = linear(
+              centerAlpha,
+              rightAlpha,
+              belowAlpha,
+              diagonalAlpha,
+              kx,
+              ky
+            );
+            const isMixed =
+              centerAlpha !== rightAlpha ||
+              centerAlpha !== belowAlpha ||
+              centerAlpha !== diagonalAlpha;
+
+            if (isMixed && alpha > 0) {
+              dst.setPixelRgba(
+                x1 + x,
+                dstY,
+                alphaWeightedLinear(
+                  icc.r,
+                  inc.r,
+                  icn.r,
+                  inn.r,
+                  centerAlpha,
+                  rightAlpha,
+                  belowAlpha,
+                  diagonalAlpha,
+                  kx,
+                  ky,
+                  alpha
+                ),
+                alphaWeightedLinear(
+                  icc.g,
+                  inc.g,
+                  icn.g,
+                  inn.g,
+                  centerAlpha,
+                  rightAlpha,
+                  belowAlpha,
+                  diagonalAlpha,
+                  kx,
+                  ky,
+                  alpha
+                ),
+                alphaWeightedLinear(
+                  icc.b,
+                  inc.b,
+                  icn.b,
+                  inn.b,
+                  centerAlpha,
+                  rightAlpha,
+                  belowAlpha,
+                  diagonalAlpha,
+                  kx,
+                  ky,
+                  alpha
+                ),
+                alpha
+              );
+              continue;
+            }
+
             dst.setPixelRgba(
               x1 + x,
               dstY,
               linear(icc.r, inc.r, icn.r, inn.r, kx, ky),
               linear(icc.g, inc.g, icn.g, inn.g, kx, ky),
               linear(icc.b, inc.b, icn.b, inn.b, kx, ky),
-              linear(icc.a, inc.a, icn.a, inn.a, kx, ky)
+              alpha
             );
           }
         }
@@ -1315,7 +1460,7 @@ export abstract class Transform {
   public static copyResizeCropSquare(
     opt: CopyResizeCropSquareOptions
   ): MemoryImage {
-    const src = opt.image;
+    const src = withoutLaterPalettes(opt.image);
     let interpolation = opt.interpolation ?? Interpolation.nearest;
     const radius = opt.radius ?? 0;
     const antialias = opt.antialias ?? true;
@@ -1373,9 +1518,8 @@ export abstract class Transform {
 
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of src.frames) {
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(frame, opt.size, opt.size, true);
+      const dst = MemoryImage.fromResized(frame, opt.size, opt.size, true);
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
       // Rounded corners
@@ -1478,7 +1622,7 @@ export abstract class Transform {
    * @returns {MemoryImage} A new MemoryImage instance with the rotated image.
    */
   public static copyRotate(opt: CopyRotateOptions): MemoryImage {
-    const src = opt.image;
+    const src = withoutLaterPalettes(opt.image);
     let interpolation = opt.interpolation ?? Interpolation.nearest;
 
     const nAngle = ((opt.angle % 360) + 360) % 360;
@@ -1539,14 +1683,13 @@ export abstract class Transform {
     const numFrames = src.numFrames;
     for (let i = 0; i < numFrames; ++i) {
       const frame = src.frames[i];
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(
-          src,
-          Math.trunc(ux + vx),
-          Math.trunc(uy + vy),
-          true
-        );
+      const dst = MemoryImage.fromResized(
+        frame,
+        Math.trunc(ux + vx),
+        Math.trunc(uy + vy),
+        true
+      );
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
       const bg = frame.backgroundColor ?? src.backgroundColor;
       if (bg !== undefined) {
@@ -1817,9 +1960,8 @@ export abstract class Transform {
 
     let firstFrame: MemoryImage | undefined = undefined;
     for (const frame of opt.image.frames) {
-      const dst: MemoryImage =
-        firstFrame?.addFrame() ??
-        MemoryImage.fromResized(frame, crop.width, crop.height, true);
+      const dst = MemoryImage.fromResized(frame, crop.width, crop.height, true);
+      firstFrame?.addFrame(dst);
       firstFrame ??= dst;
 
       Draw.compositeImage({
@@ -2069,9 +2211,8 @@ export abstract class Transform {
     }
 
     const scaleX = new Int32Array(w);
-    const dx = src.width / w;
     for (let x = 0; x < w; ++x) {
-      scaleX[x] = Math.trunc(x * dx);
+      scaleX[x] = Math.floor((x * src.width) / w);
     }
 
     const origWidth = src.width;
@@ -2085,11 +2226,9 @@ export abstract class Transform {
       const dy = frame.height / h;
       const dx = frame.width / w;
 
-      if (maintainAspect && opt.backgroundColor !== undefined) {
-        dst.clear(opt.backgroundColor);
-      }
-
       if (interpolation === Interpolation.average) {
+        const hasAlpha = frame.hasAlpha;
+        let sourcePixel: Pixel | undefined = undefined;
         for (let y = 0; y < h; ++y) {
           const ay1 = Math.trunc(y * dy);
           let ay2 = Math.trunc((y + 1) * dy);
@@ -2109,16 +2248,52 @@ export abstract class Transform {
             let b: number = 0;
             let a: number = 0;
             let np: number = 0;
+            let weightedRed: number = 0;
+            let weightedGreen: number = 0;
+            let weightedBlue: number = 0;
+            let firstAlpha = 0;
+            let isMixed = false;
+            let hasNegativeAlpha = false;
+
             for (let sy = ay1; sy < ay2; ++sy) {
               for (let sx = ax1; sx < ax2; ++sx, ++np) {
-                const s = frame.getPixel(sx, sy);
+                sourcePixel = frame.getPixel(sx, sy, sourcePixel);
+                const s = sourcePixel;
+                const pixelAlpha = s.a;
+
+                if (hasAlpha) {
+                  if (isMixed) {
+                    weightedRed += s.r * pixelAlpha;
+                    weightedGreen += s.g * pixelAlpha;
+                    weightedBlue += s.b * pixelAlpha;
+                  } else if (np === 0) {
+                    firstAlpha = pixelAlpha;
+                  } else if (pixelAlpha !== firstAlpha) {
+                    isMixed = true;
+                    weightedRed = r * firstAlpha + s.r * pixelAlpha;
+                    weightedGreen = g * firstAlpha + s.g * pixelAlpha;
+                    weightedBlue = b * firstAlpha + s.b * pixelAlpha;
+                  }
+
+                  hasNegativeAlpha = hasNegativeAlpha || pixelAlpha < 0;
+                }
+
                 r += s.r;
                 g += s.g;
                 b += s.b;
-                a += s.a;
+                a += pixelAlpha;
               }
             }
-            const c = dst.getColor(r / np, g / np, b / np, a / np);
+
+            const c =
+              isMixed && !hasNegativeAlpha
+                ? dst.getColor(
+                    weightedRed / a,
+                    weightedGreen / a,
+                    weightedBlue / a,
+                    a / np
+                  )
+                : dst.getColor(r / np, g / np, b / np, a / np);
 
             dst.data!.width = width;
             dst.data!.height = height;
@@ -2130,7 +2305,7 @@ export abstract class Transform {
       } else if (interpolation === Interpolation.nearest) {
         if (frame.hasPalette) {
           for (let y = 0; y < h; ++y) {
-            const y2 = Math.trunc(y * dy);
+            const y2 = Math.floor((y * frame.height) / h);
             for (let x = 0; x < w; ++x) {
               const p = frame.getPixelIndex(scaleX[x], y2);
               dst.data!.width = width;
@@ -2142,7 +2317,7 @@ export abstract class Transform {
           }
         } else {
           for (let y = 0; y < h; ++y) {
-            const y2 = Math.trunc(y * dy);
+            const y2 = Math.floor((y * frame.height) / h);
             for (let x = 0; x < w; ++x) {
               const p = frame.getPixel(scaleX[x], y2);
               dst.data!.width = width;
@@ -2206,14 +2381,29 @@ export abstract class Transform {
     const dy = sh / height;
     const dx = sw / width;
     let di = 0;
+
+    if (nc % 2 === 0 && interpolation === Interpolation.average) {
+      resizeDownAverageAlpha(bytes, sw, nc, width, height, dx, dy);
+      frame.data!.width = width;
+      frame.data!.height = height;
+      return;
+    }
+
+    if (nc % 2 === 0 && interpolation === Interpolation.linear) {
+      resizeDownLinearAlpha(bytes, sw, sh, nc, width, height, dx, dy);
+      frame.data!.width = width;
+      frame.data!.height = height;
+      return;
+    }
+
     switch (interpolation) {
       case Interpolation.nearest: {
         const sxs = new Int32Array(width);
         for (let x = 0; x < width; ++x) {
-          sxs[x] = Math.trunc(x * dx) * nc;
+          sxs[x] = Math.floor((x * sw) / width) * nc;
         }
         for (let y = 0; y < height; ++y) {
-          const row = Math.trunc(y * dy) * sw * nc;
+          const row = Math.floor((y * sh) / height) * sw * nc;
           for (let x = 0; x < width; ++x) {
             const si = row + sxs[x];
             for (let c = 0; c < nc; ++c) {

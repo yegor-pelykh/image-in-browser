@@ -1,9 +1,11 @@
 /** @format */
 
 import { Format } from '../color/format.js';
+import { cubicAlphaWeights } from '../common/alpha-weight.js';
 import { MathUtils } from '../common/math-utils.js';
 import { MemoryImage } from '../image/image.js';
 import { Interpolation } from '../common/interpolation.js';
+import { AlphaBlockSums } from './alpha-block-sums.js';
 import { bytesPerPixel } from './pixel-bytes.js';
 
 /**
@@ -340,6 +342,13 @@ function linearRow(
     const i1 = row1 + ixs[x];
     const n1 = row1 + nxs[x];
     const kx = kxs[x];
+
+    if (nc % 2 === 0) {
+      blendLinearAlphaPixel(src, i0, n0, i1, n1, kx, ky, out, d, nc);
+      d += nc;
+      continue;
+    }
+
     for (let c = 0; c < nc; ++c) {
       const icc = src[i0 + c];
       const inc = src[n0 + c];
@@ -350,6 +359,198 @@ function linearRow(
       );
     }
   }
+}
+
+/**
+ * Blends one linear sample of four taps.
+ * @param {number} center - The center tap.
+ * @param {number} right - The right tap.
+ * @param {number} below - The below tap.
+ * @param {number} diagonal - The diagonal tap.
+ * @param {number} fractionX - The horizontal fraction.
+ * @param {number} fractionY - The vertical fraction.
+ * @returns {number} The blended sample.
+ */
+function blendLinearByte(
+  center: number,
+  right: number,
+  below: number,
+  diagonal: number,
+  fractionX: number,
+  fractionY: number
+): number {
+  return Math.trunc(
+    center +
+      fractionX *
+        (right - center + fractionY * (center + diagonal - below - right)) +
+      fractionY * (below - center)
+  );
+}
+
+/**
+ * Blends one pixel of 2 or 4 channels from four taps, weighting taps with
+ * different alpha by alpha.
+ * @param {Uint8Array} bytes - The source data.
+ * @param {number} center - The center tap byte offset.
+ * @param {number} right - The right tap byte offset.
+ * @param {number} below - The below tap byte offset.
+ * @param {number} diagonal - The diagonal tap byte offset.
+ * @param {number} fractionX - The horizontal fraction.
+ * @param {number} fractionY - The vertical fraction.
+ * @param {Uint8Array} out - The destination data.
+ * @param {number} outOffset - The destination byte offset.
+ * @param {number} channels - The number of channels.
+ */
+function blendLinearAlphaPixel(
+  bytes: Uint8Array,
+  center: number,
+  right: number,
+  below: number,
+  diagonal: number,
+  fractionX: number,
+  fractionY: number,
+  out: Uint8Array,
+  outOffset: number,
+  channels: number
+): void {
+  const alphaOffset = channels - 1;
+  const centerAlpha = bytes[center + alphaOffset];
+  const rightAlpha = bytes[right + alphaOffset];
+  const belowAlpha = bytes[below + alphaOffset];
+  const diagonalAlpha = bytes[diagonal + alphaOffset];
+  const isUniform =
+    ((centerAlpha ^ rightAlpha) |
+      (centerAlpha ^ belowAlpha) |
+      (centerAlpha ^ diagonalAlpha)) ===
+    0;
+
+  if (!isUniform) {
+    blendMixedLinearPixel(
+      bytes,
+      center,
+      right,
+      below,
+      diagonal,
+      fractionX,
+      fractionY,
+      out,
+      outOffset,
+      channels
+    );
+    return;
+  }
+
+  out[outOffset] = blendLinearByte(
+    bytes[center],
+    bytes[right],
+    bytes[below],
+    bytes[diagonal],
+    fractionX,
+    fractionY
+  );
+
+  if (channels === 4) {
+    out[outOffset + 1] = blendLinearByte(
+      bytes[center + 1],
+      bytes[right + 1],
+      bytes[below + 1],
+      bytes[diagonal + 1],
+      fractionX,
+      fractionY
+    );
+    out[outOffset + 2] = blendLinearByte(
+      bytes[center + 2],
+      bytes[right + 2],
+      bytes[below + 2],
+      bytes[diagonal + 2],
+      fractionX,
+      fractionY
+    );
+  }
+
+  out[outOffset + alphaOffset] = centerAlpha;
+}
+
+/**
+ * Blends one pixel of 2 or 4 channels from four taps with different alpha.
+ * @param {Uint8Array} bytes - The source data.
+ * @param {number} center - The center tap byte offset.
+ * @param {number} right - The right tap byte offset.
+ * @param {number} below - The below tap byte offset.
+ * @param {number} diagonal - The diagonal tap byte offset.
+ * @param {number} fractionX - The horizontal fraction.
+ * @param {number} fractionY - The vertical fraction.
+ * @param {Uint8Array} out - The destination data.
+ * @param {number} outOffset - The destination byte offset.
+ * @param {number} channels - The number of channels.
+ */
+function blendMixedLinearPixel(
+  bytes: Uint8Array,
+  center: number,
+  right: number,
+  below: number,
+  diagonal: number,
+  fractionX: number,
+  fractionY: number,
+  out: Uint8Array,
+  outOffset: number,
+  channels: number
+): void {
+  const alphaOffset = channels - 1;
+  const centerAlpha = bytes[center + alphaOffset];
+  const rightAlpha = bytes[right + alphaOffset];
+  const belowAlpha = bytes[below + alphaOffset];
+  const diagonalAlpha = bytes[diagonal + alphaOffset];
+  const crossAlpha = centerAlpha + diagonalAlpha - belowAlpha - rightAlpha;
+  const alpha =
+    centerAlpha +
+    fractionX * (rightAlpha - centerAlpha + fractionY * crossAlpha) +
+    fractionY * (belowAlpha - centerAlpha);
+
+  if (alpha <= 0) {
+    for (let i = 0; i < alphaOffset; ++i) {
+      out[outOffset + i] = blendLinearByte(
+        bytes[center + i],
+        bytes[right + i],
+        bytes[below + i],
+        bytes[diagonal + i],
+        fractionX,
+        fractionY
+      );
+    }
+  } else {
+    const cross = fractionX * fractionY;
+    const centerWeight = (1 - fractionX - fractionY + cross) * centerAlpha;
+    const rightWeight = (fractionX - cross) * rightAlpha;
+    const belowWeight = (fractionY - cross) * belowAlpha;
+    const diagonalWeight = cross * diagonalAlpha;
+    let referenceTap = center;
+    let largest = centerWeight;
+    if (rightWeight > largest) {
+      referenceTap = right;
+      largest = rightWeight;
+    }
+    if (belowWeight > largest) {
+      referenceTap = below;
+      largest = belowWeight;
+    }
+    if (diagonalWeight > largest) {
+      referenceTap = diagonal;
+    }
+
+    for (let i = 0; i < alphaOffset; ++i) {
+      const reference = bytes[referenceTap + i];
+      const offset =
+        centerWeight * (bytes[center + i] - reference) +
+        rightWeight * (bytes[right + i] - reference) +
+        belowWeight * (bytes[below + i] - reference) +
+        diagonalWeight * (bytes[diagonal + i] - reference);
+
+      out[outOffset + i] = Math.trunc(reference + offset / alpha);
+    }
+  }
+
+  out[outOffset + alphaOffset] = Math.trunc(alpha);
 }
 
 /**
@@ -387,6 +588,11 @@ function resizeAverage(
     ax1s[x] = ax1;
     ax2s[x] = ax2;
   }
+  if (nc % 2 === 0) {
+    resizeAverageAlpha(src, out, dstStride, x1, y1, w, h, dy, ax1s, ax2s);
+    return;
+  }
+
   const sums = new Int32Array(nc);
   for (let y = 0; y < h; ++y) {
     const ay1 = Math.trunc(y * dy);
@@ -411,11 +617,199 @@ function resizeAverage(
           sums
         );
       }
-      // Integer sums are exact in doubles, so this matches summing doubles.
-      const inv = 1.0 / ((ay2 - ay1) * (ax2 - ax1));
+      const count = (ay2 - ay1) * (ax2 - ax1);
       for (let c = 0; c < nc; ++c) {
-        out[di++] = Math.trunc(sums[c] * inv);
+        out[di++] = Math.floor(sums[c] / count);
       }
+    }
+  }
+}
+
+/**
+ * Resizes by averaging the source pixels of each destination pixel, weighting
+ * the colors of blocks with different alpha by alpha.
+ * @param {OrientedSource} source - The oriented source.
+ * @param {Uint8Array} out - The destination data.
+ * @param {number} dstStride - The destination row stride.
+ * @param {number} x1 - The X offset in the destination.
+ * @param {number} y1 - The Y offset in the destination.
+ * @param {number} w - The width of the destination region.
+ * @param {number} h - The height of the destination region.
+ * @param {number} dy - The source Y step per destination Y.
+ * @param {Int32Array} ax1s - The first source X of each destination X.
+ * @param {Int32Array} ax2s - The last source X of each destination X.
+ */
+function resizeAverageAlpha(
+  source: OrientedSource,
+  out: Uint8Array,
+  dstStride: number,
+  x1: number,
+  y1: number,
+  w: number,
+  h: number,
+  dy: number,
+  ax1s: Int32Array,
+  ax2s: Int32Array
+): void {
+  const bytes = source.bytes;
+  const colStep = source.colStep;
+  const channels = source.k;
+  const rowStep = source.rowStep;
+  const hasColor = channels === 4;
+  const sums = new AlphaBlockSums();
+
+  for (let y = 0; y < h; ++y) {
+    const ay1 = Math.trunc(y * dy);
+    let ay2 = Math.trunc((y + 1) * dy);
+    if (ay2 === ay1) {
+      ay2++;
+    }
+    let di = (y1 + y) * dstStride + x1 * channels;
+
+    for (let x = 0; x < w; ++x) {
+      const columns = ax2s[x] - ax1s[x];
+      const start = source.row(ay1) + ax1s[x] * colStep;
+      const count = (ay2 - ay1) * columns;
+      sums.sumBlock(
+        bytes,
+        start,
+        colStep,
+        rowStep,
+        columns,
+        ay2 - ay1,
+        channels
+      );
+
+      if (sums.hasMixedAlpha) {
+        out[di++] = Math.floor(sums.weightedRed / sums.alpha);
+        if (hasColor) {
+          out[di++] = Math.floor(sums.weightedGreen / sums.alpha);
+          out[di++] = Math.floor(sums.weightedBlue / sums.alpha);
+        }
+      } else {
+        out[di++] = Math.floor(sums.red / count);
+        if (hasColor) {
+          out[di++] = Math.floor(sums.green / count);
+          out[di++] = Math.floor(sums.blue / count);
+        }
+      }
+
+      out[di++] = Math.floor(sums.alpha / count);
+    }
+  }
+}
+
+/**
+ * Downscales **bytes** of 2 or 4 channels by average in place for resize,
+ * reading every block before writing a pixel that overlaps it.
+ * @param {Uint8Array} bytes - The image bytes.
+ * @param {number} sourceWidth - The source width.
+ * @param {number} channels - The number of channels.
+ * @param {number} width - The destination width.
+ * @param {number} height - The destination height.
+ * @param {number} stepX - The source X step per destination X.
+ * @param {number} stepY - The source Y step per destination Y.
+ */
+export function resizeDownAverageAlpha(
+  bytes: Uint8Array,
+  sourceWidth: number,
+  channels: number,
+  width: number,
+  height: number,
+  stepX: number,
+  stepY: number
+): void {
+  const sums = new AlphaBlockSums();
+  const hasColor = channels === 4;
+  const rowStep = sourceWidth * channels;
+  let outOffset = 0;
+
+  for (let y = 0; y < height; ++y) {
+    const blockTop = Math.trunc(y * stepY);
+    const blockBottom = Math.trunc((y + 1) * stepY);
+    const rows = blockBottom === blockTop ? 1 : blockBottom - blockTop;
+
+    for (let x = 0; x < width; ++x) {
+      const blockLeft = Math.trunc(x * stepX);
+      const blockRight = Math.trunc((x + 1) * stepX);
+      const columns = blockRight === blockLeft ? 1 : blockRight - blockLeft;
+      const count = rows * columns;
+      const start = (blockTop * sourceWidth + blockLeft) * channels;
+      sums.sumBlock(bytes, start, channels, rowStep, columns, rows, channels);
+
+      if (sums.hasMixedAlpha) {
+        bytes[outOffset++] = Math.floor(sums.weightedRed / sums.alpha);
+        if (hasColor) {
+          bytes[outOffset++] = Math.floor(sums.weightedGreen / sums.alpha);
+          bytes[outOffset++] = Math.floor(sums.weightedBlue / sums.alpha);
+        }
+      } else {
+        bytes[outOffset++] = Math.floor(sums.red / count);
+        if (hasColor) {
+          bytes[outOffset++] = Math.floor(sums.green / count);
+          bytes[outOffset++] = Math.floor(sums.blue / count);
+        }
+      }
+
+      bytes[outOffset++] = Math.floor(sums.alpha / count);
+    }
+  }
+}
+
+/**
+ * Downscales **bytes** of 2 or 4 channels linearly in place for resize, using
+ * the center pixel as the tap outside the right or bottom edge, as
+ * {@link MemoryImage.getPixelLinear} does.
+ * @param {Uint8Array} bytes - The image bytes.
+ * @param {number} sourceWidth - The source width.
+ * @param {number} sourceHeight - The source height.
+ * @param {number} channels - The number of channels.
+ * @param {number} width - The destination width.
+ * @param {number} height - The destination height.
+ * @param {number} stepX - The source X step per destination X.
+ * @param {number} stepY - The source Y step per destination Y.
+ */
+export function resizeDownLinearAlpha(
+  bytes: Uint8Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  channels: number,
+  width: number,
+  height: number,
+  stepX: number,
+  stepY: number
+): void {
+  let outOffset = 0;
+  for (let y = 0; y < height; ++y) {
+    const sourceY = y * stepY;
+    const floorY = Math.trunc(sourceY);
+    const fractionY = sourceY - floorY;
+    const rowStart = floorY * sourceWidth;
+    const nextRowStart = rowStart + sourceWidth;
+    const hasNextRow = floorY + 1 < sourceHeight;
+
+    for (let x = 0; x < width; ++x) {
+      const sourceX = x * stepX;
+      const floorX = Math.trunc(sourceX);
+      const hasNextColumn = floorX + 1 < sourceWidth;
+      const center = (rowStart + floorX) * channels;
+      const right = hasNextColumn ? center + channels : center;
+      const below = hasNextRow ? (nextRowStart + floorX) * channels : center;
+      const diagonal = hasNextColumn && hasNextRow ? below + channels : center;
+
+      blendLinearAlphaPixel(
+        bytes,
+        center,
+        right,
+        below,
+        diagonal,
+        sourceX - floorX,
+        fractionY,
+        bytes,
+        outOffset,
+        channels
+      );
+      outOffset += channels;
     }
   }
 }
@@ -447,7 +841,8 @@ function sumRow(
 
 /**
  * Resizes using cubic interpolation. Matches Image.getPixelCubic: a tap whose
- * row or column is outside the image uses the center pixel.
+ * row or column is outside the image uses the center pixel, and taps with
+ * different alpha are weighted by alpha.
  * @param {OrientedSource} src - The oriented source.
  * @param {Uint8Array} out - The destination data.
  * @param {number} dstStride - The destination row stride.
@@ -471,8 +866,6 @@ function resizeCubic(
 ): void {
   const nc = src.k;
   const s = src.bytes;
-  // For each destination column, the source column offsets of the four taps,
-  // whether they're inside the image, and the fraction.
   const cols = new Int32Array(w * 4);
   const colInside = new Uint8Array(w * 4);
   const fxs = new Float64Array(w);
@@ -490,6 +883,9 @@ function resizeCubic(
   const rowInside = new Uint8Array(4);
   const taps = new Int32Array(16);
   const p = new Float64Array(4);
+  const alphas = new Float64Array(16);
+  const hasAlpha = nc % 2 === 0;
+  const alphaOffset = nc - 1;
   for (let y = 0; y < h; ++y) {
     const fy = y * dy;
     const iy = Math.trunc(fy);
@@ -511,22 +907,110 @@ function resizeCubic(
         }
       }
       const kx = fxs[x];
-      for (let c = 0; c < nc; ++c) {
-        for (let r = 0; r < 4; ++r) {
-          const o = r * 4;
-          p[r] = cubic(
-            kx,
-            s[taps[o] + c],
-            s[taps[o + 1] + c],
-            s[taps[o + 2] + c],
-            s[taps[o + 3] + c]
-          );
+      let colorChannels = nc;
+      let alpha = 0;
+      let isWeighted = false;
+      let referenceTap = 5;
+      let visible = 0;
+
+      if (hasAlpha) {
+        colorChannels = alphaOffset;
+        const centerAlpha = s[center + alphaOffset];
+        let isUniform = true;
+        for (let i = 0; i < 16; ++i) {
+          isUniform = isUniform && s[taps[i] + alphaOffset] === centerAlpha;
         }
-        const v = cubic(ky, p[0], p[1], p[2], p[3]);
-        out[di++] = v < 0 ? 0 : v > 255 ? 255 : Math.trunc(v);
+
+        alpha = centerAlpha;
+        if (!isUniform) {
+          alpha = cubicAlpha(s, taps, alphaOffset, kx, ky, alphas);
+          isWeighted = alpha > 0;
+        }
+
+        if (isWeighted) {
+          for (let i = 0; i < 16; ++i) {
+            if (alphas[i] > 0) {
+              visible |= 1 << i;
+            }
+          }
+
+          referenceTap = cubicAlphaWeights(alphas, kx, ky);
+        }
+      }
+
+      if (isWeighted) {
+        for (let c = 0; c < colorChannels; ++c) {
+          const reference = s[taps[referenceTap] + c];
+          let lowest = 255;
+          let highest = 0;
+          let v = 0;
+
+          for (let i = 0; i < 16; ++i) {
+            const value = s[taps[i] + c];
+            v += alphas[i] * (value - reference);
+            if ((visible & (1 << i)) !== 0) {
+              lowest = value < lowest ? value : lowest;
+              highest = value > highest ? value : highest;
+            }
+          }
+
+          v = reference + v / alpha;
+          out[di++] =
+            v < lowest ? lowest : v > highest ? highest : Math.trunc(v);
+        }
+      } else {
+        for (let c = 0; c < colorChannels; ++c) {
+          for (let r = 0; r < 4; ++r) {
+            const o = r * 4;
+            p[r] = cubic(
+              kx,
+              s[taps[o] + c],
+              s[taps[o + 1] + c],
+              s[taps[o + 2] + c],
+              s[taps[o + 3] + c]
+            );
+          }
+          const v = cubic(ky, p[0], p[1], p[2], p[3]);
+          out[di++] = v < 0 ? 0 : v > 255 ? 255 : Math.trunc(v);
+        }
+      }
+
+      if (hasAlpha) {
+        out[di++] = alpha < 0 ? 0 : alpha > 255 ? 255 : Math.trunc(alpha);
       }
     }
   }
+}
+
+/**
+ * Computes the cubic interpolation of the alphas of 16 taps.
+ * @param {Uint8Array} bytes - The source data.
+ * @param {Int32Array} taps - The tap byte offsets.
+ * @param {number} alphaOffset - The alpha byte offset in a pixel.
+ * @param {number} fractionX - The horizontal fraction.
+ * @param {number} fractionY - The vertical fraction.
+ * @param {Float64Array} alphas - The output alphas.
+ * @returns {number} The interpolated alpha.
+ */
+function cubicAlpha(
+  bytes: Uint8Array,
+  taps: Int32Array,
+  alphaOffset: number,
+  fractionX: number,
+  fractionY: number,
+  alphas: Float64Array
+): number {
+  for (let i = 0; i < 16; ++i) {
+    alphas[i] = bytes[taps[i] + alphaOffset];
+  }
+
+  return cubic(
+    fractionY,
+    cubic(fractionX, alphas[0], alphas[1], alphas[2], alphas[3]),
+    cubic(fractionX, alphas[4], alphas[5], alphas[6], alphas[7]),
+    cubic(fractionX, alphas[8], alphas[9], alphas[10], alphas[11]),
+    cubic(fractionX, alphas[12], alphas[13], alphas[14], alphas[15])
+  );
 }
 
 /**
