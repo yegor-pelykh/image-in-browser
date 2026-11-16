@@ -823,6 +823,15 @@ export class PngDecoder implements Decoder {
           const delayDen = this._input.readUint16();
           const dispose = this._input.read();
           const blend = this._input.read();
+          if (
+            xOffset + width > this._info.width ||
+            yOffset + height > this._info.height
+          ) {
+            throw new LibError(
+              `APNG frame ${width}x${height} at ${xOffset},${yOffset} is ` +
+                `outside the ${this._info.width}x${this._info.height} canvas`
+            );
+          }
           // CRC
           this._input.skip(4);
 
@@ -1269,8 +1278,9 @@ export class PngDecoder implements Decoder {
     // Each frame is composited to a full canvas, so check them all before
     // decoding any.
     new PixelBudget(this._maxPixels).add(
-      this._info.width * numFrames,
-      this._info.height
+      this._info.width,
+      this._info.height,
+      numFrames
     );
     for (let i = 0; i < numFrames; ++i) {
       const frame = this._info.frames[i];

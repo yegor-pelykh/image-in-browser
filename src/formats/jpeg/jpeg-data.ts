@@ -193,7 +193,7 @@ export class JpegData {
 
   private _numScans = 0;
 
-  private static readonly maxScans = 1000;
+  private static readonly maxScans = 100;
 
   private _allowStreaming = false;
 
@@ -1215,6 +1215,9 @@ export class JpegData {
     }
 
     const f = this._frame!;
+    if (f.components.size === 4 && this._adobe === undefined) {
+      throw new LibError('Unsupported color mode (4 components)');
+    }
     const components = new Array<JpegComponent>();
     for (let i = 0; i < n; i++) {
       const id = block.read();

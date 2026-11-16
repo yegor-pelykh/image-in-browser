@@ -2,11 +2,17 @@
 
 import { describe, expect, test } from 'vitest';
 import {
+  BmpDecoder,
   ColorRgba8,
+  Crc32,
+  decodeJpg,
   encodeJpg,
+  encodePng,
   encodeWebP,
   LibError,
   MemoryImage,
+  PngDecoder,
+  PnmDecoder,
   TiffDecoder,
   WebPDecoder,
 } from '../../src';
@@ -193,4 +199,208 @@ describe('Format: nested max pixels', () => {
     });
     expect(image?.width).toBe(16);
   });
+
+  test('WebP frame holding its own animation is refused', () => {
+    const inner = new WebPChunk(
+      'ANMF',
+      anmfChunkData(0, 0, 16, 16, 100, false, false, [
+        new WebPChunk('VP8L', vp8l(16, 16)),
+      ])
+    );
+    const bytes = buildRiff([
+      new WebPChunk('VP8X', vp8xChunkData(2, 16, 16)),
+      new WebPChunk('ANIM', animChunkData(0, 0, 0, 0, 0)),
+      new WebPChunk(
+        'ANMF',
+        anmfChunkData(0, 0, 16, 16, 100, false, false, [
+          new WebPChunk('VP8X', vp8xChunkData(2, 16, 16)),
+          new WebPChunk('ANIM', animChunkData(0, 0, 0, 0, 0)),
+          inner,
+        ])
+      ),
+    ]);
+    expectRefused(() => webp().decode({ bytes }), 'holds an animation');
+  });
+
+  test('WebP frame outside the canvas is refused', () => {
+    const bytes = buildRiff([
+      new WebPChunk('VP8X', vp8xChunkData(2, 16, 16)),
+      new WebPChunk('ANIM', animChunkData(0, 0, 0, 0, 0)),
+      new WebPChunk(
+        'ANMF',
+        anmfChunkData(8, 0, 16, 16, 100, false, false, [
+          new WebPChunk('VP8L', vp8l(16, 16)),
+        ])
+      ),
+    ]);
+    expectRefused(() => webp().decode({ bytes }), 'outside the 16x16 canvas');
+  });
+
+  test('APNG frame outside the canvas is refused', () => {
+    const anim = new MemoryImage({ width: 16, height: 16 });
+    anim.addFrame(new MemoryImage({ width: 16, height: 16 }));
+    const png = encodePng({ image: anim });
+    const fctl = chunkOffsets(png, 'fcTL')[1];
+    new DataView(png.buffer, png.byteOffset, png.byteLength).setUint32(
+      fctl + 12,
+      32
+    );
+    fixCrc(png, fctl);
+    expectRefused(
+      () => new PngDecoder(maxPixels).decode({ bytes: png }),
+      'outside the 16x16 canvas'
+    );
+    expect(
+      new PngDecoder(maxPixels).decode({ bytes: encodePng({ image: anim }) })
+        ?.numFrames
+    ).toBe(2);
+  });
+
+  test('PNG size whose product overflows is refused', () => {
+    const png = encodePng({ image: new MemoryImage({ width: 1, height: 1 }) });
+    const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+    view.setUint32(16, 0xffffffff);
+    view.setUint32(20, 0x80000001);
+    fixCrc(png, 8);
+    expectRefused(
+      () => new PngDecoder(40000000).startDecode(png),
+      'exceed the maximum'
+    );
+  });
+
+  test('PNM size whose product overflows is refused', () => {
+    const header = 'P5\n274177 67280421310721\n255\n';
+    const pnm = new Uint8Array(header.length + 1);
+    for (let i = 0; i < header.length; i++) {
+      pnm[i] = header.charCodeAt(i);
+    }
+    expectRefused(
+      () => new PnmDecoder().decode({ bytes: pnm }),
+      'exceed the maximum'
+    );
+  });
+
+  test('JPEG with 4 components and no Adobe marker is refused at once', () => {
+    const jpeg = Uint8Array.from([
+      0xff, 0xd8, 0xff, 0xc2, 0, 20, 8, 0, 8, 0, 8, 4, 1, 0x11, 0, 2, 0x11, 0,
+      3, 0x11, 0, 4, 0x11, 0, 0xff, 0xda, 0, 14, 4, 1, 0, 2, 0, 3, 0, 4, 0, 0,
+      0, 0, 0, 0, 0xff, 0xd9,
+    ]);
+    expectRefused(() => decodeJpg({ data: jpeg }), '4 components');
+  });
+
+  test('BMP palette larger than the file is refused', () => {
+    const bmp = new Uint8Array(58);
+    const view = new DataView(bmp.buffer);
+    view.setUint8(0, 0x42);
+    view.setUint8(1, 0x4d);
+    view.setUint32(2, 58, true);
+    view.setUint32(10, 58, true);
+    view.setUint32(14, 40, true);
+    view.setInt32(18, 1, true);
+    view.setInt32(22, 1, true);
+    view.setUint16(26, 1, true);
+    view.setUint16(28, 8, true);
+    view.setUint32(46, 0xffffffff, true);
+    expectRefused(
+      () => new BmpDecoder().decode({ bytes: bmp }),
+      'larger than the file'
+    );
+  });
+
+  test('TIFF samples per pixel count against maxPixels', () => {
+    const tiff = lzwTiff(100, 100, 30);
+    expectRefused(
+      () => new TiffDecoder(10000).decode({ bytes: tiff }),
+      '30 samples a pixel'
+    );
+    expect(new TiffDecoder(80000).decode({ bytes: tiff })?.numChannels).toBe(
+      30
+    );
+    expect(
+      new TiffDecoder(10000).decode({ bytes: lzwTiff(100, 100, 4) })
+        ?.numChannels
+    ).toBe(4);
+  });
 });
+
+/**
+ * Returns the offsets of the PNG chunks of **type** in **png**.
+ * @param {Uint8Array} png - The PNG bytes.
+ * @param {string} type - The chunk type.
+ * @returns {number[]} The chunk offsets.
+ */
+function chunkOffsets(png: Uint8Array, type: string): number[] {
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  const offsets: number[] = [];
+  for (
+    let offset = 8;
+    offset < png.length;
+    offset += 12 + view.getUint32(offset)
+  ) {
+    const chunkType = String.fromCharCode(
+      ...png.subarray(offset + 4, offset + 8)
+    );
+    if (chunkType === type) {
+      offsets.push(offset);
+    }
+  }
+  return offsets;
+}
+
+/**
+ * Recomputes the CRC of the PNG chunk at **offset**.
+ * @param {Uint8Array} png - The PNG bytes.
+ * @param {number} offset - The chunk offset.
+ */
+function fixCrc(png: Uint8Array, offset: number): void {
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  const length = view.getUint32(offset);
+  view.setUint32(
+    offset + 8 + length,
+    Crc32.getChecksum({ buffer: png.subarray(offset + 4, offset + 8 + length) })
+  );
+}
+
+/**
+ * A **width** x **height** LZW TIFF with one strip holding only a clear code.
+ * @param {number} width - The width.
+ * @param {number} height - The height.
+ * @param {number} samplesPerPixel - The number of samples per pixel.
+ * @returns {Uint8Array} The TIFF bytes.
+ */
+function lzwTiff(
+  width: number,
+  height: number,
+  samplesPerPixel: number
+): Uint8Array {
+  const entries = 9;
+  const out = new Uint8Array(12 + 2 + entries * 12 + 4);
+  const view = new DataView(out.buffer);
+  view.setUint8(0, 0x49);
+  view.setUint8(1, 0x49);
+  view.setUint16(2, 42, true);
+  view.setUint32(4, 12, true);
+  view.setUint8(8, 0x80);
+  view.setUint16(12, entries, true);
+  let at = 14;
+  const tags: [number, number, number][] = [
+    [256, 4, width],
+    [257, 4, height],
+    [258, 3, 8],
+    [259, 3, 5],
+    [262, 3, 2],
+    [273, 4, 8],
+    [277, 3, samplesPerPixel],
+    [278, 4, height],
+    [279, 4, 4],
+  ];
+  for (const [id, type, value] of tags) {
+    view.setUint16(at, id, true);
+    view.setUint16(at + 2, type, true);
+    view.setUint32(at + 4, 1, true);
+    view.setUint32(at + 8, value, true);
+    at += 12;
+  }
+  return out;
+}

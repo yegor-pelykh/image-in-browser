@@ -242,13 +242,15 @@ describe('Format: malformed input', () => {
     }
     // Repeat the scan, up to the EOI marker at the end.
     const scan = jpeg.subarray(sos, jpeg.length - 2);
-    const bytes = new Uint8Array([
-      ...jpeg.subarray(0, sos),
-      ...Array.from({ length: 1001 }, () => scan).flatMap((s) => [...s]),
-      0xff,
-      0xd9,
-    ]);
-    expect(() => decodeJpg({ data: bytes })).toThrow(LibError);
+    const withScans = (count: number): Uint8Array =>
+      new Uint8Array([
+        ...jpeg.subarray(0, sos),
+        ...Array.from({ length: count }, () => scan).flatMap((s) => [...s]),
+        0xff,
+        0xd9,
+      ]);
+    expect(() => decodeJpg({ data: withScans(101) })).toThrow(LibError);
+    expect(decodeJpg({ data: withScans(100) })?.width).toBe(8);
   });
 
   describe('decompression limits', () => {

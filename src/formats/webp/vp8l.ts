@@ -710,9 +710,9 @@ export class VP8L {
         huffmanImage[i] = group;
         if (group >= numHtreeGroupsMax) numHtreeGroupsMax = group + 1;
       }
-      if (numHtreeGroupsMax > 1000 || numHtreeGroupsMax > xSize * ySize) {
-        mapping = new Int32Array(numHtreeGroups);
-        mapping.fill(0xff, 0, numHtreeGroups);
+      if (numHtreeGroupsMax > 1) {
+        mapping = new Int32Array(numHtreeGroupsMax);
+        mapping.fill(-1, 0, numHtreeGroupsMax);
         numHtreeGroups = 0;
         for (let i = 0; i < huffmanPixs; ++i) {
           const mappedGroup = huffmanImage[i];

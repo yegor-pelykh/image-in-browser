@@ -8,7 +8,12 @@ import { MemoryImage } from '../image/image.js';
 import { Decoder, DecoderDecodeOptions, defaultMaxPixels } from './decoder.js';
 import { guardDecode } from './guard-decode.js';
 import { ImageFormat } from './image-format.js';
-import { checkPixels, PixelBudget } from './max-pixels.js';
+import {
+  checkPixels,
+  checkSamples,
+  PixelBudget,
+  pixelPlanes,
+} from './max-pixels.js';
 import { TiffImage } from './tiff/tiff-image.js';
 import { TiffInfo } from './tiff/tiff-info.js';
 
@@ -242,6 +247,18 @@ export class TiffDecoder implements Decoder {
     const tiff = this._info.images[frameIndex];
     checkPixels(tiff.width, tiff.height, this._maxPixels);
     checkPixels(tiff.tileWidth, tiff.tileHeight, this._maxPixels);
+    checkSamples(
+      tiff.width,
+      tiff.height,
+      tiff.samplesPerPixel,
+      this._maxPixels
+    );
+    checkSamples(
+      tiff.tileWidth,
+      tiff.tileHeight,
+      tiff.samplesPerPixel,
+      this._maxPixels
+    );
     const image = tiff.decode(this._input);
     if (this._exifData !== undefined) {
       image.exifData = this._exifData;
@@ -286,9 +303,11 @@ export class TiffDecoder implements Decoder {
       return this.decodeFrame(opt.frameIndex);
     }
 
-    const budget = new PixelBudget(this._maxPixels);
-    for (const tiff of this._info.images) {
-      budget.add(tiff.width, tiff.height);
+    if (len > 1) {
+      const budget = new PixelBudget(this._maxPixels, { what: 'TIFF pages' });
+      for (const tiff of this._info.images) {
+        budget.add(tiff.width, tiff.height, pixelPlanes(tiff.samplesPerPixel));
+      }
     }
 
     const image = this.decodeFrame(0);

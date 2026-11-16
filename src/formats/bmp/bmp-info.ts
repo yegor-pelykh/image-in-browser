@@ -332,6 +332,11 @@ export class BmpInfo implements DecodeInfo {
   private readPalette(input: InputBuffer<Uint8Array>): void {
     const numColors =
       this._totalColors === 0 ? 1 << this._bitsPerPixel : this._totalColors;
+    if (numColors > Math.floor(input.length / 4)) {
+      throw new LibError(
+        `BMP palette of ${numColors} colors is larger than the file`
+      );
+    }
     const numChannels = 3;
     this._palette = new PaletteUint8(numColors, numChannels);
     for (let i = 0; i < numColors; ++i) {

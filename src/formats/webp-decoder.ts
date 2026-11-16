@@ -81,68 +81,60 @@ export class WebPDecoder implements Decoder {
   }
 
   /**
-   * Decodes the frame in {@link input}. An ANMF frame passes its {@link width}
-   * and {@link height}, which were checked against maxPixels, and the
-   * bitstream inside it must match them: the decoders allocate from the
-   * bitstream's own size, so its header is checked before decoding.
+   * Decodes the ANMF frame payload in {@link input}, whose bitstream must be
+   * the {@link width} x {@link height} that was checked against maxPixels.
    * @private
    * @param {InputBuffer<Uint8Array>} input - The input buffer.
-   * @param {number} [frameIndex=0] - The frame index.
-   * @param {number} [width] - The width of the ANMF frame.
-   * @param {number} [height] - The height of the ANMF frame.
+   * @param {number} frameIndex - The frame index.
+   * @param {number} width - The width of the ANMF frame.
+   * @param {number} height - The height of the ANMF frame.
    * @returns {MemoryImage | undefined} The decoded image.
    */
   private decodeFrameInternal(
     input: InputBuffer<Uint8Array>,
-    frameIndex: number = 0,
-    width?: number,
-    height?: number
+    frameIndex: number,
+    width: number,
+    height: number
   ): MemoryImage | undefined {
     const webp = new WebPInfoInternal();
     if (!this.getInfo(input, webp)) {
       return undefined;
     }
 
-    if (webp.format === WebPFormat.undefined) {
+    if (
+      webp.hasAnimation ||
+      webp.frames.length > 0 ||
+      webp.format === WebPFormat.animated
+    ) {
+      throw new LibError('WebP frame holds an animation');
+    }
+
+    const lossless = webp.format === WebPFormat.lossless;
+    if (!lossless && webp.format !== WebPFormat.lossy) {
       return undefined;
     }
 
     webp.frame = frameIndex;
     webp.frameCount = this._info.numFrames;
 
-    if (webp.hasAnimation) {
-      if (frameIndex >= webp.frames.length || frameIndex < 0) {
-        return undefined;
-      }
-      const f = webp.frames[frameIndex];
-      const frameData = input.subarray(f.frameSize, f.framePosition);
+    const bitstream = (): InputBuffer<Uint8Array> =>
+      input.subarray(webp.vp8Size, webp.vp8Position);
 
-      return this.decodeFrameInternal(frameData, frameIndex, f.width, f.height);
-    } else {
-      const bitstream = (): InputBuffer<Uint8Array> =>
-        input.subarray(webp.vp8Size, webp.vp8Position);
-      const lossless = webp.format === WebPFormat.lossless;
-      if (!lossless && webp.format !== WebPFormat.lossy) {
-        return undefined;
-      }
-      if (width !== undefined && height !== undefined) {
-        const ok = lossless
-          ? new VP8L(bitstream(), webp).decodeHeader()
-          : new VP8(bitstream(), webp).decodeHeader();
-        if (!ok) {
-          return undefined;
-        }
-        if (webp.width !== width || webp.height !== height) {
-          throw new LibError(
-            `WebP frame bitstream size ${webp.width}x${webp.height} does not ` +
-              `match its frame size ${width}x${height}`
-          );
-        }
-      }
-      return lossless
-        ? new VP8L(bitstream(), webp).decode()
-        : new VP8(bitstream(), webp).decode();
+    const ok = lossless
+      ? new VP8L(bitstream(), webp).decodeHeader()
+      : new VP8(bitstream(), webp).decodeHeader();
+    if (!ok) {
+      return undefined;
     }
+    if (webp.width !== width || webp.height !== height) {
+      throw new LibError(
+        `WebP frame bitstream size ${webp.width}x${webp.height} does not ` +
+          `match its frame size ${width}x${height}`
+      );
+    }
+    return lossless
+      ? new VP8L(bitstream(), webp).decode()
+      : new VP8(bitstream(), webp).decode();
   }
 
   /**
@@ -374,6 +366,15 @@ export class WebPDecoder implements Decoder {
         checkPixels(this._info.width, this._info.height, this.maxPixels);
         for (const f of this._info.frames) {
           checkPixels(f.width, f.height, this.maxPixels);
+          if (
+            f.x + f.width > this._info.width ||
+            f.y + f.height > this._info.height
+          ) {
+            throw new LibError(
+              `WebP frame ${f.width}x${f.height} at ${f.x},${f.y} is ` +
+                `outside the ${this._info.width}x${this._info.height} canvas`
+            );
+          }
         }
         this._info.frameCount = this._info.frames.length;
         return this._info;
@@ -433,8 +434,9 @@ export class WebPDecoder implements Decoder {
     // Each frame is composited to a full canvas, so check them all before
     // decoding any.
     new PixelBudget(this.maxPixels).add(
-      this._info.width * this._info.numFrames,
-      this._info.height
+      this._info.width,
+      this._info.height,
+      this._info.numFrames
     );
     for (let i = 0; i < this._info.numFrames; ++i) {
       this._info.frame = i;

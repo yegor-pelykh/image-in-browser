@@ -847,8 +847,9 @@ export class GifDecoder implements Decoder {
     // Each frame is composited to a full canvas, so check them all before
     // decoding any.
     new PixelBudget(this.maxPixels).add(
-      this._info.width * this._info.numFrames,
-      this._info.height
+      this._info.width,
+      this._info.height,
+      this._info.numFrames
     );
 
     // Each output frame is the logical screen as displayed after drawing the
