@@ -107,7 +107,7 @@ function resetAllMBInfo(enc: VP8EncState): void {
 /**
  * Measures one macroblock and picks a first guess at its modes.
  */
-class MBAnalyzer {
+export class MBAnalyzer {
   public readonly enc: VP8EncState;
   public readonly it: VP8EncIterator;
 

@@ -163,6 +163,7 @@ export {
   ContrastOptions,
   ConvolutionOptions,
   CopyImageChannelsOptions,
+  DitherImageBayerOptions,
   DitherImageOptions,
   DotScreenOptions,
   DropShadowOptions,
@@ -223,6 +224,7 @@ export { IcoType, IcoTypeLength } from './formats/ico/ico-type.js';
 
 export { HuffmanNode } from './formats/jpeg/huffman-node.js';
 export { HuffmanParent } from './formats/jpeg/huffman-parent.js';
+export { HuffmanTable } from './formats/jpeg/huffman-table.js';
 export { HuffmanValue } from './formats/jpeg/huffman-value.js';
 export { JpegAdobe } from './formats/jpeg/jpeg-adobe.js';
 export { JpegComponentData } from './formats/jpeg/jpeg-component-data.js';
@@ -230,13 +232,17 @@ export { JpegComponent } from './formats/jpeg/jpeg-component.js';
 export { JpegData } from './formats/jpeg/jpeg-data.js';
 export { JpegFrame } from './formats/jpeg/jpeg-frame.js';
 export { JpegHuffman } from './formats/jpeg/jpeg-huffman.js';
+export { JpegIccProfileReader } from './formats/jpeg/jpeg-icc.js';
+export { JpegImageWriter } from './formats/jpeg/jpeg-image-writer.js';
 export { JpegInfo } from './formats/jpeg/jpeg-info.js';
 export { JpegJfif } from './formats/jpeg/jpeg-jfif.js';
 export { JpegMarker } from './formats/jpeg/jpeg-marker.js';
 export { JpegQuantize } from './formats/jpeg/jpeg-quantize.js';
 export { JpegScan } from './formats/jpeg/jpeg-scan.js';
 export { JpegUtils } from './formats/jpeg/jpeg-utils.js';
+export { RestartDecode } from './formats/jpeg/restart-decode.js';
 
+export { InvalidPngData } from './formats/png/invalid-png-data.js';
 export { PngBlendMode } from './formats/png/png-blend-mode.js';
 export { PngCicpData } from './formats/png/png-cicp-data.js';
 export { PngColorType } from './formats/png/png-color-type.js';
@@ -300,7 +306,10 @@ export {
   PvrAppleInfoOptions,
 } from './formats/pvr/pvr-apple-info.js';
 export { PvrBitUtility } from './formats/pvr/pvr-bit-utility.js';
-export { PvrColorBoundingBox } from './formats/pvr/pvr-color-bounding-box.js';
+export {
+  PvrColor,
+  PvrColorBoundingBox,
+} from './formats/pvr/pvr-color-bounding-box.js';
 export { PvrColorRgb } from './formats/pvr/pvr-color-rgb.js';
 export { PvrColorRgbCore } from './formats/pvr/pvr-color-rgb-core.js';
 export { PvrColorRgba } from './formats/pvr/pvr-color-rgba.js';
@@ -334,28 +343,59 @@ export {
 
 export { VP8BandProbas } from './formats/webp/vp8-band-probas.js';
 export { VP8BitReader } from './formats/webp/vp8-bit-reader.js';
+export { VP8BoolEncoder } from './formats/webp/vp8-bool-encoder.js';
+export { VP8Config, VP8ConfigOptions } from './formats/webp/vp8-config.js';
+export { VP8EncProba } from './formats/webp/vp8-enc-proba.js';
+export { VP8Encoder } from './formats/webp/vp8-encoder.js';
+export { VP8EncIterator } from './formats/webp/vp8-iterator.js';
 export { VP8FInfo } from './formats/webp/vp8-f-info.js';
 export { VP8FilterHeader } from './formats/webp/vp8-filter-header.js';
 export { VP8Filter } from './formats/webp/vp8-filter.js';
 export { VP8FrameHeader } from './formats/webp/vp8-frame-header.js';
+export { VP8Lossy } from './formats/webp/vp8-lossy.js';
+export { VP8Matrix } from './formats/webp/vp8-matrix.js';
 export { VP8MBData } from './formats/webp/vp8-mb-data.js';
 export { VP8MB } from './formats/webp/vp8-mb.js';
+export { VP8ModeScore } from './formats/webp/vp8-mode-score.js';
 export { VP8PictureHeader } from './formats/webp/vp8-picture-header.js';
 export { VP8Proba } from './formats/webp/vp8-proba.js';
 export { VP8QuantMatrix } from './formats/webp/vp8-quant-matrix.js';
+export { VP8Quantizers } from './formats/webp/vp8-quant.js';
 export { VP8Random } from './formats/webp/vp8-random.js';
+export { VP8Decimate } from './formats/webp/vp8-rd.js';
+export { VP8Residual } from './formats/webp/vp8-residual.js';
 export { VP8SegmentHeader } from './formats/webp/vp8-segment-header.js';
+export { VP8SegmentInfo } from './formats/webp/vp8-segment-info.js';
+export { MBAnalyzer } from './formats/webp/vp8-segments.js';
+export { VP8EncState } from './formats/webp/vp8-state.js';
+export { VP8TokenBuffer } from './formats/webp/vp8-tokens.js';
 export { VP8TopSamples } from './formats/webp/vp8-top-samples.js';
+export { VP8Yuv } from './formats/webp/vp8-yuv.js';
 export { VP8 } from './formats/webp/vp8.js';
+export {
+  VP8LAnalysis,
+  VP8LAnalysisOptions,
+} from './formats/webp/vp8l-analysis.js';
+export { VP8LBackwardRefs } from './formats/webp/vp8l-backward-refs.js';
 export { VP8LBitReader } from './formats/webp/vp8l-bit-reader.js';
+export { VP8LBitWriter } from './formats/webp/vp8l-bit-writer.js';
+export { VP8LClustering } from './formats/webp/vp8l-clustering.js';
 export { VP8LColorCache } from './formats/webp/vp8l-color-cache.js';
 export { colorCacheKey, mul32 } from './formats/webp/vp8l-color-hash.js';
+export { VP8LCostModel } from './formats/webp/vp8l-cost-model.js';
+export { VP8LCover } from './formats/webp/vp8l-cover.js';
+export { VP8LColorMultipliers } from './formats/webp/vp8l-cross-color.js';
+export { VP8LEncoder } from './formats/webp/vp8l-encoder.js';
+export { VP8LHistogram } from './formats/webp/vp8l-histogram.js';
+export { VP8LHuffmanCodes } from './formats/webp/vp8l-huffman-codes.js';
 export { VP8LImageTransformType } from './formats/webp/vp8l-image-transform-type.js';
 export { VP8LInternal } from './formats/webp/vp8l-internal.js';
+export { Lz77 } from './formats/webp/vp8l-lz77.js';
+export { VP8LMatches } from './formats/webp/vp8l-matches.js';
+export { VP8LMetaHuffman } from './formats/webp/vp8l-meta-huffman.js';
 export { VP8LMultipliers } from './formats/webp/vp8l-multipliers.js';
 export { VP8LTransform } from './formats/webp/vp8l-transform.js';
 export { VP8L } from './formats/webp/vp8l.js';
-export { VP8Config } from './formats/webp/vp8-config.js';
 export { WebPAlpha } from './formats/webp/webp-alpha.js';
 export { WebPBitWriter } from './formats/webp/webp-bit-writer.js';
 export { WebPClSymbol } from './formats/webp/webp-cl-symbol.js';
@@ -391,6 +431,7 @@ export {
 } from './formats/decoder.js';
 export { DibDecoder } from './formats/dib-decoder.js';
 export { Encoder, EncoderEncodeOptions } from './formats/encoder.js';
+export { PixelBudget } from './formats/max-pixels.js';
 export { GifDecoder } from './formats/gif-decoder.js';
 export { GifEncoder, GifEncoderInitOptions } from './formats/gif-encoder.js';
 export { IcoDecoder } from './formats/ico-decoder.js';
@@ -447,6 +488,7 @@ export {
   MemoryImageConvertOptions,
   MemoryImageCreateOptions,
   MemoryImageFromBytesOptions,
+  MemoryImageGetBytesOptions,
 } from './image/image.js';
 export { NeuralQuantizer } from './image/neural-quantizer.js';
 export { OctreeNode } from './image/octree-node.js';
@@ -480,8 +522,11 @@ export { QuantizerType } from './image/quantizer-type.js';
 export { Quantizer } from './image/quantizer.js';
 
 // Export types from 'transform' directory
+export { AlphaBlockSums } from './transform/alpha-block-sums.js';
+export { CubicRows } from './transform/cubic-rows.js';
 export { ExpandCanvasPosition } from './transform/expand-canvas-position.js';
 export { FlipDirection } from './transform/flip-direction.js';
+export { OrientedSource } from './transform/resize-bytes.js';
 export {
   Transform,
   CopyCropCircleOptions,

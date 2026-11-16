@@ -125,7 +125,7 @@ export function resizeBytes(
  * The bytes of a frame seen with an EXIF orientation applied: the pixel at
  * (x, y) of the oriented image starts at byte base + x * colStep + y * rowStep.
  */
-class OrientedSource {
+export class OrientedSource {
   /** The frame pixel data. */
   bytes: Uint8Array;
   /** The number of bytes per pixel. */
