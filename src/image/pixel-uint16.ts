@@ -61,7 +61,7 @@ export class PixelUint16 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets or sets the index of the pixel.
    */
   public get index(): number {
-    return this.r;
+    return this.data[this._index];
   }
   public set index(i: number) {
     this.r = i;

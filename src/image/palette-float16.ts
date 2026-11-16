@@ -224,7 +224,7 @@ export class PaletteFloat16 implements Palette {
   public getAlpha(index: number): number {
     let _index = index;
     if (this._numChannels < 4) {
-      return 255;
+      return this.maxChannelValue;
     }
     _index *= this._numChannels;
     return Float16.float16ToDouble(this._data[_index + 3]);

@@ -199,11 +199,13 @@ export class PixelUint4 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
    * Gets or sets the alpha channel value.
    */
   public get a(): number {
-    return this.palette === undefined && this.numChannels === 2
-      ? this.getChannelInternal(1)
-      : this.palette === undefined && this.numChannels < 4
-        ? this.maxChannelValue
-        : this.getChannel(3);
+    return this.palette !== undefined
+      ? this.palette.getAlpha(this.getChannelInternal(0))
+      : this.numChannels === 2
+        ? this.getChannelInternal(1)
+        : this.numChannels < 4
+          ? this.maxChannelValue
+          : this.getChannel(3);
   }
   public set a(a: number) {
     this.setChannel(this.numChannels === 2 ? 1 : 3, a);
@@ -390,13 +392,12 @@ export class PixelUint4 implements Pixel, Iterable<Pixel>, Iterator<Pixel> {
     this._x = x;
     this._y = y;
     const bpp = this.image.numChannels * 4;
-    const w = this.image.width;
     const rowStride = this.image.rowStride;
     this._index =
       bpp === 4
         ? this._y * rowStride + (this._x >>> 1)
         : bpp === 8
-          ? this._y * w + this._x
+          ? this._y * rowStride + this._x
           : bpp === 16
             ? this._y * rowStride + (this._x << 1)
             : this._y * rowStride + ((this._x * bpp) >>> 3);

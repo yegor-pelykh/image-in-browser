@@ -8,6 +8,7 @@ import { Line } from '../common/line.js';
 import { MathUtils } from '../common/math-utils.js';
 import { Point } from '../common/point.js';
 import { Rectangle } from '../common/rectangle.js';
+import { withoutPalette } from '../common/without-palette.js';
 import { MemoryImage } from '../image/image.js';
 import { ImageUtils } from '../image/image-utils.js';
 import { Pixel } from '../image/pixel.js';
@@ -2692,9 +2693,7 @@ export abstract class Draw {
     }
 
     if (blend !== BlendMode.direct && dst.hasPalette) {
-      dst = dst.convert({
-        numChannels: dst.numChannels,
-      });
+      dst = withoutPalette(dst);
     }
 
     const dy = srcH / dstH;

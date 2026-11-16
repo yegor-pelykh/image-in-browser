@@ -5,6 +5,7 @@ import type { Color } from '../color/color.js';
 import { ColorRgba8 } from '../color/color-rgba8.js';
 import { Interpolation } from '../common/interpolation.js';
 import { MathUtils } from '../common/math-utils.js';
+import { withoutPalette } from '../common/without-palette.js';
 import { NeuralQuantizer } from '../image/neural-quantizer.js';
 import { OctreeQuantizer } from '../image/octree-quantizer.js';
 import type { Quantizer } from '../image/quantizer.js';
@@ -1518,11 +1519,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The adjusted image.
    */
   public static adjustColor(opt: AdjustColorOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     const contrast =
       opt.contrast !== undefined
@@ -1722,11 +1719,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the billboard filter applied.
    */
   public static billboard(opt: BillboardOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const grid = opt.grid ?? 10;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -1804,11 +1797,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the bleach bypass effect applied.
    */
   public static bleachBypass(opt: BleachBypassOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -1895,11 +1884,7 @@ export abstract class Filter {
       );
     }
 
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
 
     let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
@@ -1962,9 +1947,7 @@ export abstract class Filter {
     const strength = opt.strength ?? 2;
 
     const dest = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
+      ? withoutPalette(opt.image)
       : MemoryImage.from(opt.image);
 
     const mx = opt.image.maxChannelValue;
@@ -2019,11 +2002,7 @@ export abstract class Filter {
   public static chromaticAberration(
     opt: ChromaticAberrationOptions
   ): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const shift = opt.shift ?? 5;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -2069,11 +2048,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the color halftone filter applied.
    */
   public static colorHalftone(opt: ColorHalftone): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     let angle = opt.angle ?? 1;
     const size = opt.size ?? 5;
@@ -2172,11 +2147,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The processed image with color offsets applied.
    */
   public static colorOffset(opt: ColorOffsetOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const red = opt.red ?? 0;
     const green = opt.green ?? 0;
     const blue = opt.blue ?? 0;
@@ -2220,11 +2191,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The processed image with adjusted contrast.
    */
   public static contrast(opt: ContrastOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     const mode = opt.mode ?? ContrastMode.proportional;
 
@@ -2302,11 +2269,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image after applying the convolution filter.
    */
   public static convolution(opt: ConvolutionOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const div = opt.div ?? 1;
     const offset = opt.offset ?? 0;
     const amount = opt.amount ?? 1;
@@ -2380,11 +2343,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The modified target image with copied channels.
    */
   public static copyImageChannels(opt: CopyImageChannelsOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const scaled = opt.scaled ?? false;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -2528,7 +2487,7 @@ export abstract class Filter {
     // The error is diffused through color values, not palette indices.
     let image = opt.image;
     if (image.hasPalette) {
-      image = image.convert({ numChannels: image.numChannels });
+      image = withoutPalette(image);
     }
     const quantizer = opt.quantizer ?? new NeuralQuantizer(image);
     const kernel = opt.kernel ?? DitherKernel.floydSteinberg;
@@ -2739,11 +2698,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the dot screen filter applied.
    */
   public static dotScreen(opt: DotScreenOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const size = opt.size ?? 5.75;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -2886,11 +2841,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the edge glow filter applied.
    */
   public static edgeGlow(opt: EdgeGlowOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -3037,11 +2988,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with gamma scaling applied.
    */
   public static gamma(opt: GammaOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
     for (const frame of image.frames) {
       if (
@@ -3158,11 +3105,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The grayscale image.
    */
   public static grayscale(opt: GrayscaleOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -3338,11 +3281,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the hexagon pixelate filter applied.
    */
   public static hexagonPixelate(opt: HexagonPixelateOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const size = opt.size ?? 5;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
@@ -3445,11 +3384,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with inverted colors.
    */
   public static invert(opt: InvertOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const max = image.maxChannelValue;
@@ -3502,11 +3437,7 @@ export abstract class Filter {
   public static luminanceThreshold(
     opt: LuminanceThresholdOptions
   ): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const threshold = opt.threshold ?? 0.5;
     const outputColor = opt.outputColor ?? false;
     const amount = opt.amount ?? 1;
@@ -3553,11 +3484,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the monochrome filter applied.
    */
   public static monochrome(opt: MonochromeOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -3600,11 +3527,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with added noise.
    */
   public static noise(opt: NoiseOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const type = opt.type ?? NoiseType.gaussian;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -3810,11 +3733,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The normalized image.
    */
   public static normalize(opt: NormalizeOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const a = opt.min < opt.max ? opt.min : opt.max;
@@ -3897,11 +3816,7 @@ export abstract class Filter {
       );
     }
 
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
 
     for (const frame of image.frames) {
       const w = frame.width;
@@ -4101,11 +4016,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with remapped color channels.
    */
   public static remapColors(opt: RemapColorsOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const red = opt.red ?? Channel.red;
     const green = opt.green ?? Channel.green;
     const blue = opt.blue ?? Channel.blue;
@@ -4147,11 +4058,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The scaled image.
    */
   public static scaleRgba(opt: ScaleRgbaOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
     const dr = opt.scale.rNormalized;
@@ -4210,11 +4117,7 @@ export abstract class Filter {
       );
     }
 
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
 
     for (const frame of image.frames) {
       if (
@@ -4257,11 +4160,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the sepia effect applied.
    */
   public static sepia(opt: SepiaOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -4299,11 +4198,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the sketch filter applied.
    */
   public static sketch(opt: SketchOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -4408,11 +4303,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The image with the Sobel filter applied.
    */
   public static sobel(opt: SobelOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const amount = opt.amount ?? 1;
     const maskChannel = opt.maskChannel ?? Channel.luminance;
 
@@ -4480,11 +4371,7 @@ export abstract class Filter {
    * @returns {MemoryImage} The solarized image.
    */
   public static solarize(opt: SolarizeOptions): MemoryImage {
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
     const mode = opt.mode ?? SolarizeMode.highlights;
 
     const max = image.maxChannelValue;
@@ -4598,11 +4485,7 @@ export abstract class Filter {
       );
     }
 
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
 
     let scratch: MemoryImage | undefined = undefined;
     for (const frame of image.frames) {
@@ -4690,11 +4573,7 @@ export abstract class Filter {
       );
     }
 
-    const image = opt.image.hasPalette
-      ? opt.image.convert({
-          numChannels: opt.image.numChannels,
-        })
-      : opt.image;
+    const image = opt.image.hasPalette ? withoutPalette(opt.image) : opt.image;
 
     const h = image.height - 1;
     const w = image.width - 1;
