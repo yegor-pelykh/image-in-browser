@@ -10,48 +10,48 @@ export type PvrColor = PvrColorRgbCore<PvrColor>;
 /**
  * Class representing a bounding box for PvrColor.
  */
-export class PvrColorBoundingBox {
+export class PvrColorBoundingBox<T extends PvrColorRgbCore<T> = PvrColor> {
   /**
-   * The minimum PvrColor value in the bounding box.
+   * The minimum color value in the bounding box.
    */
-  private _min: PvrColor;
+  private _min: T;
 
   /**
-   * Gets the minimum PvrColor value in the bounding box.
-   * @returns {PvrColor} The minimum PvrColor value.
+   * Gets the minimum color value in the bounding box.
+   * @returns {T} The minimum color value.
    */
-  public get min(): PvrColor {
+  public get min(): T {
     return this._min;
   }
 
   /**
-   * The maximum PvrColor value in the bounding box.
+   * The maximum color value in the bounding box.
    */
-  private _max: PvrColor;
+  private _max: T;
 
   /**
-   * Gets the maximum PvrColor value in the bounding box.
-   * @returns {PvrColor} The maximum PvrColor value.
+   * Gets the maximum color value in the bounding box.
+   * @returns {T} The maximum color value.
    */
-  public get max(): PvrColor {
+  public get max(): T {
     return this._max;
   }
 
   /**
    * Creates an instance of PvrColorBoundingBox.
-   * @param {PvrColor} min - The minimum PvrColor value.
-   * @param {PvrColor} max - The maximum PvrColor value.
+   * @param {T} min - The minimum color value.
+   * @param {T} max - The maximum color value.
    */
-  constructor(min: PvrColor, max: PvrColor) {
+  constructor(min: T, max: T) {
     this._min = min.copy();
     this._max = max.copy();
   }
 
   /**
-   * Adds a PvrColor to the bounding box, updating the min and max values.
-   * @param {PvrColor} c - The PvrColor to add.
+   * Adds a color to the bounding box, updating the min and max values.
+   * @param {T} c - The color to add.
    */
-  public add(c: PvrColor): void {
+  public add(c: T): void {
     this._min.setMin(c);
     this._max.setMax(c);
   }

@@ -50,7 +50,7 @@ export class PvrEncoder implements Encoder {
     bitmap: MemoryImage,
     blockX: number,
     blockY: number
-  ): PvrColorBoundingBox {
+  ): PvrColorBoundingBox<PvrColorRgb> {
     const pixel = (x: number, y: number): PvrColorRgb => {
       const p = bitmap.getPixel(blockX + x, blockY + y);
       return new PvrColorRgb(Math.trunc(p.r), Math.trunc(p.g), Math.trunc(p.b));
@@ -85,7 +85,7 @@ export class PvrEncoder implements Encoder {
     bitmap: MemoryImage,
     blockX: number,
     blockY: number
-  ): PvrColorBoundingBox {
+  ): PvrColorBoundingBox<PvrColorRgba> {
     const pixel = (x: number, y: number): PvrColorRgba => {
       const p = bitmap.getPixel(blockX + x, blockY + y);
       return new PvrColorRgba(
@@ -217,8 +217,8 @@ export class PvrEncoder implements Encoder {
         const cbb = PvrEncoder.calculateBoundingBoxRgb(bitmap, x, y);
         packet.setBlock(x, y);
         packet.usePunchthroughAlpha = false;
-        packet.setColorRgbA(cbb.min as PvrColorRgb);
-        packet.setColorRgbB(cbb.max as PvrColorRgb);
+        packet.setColorRgbA(cbb.min);
+        packet.setColorRgbB(cbb.max);
       }
     }
 
@@ -345,8 +345,8 @@ export class PvrEncoder implements Encoder {
         const cbb = PvrEncoder.calculateBoundingBoxRgba(bitmap, x4, y4);
         packet.setBlock(x, y);
         packet.usePunchthroughAlpha = false;
-        packet.setColorRgbaA(cbb.min as PvrColorRgba);
-        packet.setColorRgbaB(cbb.max as PvrColorRgba);
+        packet.setColorRgbaA(cbb.min);
+        packet.setColorRgbaB(cbb.max);
       }
     }
 

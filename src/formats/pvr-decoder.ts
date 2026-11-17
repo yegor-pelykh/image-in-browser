@@ -298,11 +298,14 @@ export class PvrDecoder implements Decoder {
     const pvrTypePvrtc2 = 0x18;
     const pvrTypePvrtc4 = 0x19;
 
-    if (length < PvrDecoder.pvrHeaderSize || this._info === undefined) {
+    if (
+      length < PvrDecoder.pvrHeaderSize ||
+      !(this._info instanceof Pvr2Info)
+    ) {
       return undefined;
     }
 
-    const info = this._info as Pvr2Info;
+    const info = this._info;
 
     const input = new InputBuffer({
       buffer: data,
