@@ -70,7 +70,12 @@ describe('Filter', () => {
    */
   test('dropShadow preserves source dimensions', () => {
     const src = checkerImage(64, 48);
-    Filter.dropShadow({ image: src });
+    Filter.dropShadow({
+      image: src,
+      hShadow: 0,
+      vShadow: 0,
+      blur: 0,
+    });
     expect(src.width).toBe(64);
     expect(src.height).toBe(48);
   });

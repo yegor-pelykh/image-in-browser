@@ -5,7 +5,10 @@ import tseslint from 'typescript-eslint';
 import config from 'eslint/config';
 
 export default config.defineConfig(
-  config.globalIgnores(['lib/**/*', 'pre-build.js'], 'Ignore Build Directory'),
+  config.globalIgnores(
+    ['lib/**/*', 'pre-build.js', 'eslint.config.js'],
+    'Ignore generated and config files'
+  ),
 
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

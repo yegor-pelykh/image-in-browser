@@ -108,7 +108,7 @@
     "test:all": "vitest run test",
     "format:src": "prettier --write \"src/**/*.{js,ts,tsx,json}\" --no-error-on-unmatched-pattern",
     "format:test": "prettier --write \"test/**/*.{js,ts,tsx,json}\" --no-error-on-unmatched-pattern",
-    "format:lint": "eslint --ext .ts,.tsx --fix",
+    "format:lint": "eslint --fix .",
     "format": "npm run format:src && npm run format:test && npm run format:lint",
     "build:src-js": "tsc -p tsconfig.build.json --removeComments",
     "build:src-typings": "tsc -p tsconfig.build.json --emitDeclarationOnly",

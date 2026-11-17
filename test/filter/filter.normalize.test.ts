@@ -52,7 +52,11 @@ describe('Filter', () => {
    */
   test('normalize preserves dimensions', () => {
     const src = checkerImage(64, 48);
-    Filter.normalize({ image: src });
+    Filter.normalize({
+      image: src,
+      min: 0,
+      max: 255,
+    });
     expect(src.width).toBe(64);
     expect(src.height).toBe(48);
   });
