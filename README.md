@@ -98,4 +98,4 @@ This project is licensed under the MIT License. See the [**LICENSE.md**](/LICENS
 
 Check out our NPM repository for more information:
 
-<a href="https://nodei.co/npm/image-in-browser/"><img src="https://nodei.co/npm/image-in-browser.png"></a>
+<a href="https://www.npmjs.com/package/image-in-browser"><img src="https://nodei.co/npm/image-in-browser.svg?color=brightgreen"></a>
