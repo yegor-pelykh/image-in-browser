@@ -300,6 +300,27 @@ export class TgaInfo implements DecodeInfo {
    * @returns {boolean} True if the TGA information is valid, otherwise false.
    */
   public isValid(): boolean {
+    const type = this._imageType;
+    const isSupportedType =
+      type === TgaImageType.palette ||
+      type === TgaImageType.paletteRle ||
+      type === TgaImageType.rgb ||
+      type === TgaImageType.rgbRle ||
+      type === TgaImageType.gray ||
+      type === TgaImageType.grayRle;
+    if (!isSupportedType) {
+      // none and the reserved types are not decodable.
+      return false;
+    }
+
+    // 16-bit grayscale is grayscale+alpha, which is not supported.
+    if (
+      (type === TgaImageType.gray || type === TgaImageType.grayRle) &&
+      this._pixelDepth !== 8
+    ) {
+      return false;
+    }
+
     if (
       this._pixelDepth !== 8 &&
       this._pixelDepth !== 16 &&

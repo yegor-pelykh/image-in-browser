@@ -127,4 +127,31 @@ describe('Format: TGA', () => {
     expect(image.getPixel(0, 1).r).toBe(0x10);
     expect(image.getPixel(1, 1).r).toBe(0x10);
   });
+
+  /**
+   * Rejects image types the decoder does not support.
+   */
+  test('unsupported image types are invalid', () => {
+    for (const imageType of [0, 4, 5, 6, 7, 8]) {
+      const data = new Uint8Array(grayHeader(imageType));
+      const decoder = new TgaDecoder();
+
+      expect(decoder.isValidFile(data)).toBe(false);
+      expect(decoder.decode({ bytes: data })).toBeUndefined();
+    }
+  });
+
+  /**
+   * Rejects 16-bit grayscale images, which are grayscale+alpha.
+   */
+  test('16-bit grayscale is invalid', () => {
+    for (const imageType of [3, 11]) {
+      const data = new Uint8Array([...grayHeader(imageType), 0x10, 0x20]);
+      data[16] = 16;
+      const decoder = new TgaDecoder();
+
+      expect(decoder.isValidFile(data)).toBe(false);
+      expect(decoder.decode({ bytes: data })).toBeUndefined();
+    }
+  });
 });
