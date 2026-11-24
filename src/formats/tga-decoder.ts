@@ -112,6 +112,8 @@ export class TgaDecoder implements Decoder {
       return undefined;
     }
 
+    this._input.offset = this._info.imageOffset;
+
     const bpp = this._info.pixelDepth;
     const hasAlpha = bpp === 16 || bpp === 32;
     const isGray = this._info.imageType === TgaImageType.grayRle;

@@ -1,7 +1,8 @@
 /** @format */
 
 import { describe, expect, test } from 'vitest';
-import { decodeTga, encodePng, encodeTga } from '../../src';
+import { TgaDecoder, decodeTga, encodePng, encodeTga } from '../../src';
+import { ImageTestUtils } from '../_utils/image-test-utils';
 import { TestFolder } from '../_utils/test-folder';
 import { TestSection } from '../_utils/test-section';
 import { TestUtils } from '../_utils/test-utils';
@@ -33,6 +34,17 @@ describe('Format: TGA', () => {
       expect(image).toBeDefined();
       if (image === undefined) {
         return;
+      }
+
+      // Every decodeFrame call must restart at the image data offset.
+      const decoder = new TgaDecoder();
+      expect(decoder.startDecode(input)).toBeDefined();
+      const first = decoder.decodeFrame(0);
+      const second = decoder.decodeFrame(0);
+      expect(first).toBeDefined();
+      expect(second).toBeDefined();
+      if (first !== undefined && second !== undefined) {
+        ImageTestUtils.testImageEquals(first, second);
       }
 
       const tgaBytes = encodeTga({
