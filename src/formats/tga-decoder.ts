@@ -11,7 +11,9 @@ import { TgaImageType } from './tga/tga-image-type.js';
 import { TgaInfo } from './tga/tga-info.js';
 
 /**
- * Decode a TGA image. This only supports the 24-bit and 32-bit uncompressed format.
+ * Decode a TGA image. This supports uncompressed and RLE color-mapped and
+ * true-color images, as well as 8-bit grayscale images. 16-bit grayscale
+ * (grayscale+alpha) is not supported and decodes to undefined.
  */
 export class TgaDecoder implements Decoder {
   /**

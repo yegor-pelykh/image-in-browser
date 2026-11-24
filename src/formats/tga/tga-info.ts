@@ -296,7 +296,8 @@ export class TgaInfo implements DecodeInfo {
   }
 
   /**
-   * Validates the TGA information.
+   * Validates the TGA header and checks that the image type and pixel depth
+   * are supported by the decoder.
    * @returns {boolean} True if the TGA information is valid, otherwise false.
    */
   public isValid(): boolean {
