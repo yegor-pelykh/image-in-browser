@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Support image-in-browser</title>
+<meta name="description" content="Crypto donation addresses for image-in-browser. No account, no platform fee, no ads.">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0d0e0b;
+  --bg-soft: #12140f;
+  --card: #171a14;
+  --card-soft: #1d2119;
+  --line: #2b3025;
+  --line-strong: #3b4232;
+  --text: #f2efe6;
+  --muted: #a6a99b;
+  --accent: #f7931a;
+  --accent-soft: #3a2410;
+  --green: #9bd46a;
+  --radius: 18px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f7f3e9;
+    --bg-soft: #efe9dc;
+    --card: #fffdf7;
+    --card-soft: #f4eee2;
+    --line: #ded5c4;
+    --line-strong: #c9bda8;
+    --text: #1e1f1a;
+    --muted: #66685e;
+    --accent: #a85400;
+    --accent-soft: #f6e3cb;
+    --green: #2f6b1f;
+  }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  background:
+    radial-gradient(900px 520px at 15% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%),
+    var(--bg);
+  color: var(--text);
+  font: 16px/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent); color: #0d0e0b; }
+a { color: var(--accent); }
+a:hover { text-decoration-thickness: 2px; }
+.wrap { width: min(1080px, calc(100% - 40px)); margin: 0 auto; }
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 0;
+}
+.brand {
+  color: var(--text);
+  text-decoration: none;
+  font: 600 14px/1 var(--mono);
+  letter-spacing: .02em;
+}
+.brand span { color: var(--muted); font-weight: 400; }
+.top-link { color: var(--muted); font-size: 13px; text-decoration: none; }
+.top-link:hover { color: var(--text); }
+
+.hero { max-width: 820px; padding: 44px 0 36px; }
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font: 600 12px/1.4 var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0 0 20px;
+  font: 400 clamp(42px, 7vw, 76px)/.98 var(--serif);
+  letter-spacing: -.035em;
+  overflow-wrap: break-word;
+}
+h1 em { font-style: italic; color: var(--accent); }
+.lead { max-width: 620px; margin: 0; color: var(--muted); font-size: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 11px;
+  color: var(--muted);
+  font: 500 12px/1 var(--mono);
+}
+
+.template {
+  margin: 0 0 28px;
+  border: 1px solid var(--line-strong);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 12px;
+  background: var(--accent-soft);
+  padding: 12px 14px;
+  font-size: 14px;
+}
+.template code {
+  border-radius: 5px;
+  background: var(--card);
+  padding: 2px 5px;
+  font: 12px/1.4 var(--mono);
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--line);
+}
+.strip div { background: var(--bg); padding: 18px 18px 20px; }
+.strip strong { display: block; margin-bottom: 4px; font: 600 14px/1.3 var(--sans); }
+.strip span { display: block; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+.section { margin-top: 64px; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.section-head h2 {
+  margin: 0;
+  font: 400 30px/1.1 var(--serif);
+  letter-spacing: -.02em;
+}
+.section-head p { max-width: 420px; margin: 0; color: var(--muted); font-size: 14px; text-align: right; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+
+.card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 18px;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent 70%);
+  opacity: .55;
+}
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.card-head > div, .card-main { min-width: 0; }
+.card h3 { margin: 0; font: 600 19px/1.2 var(--sans); letter-spacing: -.01em; }
+.network { margin: 3px 0 0; color: var(--muted); font: 12px/1.3 var(--mono); }
+.tag {
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--muted);
+  font: 11px/1 var(--mono);
+}
+.card-body {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.qr-wrap {
+  width: 132px;
+  height: 132px;
+  padding: 7px;
+  border-radius: 12px;
+  background: #fff;
+}
+.qr-wrap img { display: block; width: 100%; height: 100%; }
+.fee { margin: 0 0 8px; color: var(--muted); font: 12px/1.3 var(--mono); }
+.address {
+  display: block;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg-soft);
+  padding: 9px 10px;
+  color: var(--text);
+  font: 12px/1.5 var(--mono);
+  word-break: break-all;
+  user-select: all;
+}
+.note { margin: 9px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+button, .btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 8px 11px;
+  font: 600 12.5px/1.2 var(--sans);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, filter .15s ease;
+}
+button { background: var(--accent); color: #12140f; }
+button:hover { filter: brightness(1.07); }
+button.copied { background: var(--green); color: #0d0e0b; }
+.btn.ghost { background: transparent; border-color: var(--line-strong); color: var(--text); }
+.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.pick { border-top: 1px solid var(--line); padding-top: 28px; }
+.pick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.pick-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.pick-item span { color: var(--muted); font-size: 13px; }
+.pick-item strong { font-size: 14px; font-weight: 600; text-align: right; }
+
+footer {
+  margin-top: 64px;
+  border-top: 1px solid var(--line);
+  padding: 28px 0 48px;
+  color: var(--muted);
+  font-size: 13px;
+}
+footer p { max-width: 760px; margin: 0 0 10px; }
+footer strong { color: var(--text); }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 820px) {
+  .strip { grid-template-columns: repeat(2, 1fr); }
+  .grid, .pick-grid { grid-template-columns: 1fr; }
+  .section-head { display: block; }
+  .section-head p { margin-top: 8px; text-align: left; }
+}
+@media (max-width: 560px) {
+  .wrap { width: min(100% - 28px, 1080px); }
+  .hero { padding-top: 28px; }
+  .card-body { grid-template-columns: 1fr; }
+  .qr-wrap { width: 148px; height: 148px; }
+  .card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="https://github.com/yegor-pelykh/image-in-browser">image-in-browser <span>/ donate</span></a>
+    <a class="top-link" href="https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md">Read it on GitHub</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">A small image library, maintained in the open</p>
+      <h1>Keep<br><em>image-in-browser</em> free.</h1>
+      <p class="lead">One maintainer. A dozen image formats. No ads, no paid tier, no company. If the library saved you an afternoon, you can chip in with crypto. If it didn’t, no hard feelings.</p>
+      <div class="chips">
+        <span class="chip">MIT license</span>
+        <span class="chip">No account</span>
+        <span class="chip">No platform fee</span>
+        <span class="chip">One-time</span>
+      </div>
+    </section>
+
+    <div id="template-warning" class="template" hidden>
+      <strong>Template mode.</strong> Some address or wallet URI fields still contain <code>YOUR_</code>. Replace the addresses in <code>index.html</code>, then run <code>npm run donate:qr</code>.
+    </div>
+
+    <section class="strip" aria-label="What the money goes to">
+      <div><strong>Time</strong><span>Issue triage, reviews, and releases.</span></div>
+      <div><strong>Test images</strong><span>The weird fixtures that keep the codecs honest.</span></div>
+      <div><strong>New codecs</strong><span>The unglamorous research part.</span></div>
+      <div><strong>The boring bits</strong><span>Dependency updates and docs.</span></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>The usual suspects</h2>
+        <p>Shortest path. Pick one, copy, send.</p>
+      </div>
+      <div class="grid" data-group="usual"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Cheap and quick</h2>
+        <p>For a couple of dollars, the network fee should not be the bigger number.</p>
+      </div>
+      <div class="grid" data-group="cheap"></div>
+    </section>
+
+    <section class="section pick">
+      <div class="section-head">
+        <h2>Which one?</h2>
+        <p>No wrong answer, but some are cheaper than others.</p>
+      </div>
+      <div class="pick-grid">
+        <div class="pick-item"><span>Least hassle</span><strong>USDT on TRON</strong></div>
+        <div class="pick-item"><span>Under $5</span><strong>XLM, SOL, XRP, or TON</strong></div>
+        <div class="pick-item"><span>No stablecoins</span><strong>BTC for larger, LTC for smaller</strong></div>
+        <div class="pick-item"><span>Ethereum person</span><strong>ETH or USDC on Base</strong></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Only these addresses are official.</strong> I will never DM you first or ask for a seed phrase. If you see another address in an issue or PR, it’s a scam.</p>
+    <p>No cookies, no analytics, no affiliate links. This page is just HTML and a few QR codes.</p>
+    <p><a href="https://github.com/yegor-pelykh/image-in-browser">Source on GitHub</a> · <a href="https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md">DONATE.md</a></p>
+  </footer>
+</div>
+
+<p id="copy-status" class="sr-only" aria-live="polite"></p>
+
+<script>
+/* COINS:START */
+const COINS = [
+  {
+    "id": "usdt",
+    "group": "usual",
+    "name": "USDT",
+    "network": "TRON · TRC-20",
+    "fee": "~$1",
+    "tag": "Most common",
+    "placeholder": "YOUR_TRC20_ADDRESS",
+    "address": "TPTdByy4nWFB9zRxQEqyfQHZFdpX23qjW9",
+    "uri": "",
+    "uriLabel": "",
+    "qr": "qr/usdt-trc20.svg",
+    "qrMode": "address",
+    "note": "TRC-20 only. Not ERC-20, not BEP-20, not Solana. TRX is welcome at the same address."
+  },
+  {
+    "id": "btc",
+    "group": "usual",
+    "name": "Bitcoin",
+    "network": "On-chain",
+    "fee": "$0.30–3",
+    "tag": "For larger amounts",
+    "placeholder": "YOUR_BTC_ADDRESS",
+    "address": "bc1qnu22q5xytxq3l78vm4tsexcnrdkt0avjrkaj5x",
+    "uri": "bitcoin:{address}",
+    "uriLabel": "Open Bitcoin wallet",
+    "qr": "qr/btc.svg",
+    "qrMode": "uri",
+    "note": "Small amount? USDT on TRON or a cheap chain will cost you less."
+  },
+  {
+    "id": "evm",
+    "group": "usual",
+    "name": "ETH / USDC",
+    "network": "Base",
+    "fee": "under $0.01",
+    "tag": "For Ethereum people",
+    "placeholder": "YOUR_EVM_ADDRESS",
+    "address": "0x53218b644693AF8fa0c31f5A6df1ACA0DB2E3740",
+    "uri": "ethereum:{address}@8453",
+    "uriLabel": "Open ETH wallet",
+    "qr": "qr/evm-base.svg",
+    "qrMode": "address",
+    "note": "Pick Base for ETH. Pick USDC on Base for USDC. Mainnet works, but gas hurts."
+  },
+  {
+    "id": "ton",
+    "group": "usual",
+    "name": "TON",
+    "network": "The Open Network",
+    "fee": "~$0.005",
+    "tag": "",
+    "placeholder": "YOUR_TON_ADDRESS",
+    "address": "UQCSfz3BzVbdfzx7_uOJDbcsvNXN4Enz_eqhCwSkT_JbBg4Q",
+    "uri": "ton://transfer/{address}?text=Donation",
+    "uriLabel": "Open TON wallet",
+    "qr": "qr/ton.svg",
+    "qrMode": "uri",
+    "note": "Cheap and quick, especially if you already live in Telegram."
+  },
+  {
+    "id": "xrp",
+    "group": "cheap",
+    "name": "XRP",
+    "network": "XRP Ledger",
+    "fee": "under $0.001",
+    "tag": "",
+    "placeholder": "YOUR_XRP_ADDRESS",
+    "address": "rpteDv1F57N3s3QngPdddQ89VRXKQ1kEBa",
+    "uri": "",
+    "uriLabel": "",
+    "qr": "qr/xrp.svg",
+    "qrMode": "address",
+    "note": "No destination tag needed. If your exchange insists, use 0."
+  },
+  {
+    "id": "sol",
+    "group": "cheap",
+    "name": "Solana",
+    "network": "Solana · SPL",
+    "fee": "under $0.001",
+    "tag": "",
+    "placeholder": "YOUR_SOL_ADDRESS",
+    "address": "DWHotA4CKWc3bo4buvreB63LEnWUdQGFRDRCkczTaPr8",
+    "uri": "solana:{address}?label=image-in-browser",
+    "uriLabel": "Open Solana wallet",
+    "qr": "qr/sol.svg",
+    "qrMode": "uri",
+    "note": "For USDC, choose USDC (SPL) on Solana."
+  },
+  {
+    "id": "xlm",
+    "group": "cheap",
+    "name": "Stellar",
+    "network": "XLM",
+    "fee": "under $0.001",
+    "tag": "Cheapest",
+    "placeholder": "YOUR_XLM_ADDRESS",
+    "address": "GB6GSOEHYR3XPFGIQQMWQDBYJ2YLJ22IWXUFBIRO2P5Y7YMECIIKTGN4",
+    "uri": "",
+    "uriLabel": "",
+    "qr": "qr/xlm.svg",
+    "qrMode": "address",
+    "note": "No memo needed. If your exchange insists, use 0."
+  },
+  {
+    "id": "ltc",
+    "group": "cheap",
+    "name": "Litecoin",
+    "network": "Litecoin",
+    "fee": "~$0.01",
+    "tag": "",
+    "placeholder": "YOUR_LTC_ADDRESS",
+    "address": "ltc1q47ehc8zsupgzg8d7sl7yj2vcuarj4s7z029f5l",
+    "uri": "litecoin:{address}",
+    "uriLabel": "Open Litecoin wallet",
+    "qr": "qr/ltc.svg",
+    "qrMode": "uri",
+    "note": "The old-school cheap option."
+  }
+];
+/* COINS:END */
+
+const renderCard = (coin) => {
+  const walletUri = coin.uri ? coin.uri.replaceAll("{address}", coin.address) : "";
+  const openLink = walletUri
+    ? `<a class="btn ghost" href="${walletUri}" rel="noopener">${coin.uriLabel || "Open wallet"}</a>`
+    : "";
+
+  return `
+    <article class="card">
+      <div class="card-head">
+        <div>
+          <h3>${coin.name}</h3>
+          <p class="network">${coin.network}</p>
+        </div>
+        ${coin.tag ? `<span class="tag">${coin.tag}</span>` : ""}
+      </div>
+      <div class="card-body">
+        <div class="qr-wrap">
+          <img src="${coin.qr}" alt="${coin.name} donation QR code" width="132" height="132" loading="lazy">
+        </div>
+        <div class="card-main">
+          <p class="fee">Network fee: ${coin.fee}</p>
+          <code class="address" id="addr-${coin.id}">${coin.address}</code>
+          <p class="note">${coin.note}</p>
+          <div class="actions">
+            <button type="button" data-copy="${coin.id}">Copy address</button>
+            ${openLink}
+          </div>
+        </div>
+      </div>
+    </article>`;
+};
+
+document.querySelectorAll("[data-group]").forEach((grid) => {
+  const group = grid.dataset.group;
+  grid.innerHTML = COINS.filter((coin) => coin.group === group).map(renderCard).join("");
+});
+
+const hasPlaceholders = COINS.some(
+  (coin) =>
+    !coin.address ||
+    coin.address.startsWith("YOUR_") ||
+    (coin.uri && coin.uri.includes("YOUR_"))
+);
+if (hasPlaceholders) {
+  document.getElementById("template-warning").hidden = false;
+}
+
+const copyStatus = document.getElementById("copy-status");
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    return ok;
+  }
+};
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-copy]");
+  if (!button) return;
+
+  const coin = COINS.find((item) => item.id === button.dataset.copy);
+  if (!coin) return;
+
+  const copied = await copyText(coin.address);
+  const previous = button.textContent;
+
+  button.textContent = copied ? "Copied" : "Select and copy";
+  button.classList.toggle("copied", copied);
+  copyStatus.textContent = copied ? `${coin.name} address copied` : `Could not copy ${coin.name} address`;
+
+  window.setTimeout(() => {
+    button.textContent = previous;
+    button.classList.remove("copied");
+  }, 1600);
+});
+</script>
+</body>
+</html>

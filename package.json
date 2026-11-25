@@ -4,6 +4,10 @@
   "description": "Package for encoding / decoding images, transforming images, applying filters, drawing primitives on images on the client side (no need for server Node.js)",
   "author": "Yegor Pelykh <yegor.dev@gmail.com>",
   "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/yegor-pelykh/image-in-browser"
@@ -115,7 +119,8 @@
     "build:src": "npm run build:src-js && npm run build:src-typings",
     "build:pre": "node pre-build.js",
     "build": "npm run build:pre && npm run format && npm run build:src",
-    "release": "release-it"
+    "release": "release-it",
+    "donate:qr": "node scripts/generate-donate-qr.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -127,6 +132,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.7",
     "prettier": "^3.10.1",
+    "qrcode": "^1.5.4",
     "release-it": "^21.1.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.73.0",

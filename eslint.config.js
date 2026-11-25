@@ -9,6 +9,7 @@ export default config.defineConfig(
     ['lib/**/*', 'pre-build.js', 'eslint.config.js'],
     'Ignore generated and config files'
   ),
+  config.globalIgnores(['scripts/**/*'], 'Ignore local maintenance scripts'),
 
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

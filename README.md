@@ -1,3 +1,5 @@
+<!-- @format -->
+
 # 📋 Table of Contents
 
 - [**Introduction**](#introduction)
@@ -6,6 +8,7 @@
 - [**Documentation**](#documentation)
 - [**Performance Considerations**](#performance-considerations)
 - [**Contributing**](#contributing)
+- [**Support the Project**](#support-the-project)
 - [**Useful Links**](#useful-links)
 
 <h1 id="introduction">🌟 Introduction</h1>
@@ -28,6 +31,8 @@ Key Features:
 - Guards against oversized or malformed images, and decodes JPEG at 1/2, 1/4 or 1/8 scale for fast thumbnails
 
 Whether you're working with static images or animated graphics, this library is perfect for projects where you want to keep your code isolated from the underlying system.
+
+> 💖 **If image-in-browser saves you time, you can chip in with crypto.** [Ways to donate →](https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md)
 
 <h1 id="supported-image-formats">🖼️ Supported Image Formats</h1>
 
@@ -89,6 +94,18 @@ To contribute:
 7. Open a Pull Request
 
 Your support is greatly appreciated!
+
+<h1 id="support-the-project">💖 Support the Project</h1>
+
+**image-in-browser** is free, MIT-licensed, and has no ads, telemetry, or paid tier. I maintain it in my spare time.
+
+If it saved you an afternoon, you can support it with crypto. Donations are optional and don't buy features or priority - the library stays free for everyone.
+
+[**Ways to donate, QR codes, and a few honest answers →**](https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md)
+
+💵 Least hassle: **USDT (TRC-20)** `TPTdByy4nWFB9zRxQEqyfQHZFdpX23qjW9`
+
+Not planning to donate? A ⭐, a bug report, or sharing the project helps too.
 
 <h1 id="license">📜 License</h1>
 
