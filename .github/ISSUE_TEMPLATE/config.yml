@@ -1,5 +1,14 @@
 blank_issues_enabled: true
 contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/yegor-pelykh/image-in-browser/wiki
+    about: API reference, guides, examples, and format details
+  - name: 💬 Support and questions
+    url: https://github.com/yegor-pelykh/image-in-browser/blob/main/.github/SUPPORT.md
+    about: How to ask a question or get help with image-in-browser
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/yegor-pelykh/image-in-browser/security/policy
+    about: Please report vulnerabilities privately, not in a public issue
   - name: 💖 Chip in with crypto
     url: https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md
     about: Donation addresses, QR codes, and the boring details
