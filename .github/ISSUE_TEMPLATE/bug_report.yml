@@ -1,0 +1,93 @@
+# @format
+
+name: Bug report
+description: Report a reproducible problem with image-in-browser
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please provide a minimal reproduction: the smaller the code sample and input image, the faster the issue can be investigated.
+
+        Do not report security vulnerabilities here. See [SECURITY.md](https://github.com/yegor-pelykh/image-in-browser/blob/main/SECURITY.md) for the private reporting process.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/yegor-pelykh/image-in-browser/blob/main/CODE_OF_CONDUCT.md).
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: image-in-browser version
+      description: Run `npm ls image-in-browser` or check your lockfile for the installed version. `npm view image-in-browser version` shows the latest release.
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does the problem occur?
+      options:
+        - Browser
+        - Node.js
+        - Browser and Node.js
+        - Other (bundler, worker, etc.)
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the problem.
+      placeholder: What happens, and what did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: A code sample, steps, or a link to a minimal repository or playground. Please remove unrelated code.
+      render: typescript
+      placeholder: |
+        import { decodeImage } from 'image-in-browser';
+
+        const image = decodeImage({ data: bytes });
+        if (!image) {
+          throw new Error('Failed to decode the image');
+        }
+        // ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happens instead? Include the observed output, error message, or stack trace.
+    validations:
+      required: true
+  - type: upload
+    id: sample
+    attributes:
+      label: Minimal input image
+      description: Attach a small image that reproduces the problem, if applicable. Remove or redact sensitive content. If the file is large or cannot be shared, describe its format, dimensions, frame type, and origin below.
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that may help, such as the browser or Node.js version, image format, dimensions, alpha or animation details, or a comparison with another decoder.
+    validations:
+      required: false
