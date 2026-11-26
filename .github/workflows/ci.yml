@@ -26,9 +26,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run normalize:src
-      - run: git diff --exit-code -- src/
-      - run: npm run format:prettier
-      - run: npm run format:lint
-      - run: npm run typecheck
+      - run: npm run check:src-clean
+      - run: npm run verify
       - run: npm run test:all
       - run: npm run build:src

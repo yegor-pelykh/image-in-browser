@@ -64,6 +64,7 @@ is used for building, testing and releasing only.
 | :----------------------------------------------- | :-------------------------------------------------------------------------------------- |
 | `npm run build`                                  | Normalizes imports, formats, lints, then cleans and compiles to `lib/`                  |
 | `npm run normalize:src`                          | Normalizes relative imports in `src/` so they include the `.js` extension               |
+| `npm run check:src-clean`                        | Fails if `src/` has staged, unstaged, or untracked changes                              |
 | `npm run clean:lib`                              | Removes the generated `lib/` directory                                                  |
 | `npm run test:all`                               | Runs the complete test suite                                                            |
 | `npm run test:format`                            | Runs the format suite; `test:color`, `test:draw`, `test:exif`, and so on run the others |
@@ -72,12 +73,16 @@ is used for building, testing and releasing only.
 | `npm run typecheck`                              | Type-checks `src/`, `test/` and configs without writing files                           |
 | `npm run verify`                                 | Runs the formatting check, lint and full typecheck without rewriting files              |
 | `npm run format:prettier`                        | Checks Prettier formatting for `src/` and `test/` without rewriting files               |
-| `npm run format:lint`                            | Runs ESLint without `--fix`                                                             |
-| `npm run format`                                 | Rewrites formatting and applies ESLint fixes                                            |
+| `npm run format:lint`                            | Runs ESLint without `--fix` and fails on warnings                                       |
+| `npm run format`                                 | Rewrites formatting and applies ESLint fixes; fails on remaining warnings               |
 | `npm run release:check`                          | Maintainer only: full verification, source check and `lib/` build before publishing     |
 | `npm run release`                                | Maintainer only: runs `release:check`, bumps the version, tags and publishes            |
 
 There is no `npm test`; use `npm run test:all`.
+
+`normalize:src` is followed by `check:src-clean` in CI and `release:check`. The
+check fails if normalization changed `src/` or if `src/` has any other staged,
+unstaged, or untracked changes.
 
 `npm run release` executes `release:check` through release-it's `before:init`
 hook, before the version bump. A manual `npm publish` runs the same check
@@ -88,9 +93,9 @@ so the check does not run twice.
 > non-mutating check, use `npm run verify` (or the `tsc --noEmit` commands
 > above).
 
-CI runs the non-mutating formatting, lint, type and test checks, followed by a
-source build, on every pull request. Before opening one, run `npm run verify`
-and `npm run test:all` locally.
+CI normalizes imports, verifies that `src/` is clean, then runs the non-mutating
+formatting, lint, type and test checks, followed by a source build, on every pull
+request. Before opening one, run `npm run verify` and `npm run test:all` locally.
 
 ## Project layout
 
