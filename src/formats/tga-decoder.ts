@@ -11,7 +11,9 @@ import { TgaImageType } from './tga/tga-image-type.js';
 import { TgaInfo } from './tga/tga-info.js';
 
 /**
- * Decode a TGA image. This only supports the 24-bit and 32-bit uncompressed format.
+ * Decode a TGA image. This supports uncompressed and RLE color-mapped and
+ * true-color images, as well as 8-bit grayscale images. 16-bit grayscale
+ * (grayscale+alpha) is not supported and decodes to undefined.
  */
 export class TgaDecoder implements Decoder {
   /**
@@ -112,12 +114,15 @@ export class TgaDecoder implements Decoder {
       return undefined;
     }
 
+    this._input.offset = this._info.imageOffset;
+
     const bpp = this._info.pixelDepth;
     const hasAlpha = bpp === 16 || bpp === 32;
+    const isGray = this._info.imageType === TgaImageType.grayRle;
     const image = new MemoryImage({
       width: this._info.width,
       height: this._info.height,
-      numChannels: hasAlpha ? 4 : 3,
+      numChannels: isGray ? 1 : hasAlpha ? 4 : 3,
       withPalette: this._info.hasColorMap,
     });
 
@@ -260,11 +265,12 @@ export class TgaDecoder implements Decoder {
       bpp === 32 ||
       (this._info.hasColorMap &&
         (this._info.colorMapDepth === 16 || this._info.colorMapDepth === 32));
+    const isGray = this._info.imageType === TgaImageType.gray;
 
     const image = new MemoryImage({
       width: this._info.width,
       height: this._info.height,
-      numChannels: hasAlpha ? 4 : 3,
+      numChannels: isGray ? 1 : hasAlpha ? 4 : 3,
       withPalette: this._info.hasColorMap,
     });
 
@@ -401,6 +407,13 @@ export class TgaDecoder implements Decoder {
       return this.decodeRle();
     } else if (this._info.imageType === TgaImageType.palette) {
       return this.decodeRgb();
+    } else if (this._info.pixelDepth === 8) {
+      // 8-bit grayscale is read like the 8-bit palette indices.
+      if (this._info.imageType === TgaImageType.gray) {
+        return this.decodeRgb();
+      } else if (this._info.imageType === TgaImageType.grayRle) {
+        return this.decodeRle();
+      }
     }
 
     return undefined;
