@@ -25,7 +25,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node pre-build.js
+      - run: npm run normalize:src
       - run: git diff --exit-code -- src/
       - run: npm run format:prettier
       - run: npm run format:lint

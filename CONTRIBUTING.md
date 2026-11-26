@@ -62,7 +62,8 @@ is used for building, testing and releasing only.
 
 | Command                                          | What it does                                                                            |
 | :----------------------------------------------- | :-------------------------------------------------------------------------------------- |
-| `npm run build`                                  | Pre-build fixes, formatting, linting, then cleans and compiles to `lib/`                |
+| `npm run build`                                  | Normalizes imports, formats, lints, then cleans and compiles to `lib/`                  |
+| `npm run normalize:src`                          | Normalizes relative imports in `src/` so they include the `.js` extension               |
 | `npm run clean:lib`                              | Removes the generated `lib/` directory                                                  |
 | `npm run test:all`                               | Runs the complete test suite                                                            |
 | `npm run test:format`                            | Runs the format suite; `test:color`, `test:draw`, `test:exif`, and so on run the others |
@@ -143,8 +144,8 @@ The library's API documentation is the
   check without rewriting files.
 - **Linting:** ESLint with `strictTypeChecked`. Fix warnings rather than
   disabling rules.
-- **Imports:** In `src/`, relative imports end in `.js` (ESM; `pre-build.js`
-  enforces this). In `test/`, imports are extensionless.
+- **Imports:** In `src/`, relative imports end in `.js` (ESM;
+  `npm run normalize:src` enforces this). In `test/`, imports are extensionless.
 - **Environment safety:** `src/` must not use Node built-ins (`fs`, `path`,
   `Buffer`) or DOM APIs. Work with `Uint8Array`. Only `test/` may use `fs` and
   `path`.

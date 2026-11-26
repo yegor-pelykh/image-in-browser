@@ -6,7 +6,7 @@ import config from 'eslint/config';
 
 export default config.defineConfig(
   config.globalIgnores(
-    ['lib/**/*', 'pre-build.js', 'eslint.config.js'],
+    ['lib/**/*', 'eslint.config.js'],
     'Ignore generated and config files'
   ),
   config.globalIgnores(['scripts/**/*'], 'Ignore local maintenance scripts'),
