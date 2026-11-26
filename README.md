@@ -83,15 +83,7 @@ This will execute all test cases defined in the project.
 
 We believe that contributions are the heart of the open-source community! Your input can help make **image-in-browser** even better.
 
-To contribute:
-
-1. Fork the project
-2. Create your feature branch (e.g., `git checkout -b feature/AmazingFeature`)
-3. **Important!** Run `npm run build` to ensure your code meets project standards
-4. **Important!** Address any errors or warnings that arise from your changes
-5. Commit your changes (e.g., `git commit -m 'Add some AmazingFeature'`)
-6. Push to your branch (e.g., `git push origin feature/AmazingFeature`)
-7. Open a Pull Request
+Please read [**CONTRIBUTING.md**](/CONTRIBUTING.md) for the full guide (development setup, project layout, coding rules, tests and pull request process). All participants are expected to follow our [**Code of Conduct**](/CODE_OF_CONDUCT.md).
 
 Your support is greatly appreciated!
 
