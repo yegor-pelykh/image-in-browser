@@ -67,17 +67,22 @@ is used for building, testing and releasing only.
 | `npm run test:format`                            | Runs the format suite; `test:color`, `test:draw`, `test:exif`, and so on run the others |
 | `npx vitest run test/format/format.webp.test.ts` | Runs a single test file                                                                 |
 | `npx tsc -p tsconfig.build.json --noEmit`        | Type-checks `src/` without writing files                                                |
-| `npx tsc -p tsconfig.json --noEmit`              | Type-checks `src/`, `test/` and configs without writing files                           |
-| `npm run format`                                 | Runs Prettier and `eslint --fix` over the project                                       |
+| `npm run typecheck`                              | Type-checks `src/`, `test/` and configs without writing files                           |
+| `npm run verify`                                 | Runs the formatting check, lint and full typecheck without rewriting files              |
+| `npm run format:prettier`                        | Checks Prettier formatting for `src/` and `test/` without rewriting files               |
+| `npm run format:lint`                            | Runs ESLint without `--fix`                                                             |
+| `npm run format`                                 | Rewrites formatting and applies ESLint fixes                                            |
 | `npm run release`                                | Maintainer only: bumps the version, tags and publishes                                  |
 
 There is no `npm test`; use `npm run test:all`.
 
 > **Note:** `npm run build` and `npm run format` rewrite files. For a
-> non-mutating check, use the `tsc --noEmit` commands above.
+> non-mutating check, use `npm run verify` (or the `tsc --noEmit` commands
+> above).
 
-This repository has **no CI workflows**. Please run `npm run test:all` and
-`npm run build` locally and mention the results in your pull request.
+CI runs the non-mutating formatting, lint, type and test checks, followed by a
+source build, on every pull request. Before opening one, run `npm run verify`
+and `npm run test:all` locally.
 
 ## Project layout
 
@@ -127,7 +132,8 @@ The library's API documentation is the
 - **Language:** TypeScript in strict mode with `noUnusedParameters`, compiled to
   ESM (`"type": "module"`). The package targets both browsers and Node.js.
 - **Formatting:** Prettier with 2 spaces, LF line endings, single quotes and
-  semicolons. Run `npm run format` before committing.
+  semicolons. Run `npm run format` before committing; use `npm run verify` to
+  check without rewriting files.
 - **Linting:** ESLint with `strictTypeChecked`. Fix warnings rather than
   disabling rules.
 - **Imports:** In `src/`, relative imports end in `.js` (ESM; `pre-build.js`
