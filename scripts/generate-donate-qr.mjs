@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+/** @format */
+/* eslint-disable no-console */
+
 // Regenerates the donation QR codes and keeps DONATE.md/README.md in sync
 // with the addresses in docs/donate/index.html.
 //
@@ -64,7 +67,7 @@ for (const coin of coins) {
     type: 'svg',
     width: 512,
     margin: 2,
-    errorCorrectionLevel: 'M'
+    errorCorrectionLevel: 'M',
   });
 
   await mkdir(dirname(target), { recursive: true });
@@ -80,11 +83,7 @@ for (const file of ['DONATE.md', 'README.md']) {
 }
 
 for (const coin of coins) {
-  if (
-    !coin.placeholder ||
-    !coin.address ||
-    coin.address.startsWith('YOUR_')
-  ) {
+  if (!coin.placeholder || !coin.address || coin.address.startsWith('YOUR_')) {
     continue;
   }
 

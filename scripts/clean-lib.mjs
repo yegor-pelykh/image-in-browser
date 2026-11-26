@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** @format */
+/* eslint-disable no-console */
 
 // Removes the generated lib directory before a build.
 //

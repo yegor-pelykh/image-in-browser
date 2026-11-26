@@ -1,12 +1,13 @@
+#!/usr/bin/env node
 /** @format */
 /* eslint-disable no-console */
 
 // Fails when src/ has staged, unstaged, or untracked changes.
 //
+// Run from anywhere: npm run check:src-clean
+//
 // `git status --porcelain` is used instead of `git diff --exit-code` because it
 // also catches staged and untracked files.
-//
-// Run from anywhere: npm run check:src-clean
 
 import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';

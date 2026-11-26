@@ -1,2 +1,4 @@
+# @format
+
 # Displays a Sponsor button that links to the project's donation page.
 custom: ['https://github.com/yegor-pelykh/image-in-browser/blob/main/DONATE.md']

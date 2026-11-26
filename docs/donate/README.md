@@ -11,7 +11,7 @@ This is the static GitHub Pages version of [`/DONATE.md`](../../DONATE.md). The 
 3. Preview with `npx --yes serve docs/donate` and scan a few QR codes with your phone.
 4. Check that the orange “Template mode” banner is gone.
 
-The `donate:qr` script uses the `qrcode` dev dependency and works on Windows, Linux, and macOS. Run `npm install` once after cloning if you haven’t already. It exits with code 1 while any address still starts with `YOUR_`, so a green run means the page is ready.
+The `donate:qr` script uses the `qrcode` dev dependency and works on Windows, Linux, and macOS. Run `npm ci` once after cloning if you haven't already. It exits with code 1 while any address still starts with `YOUR_`, so a green run means the page is ready.
 
 ## Wallet notes
 
@@ -30,7 +30,7 @@ The page will be available at:
 
 `https://yegor-pelykh.github.io/image-in-browser/donate/`
 
-Put that URL in the repository’s **Website** field if you want a direct link from the About section. The README and npm `funding` link point to `DONATE.md` instead, so they keep working even if Pages is disabled.
+Put that URL in the repository's **Website** field if you want a direct link from the About section. The README, npm `funding` field, and GitHub funding link point to `DONATE.md` instead, so they keep working even if Pages is disabled.
 
 ## Changing an address later
 

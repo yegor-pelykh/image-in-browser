@@ -83,7 +83,7 @@ This will execute all test cases defined in the project.
 
 We believe that contributions are the heart of the open-source community! Your input can help make **image-in-browser** even better.
 
-Please read [**CONTRIBUTING.md**](/CONTRIBUTING.md) for the full guide (development setup, project layout, coding rules, tests and pull request process). All participants are expected to follow our [**Code of Conduct**](/CODE_OF_CONDUCT.md).
+Please read [**CONTRIBUTING.md**](https://github.com/yegor-pelykh/image-in-browser/blob/main/CONTRIBUTING.md) for the full guide (development setup, project layout, coding rules, tests and pull request process). All participants are expected to follow our [**Code of Conduct**](https://github.com/yegor-pelykh/image-in-browser/blob/main/CODE_OF_CONDUCT.md).
 
 Your support is greatly appreciated!
 
@@ -101,7 +101,7 @@ Not planning to donate? A ⭐, a bug report, or sharing the project helps too.
 
 <h1 id="license">📜 License</h1>
 
-This project is licensed under the MIT License. See the [**LICENSE.md**](/LICENSE.md) file for details.
+This project is licensed under the MIT License. See the [**LICENSE.md**](https://github.com/yegor-pelykh/image-in-browser/blob/main/LICENSE.md) file for details.
 
 <h1 id="useful-links">🔗 Useful Links</h1>
 

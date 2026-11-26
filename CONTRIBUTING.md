@@ -56,7 +56,7 @@ Use `npm ci` for a reproducible install from `package-lock.json`. Use
 `npm install` only when you intentionally change dependencies.
 
 The package has **zero runtime dependencies**. Everything in `devDependencies`
-is used for building, testing and releasing only.
+is used for building, testing, releasing and repository maintenance only.
 
 ### Useful commands
 
@@ -72,7 +72,7 @@ is used for building, testing and releasing only.
 | `npx tsc -p tsconfig.build.json --noEmit`        | Type-checks `src/` without writing files                                                |
 | `npm run typecheck`                              | Type-checks `src/`, `test/` and configs without writing files                           |
 | `npm run verify`                                 | Runs the formatting check, lint and full typecheck without rewriting files              |
-| `npm run format:prettier`                        | Checks Prettier formatting for `src/` and `test/` without rewriting files               |
+| `npm run format:prettier`                        | Checks Prettier formatting for `src/`, `test/`, `scripts/` and `.github/`               |
 | `npm run format:lint`                            | Runs ESLint without `--fix` and fails on warnings                                       |
 | `npm run format`                                 | Rewrites formatting and applies ESLint fixes; fails on remaining warnings               |
 | `npm run release:check`                          | Maintainer only: full verification, source check and `lib/` build before publishing     |
@@ -95,7 +95,8 @@ so the check does not run twice.
 
 CI normalizes imports, verifies that `src/` is clean, then runs the non-mutating
 formatting, lint, type and test checks, followed by a source build, on every pull
-request. Before opening one, run `npm run verify` and `npm run test:all` locally.
+request and push to `main`. Before opening a pull request, run `npm run verify`
+and `npm run test:all` locally.
 
 ## Project layout
 
@@ -122,8 +123,9 @@ the image itself.
 
 `docs/` is published as-is by GitHub Pages from the `main` branch and the
 `/docs` folder (repository **Settings → Pages → Deploy from a branch**). There
-is no build step: everything committed here becomes public at
-`https://yegor-pelykh.github.io/image-in-browser/`, so do not put drafts,
+is no build step: everything committed here is public under
+`https://yegor-pelykh.github.io/image-in-browser/`. The donation page is at
+`https://yegor-pelykh.github.io/image-in-browser/donate/`. Do not put drafts,
 secrets or generated build output in this directory.
 
 - `docs/donate/index.html` — the static donation page. It must stay
@@ -220,10 +222,9 @@ polite ping after a week is fine.
 
 ## Security
 
-Please do not open a public issue for security problems. Report them privately
-to **yegor.dev@gmail.com** with a description, reproduction steps and affected
-versions. You will get a response as soon as possible, and the issue will be
-disclosed responsibly after a fix is available.
+Do not open a public issue for security problems. See
+[SECURITY.md](SECURITY.md) for supported versions, what to include in a report,
+and the disclosure process.
 
 ## License
 
