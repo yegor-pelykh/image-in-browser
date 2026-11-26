@@ -72,9 +72,15 @@ is used for building, testing and releasing only.
 | `npm run format:prettier`                        | Checks Prettier formatting for `src/` and `test/` without rewriting files               |
 | `npm run format:lint`                            | Runs ESLint without `--fix`                                                             |
 | `npm run format`                                 | Rewrites formatting and applies ESLint fixes                                            |
-| `npm run release`                                | Maintainer only: bumps the version, tags and publishes                                  |
+| `npm run release:check`                          | Maintainer only: full verification, source check and `lib/` build before publishing     |
+| `npm run release`                                | Maintainer only: runs `release:check`, bumps the version, tags and publishes            |
 
 There is no `npm test`; use `npm run test:all`.
+
+`npm run release` executes `release:check` through release-it's `before:init`
+hook, before the version bump. A manual `npm publish` runs the same check
+through `prepublishOnly`; release-it itself publishes with `--ignore-scripts`
+so the check does not run twice.
 
 > **Note:** `npm run build` and `npm run format` rewrite files. For a
 > non-mutating check, use `npm run verify` (or the `tsc --noEmit` commands

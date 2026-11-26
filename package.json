@@ -122,6 +122,8 @@
     "build:src": "npm run build:src-js && npm run build:src-typings",
     "build:pre": "node pre-build.js",
     "build": "npm run build:pre && npm run format && npm run build:src",
+    "release:check": "npm run verify && npm run test:all && npm run build:pre && git diff --exit-code -- src/ && npm run build:src",
+    "prepublishOnly": "npm run release:check",
     "release": "release-it",
     "donate:qr": "node scripts/generate-donate-qr.mjs"
   },

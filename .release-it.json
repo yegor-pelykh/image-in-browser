@@ -6,7 +6,11 @@
   "github": {
     "release": true
   },
+  "npm": {
+    "publishArgs": ["--ignore-scripts"]
+  },
   "hooks": {
+    "before:init": "npm run release:check",
     "after:bump": "npx auto-changelog -p"
   }
 }
