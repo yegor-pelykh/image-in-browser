@@ -62,7 +62,8 @@ is used for building, testing and releasing only.
 
 | Command                                          | What it does                                                                            |
 | :----------------------------------------------- | :-------------------------------------------------------------------------------------- |
-| `npm run build`                                  | Pre-build fixes, formatting, linting, then compiles to `lib/`                           |
+| `npm run build`                                  | Pre-build fixes, formatting, linting, then cleans and compiles to `lib/`                |
+| `npm run clean:lib`                              | Removes the generated `lib/` directory                                                  |
 | `npm run test:all`                               | Runs the complete test suite                                                            |
 | `npm run test:format`                            | Runs the format suite; `test:color`, `test:draw`, `test:exif`, and so on run the others |
 | `npx vitest run test/format/format.webp.test.ts` | Runs a single test file                                                                 |
